@@ -47,7 +47,8 @@ import os
 
 class Genotype(object):
     """Holds information about a genotype"""
-    def __init__(self, GT='./.', AD='.,.', DP='0', GQ='0', PL=False, allele_1 = '.', allele_2 = '.', FILTER = '.'):
+    def __init__(self, GT='./.', AD='.,.', DP='0', GQ='0', PL=[],
+                 allele_1 = '.', allele_2 = '.', FILTER = '.', original_info = ''):
         super(Genotype, self).__init__()        
         # Genotype call, ./., 1/1, 0/1, 0|1 ...
         self.genotype = GT
@@ -57,6 +58,7 @@ class Genotype(object):
         self.allele_2_base = allele_2
         self.ref_depth = '.'
         self.alt_depth = '.'
+        self.original_info = original_info
         if len(AD) > 2:
             if AD[0].isdigit():
                 self.ref_depth = int(AD.split(',')[0])
@@ -66,7 +68,6 @@ class Genotype(object):
         self.genotype_quality = float(GQ)
         self.phred_likelihoods = []
         if PL :
-            print PL
             for score in PL.split(','):
                 self.phred_likelihoods.append(int(score))
         
@@ -108,6 +109,13 @@ class Genotype(object):
                 self.homo_alt = True
             elif variant2 != '.':
                 self.heterozygote = True
+    
+    def get_vcf_genotype(self):
+        """Returns the genotype in the original vcf-format"""
+        
+        return self.original_info
+                    
+            
     
     def __str__(self):
         """Specifies what will be printed when printing the object."""

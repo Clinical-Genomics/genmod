@@ -31,6 +31,7 @@ class HeaderParser(object):
         self.header=[]
         self.metadata_counter = 1
         self.line_counter = 0
+        self.individuals = []
         start_symbol = '#'
         with open(infile, 'rb') as f:
             for line in f:
@@ -43,6 +44,8 @@ class HeaderParser(object):
                         self.metadata_counter += 1
                     else:
                         self.header = line[1:].rstrip().split('\t')
+                        if len(self.header) > 9:
+                            self.individuals = self.header[9:]
                 else:
                     break
                         
@@ -58,6 +61,7 @@ def main():
         print line, my_parser.metadata[line]
     print '\t'.join(my_parser.header)
     print my_parser.line_counter
+    print my_parser.individuals
     # for individual in my_parser.individuals:
     #     for genotype in my_parser.individuals[individual]:
     #         print individual, genotype, my_parser.individuals[individual][genotype]

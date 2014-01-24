@@ -20,19 +20,21 @@ import shelve
 import tempfile
 from datetime import datetime
 
+from pprint import pprint as pp
+
 from genmod.variants import genetic_variant, genotype
 from genmod.utils import get_genes
+from genmod.vcf import vcf_header
 from collections import OrderedDict
 
 
 
 class VariantParser(object):
     """docstring for VariantParser"""
-    def __init__(self, variant_file, tasks_queue, individuals, verbosity):
+    def __init__(self, variant_file, file_type, tasks_queue, verbosity):
         super(VariantParser, self).__init__()
         self.variant_file = variant_file
         self.tasks_queue = tasks_queue
-        self.individuals = individuals
         self.header_line = []
         self.metadata = []
         self.verbosity = verbosity    
@@ -40,6 +42,9 @@ class VariantParser(object):
         current_chrom = '0'
         new_chrom = '0'
         chrom_time = datetime.now()
+        
+        self.header = vcf_header.HeaderParser(variant_file)
+        self.individuals = self.header.individuals
     
         # We only parse the variants here:
         with open(variant_file, 'rb') as f:
@@ -50,46 +55,47 @@ class VariantParser(object):
             new_region = []
             for line in f:
                 line = line.rstrip()
-                if line[0] != '##':
+                if line[0] != '#':
                     #These are variant lines                    
                     variant = self.vcf_variant(line)
+                    
                     if self.verbosity:
                         new_chrom = variant.chr
+                        print '\t'.join(variant.get_vcf_variant())
                         if new_chrom != current_chrom:
                             print 'Now processing chromosome', new_chrom
                             print 'Time to process chromosome', current_chrom, ':', datetime.now() - chrom_time
                             chrom_time = datetime.now()
                             current_chrom = new_chrom
                     
-                    new_genes = variant.genes
-                    # If we look at the first variant, setup boundary conditions:
-                    if beginning:
-                        current_genes = new_genes
-                        beginning = False
-                        batch = self.add_variant(batch, variant) # Add variant batch
-
-                    else:
-                        send = True
-                    
-                    #Check if we are in a space between genes:
-                        if len(new_genes) == 0:
-                            if len(current_genes) == 0:
-                                send = False
-                    #If not check if we are in a consecutive region
-                        else:
-                            for gene in new_genes:
-                                if gene in current_genes:
-                                    send = False
-                        if send:
-                            # If there is an intergenetic region we do not look at the compounds.
-                            # The tasks are tuples like (variant_list, bool(if compounds))
-                            self.tasks_queue.put(batch)
-                            current_genes = new_genes
-                            batch = self.add_variant({}, variant)
-                        else:
-                            current_genes = list(set(current_genes) | set(new_genes))
-                            batch = self.add_variant(batch, variant) # Add variant batch
-        tasks_queue.put(batch)
+        #             new_genes = variant.genes
+        #             # If we look at the first variant, setup boundary conditions:
+        #             if beginning:
+        #                 current_genes = new_genes
+        #                 beginning = False
+        #                 batch = self.add_variant(batch, variant) # Add variant batch
+        #                 
+        #             else:
+        #                 send = True
+        #             
+        #             #Check if we are in a space between genes:
+        #                 if len(new_genes) == 0:
+        #                     if len(current_genes) == 0:
+        #                         send = False
+        #             #If not check if we are in a consecutive region
+        #                 else:
+        #                     for gene in new_genes:
+        #                         if gene in current_genes:
+        #                             send = False
+        #                 if send:
+        #                     # The tasks are a dictionary like {gene:{variant_id:variant}}
+        #                     self.tasks_queue.put(batch)
+        #                     current_genes = new_genes
+        #                     batch = self.add_variant({}, variant)
+        #                 else:
+        #                     current_genes = list(set(current_genes) | set(new_genes))
+        #                     batch = self.add_variant(batch, variant) # Add variant batch
+        # tasks_queue.put(batch)
         
     def add_variant(self, batch, variant):
         """Adds the variant to the proper gene(s) in the batch."""
@@ -148,90 +154,76 @@ class VariantParser(object):
     def vcf_variant(self, variant_line):
         """Read a VCF-variant line and returns a variant object and a 
         dictionary with the genotypes like {variant-id:[genotype1, genotype2,...]}"""
-        variant_line = variant_line.split()
+        variant_line = variant_line.split('\t')
         format_info = [] # Information about the genotype format
-        variant_info = OrderedDict()
-
-        for entry in range(len(variant_line)):
-            variant_info[self.header_lines[entry]] = variant_line[entry]
-            
-            if entry > 8:
-                individual = self.header_lines[entry]
-                if individual not in self.individuals:
-                    self.individuals[individual] = {}
         
-        chrom = variant_info['CHROM']
-        position = int(variant_info['POS'])
-        identity = variant_info['ID']
-        reference = variant_info['REF']
-        alternatives = variant_info['ALT']
-        quality = variant_info['QUAL']
-        filt = variant_info['FILTER']
-        info = variant_info['INFO']
-        format_info = variant_info['FORMAT'].split(':')
-        number_of_individuals = len(variant_line[9:])
+        chrom = variant_line[0]
+        start = int(variant_line[1])
+        stop = start
+        identity = variant_line[2]
+        reference = variant_line[3]
+        alternative = variant_line[4].split(',') # returns a list
+        quality = variant_line[5]
+        filt = variant_line[6]
+        info = variant_line[7].split(';')
+        format_info = variant_line[8].split(':')
         
-        if self.split_alternatives:
-    
-            for alternative in alternatives:
-                # This is a SNV:
-                if len(reference) == len(alternative):
-                    start = position
-                    stop = position
-                # This is a deletion:
-                elif len(reference) > len(alternative):
-                    start = str(int(position) + 1)
-                    stop = str(int(position) + len(reference) - 1)
-                # This is a insertion
-                elif len(reference) < len(alternative):
-                    start = position
-                    stop = position
-                    alternative = alternative[1:]
-                # Put the variants in a list:
-                my_variant = genetic_variant.Variant(chrom, start, stop, reference, alternative, identity, variant_info)
-                self.variants[my_variant.variant_id] = my_variant
-                # Check the genotypes
-        else:
-            
-            start = position
-            stop = position
-            my_variant = genetic_variant.Variant(chrom, start, stop, reference, alternatives, identity, variant_info)
-            self.variants[my_variant.variant_id] = my_variant
+        my_variant = genetic_variant.Variant(chrom, start, stop, reference, alternative,
+             identity, quality, filt, info, format_info)
         
-        # Collect the genotypes:
-        
+        i=0
         for individual in self.individuals:
-                genotype_arguments = {} # args for Genotype class
-                individual_info = variant_info[individual].split(':')
-                for i in range(len(format_info)):
-                # Fill the dictionary like {GT:'0/1', DP:'10'} and so on
-                    if not i > len(individual_info)-1:
-                        genotype_arguments[format_info[i]] = individual_info[i]
-                my_genotype = genotype.Genotype(GT=genotype_arguments.get('GT','./.'), AD=genotype_arguments.get('AD','.,.'), DP=genotype_arguments.get('DP','0'), GQ=genotype_arguments.get('GQ','0'))
-                
-                # Add the genotypes to each individual:
-                
-                self.individuals[individual][my_variant.variant_id] = my_genotype
-
+            genotype_arguments = {} # args for genotype class
+            original_genotype = variant_line[9+i]
+            gtype = original_genotype.split(':')
+            for gt_field in range(len(format_info)):
+                if gt_field < len(gtype):
+                    genotype_arguments[format_info[gt_field]] = gtype[gt_field]
+            my_genotype = genotype.Genotype(GT=genotype_arguments.get('GT','./.'),
+                         AD=genotype_arguments.get('AD','.,.'), DP=genotype_arguments.get('DP','0'),
+                         GQ=genotype_arguments.get('GQ','0'), original_info=original_genotype)
+            #genotypes is a ordered dict so order is preserved
+            my_variant.genotypes[individual] = my_genotype
+            i += 1
+        return my_variant
+        
+        # if self.split_alternatives:
+        #     
+        #     for alternative in alternatives:
+        #         # This is a SNV:
+        #         if len(reference) == len(alternative):
+        #             start = position
+        #             stop = position
+        #         # This is a deletion:
+        #         elif len(reference) > len(alternative):
+        #             start = str(int(position) + 1)
+        #             stop = str(int(position) + len(reference) - 1)
+        #         # This is a insertion
+        #         elif len(reference) < len(alternative):
+        #             start = position
+        #             stop = position
+        #             alternative = alternative[1:]
+                # Put the variants in a list:
+        
 
 def main():
+    from multiprocessing import JoinableQueue
     parser = argparse.ArgumentParser(description="Parse different kind of pedigree files.")
     parser.add_argument('variant_file', type=str, nargs=1 , help='A file with variant information.')
+    parser.add_argument('-vcf', '--vcf', action="store_true", help='Annotation file is in gtf format.')
+    parser.add_argument('-cmms', '--cmms', action="store_true", help='Annotation file is in gtf format.')
+    parser.add_argument('-v', '--verbose', action="store_true", help='Annotation file is in gtf format.')
     args = parser.parse_args()
     infile = args.variant_file[0]
+    
+    tasks = JoinableQueue()
+    
     file_type = 'cmms'
-    my_parser = VariantParser(infile, file_type)
-    number_of_variants = 0
-    for chrom in my_parser.chrom_shelves:
-        current_db = shelve.open(my_parser.chrom_shelves[chrom])
-        print chrom, len(current_db)
-        for variant in current_db:
-            print current_db[variant]
-        number_of_variants += len(current_db)
-        current_db.close()
-        os.remove(my_parser.chrom_shelves[chrom])
-    print 'Number of shelved:', number_of_variants
-
+    if args.vcf:
+        file_type = 'vcf'
+        
+    my_parser = VariantParser(infile, file_type, tasks, args.verbose)
+    
 
 if __name__ == '__main__':
     main()
