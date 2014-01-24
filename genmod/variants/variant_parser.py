@@ -41,7 +41,8 @@ class VariantParser(object):
         new_chrom = '0'
         chrom_time = datetime.now()
     
-        with open(variant_file, 'r') as f:
+        # We only parse the variants here:
+        with open(variant_file, 'rb') as f:
             
             beginning = True
             batch = {} # This is a dictionary to store the variant lines of a batch
@@ -49,14 +50,9 @@ class VariantParser(object):
             new_region = []
             for line in f:
                 line = line.rstrip()
-                if line[:2] == '##':
-                #This is the metadata information
-                    self.metadata.append(line)
-                elif line[:1] == '#':
-                    self.header_line = line[1:].split('\t')
-                else:
+                if line[0] != '##':
                     #These are variant lines                    
-                    variant = self.cmms_variant(line)
+                    variant = self.vcf_variant(line)
                     if self.verbosity:
                         new_chrom = variant.chr
                         if new_chrom != current_chrom:
@@ -148,6 +144,74 @@ class VariantParser(object):
             my_variant.genotypes[individual] = my_genotype
    
         return my_variant
+    
+    def vcf_variant(self, variant_line):
+        """Read a VCF-variant line and returns a variant object and a 
+        dictionary with the genotypes like {variant-id:[genotype1, genotype2,...]}"""
+        variant_line = variant_line.split()
+        format_info = [] # Information about the genotype format
+        variant_info = OrderedDict()
+
+        for entry in range(len(variant_line)):
+            variant_info[self.header_lines[entry]] = variant_line[entry]
+            
+            if entry > 8:
+                individual = self.header_lines[entry]
+                if individual not in self.individuals:
+                    self.individuals[individual] = {}
+        
+        chrom = variant_info['CHROM']
+        position = int(variant_info['POS'])
+        identity = variant_info['ID']
+        reference = variant_info['REF']
+        alternatives = variant_info['ALT']
+        quality = variant_info['QUAL']
+        filt = variant_info['FILTER']
+        info = variant_info['INFO']
+        format_info = variant_info['FORMAT'].split(':')
+        number_of_individuals = len(variant_line[9:])
+        
+        if self.split_alternatives:
+    
+            for alternative in alternatives:
+                # This is a SNV:
+                if len(reference) == len(alternative):
+                    start = position
+                    stop = position
+                # This is a deletion:
+                elif len(reference) > len(alternative):
+                    start = str(int(position) + 1)
+                    stop = str(int(position) + len(reference) - 1)
+                # This is a insertion
+                elif len(reference) < len(alternative):
+                    start = position
+                    stop = position
+                    alternative = alternative[1:]
+                # Put the variants in a list:
+                my_variant = genetic_variant.Variant(chrom, start, stop, reference, alternative, identity, variant_info)
+                self.variants[my_variant.variant_id] = my_variant
+                # Check the genotypes
+        else:
+            
+            start = position
+            stop = position
+            my_variant = genetic_variant.Variant(chrom, start, stop, reference, alternatives, identity, variant_info)
+            self.variants[my_variant.variant_id] = my_variant
+        
+        # Collect the genotypes:
+        
+        for individual in self.individuals:
+                genotype_arguments = {} # args for Genotype class
+                individual_info = variant_info[individual].split(':')
+                for i in range(len(format_info)):
+                # Fill the dictionary like {GT:'0/1', DP:'10'} and so on
+                    if not i > len(individual_info)-1:
+                        genotype_arguments[format_info[i]] = individual_info[i]
+                my_genotype = genotype.Genotype(GT=genotype_arguments.get('GT','./.'), AD=genotype_arguments.get('AD','.,.'), DP=genotype_arguments.get('DP','0'), GQ=genotype_arguments.get('GQ','0'))
+                
+                # Add the genotypes to each individual:
+                
+                self.individuals[individual][my_variant.variant_id] = my_genotype
 
 
 def main():
