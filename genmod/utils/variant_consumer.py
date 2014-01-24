@@ -19,13 +19,14 @@ from genmod.models import genetic_models, score_variants
 class VariantConsumer(multiprocessing.Process):
     """Yeilds all unordered pairs from a list of objects as tuples, like (obj_1, obj_2)"""
     
-    def __init__(self, lock, task_queue, results_queue, family, verbosity):
+    def __init__(self, lock, task_queue, results_queue, family, verbosity, outfile):
         multiprocessing.Process.__init__(self)
         self.batch_queue = task_queue
         self.results_queue = results_queue
         self.family = family
         self.lock = lock
         self.verbosity = verbosity
+        self.outfile = outfile
     
     def run(self):
         """Run the consuming"""
@@ -35,7 +36,6 @@ class VariantConsumer(multiprocessing.Process):
             # A batch is a dictionary on the form {gene:{variant_id:variant}}
             next_batch = self.batch_queue.get()
             if next_batch is None:
-                print '%s: Exiting' % proc_name
                 self.batch_queue.task_done()
                 break
             # print '%s: %s' % (proc_name, next_batch)
@@ -49,8 +49,7 @@ class VariantConsumer(multiprocessing.Process):
             
             with self.lock:
                 for variant_id in fixed_variants:
-                    print fixed_variants[variant_id]
-                    print 'hej!!!!'
+                    self.outfile.write('\t'.join(fixed_variants[variant_id].get_cmms_variant())+'\n')
             self.batch_queue.task_done()
             # self.results_queue.put(answer)
         return

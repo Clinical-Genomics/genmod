@@ -143,7 +143,7 @@ class Variant(object):
         
         # self.ar_comp_dn = True #If following Autosomal Recessive Compound De Novo pattern BOOL
         self.models = ['Na']
-        self.rank_score = 0
+        self.rank_score = '-'
     
     def get_vcf_variant(self):
         """Return a list with information in vcf format"""

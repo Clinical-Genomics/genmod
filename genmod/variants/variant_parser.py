@@ -18,6 +18,8 @@ import os
 import argparse
 import shelve
 import tempfile
+from datetime import datetime
+
 from genmod.variants import genetic_variant, genotype
 from genmod.utils import get_genes
 from collections import OrderedDict
@@ -26,15 +28,18 @@ from collections import OrderedDict
 
 class VariantParser(object):
     """docstring for VariantParser"""
-    def __init__(self, variant_file, tasks_queue, individuals):
+    def __init__(self, variant_file, tasks_queue, individuals, verbosity):
         super(VariantParser, self).__init__()
         self.variant_file = variant_file
         self.tasks_queue = tasks_queue
         self.individuals = individuals
         self.header_line = []
         self.metadata = []
-            
+        self.verbosity = verbosity    
         variants = []
+        current_chrom = '0'
+        new_chrom = '0'
+        chrom_time = datetime.now()
     
         with open(variant_file, 'r') as f:
             
@@ -52,6 +57,14 @@ class VariantParser(object):
                 else:
                     #These are variant lines                    
                     variant = self.cmms_variant(line)
+                    if self.verbosity:
+                        new_chrom = variant.chr
+                        if new_chrom != current_chrom:
+                            print 'Now processing chromosome', new_chrom
+                            print 'Time to process chromosome', current_chrom, ':', datetime.now() - chrom_time
+                            chrom_time = datetime.now()
+                            current_chrom = new_chrom
+                    
                     new_genes = variant.genes
                     # If we look at the first variant, setup boundary conditions:
                     if beginning:

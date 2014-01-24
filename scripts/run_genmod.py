@@ -14,12 +14,13 @@ import os
 import argparse
 from multiprocessing import JoinableQueue, Queue, Lock, cpu_count
 from datetime import datetime
+from tempfile import NamedTemporaryFile
 
 from pprint import pprint as pp
 
 # pp(sys.path)
 
-from genmod.utils import is_number, variant_consumer
+from genmod.utils import is_number, variant_consumer, variant_sorter
 from genmod.family import family_parser
 from genmod.variants import variant_parser
 
@@ -76,7 +77,6 @@ def main():
     family_type = 'CMMS'    
     my_family_parser = family_parser.FamilyParser(args.family_file[0], family_type)
     
-    print my_family_parser
     # # Stupid thing but for now when we only look at one family
     my_family = my_family_parser.families.popitem()[1]
     
@@ -90,6 +90,13 @@ def main():
     
     
     start_time_variant_parsing = datetime.now()
+    
+    ###### TEMPORARY SOLUTION!!!! ####
+    
+    
+    temp_file = './temp.txt'
+    
+    file_handle = open(temp_file, 'w')
     
     var_file = args.variant_file[0]
     file_name, file_extension = os.path.splitext(var_file)
@@ -109,17 +116,27 @@ def main():
     lock = Lock()
     
     num_consumers = cpu_count() * 2
-    consumers = [variant_consumer.VariantConsumer(lock, tasks, results, my_family, args.verbose) for i in xrange(num_consumers)]
+    consumers = [variant_consumer.VariantConsumer(lock, tasks, results, my_family, args.verbose, file_handle) for i in xrange(num_consumers)]
     
     for w in consumers:
         w.start()
     
-    var_parser = variant_parser.VariantParser(var_file, tasks, individuals)
+    var_parser = variant_parser.VariantParser(var_file, tasks, individuals, args.verbose)
     
     for i in xrange(num_consumers):
         tasks.put(None)
     
     tasks.join()
+    file_handle.close()
+    # temp_file.seek(0)
+    
+    var_sorter = variant_sorter.FileSort(temp_file)
+    var_sorter.sort()
+    
+    # for line in temp_file:
+    #     print line
+        
+    os.remove(temp_file)    
     # # 
     # # while num_jobs:
     # #     result = results.get()
@@ -127,9 +144,9 @@ def main():
     # #     num_jobs -= 1
     # 
     # 
-    # if args.verbose:
-    #     print 'Variants done!. Time to parse variants: ', (datetime.now() - start_time_variant_parsing)
-    #     print ''
+    if args.verbose:
+        print 'Variants done!. Time to parse variants: ', (datetime.now() - start_time_variant_parsing)
+        print ''
     # # 
     # # # Add info about variant file:
     # # new_headers = my_variant_parser.header_lines 
