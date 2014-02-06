@@ -139,6 +139,7 @@ class VCFParser(object):
         self.infile = infile
         self.metadataparser = HeaderParser()
         self.individuals = []
+        self.header = []
         file_name, file_extension = os.path.splitext(self.infile)
         if file_extension == '.gz':
             self.vcf = gzip.open(self.infile)
@@ -185,6 +186,7 @@ def main():
     infile = args.variant_file[0]
     my_parser = VCFParser(infile)
     my_parser.parse()
+    print my_parser.__dict__
     # for line in my_parser.metadata:
     #     print line, my_parser.metadata[line]
     # print '\t'.join(my_parser.header)
