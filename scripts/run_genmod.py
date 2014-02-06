@@ -12,19 +12,51 @@ Copyright (c) 2013 __MyCompanyName__. All rights reserved.
 import sys
 import os
 import argparse
-from multiprocessing import JoinableQueue, Queue, Lock, cpu_count
+from multiprocessing import JoinableQueue, Manager, cpu_count
 from datetime import datetime
 from tempfile import NamedTemporaryFile
+import pkg_resources
 
 from pprint import pprint as pp
 
 # pp(sys.path)
 
+from ped_parser import parser
+
 from genmod.utils import is_number, variant_consumer, variant_sorter
-from genmod.family import family_parser
 from genmod.variants import variant_parser
+from genmod.vcf import vcf_header
 
+def get_family(args):
+    """Return the family"""
+    family_type = 'ped'
+    family_file = args.family_file[0]
+    
+    my_family_parser = parser.FamilyParser(family_file, family_type)
+    # Stupid thing but for now when we only look at one family
+    return my_family_parser.families.popitem()[1]
 
+def get_header(variant_file):
+    """Return a fixed header parser"""
+    head = vcf_header.VcfParser(variant_file)
+    return head
+
+def print_headers(args, header_object):
+    """Print the headers to a results file."""
+    header_object.header.append('Inheritance_model')
+    header_object.header.append('Compounds')
+    header_object.header.append('Rank_score')
+    if args.outfile[0]:
+        with open(args.outfile[0], 'w') as f: 
+            for head_count in header_object.metadata:
+                f.write(header_object.metadata[head_count]+'\n')
+            f.write('#' + '\t'.join(header_object.header) + '\n')
+    else:
+        if not args.silent:
+            for head_count in header_object.metadata:
+                print header_object.metadata[head_count]
+            print '#' + '\t'.join(header_object.header)
+    return
 
 def main():
     parser = argparse.ArgumentParser(description="Annotate genetic models in variant files..")
@@ -38,50 +70,33 @@ def main():
         help='A variant file. Default is vcf format.'
     )
     
-    parser.add_argument('-var_type', '--variant_type', 
-        type=str, choices=['CMMS', 'VCF'], nargs=1, default=['CMMS'],
-        help='Specify the format on the variant file.'
-    )
+    parser.add_argument('--version', 
+        action="version", 
+        version=pkg_resources.require("genmod")[0].version)
+    
     
     parser.add_argument('-v', '--verbose', 
         action="store_true", 
         help='Increase output verbosity.'
     )
     
-    parser.add_argument('-ga', '--gene_annotation', 
-        type=str, choices=['Ensembl', 'HGNC'], nargs=1, default=['HGNC'],
-        help='What gene annotation should be used, HGNC or Ensembl.'
-    )
     
     parser.add_argument('-o', '--output', 
         type=str, nargs=1, 
         help='Specify the path to a file where results should be stored.'
     )
     
-    # parser.add_argument('-pos', '--position', 
-    #     action="store_true", 
-    #     help='If output should be sorted by position. Default is sorted on rank score'
-    # )
-    
-    parser.add_argument('-tres', '--treshold', 
-        type=int, nargs=1,  
-        help='Specify the lowest rank score to be outputted.'
-    )
     
     args = parser.parse_args()
     
+    start_time_analysis = datetime.now()
     
-    new_headers = []    
-        
+            
     # Start by parsing at the pedigree file:
-    family_type = 'CMMS'    
-    my_family_parser = family_parser.FamilyParser(args.family_file[0], family_type)
+
+    my_family = get_family(args)
     
-    # # Stupid thing but for now when we only look at one family
-    my_family = my_family_parser.families.popitem()[1]
-    
-    preferred_models = my_family.models_of_inheritance
-        
+    head = get_header(var_file)        
     # # Check the variants:
     
     if args.verbose:
@@ -90,53 +105,43 @@ def main():
     
     
     start_time_variant_parsing = datetime.now()
-    
-    ###### TEMPORARY SOLUTION!!!! ####
-    
-    
-    temp_file = './temp.txt'
-    
-    file_handle = open(temp_file, 'w')
+        
     
     var_file = args.variant_file[0]
     file_name, file_extension = os.path.splitext(var_file)
     
-    individuals = [ind.individual_id for ind in my_family.individuals]
+    individuals = head.individuals
 
-    var_type = 'cmms'        
-    # header_line = []
-    # metadata = []
-    # 
     # # The task queue is where all jobs(in this case batches that represents variants in a region) is put
     # # the consumers will then pick their jobs from this queue.
-    tasks = JoinableQueue()
+    variant_queue = JoinableQueue()
     # # The consumers will put their results in the results queue
-    results = Queue()
+    # results = Manager().Queue()
     # # We will need a lock so that the consumers can print their results to screen
-    lock = Lock()
+    # lock = Lock()
     
-    num_consumers = cpu_count() * 2
-    consumers = [variant_consumer.VariantConsumer(lock, tasks, results, my_family, args.verbose, file_handle) for i in xrange(num_consumers)]
+    # num_consumers = cpu_count() * 2
+    # consumers = [variant_consumer.VariantConsumer(lock, tasks, results, my_family, args.verbose, file_handle) for i in xrange(num_consumers)]
+    # 
+    # for w in consumers:
+    #     w.start()
     
-    for w in consumers:
-        w.start()
+    var_parser = variant_parser.VariantParser(var_file, variant_queue, head, args.verbose)
     
-    var_parser = variant_parser.VariantParser(var_file, tasks, individuals, args.verbose)
+    # for i in xrange(num_consumers):
+    #     tasks.put(None)
     
-    for i in xrange(num_consumers):
-        tasks.put(None)
-    
-    tasks.join()
-    file_handle.close()
+    # tasks.join()
+    # file_handle.close()
     # temp_file.seek(0)
     
-    var_sorter = variant_sorter.FileSort(temp_file)
-    var_sorter.sort()
+    # var_sorter = variant_sorter.FileSort(temp_file)
+    # var_sorter.sort()
     
     # for line in temp_file:
     #     print line
         
-    os.remove(temp_file)    
+    # os.remove(temp_file)    
     # # 
     # # while num_jobs:
     # #     result = results.get()

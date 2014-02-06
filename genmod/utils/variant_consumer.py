@@ -14,7 +14,7 @@ Copyright (c) 2013 __MyCompanyName__. All rights reserved.
 import sys
 import os
 import multiprocessing
-from genmod.models import genetic_models, score_variants
+from genmod.models import genetic_models
 
 class VariantConsumer(multiprocessing.Process):
     """Yeilds all unordered pairs from a list of objects as tuples, like (obj_1, obj_2)"""
