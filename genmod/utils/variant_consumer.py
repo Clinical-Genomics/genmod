@@ -50,24 +50,22 @@ class VariantConsumer(multiprocessing.Process):
                 break
             # print '%s: %s' % (proc_name, next_batch)
             variant_batch = genetic_models.check_genetic_models(next_batch, self.family, self.verbosity, proc_name)
-            # for gene in variant_batch:
-            #     pp(variant_batch[gene])
-            # fixed_variants = {}
-            # # Make shore we only have one copy of each variant:
-            # for gene in variant_batch:
-            #     #Make one dictionary for each gene:
-            #     variant_dict = dict((variant_id, variant_info) for variant_id, variant_info in variant_batch[gene].items())
-            #     for variant_id in variant_dict:
-            #         #Remove the 'Genotypes' post since we will not need them for now
-            #         variant_dict[variant_id].pop('Genotypes', 0)
-            #         if variant_id in fixed_variants:
-            #             if len(variant_dict[variant_id]['Compounds']) > 0:
-            #                 fixed_variants[variant_id]['Compounds'] = dict(variant_dict[variant_id]['Compounds'].items() +
-            #                                                                  fixed_variants[variant_id]['Compounds'].items())
-            #                 fixed_variants[variant_id]['Inheritance_model']['AR_compound'] = True
-            #         else:
-            #             fixed_variants[variant_id] = variant_dict[variant_id]
-            # 
+            fixed_variants = {}
+            # Make shore we only have one copy of each variant:
+            for gene in variant_batch:
+                #Make one dictionary for each gene:
+                variant_dict = dict((variant_id, variant_info) for variant_id, variant_info in variant_batch[gene].items())
+                for variant_id in variant_dict:
+                    #Remove the 'Genotypes' post since we will not need them for now
+                    variant_dict[variant_id].pop('Genotypes', 0)
+                    if variant_id in fixed_variants:
+                        if len(variant_dict[variant_id]['Compounds']) > 0:
+                            for compound in variant_dict[variant_id]['Compounds']:
+                                fixed_variants[variant_id]['Compounds'].append(compound)
+                            fixed_variants[variant_id]['Inheritance_model']['AR_compound'] = True
+                    else:
+                        fixed_variants[variant_id] = variant_dict[variant_id]
+            
             # fixed_variants = score_variants.score_variant(fixed_variants, self.family.models_of_inheritance)
             # # with self.lock:
             # #     for variant_id, variant in fixed_variants.items():
