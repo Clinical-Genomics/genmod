@@ -87,7 +87,7 @@ def check_genetic_models(variant_batch, family, verbose = False, proc_name = Non
         for variant_id in variant_batch[gene]:
             variant_batch[gene][variant_id]['Inheritance_model'] = {'X' : True, 'X_dn' : True, 'AD' : True, 'AD_denovo' : True, 
                                             'AR_hom' : True, 'AR_hom_denovo' : True, 'AR_compound' : False}
-            variant_batch[gene][variant_id]['Compounds'] = []
+            variant_batch[gene][variant_id]['Compounds'] = {}
             # Only check X-linked for the variants in the X-chromosome:
             # For X-linked we do not need to check the other models
             if variant_batch[gene][variant_id]['CHROM'] == 'X':
@@ -111,15 +111,15 @@ def check_genetic_models(variant_batch, family, verbose = False, proc_name = Non
                 for variant in pair:
                     variant_pair.append(variant)
                 # Add the compound pair id to each variant
-                variant_batch[gene][variant_pair[0]]['Compounds'].append(variant_pair[1])
-                variant_batch[gene][variant_pair[1]]['Compounds'].append(variant_pair[0])
+                variant_batch[gene][variant_pair[0]]['Compounds'][variant_pair[1]] = ''
+                variant_batch[gene][variant_pair[1]]['Compounds'][variant_pair[0]] = ''
                 variant_batch[gene][variant_pair[0]]['Inheritance_model']['AR_compound'] = True
                 variant_batch[gene][variant_pair[1]]['Inheritance_model']['AR_compound'] = True
                 
-        for variant_id in variant_batch[gene]:
-            for model in variant_batch[gene][variant_id]['Inheritance_model']:
-                if variant_batch[gene][variant_id]['Inheritance_model'][model]:
-                    print variant_batch[gene][variant_id]
+        # for variant_id in variant_batch[gene]:
+        #     for model in variant_batch[gene][variant_id]['Inheritance_model']:
+        #         if variant_batch[gene][variant_id]['Inheritance_model'][model]:
+        #             print variant_batch[gene][variant_id]
     
     return variant_batch
 
@@ -289,13 +289,19 @@ def check_parents(model, individual, variant, family):
 
     if model == 'recessive':
         # If any of the parents doesent exist de novo will be true as the model is specified
+        # If any of the parents doesent exist AR_hom will also be true(since 10/2-2014)
         if mother_id != '0' and father_id != '0':
-        # If both parents have the variant or if one of the parents are homozygote alternative, the de novo model is NOT followed, otherwise de novo is true.
+        # If both parents exists and both parents have the variant or if one of the (sick) parents
+        # are homozygote alternative, the de novo model is NOT followed, otherwise de novo is true.
             if ((mother_genotype.homo_alt or father_genotype.homo_alt) or 
                 (mother_genotype.has_variant and father_genotype.has_variant)):
                 variant['Inheritance_model']['AR_hom_denovo'] = False
-        if variant['Inheritance_model']['AR_hom_denovo']:# If de novo is true then the it is only de novo
-            variant['Inheritance_model']['AR_hom'] = False
+                # If de novo is true then the it is only de novo in this case
+                if variant['Inheritance_model']['AR_hom_denovo']:
+                    variant['Inheritance_model']['AR_hom'] = False
+        else:   
+            if (mother_genotype.homo_alt or father_genotype.homo_alt):
+                variant['Inheritance_model']['AR_hom_denovo'] = False
                 
     elif model == 'dominant':
     # If one of the parents have the variant on any form the de novo model is NOT followed.

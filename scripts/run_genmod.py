@@ -163,6 +163,7 @@ def main():
         variant_queue.put(None)
     
     variant_queue.join()
+    print var_parser.chromosomes
     # results.put(None)
     # var_printer.join()
     

@@ -40,6 +40,7 @@ class VariantFileParser(object):
         self.individuals = head.individuals
         self.header_line = head.header
         self.interval_tree = interval_tree
+        self.chromosomes = OrderedDict()
     
     def parse(self):
         """Start the parsing"""        
@@ -50,17 +51,16 @@ class VariantFileParser(object):
         batch = {}
         new_chrom = None
         current_chrom = None
-        current_genes = []
+        current_features = []
         nr_of_variants = 0
         with open(self.variant_file, 'rb') as f:
             for line in f:
                 
                 if not line.startswith('#'):
-                    variant, new_genes = self.vcf_variant(line.rstrip().split('\t'))
-                    # pp(variant)
+                    variant, new_features = self.vcf_variant(line.rstrip().split('\t'))
+                    new_chrom = variant['CHROM']
                     if self.verbosity:
                         nr_of_variants += 1
-                        new_chrom = variant['CHROM']
                         if nr_of_variants % 20000 == 0:
                             print nr_of_variants, 'variants parsed!'
                             print 'Last 20.000 took', datetime.now() - start_twenty, 'to parse.'
@@ -68,41 +68,41 @@ class VariantFileParser(object):
                             start_twenty = datetime.now()
                     # If we look at the first variant, setup boundary conditions:
                     if beginning:
-                        current_genes = new_genes
+                        current_features = new_features
                         beginning = False
-                        # Add the variant to each of its genes in a batch
-                        batch = self.add_variant(batch, variant, new_genes)
-                        if self.verbosity:
-                            current_chrom = new_chrom
+                        # Add the variant to each of its features in a batch
+                        batch = self.add_variant(batch, variant, new_features)
+                        current_chrom = new_chrom
                     else:
                         send = True
                     
-                    # Check if we are in a space between genes:
-                        # print current_genes, new_genes
-                        if len(new_genes) == 0:
-                            if len(current_genes) == 0:
+                    # Check if we are in a space between features:
+                        # print current_features, new_features
+                        if len(new_features) == 0:
+                            if len(current_features) == 0:
                                 send = False
                     #If not check if we are in a consecutive region
-                        elif len(set.intersection(set(new_genes),set(current_genes))) > 0:
+                        elif len(set.intersection(set(new_features),set(current_features))) > 0:
                             send = False
                         
                         if send:
                             # If there is an intergenetic region we do not look at the compounds.
                             # The tasks are tuples like (variant_list, bool(if compounds))
                             self.batch_queue.put(batch)
-                            current_genes = new_genes
-                            batch = self.add_variant({}, variant, new_genes)
+                            current_features = new_features
+                            batch = self.add_variant({}, variant, new_features)
                         else:
-                            current_genes = list(set(current_genes) | set(new_genes))
-                            batch = self.add_variant(batch, variant, new_genes) # Add variant batch
-                    
-                    if self.verbosity:
-                        if new_chrom != current_chrom:
+                            current_features = list(set(current_features) | set(new_features))
+                            batch = self.add_variant(batch, variant, new_features) # Add variant batch
+
+                    if new_chrom != current_chrom:
+                        self.chromosomes[current_chrom] = ''
+                        if self.verbosity:
                             print 'Chromosome', current_chrom, 'parsed!'
                             print 'Time to parse chromosome', datetime.now()-start_chrom
                             current_chrom = new_chrom
                             start_chrom = datetime.now()
-                        
+        self.chromosomes[current_chrom] = ''    
         if self.verbosity:
             print 'Chromosome', current_chrom, 'parsed!'
             print 'Time to parse chromosome', datetime.now()-start_chrom
@@ -112,33 +112,31 @@ class VariantFileParser(object):
         self.batch_queue.put(batch)
         return
     
-    def add_variant(self, batch, variant, genes):
+    def add_variant(self, batch, variant, features):
         """Adds the variant to the proper gene(s) in the batch."""
         variant_id = [variant['CHROM'], variant['POS'], variant['REF'], variant['ALT']]
         variant_id = '_'.join(variant_id)
-        if len(genes) == 0:
+        if len(features) == 0:
             if len(batch) == 0:
                 batch['-'] = {variant_id:variant}
             else:
                 batch['-'][variant_id] = variant
-        for gene in genes:
-            if gene in batch:
-                batch[gene][variant_id] = variant
+        for feature in features:
+            if feature in batch:
+                batch[feature][variant_id] = variant
             else:
-                batch[gene] = {variant_id:variant}
+                batch[feature] = {variant_id:variant}
         return batch
     
     def vcf_variant(self, splitted_variant_line):
         """Returns a variant object in the cmms format."""
-    
-        
-        # ensemble_genes = get_genes.get_genes(ensemble_entry, 'Ensemble')
         my_variant = OrderedDict(zip(self.header_line, splitted_variant_line))
         variant_chrom = my_variant['CHROM']
         variant_interval = [int(my_variant['POS']), int(my_variant['POS'])]
         
-        hgnc_genes = self.interval_tree.interval_trees[variant_chrom].findRange(variant_interval)
-        return my_variant, hgnc_genes
+        features_overlapped = self.interval_tree.interval_trees[variant_chrom].findRange(variant_interval)
+        my_variant['Annotation'] = features_overlapped
+        return my_variant, features_overlapped
 
 def main():
     from multiprocessing import JoinableQueue
