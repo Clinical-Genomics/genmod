@@ -89,8 +89,7 @@ class VariantFileParser(object):
                         if send:
                             # If there is an intergenetic region we do not look at the compounds.
                             # The tasks are tuples like (variant_list, bool(if compounds))
-                            # self.batch_queue.put(batch)
-                            print batch
+                            self.batch_queue.put(batch)
                             current_genes = new_genes
                             batch = self.add_variant({}, variant, new_genes)
                         else:
@@ -107,8 +106,10 @@ class VariantFileParser(object):
         if self.verbosity:
             print 'Chromosome', current_chrom, 'parsed!'
             print 'Time to parse chromosome', datetime.now()-start_chrom
-        # self.batch_queue.put(batch)
-        print batch
+            print ''
+            print 'Variants parsed!'
+            print 'Time to parse variants:', datetime.now() - start_parsing
+        self.batch_queue.put(batch)
         return
     
     def add_variant(self, batch, variant, genes):

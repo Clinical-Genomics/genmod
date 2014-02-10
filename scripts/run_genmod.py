@@ -23,9 +23,8 @@ from pprint import pprint as pp
 
 from ped_parser import parser
 
-from genmod.utils import is_number, variant_consumer, variant_sorter
-from genmod.variants import variant_parser
-from genmod.vcf import vcf_header
+from genmod.utils import is_number, variant_consumer, variant_sorter, annotation_parser
+from genmod.vcf import vcf_header, vcf_parser
 
 def get_family(args):
     """Return the family"""
@@ -38,7 +37,8 @@ def get_family(args):
 
 def get_header(variant_file):
     """Return a fixed header parser"""
-    head = vcf_header.VcfParser(variant_file)
+    head = vcf_header.VCFParser(variant_file)
+    head.parse()
     return head
 
 def print_headers(args, header_object):
@@ -69,6 +69,16 @@ def main():
         type=str, nargs=1, 
         help='A variant file. Default is vcf format.'
     )
+
+    parser.add_argument('annotation_file', 
+        type=str, nargs=1, 
+        help='A annotations file. Default is ref_gene format.'
+    )
+    
+    parser.add_argument('-at', '--annotation_type',  
+        type=str, nargs=1, choices=['bed', 'ccds', 'gtf', 'ref_gene'],
+        default=['ref_gene'], help='Specify the format of the annotation file.'
+    )    
     
     parser.add_argument('--version', 
         action="version", 
@@ -88,52 +98,73 @@ def main():
     
     
     args = parser.parse_args()
-    
+    var_file = args.variant_file[0]
+    file_name, file_extension = os.path.splitext(var_file)
+    anno_file = args.annotation_file[0]
+        
     start_time_analysis = datetime.now()
     
             
     # Start by parsing at the pedigree file:
 
     my_family = get_family(args)
+    pp(my_family.__dict__)
     
-    head = get_header(var_file)        
+    # Parse the header of the vcf:
+    
+    head = get_header(var_file)
+    pp(head.__dict__)
+    
+    # Parse the annotation file and make annotation trees:
+    
+    annotation_trees = annotation_parser.AnnotationParser(anno_file, args.annotation_type[0])
+    pp(annotation_trees.__dict__)
+            
     # # Check the variants:
     
     if args.verbose:
         print 'Parsing variants ...'
         print ''
     
-    
     start_time_variant_parsing = datetime.now()
         
-    
-    var_file = args.variant_file[0]
-    file_name, file_extension = os.path.splitext(var_file)
-    
-    individuals = head.individuals
-
-    # # The task queue is where all jobs(in this case batches that represents variants in a region) is put
-    # # the consumers will then pick their jobs from this queue.
+    # The task queue is where all jobs(in this case batches that represents variants in a region) is put
+    # the consumers will then pick their jobs from this queue.
     variant_queue = JoinableQueue()
-    # # The consumers will put their results in the results queue
-    # results = Manager().Queue()
-    # # We will need a lock so that the consumers can print their results to screen
+    # The consumers will put their results in the results queue
+    results = Manager().Queue()
+    # We will need a lock so that the consumers can print their results to screen
     # lock = Lock()
     
-    # num_consumers = cpu_count() * 2
-    # consumers = [variant_consumer.VariantConsumer(lock, tasks, results, my_family, args.verbose, file_handle) for i in xrange(num_consumers)]
-    # 
-    # for w in consumers:
-    #     w.start()
+    # Create a temporary file for the variants:
     
-    var_parser = variant_parser.VariantParser(var_file, variant_queue, head, args.verbose)
+    temp_file = NamedTemporaryFile(delete=False)
     
-    # for i in xrange(num_consumers):
-    #     tasks.put(None)
+    num_model_checkers = (cpu_count()*2-1)
     
-    # tasks.join()
-    # file_handle.close()
-    # temp_file.seek(0)
+    model_checkers = [variant_consumer.VariantConsumer(variant_queue, results, my_family, 
+                     args.verbose) for i in xrange(num_model_checkers)]
+    
+    for w in model_checkers:
+        w.start()
+    
+    # var_printer = variant_printer.VariantPrinter(results, temp_file, lock, args.verbose)
+    # var_printer.start()
+    
+    if args.verbose:
+        print 'Start parsing the variants ...'
+        print ''
+        start_time_variant_parsing = datetime.now()    
+    
+    var_parser = vcf_parser.VariantFileParser(var_file, variant_queue, head, annotation_trees, args.verbose)
+    var_parser.parse()
+    
+    for i in xrange(num_model_checkers):
+        variant_queue.put(None)
+    
+    variant_queue.join()
+    # results.put(None)
+    # var_printer.join()
     
     # var_sorter = variant_sorter.FileSort(temp_file)
     # var_sorter.sort()
@@ -149,9 +180,9 @@ def main():
     # #     num_jobs -= 1
     # 
     # 
-    if args.verbose:
-        print 'Variants done!. Time to parse variants: ', (datetime.now() - start_time_variant_parsing)
-        print ''
+    # if args.verbose:
+    #     print 'Variants done!. Time to parse variants: ', (datetime.now() - start_time_variant_parsing)
+    #     print ''
     # # 
     # # # Add info about variant file:
     # # new_headers = my_variant_parser.header_lines 
