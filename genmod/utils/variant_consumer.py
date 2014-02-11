@@ -93,8 +93,8 @@ class VariantConsumer(multiprocessing.Process):
                 # if we should include genetic models:
                 vcf_info.append('GM=' + ':'.join(model_list))
                 fixed_variants[variant_id]['INFO'] = ';'.join(vcf_info)
-                pp(fixed_variants[variant_id])
-            # self.results_queue.put(fixed_variants)
+                # pp(fixed_variants[variant_id])
+            self.results_queue.put(fixed_variants)
             self.task_queue.task_done()
         return
         

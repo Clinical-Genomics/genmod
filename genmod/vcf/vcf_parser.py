@@ -18,6 +18,9 @@ import os
 import argparse
 import shelve
 from datetime import datetime
+from tempfile import NamedTemporaryFile
+
+
 if sys.version_info < (2, 7):
     from ordereddict import OrderedDict
 else:
@@ -32,7 +35,7 @@ from genmod.utils import get_genes
 
 class VariantFileParser(object):
     """docstring for VariantParser"""
-    def __init__(self, variant_file, batch_queue, head, interval_tree, verbosity = False):
+    def __init__(self, variant_file, batch_queue, head, interval_tree, chromosomes, verbosity = False):
         super(VariantFileParser, self).__init__()
         self.variant_file = variant_file
         self.batch_queue = batch_queue
@@ -40,7 +43,7 @@ class VariantFileParser(object):
         self.individuals = head.individuals
         self.header_line = head.header
         self.interval_tree = interval_tree
-        self.chromosomes = OrderedDict()
+        self.chromosomes = chromosomes
     
     def parse(self):
         """Start the parsing"""        
@@ -97,12 +100,13 @@ class VariantFileParser(object):
 
                     if new_chrom != current_chrom:
                         self.chromosomes[current_chrom] = ''
+
                         if self.verbosity:
                             print 'Chromosome', current_chrom, 'parsed!'
                             print 'Time to parse chromosome', datetime.now()-start_chrom
                             current_chrom = new_chrom
                             start_chrom = datetime.now()
-        self.chromosomes[current_chrom] = ''    
+        self.chromosomes[current_chrom] = ''
         if self.verbosity:
             print 'Chromosome', current_chrom, 'parsed!'
             print 'Time to parse chromosome', datetime.now()-start_chrom

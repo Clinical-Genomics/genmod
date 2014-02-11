@@ -12,10 +12,15 @@ Copyright (c) 2013 __MyCompanyName__. All rights reserved.
 import sys
 import os
 import argparse
-from multiprocessing import JoinableQueue, Manager, cpu_count
+from multiprocessing import JoinableQueue, Manager, cpu_count, Lock
 from datetime import datetime
 from tempfile import NamedTemporaryFile
 import pkg_resources
+if sys.version_info < (2, 7):
+    from ordereddict import OrderedDict
+else:
+    from collections import OrderedDict
+
 
 from pprint import pprint as pp
 
@@ -23,7 +28,7 @@ from pprint import pprint as pp
 
 from ped_parser import parser
 
-from genmod.utils import is_number, variant_consumer, variant_sorter, annotation_parser
+from genmod.utils import is_number, variant_consumer, variant_sorter, annotation_parser, variant_printer
 from genmod.vcf import vcf_header, vcf_parser
 
 def get_family(args):
@@ -43,9 +48,6 @@ def get_header(variant_file):
 
 def print_headers(args, header_object):
     """Print the headers to a results file."""
-    header_object.header.append('Inheritance_model')
-    header_object.header.append('Compounds')
-    header_object.header.append('Rank_score')
     if args.outfile[0]:
         with open(args.outfile[0], 'w') as f: 
             for head_count in header_object.metadata:
@@ -53,9 +55,24 @@ def print_headers(args, header_object):
             f.write('#' + '\t'.join(header_object.header) + '\n')
     else:
         if not args.silent:
-            for head_count in header_object.metadata:
-                print header_object.metadata[head_count]
-            print '#' + '\t'.join(header_object.header)
+            pp(header_object.metadataparser.info_lines)
+            print ''
+            pp(header_object.metadataparser.filter_lines)
+            print ''
+            pp(header_object.metadataparser.format_lines)
+            print ''
+            pp(header_object.metadataparser.contig_lines)
+            print ''
+            pp(header_object.metadataparser.alt_lines)
+            print ''
+            pp(header_object.metadataparser.other_lines)
+            print ''
+            pp(header_object.metadataparser.header)
+            print ''
+            
+            # for head_count in header_object.metadata:
+            #     print header_object.metadata[head_count]
+            # print '#' + '\t'.join(header_object.header)
     return
 
 def main():
@@ -90,9 +107,13 @@ def main():
         help='Increase output verbosity.'
     )
     
+    parser.add_argument('-s', '--silent', 
+        action="store_true", 
+        help='Do not print the variants.'
+    )
     
-    parser.add_argument('-o', '--output', 
-        type=str, nargs=1, 
+    parser.add_argument('-o', '--outfile', 
+        type=str, nargs=1, default=[None],
         help='Specify the path to a file where results should be stored.'
     )
     
@@ -134,11 +155,11 @@ def main():
     # The consumers will put their results in the results queue
     results = Manager().Queue()
     # We will need a lock so that the consumers can print their results to screen
-    # lock = Lock()
+    lock = Lock()
+    chromosomes = Manager().dict()
     
     # Create a temporary file for the variants:
     
-    temp_file = NamedTemporaryFile(delete=False)
     
     num_model_checkers = (cpu_count()*2-1)
     
@@ -148,24 +169,37 @@ def main():
     for w in model_checkers:
         w.start()
     
-    # var_printer = variant_printer.VariantPrinter(results, temp_file, lock, args.verbose)
-    # var_printer.start()
+    var_printer = variant_printer.VariantPrinter(results, lock, chromosomes, args.verbose)
+    var_printer.start()
     
     if args.verbose:
         print 'Start parsing the variants ...'
         print ''
         start_time_variant_parsing = datetime.now()    
     
-    var_parser = vcf_parser.VariantFileParser(var_file, variant_queue, head, annotation_trees, args.verbose)
+    var_parser = vcf_parser.VariantFileParser(var_file, variant_queue, head, annotation_trees, chromosomes, args.verbose)
     var_parser.parse()
     
     for i in xrange(num_model_checkers):
         variant_queue.put(None)
     
     variant_queue.join()
-    print var_parser.chromosomes
-    # results.put(None)
-    # var_printer.join()
+    results.put(None)
+    var_printer.join()
+    
+    print 'Cromosomes', chromosomes
+    
+    if args.verbose:
+        print 'Models checked!'
+        print 'Start sorting the variants:'
+        print ''
+        start_time_variant_sorting = datetime.now()
+    
+    # print_headers(args, head)
+    
+    # for chromosome in chromosomes:
+    #     for line in chromosomes[chromosome].readlines():
+    #         print line 
     
     # var_sorter = variant_sorter.FileSort(temp_file)
     # var_sorter.sort()
@@ -173,7 +207,7 @@ def main():
     # for line in temp_file:
     #     print line
         
-    # os.remove(temp_file)    
+    # os.remove(temp_file.name)    
     # # 
     # # while num_jobs:
     # #     result = results.get()
