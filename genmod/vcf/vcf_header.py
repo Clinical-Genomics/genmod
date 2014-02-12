@@ -33,11 +33,23 @@ class HeaderParser(object):
     def __init__(self):
         super(HeaderParser, self).__init__()
         self.info_lines=[]
+        self.info_dict=OrderedDict()
+        
         self.filter_lines=[]
+        self.filter_dict=OrderedDict()
+        
         self.contig_lines=[]
+        self.contig_dict=OrderedDict()
+        
         self.format_lines=[]
+        self.format_dict=OrderedDict()
+        
         self.alt_lines=[]
+        self.alt_dict=OrderedDict()
+        
         self.other_lines=[]
+        self.other_dict=OrderedDict()
+        
         self.header=[]
         self.header_keys={'info' : ['ID', 'Number', 'Type', 'Description'], 
                             'form' : ['ID', 'Number', 'Type', 'Description'], 
@@ -45,7 +57,6 @@ class HeaderParser(object):
                             'alt' : ['ID', 'Description'],
                             'contig' : ['ID', 'length']}
         self.fileformat = ''
-        self.metadata_counter = 1
         self.line_counter = 0
         self.individuals = []
         self.info_pattern = re.compile(r'''\#\#INFO=<
@@ -90,37 +101,41 @@ class HeaderParser(object):
                 raise SyntaxError("One of the INFO lines is malformed: %s" % line)
             matches = [match.group('id'), match.group('number'), match.group('type'), match.group('desc')]
             self.info_lines.append(dict(zip(self.header_keys['info'],matches)))
+            self.info_dict[match.group('id')] = line
         elif line_info[0] == 'FILTER':
             match = self.filter_pattern.match(line)
             if not match:
                 raise SyntaxError("One of the FILTER lines is malformed: %s" % line)
             matches = [match.group('id'), match.group('desc')]
             self.filter_lines.append(dict(zip(self.header_keys['filt'],matches)))
+            self.filter_dict[match.group('id')] = line
         elif line_info[0] == 'contig':
             match = self.contig_pattern.match(line)
             if not match:
                 raise SyntaxError("One of the contig lines is malformed: %s" % line)
             matches = [match.group('id'), match.group('length')]
             self.contig_lines.append(dict(zip(self.header_keys['contig'],matches)))
+            self.contig_dict[match.group('id')] = line
         elif line_info[0] == 'FORMAT':
             match = self.format_pattern.match(line)
             if not match:
                 raise SyntaxError("One of the FORMAT lines is malformed: %s" % line)
             matches = [match.group('id'), match.group('number'), match.group('type'), match.group('desc')]
             self.format_lines.append(dict(zip(self.header_keys['form'],matches)))
+            self.format_dict[match.group('id')] = line
         elif line_info[0] == 'ALT':
             match = self.alt_pattern.match(line)
             if not match:
                 raise SyntaxError("One of the ALT lines is malformed: %s" % line)
             matches = [match.group('id'), match.group('desc')]
             self.alt_lines.append(dict(zip(self.header_keys['alt'],matches)))
+            self.alt_dict[match.group('id')] = line
         else:
             match = self.meta_pattern.match(line)
             if not match:
                 raise SyntaxError("One of the meta data lines is malformed: %s" % line)
             self.other_lines.append({match.group('key'): match.group('val')})
-        # self.metadata[self.metadata_counter] = line
-        # self.metadata_counter += 1
+            self.other_dict[match.group('key')] = line
     
     def parse_header_line(self, line):
         """docstring for parse_header_line"""
@@ -129,7 +144,28 @@ class HeaderParser(object):
         
     def print_header(self):
         """Returns a list with the header lines if proper format"""
-        pass
+        lines_to_print = []
+        print '##fileformat='+self.fileformat
+        for filt in self.filter_dict:
+            print self.filter_dict[filt]
+        for form in self.format_dict:
+            print self.format_dict[form]
+        for info in self.info_dict:
+            print self.info_dict[info]
+        for contig in self.contig_dict:
+            print self.contig_dict[contig]
+        for alt in self.alt_dict:
+            print self.alt_dict[alt]
+        for other in self.other_dict:
+            print self.other_dict[other]
+        print '#'+ '\t'.join(self.header)
+    
+    def add_info(self, info_id, number, entry_type, description):
+        """Add an info line to the header."""
+        info_line = '##INFO=<ID='+info_id+',Number='+str(number)+',Type='+entry_type+',Description="'+description+'">'
+        self.info_dict[info_id] = info_line
+        return
+    
 
 
 class VCFParser(object):
@@ -147,7 +183,6 @@ class VCFParser(object):
             self.vcf = open(self.infile, 'rb')
         else:
             raise SyntaxError('File is not in a supported format.')
-        print file_name, file_extension
             
     def parse(self):
         """Start parsing the vcf"""
@@ -157,26 +192,13 @@ class VCFParser(object):
             elif line.startswith('#'):
                 self.metadataparser.parse_header_line(line)
             else:
-                # Here comes the variant lines
-                pass
+                break
         self.individuals = self.metadataparser.individuals
         self.header = self.metadataparser.header
-        # pp(self.metadataparser.info_lines)
-        # print ''
-        # pp(self.metadataparser.filter_lines)
-        # print ''
-        # pp(self.metadataparser.format_lines)
-        # print ''
-        # pp(self.metadataparser.contig_lines)
-        # print ''
-        # pp(self.metadataparser.alt_lines)
-        # print ''
-        # pp(self.metadataparser.other_lines)
-        # print ''
-        # pp(self.metadataparser.header)
-        # print ''
-        # pp(self.metadataparser.individuals)
         
+    def print_header(self):
+        """Print the header lines to screen."""
+        self.metadataparser.print_header()
         
 
 def main():
@@ -186,7 +208,11 @@ def main():
     infile = args.variant_file[0]
     my_parser = VCFParser(infile)
     my_parser.parse()
-    print my_parser.__dict__
+    my_parser.metadataparser.add_info('ANN', '.', 'String', 'Annotates what feature(s) this variant belongs to.')
+    my_parser.metadataparser.add_info('Comp', '.', 'String', "':'-separated list of compound pairs for this variant.")
+    my_parser.metadataparser.add_info('GM', '.', 'String', "':'-separated list of genetic models for this variant.")
+    my_parser.print_header()
+    # print my_parser.__dict__
     # for line in my_parser.metadata:
     #     print line, my_parser.metadata[line]
     # print '\t'.join(my_parser.header)
