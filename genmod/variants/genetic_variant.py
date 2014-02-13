@@ -71,26 +71,15 @@ from collections import OrderedDict
 
 class Variant(object):
     """This class holds the necessary information about a genetic variant."""
-    def __init__(self, chrom, start, stop, reference, alternative, identity='.', genes = [], all_info = OrderedDict()):
+    def __init__(self, chrom, start, stop, reference, alternative, identity='.', quality='.',
+                filt='.', info=[], format_info=[], genes = [], all_info = OrderedDict()):
         super(Variant, self).__init__()
         # Properties:
-        self.chr = ''
-        self.start = 0
-        self.stop = 0
-        self.ref = ''
-        self.alt = ''
-        self.variant_id = ''
-        self.identity = ''
-        self.all_info = all_info
-        self.genes = genes
-        self.genotypes = {} # Dict with {'ind_id':<Genotype>, 'ind_id':<Genotype>, ...}
-
         # If chromosome name is like Chr3 or chr5 we change to 3 or 5
         if 'hr' in chrom:
             self.chr = chrom[3:]
         else:
             self.chr = chrom # STRING
-            
         # Make sure that start and stop are integers:
         # TODO raise proper exceptions here
         
@@ -101,24 +90,24 @@ class Variant(object):
         else:
             print 'Start position', start, 'is not an integer.'
             sys.exit()
-        if type(stop) == type(0):
-            self.stop = stop # INT 
-        elif is_number(stop):
-            self.stop = int(stop)
-        else:
-            print 'Stop position', stop, 'is not an integer.'
-            sys.exit()
-        
         self.ref = reference # Reference nucleotide(s) STRING
-        self.alt = alternative # Alternative sequence STRING
-        
-        id_values = [self.chr, str(self.start), self.ref, self.alt]
-        self.variant_id = '_'.join(id_values)
-        
+        self.alt = alternative # Alternative sequence LIST
         if identity == '-':
             self.identity = '.'
         else:
             self.identity = identity #dbSNP-id STRING
+        self.quality = quality
+        self.filter = filt
+        self.genes = genes
+        self.info = info # INFO field for vcf:s
+        self.format_info = format_info# FORMAT field for vcf:s
+        self.genotypes = OrderedDict() # Dict with {'ind_id':<Genotype>, 'ind_id':<Genotype>, ...}
+        
+        
+        id_values = [self.chr, str(self.start), self.ref, self.alt[0]]
+        self.variant_id = '_'.join(id_values)
+        
+        self.all_info = all_info
         
         # Models:
         
@@ -147,15 +136,12 @@ class Variant(object):
     
     def get_vcf_variant(self):
         """Return a list with information in vcf format"""
-        vcf_info = [self.chr, str(self.start), self.identity, self.ref, self.alt]
-        vcf_info.append(self.all_info.get('QUAL', '.'))
-        vcf_info.append(self.all_info.get('FILTER','.'))
-        vcf_info.append(self.all_info.get('INFO', '.'))
-        vcf_info.append(self.all_info.get('FORMAT', '.'))
-
-        if len(self.all_info) > 9:
-            for ind_id in self.all_info.keys()[9:]:
-                vcf_info.append(self.all_info[ind_id])
+        vcf_info = [self.chr, str(self.start), self.identity, self.ref, ','.join(self.alt),
+                    self.quality, self.filter, ';'.join(self.info), ':'.join(self.format_info)]
+        
+        for ind_id in self.genotypes:
+            vcf_info.append(self.genotypes[ind_id].get_vcf_genotype())
+        
         return vcf_info
         
     def get_cmms_variant(self):

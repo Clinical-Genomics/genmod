@@ -27,12 +27,12 @@ class AnnotationParser(object):
     def __init__(self, infile, annotation_type, zipped = False):
         super(AnnotationParser, self).__init__()
         self.annotation_type = annotation_type
-        
-        self.chromosomes = {} # A dictionary with {<chr>: [feature_1, feature_2, ...]} 
-        
+                
         self.interval_trees = {}# A dictionary with {<chr>:<intervalTree>}
         
-        self.chromosome_stops = {}# A dictionary with information about the last positions on each chromosome:
+        chromosomes = {} # A dictionary with {<chr>: [feature_1, feature_2, ...]} 
+        chromosome_stops = {}# A dictionary with information about the last positions on each chromosome:
+        
         if zipped:
             f = gzip.open(infile, 'r')
         else: 
@@ -54,13 +54,13 @@ class AnnotationParser(object):
                 #Feature is a list with [start, stop, id]
                 feature = [info['start'], info['stop'], info['feature_id']]
                 
-                if info['chrom'] in self.chromosomes:
-                    self.chromosomes[info['chrom']].append(feature)
+                if info['chrom'] in chromosomes:
+                    chromosomes[info['chrom']].append(feature)
                 else:
-                    self.chromosomes[info['chrom']] = [feature]
+                    chromosomes[info['chrom']] = [feature]
                 # Update the last end position, is it is bigger than before:
-                if info['stop'] > self.chromosome_stops.get(info['chrom'], 0):
-                    self.chromosome_stops[info['chrom']] = info['stop'] + 1
+                if info['stop'] > chromosome_stops.get(info['chrom'], 0):
+                    chromosome_stops[info['chrom']] = info['stop'] + 1
             line_count += 1
         
         number_of_intervals = 0
@@ -69,9 +69,9 @@ class AnnotationParser(object):
         #     number_of_intervals += len(self.chromosomes[chrom])
         
         #Build one interval tree for each chromosome:
-        for chrom in self.chromosomes:
-            self.interval_trees[chrom] = interval_tree.intervalTree(self.chromosomes[chrom], 
-                                        0, 1, 1, self.chromosome_stops[chrom])
+        for chrom in chromosomes:
+            self.interval_trees[chrom] = interval_tree.intervalTree(chromosomes[chrom], 
+                                        0, 1, 1, chromosome_stops[chrom])
                     
     def bed_parser(self, line, info, line_count):
         """Parse a .bed."""

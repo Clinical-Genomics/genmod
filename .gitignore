@@ -9,5 +9,5 @@
 *.egg-info
 *.tmproj
 *.ipynb
-*.txt
 *.tmp
+*.temp

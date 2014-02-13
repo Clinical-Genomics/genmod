@@ -12,19 +12,59 @@ Copyright (c) 2013 __MyCompanyName__. All rights reserved.
 import sys
 import os
 import argparse
-from multiprocessing import JoinableQueue, Queue, Lock, cpu_count
+from multiprocessing import JoinableQueue, Manager, cpu_count, Lock
 from datetime import datetime
-from tempfile import NamedTemporaryFile
+from tempfile import mkdtemp
+import shutil
+import pkg_resources
+if sys.version_info < (2, 7):
+    from ordereddict import OrderedDict
+else:
+    from collections import OrderedDict
+
 
 from pprint import pprint as pp
 
 # pp(sys.path)
 
-from genmod.utils import is_number, variant_consumer, variant_sorter
-from genmod.family import family_parser
-from genmod.variants import variant_parser
+from ped_parser import parser
 
+from genmod.utils import is_number, variant_consumer, variant_sorter, annotation_parser, variant_printer
+from genmod.vcf import vcf_header, vcf_parser
 
+def get_family(args):
+    """Return the family"""
+    family_type = 'ped'
+    family_file = args.family_file[0]
+    
+    my_family_parser = parser.FamilyParser(family_file, family_type)
+    # Stupid thing but for now when we only look at one family
+    return my_family_parser.families.popitem()[1]
+
+def get_header(variant_file):
+    """Return a fixed header parser"""
+    head = vcf_header.VCFParser(variant_file)
+    head.parse()
+    return head
+
+def add_metadata(head):
+    """Add metadata for the information added by this script."""
+    head.metadataparser.add_info('ANN', '.', 'String', 'Annotates what feature(s) this variant belongs to.')
+    head.metadataparser.add_info('Comp', '.', 'String', "':'-separated list of compound pairs for this variant.")
+    head.metadataparser.add_info('GM', '.', 'String', "':'-separated list of genetic models for this variant.")
+    return
+
+def print_headers(args, header_object):
+    """Print the headers to a results file."""
+    if args.outfile[0]:
+        with open(args.outfile[0], 'w') as f: 
+            for head_count in header_object.print_header():
+                f.write(head_count+'\n')
+    else:
+        if not args.silent:
+            for line in header_object.print_header():
+                print line
+    return
 
 def main():
     parser = argparse.ArgumentParser(description="Annotate genetic models in variant files..")
@@ -37,187 +77,148 @@ def main():
         type=str, nargs=1, 
         help='A variant file. Default is vcf format.'
     )
-    
-    parser.add_argument('-var_type', '--variant_type', 
-        type=str, choices=['CMMS', 'VCF'], nargs=1, default=['CMMS'],
-        help='Specify the format on the variant file.'
+
+    parser.add_argument('annotation_file', 
+        type=str, nargs=1, 
+        help='A annotations file. Default is ref_gene format.'
     )
+    
+    parser.add_argument('-at', '--annotation_type',  
+        type=str, nargs=1, choices=['bed', 'ccds', 'gtf', 'ref_gene'],
+        default=['ref_gene'], help='Specify the format of the annotation file.'
+    )    
+    
+    parser.add_argument('--version', 
+        action="version", 
+        version=pkg_resources.require("genmod")[0].version)
+    
     
     parser.add_argument('-v', '--verbose', 
         action="store_true", 
         help='Increase output verbosity.'
     )
     
-    parser.add_argument('-ga', '--gene_annotation', 
-        type=str, choices=['Ensembl', 'HGNC'], nargs=1, default=['HGNC'],
-        help='What gene annotation should be used, HGNC or Ensembl.'
+    parser.add_argument('-s', '--silent', 
+        action="store_true", 
+        help='Do not print the variants.'
     )
     
-    parser.add_argument('-o', '--output', 
-        type=str, nargs=1, 
+    parser.add_argument('-o', '--outfile', 
+        type=str, nargs=1, default=[None],
         help='Specify the path to a file where results should be stored.'
     )
     
-    # parser.add_argument('-pos', '--position', 
-    #     action="store_true", 
-    #     help='If output should be sorted by position. Default is sorted on rank score'
-    # )
-    
-    parser.add_argument('-tres', '--treshold', 
-        type=int, nargs=1,  
-        help='Specify the lowest rank score to be outputted.'
-    )
     
     args = parser.parse_args()
-    
-    
-    new_headers = []    
+    var_file = args.variant_file[0]
+    file_name, file_extension = os.path.splitext(var_file)
+    anno_file = args.annotation_file[0]
         
+    start_time_analysis = datetime.now()
+    
+            
     # Start by parsing at the pedigree file:
-    family_type = 'CMMS'    
-    my_family_parser = family_parser.FamilyParser(args.family_file[0], family_type)
+
+    my_family = get_family(args)
     
-    # # Stupid thing but for now when we only look at one family
-    my_family = my_family_parser.families.popitem()[1]
+    # Parse the header of the vcf:
     
-    preferred_models = my_family.models_of_inheritance
-        
+    head = get_header(var_file)
+    add_metadata(head)
+    # Parse the annotation file and make annotation trees:
+
+    if args.verbose:
+        print 'Parsing annotation ...'
+        print ''
+        start_time_annotation = datetime.now()
+    
+    annotation_trees = annotation_parser.AnnotationParser(anno_file, args.annotation_type[0])
+            
     # # Check the variants:
     
     if args.verbose:
+        print 'Annotation Parsed!'
+        print 'Time to parse annotation:', datetime.now() - start_time_annotation
+        print ''
         print 'Parsing variants ...'
         print ''
     
-    
     start_time_variant_parsing = datetime.now()
+        
+    # The task queue is where all jobs(in this case batches that represents variants in a region) is put
+    # the consumers will then pick their jobs from this queue.
+    variant_queue = JoinableQueue()
+    # The consumers will put their results in the results queue
+    results = Manager().Queue()
     
-    ###### TEMPORARY SOLUTION!!!! ####
+    temp_dir = mkdtemp()
+    # Create a temporary file for the variants:
+        
+    num_model_checkers = (cpu_count()*2-1)
     
+    model_checkers = [variant_consumer.VariantConsumer(variant_queue, results, my_family, 
+                     args.verbose) for i in xrange(num_model_checkers)]
     
-    temp_file = './temp.txt'
-    
-    file_handle = open(temp_file, 'w')
-    
-    var_file = args.variant_file[0]
-    file_name, file_extension = os.path.splitext(var_file)
-    
-    individuals = [ind.individual_id for ind in my_family.individuals]
-
-    var_type = 'cmms'        
-    # header_line = []
-    # metadata = []
-    # 
-    # # The task queue is where all jobs(in this case batches that represents variants in a region) is put
-    # # the consumers will then pick their jobs from this queue.
-    tasks = JoinableQueue()
-    # # The consumers will put their results in the results queue
-    results = Queue()
-    # # We will need a lock so that the consumers can print their results to screen
-    lock = Lock()
-    
-    num_consumers = cpu_count() * 2
-    consumers = [variant_consumer.VariantConsumer(lock, tasks, results, my_family, args.verbose, file_handle) for i in xrange(num_consumers)]
-    
-    for w in consumers:
+    for w in model_checkers:
         w.start()
     
-    var_parser = variant_parser.VariantParser(var_file, tasks, individuals, args.verbose)
+    var_printer = variant_printer.VariantPrinter(results, temp_dir, args.verbose)
+    var_printer.start()
     
-    for i in xrange(num_consumers):
-        tasks.put(None)
-    
-    tasks.join()
-    file_handle.close()
-    # temp_file.seek(0)
-    
-    var_sorter = variant_sorter.FileSort(temp_file)
-    var_sorter.sort()
-    
-    # for line in temp_file:
-    #     print line
-        
-    os.remove(temp_file)    
-    # # 
-    # # while num_jobs:
-    # #     result = results.get()
-    # #     print 'Result: ', result
-    # #     num_jobs -= 1
-    # 
-    # 
     if args.verbose:
-        print 'Variants done!. Time to parse variants: ', (datetime.now() - start_time_variant_parsing)
+        print 'Start parsing the variants ...'
         print ''
-    # # 
-    # # # Add info about variant file:
-    # # new_headers = my_variant_parser.header_lines 
-    # # 
-    # # # Add new headers:
-    # # 
-    # # new_headers.append('Inheritance_model')
-    # # new_headers.append('Compounds')
-    # # new_headers.append('Rank_score')
-    # # 
-    # # 
-    # # if args.verbose:
-    # #     print 'Checking genetic models...'
-    # #     print ''
-    # # 
-    # # for data in my_variant_parser.metadata:
-    # #     print data
-    # # 
-    # # print '#'+'\t'.join(new_headers)
-    # # 
-    # # if not args.position:
-    # #     all_variants = {}
-    # # 
-    # # # Check the genetic models
-    # # 
-    # # jobs=[]
-    # # 
-    # # for chrom in my_variant_parser.chrom_shelves:
-    # #     
-    # #     shelve_directory = os.path.split(my_variant_parser.chrom_shelves[chrom])[0]
-    # #     current_shelve = my_variant_parser.chrom_shelves[chrom]
-    # #     
-    # #     p = multiprocessing.Process(target=check_variants, args=(current_shelve, my_family, gene_annotation, args, preferred_models))
-    # #     jobs.append(p)
-    # #     p.start()
-    # # 
-    # # for job in jobs:
-    # #     job.join()
-    # # 
-    # # # Print all variants:
-    # # 
-    # # for chrom in my_variant_parser.chrom_shelves:
-    # #     
-    # #     variants = []        
-    # #     variant_db = shelve.open(my_variant_parser.chrom_shelves[chrom])
-    # #     
-    # #     for var_id in variant_db:
-    # #         variants.append(variant_db[var_id])
-    # #         
-    # #     for variant in sorted(variants, key=lambda genetic_variant:genetic_variant.start):
-    # #         pass
-    # #         # print '\t'.join(variant.get_cmms_variant())
-    # # 
-    # # 
-    # #     os.remove(my_variant_parser.chrom_shelves[chrom])
-    # # os.removedirs(shelve_directory)
-    # # 
-    # # # Else print by rank score:
-    # # # if not args.position:
-    # # #     for variant in sorted(all_variants.iteritems(), key=lambda (k,v): int(operator.itemgetter(-1)(v)), reverse=True):
-    # # #         if args.treshold:
-    # # #             rank_score = int(variant[-1][-1])
-    # # #             if rank_score >= args.treshold[0]:
-    # # #                 print '\t'.join(variant[1])
-    # # #         else:
-    # #             # print '\t'.join(variant[1])
-    # # if args.verbose:
-    # #     print 'Finished analysis!'
-    # #     print 'Time for analysis', (datetime.now() - start_time_variant_parsing)
-    pass
+        start_time_variant_parsing = datetime.now()    
+    
+    var_parser = vcf_parser.VariantFileParser(var_file, variant_queue, head, annotation_trees, args.verbose)
+    var_parser.parse()
+    
+    for i in xrange(num_model_checkers):
+        variant_queue.put(None)
+    
+    variant_queue.join()
+    results.put(None)
+    var_printer.join()
+    
+    chromosome_list = var_parser.chromosomes
+    
+    print 'Temp dir', temp_dir
+    print 'Temp_files:', os.listdir(temp_dir)
+    
+    if args.verbose:
+        print 'Cromosomes', chromosome_list
+        print 'Models checked!'
+        print 'Start sorting the variants:'
+        print ''
+        start_time_variant_sorting = datetime.now()
+    
+    print_headers(args, head)
+    
+    # if not args.silent:
+    #     with open(temp_file.name, 'rb') as f:
+    #         for line in f:
+    #             print line.rstrip()
 
+    
+    for chromosome in chromosome_list:
+        for temp_file in os.listdir(temp_dir):
+            if temp_file.split('_')[0] == chromosome:
+                var_sorter = variant_sorter.FileSort(os.path.join(temp_dir, temp_file), outFile=args.outfile[0], silent=args.silent)
+                var_sorter.sort()
+    
+    if args.verbose:
+        print 'Sorting done!'
+        print 'Time for sorting:', datetime.now()-start_time_variant_sorting
+        print ''
+        print 'Time for analyis:', datetime.now() - start_time_analysis
+    
+    shutil.rmtree(temp_dir)
+    # try:
+    #     for chrom in file_handles:
+    #         os.remove(temp_files[chrom])
+    # except KeyError:
+    #     pass
+    
 
 if __name__ == '__main__':
     main()
