@@ -145,20 +145,21 @@ class HeaderParser(object):
     def print_header(self):
         """Returns a list with the header lines if proper format"""
         lines_to_print = []
-        print '##fileformat='+self.fileformat
+        lines_to_print.append('##fileformat='+self.fileformat)
         for filt in self.filter_dict:
-            print self.filter_dict[filt]
+            lines_to_print.append(self.filter_dict[filt])
         for form in self.format_dict:
-            print self.format_dict[form]
+            lines_to_print.append(self.format_dict[form])
         for info in self.info_dict:
-            print self.info_dict[info]
+            lines_to_print.append(self.info_dict[info])
         for contig in self.contig_dict:
-            print self.contig_dict[contig]
+            lines_to_print.append(self.contig_dict[contig])
         for alt in self.alt_dict:
-            print self.alt_dict[alt]
+            lines_to_print.append(self.alt_dict[alt])
         for other in self.other_dict:
-            print self.other_dict[other]
-        print '#'+ '\t'.join(self.header)
+            lines_to_print.append(self.other_dict[other])
+        lines_to_print.append('#'+ '\t'.join(self.header))
+        return lines_to_print
     
     def add_info(self, info_id, number, entry_type, description):
         """Add an info line to the header."""
@@ -198,7 +199,7 @@ class VCFParser(object):
         
     def print_header(self):
         """Print the header lines to screen."""
-        self.metadataparser.print_header()
+        return self.metadataparser.print_header()
         
 
 def main():

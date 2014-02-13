@@ -16,11 +16,11 @@ import os
 import argparse
 from tempfile import NamedTemporaryFile
 
-from Mip_Family_Analysis.Utils.is_number import is_number
+from genmod.utils.is_number import is_number
 
 
 class FileSort(object):
-    def __init__(self, inFile, outFile=None, sort_mode = 'rank', splitSize=20, silent=False):
+    def __init__(self, inFile, outFile=None, splitSize=20, silent=False):
         """ split size (in MB) """
         self._inFile = inFile
         self._silent = silent
@@ -29,16 +29,12 @@ class FileSort(object):
         #     self._print_to_screen = True
         #     # self._outFile = inFile
         # else:
+        
         self._outFile = outFile
                     
         self._splitSize = splitSize * 1000000
                 
-        if sort_mode == 'rank':
-            # To sort a CMMS-file on rank score
-            self._getKey = lambda variant_line: int(variant_line.rstrip().split('\t')[-1])
-        else:
-            # to sort a vcf-file on positions
-            self._getKey = lambda variant_line: (int(variant_line.split('\t')[1]))
+        self._getKey = lambda variant_line: (int(variant_line.split('\t')[1]))
     
     def sort(self):
         
@@ -57,10 +53,10 @@ class FileSort(object):
 
         
     def _sortFile(self, fileName, outFile=None, ready_to_print=False):
-        lines = open(fileName.name).readlines()
+        lines = open(fileName).readlines()
         get_key = self._getKey
         data = [(get_key(line), line) for line in lines if line!='']
-        data.sort(reverse=True)
+        data.sort()
         lines = [line[1] for line in data]
         if ready_to_print:
             if outFile:
@@ -76,17 +72,17 @@ class FileSort(object):
     
 
     def _splitFile(self):
-        totalSize = os.path.getsize(self._inFile.name)
+        totalSize = os.path.getsize(self._inFile)
         if totalSize <= self._splitSize:
             # do not split file, the file isn't so big.
             return None
 
         fileNames = []            
-        with open(self._inFile.name, 'r+b') as f:
+        with open(self._inFile, 'r+b') as f:
             size = 0
             lines = []
             for line in f:
-                if not is_number(line.rstrip().split('\t')[-1]):
+                if not is_number(line.rstrip().split('\t')[1]):
                     print 'hej',line
                 size += len(line)
                 lines.append(line)

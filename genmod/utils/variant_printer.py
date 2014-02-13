@@ -14,18 +14,18 @@ Copyright (c) 2013 __MyCompanyName__. All rights reserved.
 import sys
 import os
 import multiprocessing
+from tempfile import NamedTemporaryFile
 from pprint import pprint as pp
 
 
 class VariantPrinter(multiprocessing.Process):
     """docstring for VariantPrinter"""
-    def __init__(self, task_queue, outfile, chromosomes, verbosity=False):
+    def __init__(self, task_queue, temp_dir,verbosity=False):
         multiprocessing.Process.__init__(self)
         self.task_queue = task_queue
-        self.outfile = outfile
         self.verbosity = verbosity
-        # self.lock = lock
-        self.chromosomes = chromosomes
+        self.file_handles = {}
+        self.temp_dir = temp_dir
     
     def run(self):
         """Starts the printing"""
@@ -42,14 +42,26 @@ class VariantPrinter(multiprocessing.Process):
             if next_result is None:
                 if self.verbosity:
                     print 'All variants printed!'
-                self.outfile.close()
+                    print 'File_handles:', self.file_handles
+                for chromosome in self.file_handles:
+                    self.file_handles[chromosome].close()
+                print 'File_handles again:', self.file_handles
+                return self.file_handles
                 break
+                
             else:
                 for variant_id in next_result:
-                    # print '\t'.join(next_result[variant_id].values())
-                    # self.chromosomes[next_result[variant_id['CHROM']]].write(
-                    self.outfile.write('\t'.join(next_result[variant_id].values())+'\n')
+                    variant_chrom = next_result[variant_id]['CHROM']
+                    if variant_chrom in self.file_handles:
+                        self.file_handles[variant_chrom].write('\t'.join(next_result[variant_id].values()) + '\n')
+                    else:
+                        self.file_handles[variant_chrom] = NamedTemporaryFile(prefix=variant_chrom+'_', dir=self.temp_dir, delete=False)
         return
+    
+    def get_temp_files(self):
+        """Return the dictionary with temp files"""
+        print self.file_handles
+        return self.file_handles
 
 def main():
     pass

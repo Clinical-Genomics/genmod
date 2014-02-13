@@ -14,7 +14,8 @@ import os
 import argparse
 from multiprocessing import JoinableQueue, Manager, cpu_count, Lock
 from datetime import datetime
-from tempfile import NamedTemporaryFile
+from tempfile import mkdtemp
+import shutil
 import pkg_resources
 if sys.version_info < (2, 7):
     from ordereddict import OrderedDict
@@ -57,12 +58,12 @@ def print_headers(args, header_object):
     """Print the headers to a results file."""
     if args.outfile[0]:
         with open(args.outfile[0], 'w') as f: 
-            for head_count in header_object.metadata:
-                f.write(header_object.metadata[head_count]+'\n')
-            f.write('#' + '\t'.join(header_object.header) + '\n')
+            for head_count in header_object.print_header():
+                f.write(head_count+'\n')
     else:
         if not args.silent:
-            header_object.print_header()
+            for line in header_object.print_header():
+                print line
     return
 
 def main():
@@ -125,12 +126,20 @@ def main():
     head = get_header(var_file)
     add_metadata(head)
     # Parse the annotation file and make annotation trees:
+
+    if args.verbose:
+        print 'Parsing annotation ...'
+        print ''
+        start_time_annotation = datetime.now()
     
     annotation_trees = annotation_parser.AnnotationParser(anno_file, args.annotation_type[0])
             
     # # Check the variants:
     
     if args.verbose:
+        print 'Annotation Parsed!'
+        print 'Time to parse annotation:', datetime.now() - start_time_annotation
+        print ''
         print 'Parsing variants ...'
         print ''
     
@@ -141,14 +150,10 @@ def main():
     variant_queue = JoinableQueue()
     # The consumers will put their results in the results queue
     results = Manager().Queue()
-    # We will need a lock so that the consumers can print their results to screen
-    lock = Lock()
-    chromosomes = Manager().dict()
     
+    temp_dir = mkdtemp()
     # Create a temporary file for the variants:
-    
-    temp_file = NamedTemporaryFile(delete=False)
-    
+        
     num_model_checkers = (cpu_count()*2-1)
     
     model_checkers = [variant_consumer.VariantConsumer(variant_queue, results, my_family, 
@@ -157,7 +162,7 @@ def main():
     for w in model_checkers:
         w.start()
     
-    var_printer = variant_printer.VariantPrinter(results, temp_file, chromosomes, args.verbose)
+    var_printer = variant_printer.VariantPrinter(results, temp_dir, args.verbose)
     var_printer.start()
     
     if args.verbose:
@@ -165,7 +170,7 @@ def main():
         print ''
         start_time_variant_parsing = datetime.now()    
     
-    var_parser = vcf_parser.VariantFileParser(var_file, variant_queue, head, annotation_trees, chromosomes, args.verbose)
+    var_parser = vcf_parser.VariantFileParser(var_file, variant_queue, head, annotation_trees, args.verbose)
     var_parser.parse()
     
     for i in xrange(num_model_checkers):
@@ -174,9 +179,14 @@ def main():
     variant_queue.join()
     results.put(None)
     var_printer.join()
-        
+    
+    chromosome_list = var_parser.chromosomes
+    
+    print 'Temp dir', temp_dir
+    print 'Temp_files:', os.listdir(temp_dir)
+    
     if args.verbose:
-        print 'Cromosomes', chromosomes
+        print 'Cromosomes', chromosome_list
         print 'Models checked!'
         print 'Start sorting the variants:'
         print ''
@@ -184,22 +194,31 @@ def main():
     
     print_headers(args, head)
     
-    if not args.silent:
-        with open(temp_file.name, 'rb') as f:
-            for line in f:
-                print line.rstrip()
+    # if not args.silent:
+    #     with open(temp_file.name, 'rb') as f:
+    #         for line in f:
+    #             print line.rstrip()
 
     
-    # for chromosome in chromosomes:
-    #     for line in chromosomes[chromosome].readlines():
-    #         print line 
+    for chromosome in chromosome_list:
+        for temp_file in os.listdir(temp_dir):
+            if temp_file.split('_')[0] == chromosome:
+                var_sorter = variant_sorter.FileSort(os.path.join(temp_dir, temp_file), outFile=args.outfile[0], silent=args.silent)
+                var_sorter.sort()
     
-    # var_sorter = variant_sorter.FileSort(temp_file)
-    # var_sorter.sort()
+    if args.verbose:
+        print 'Sorting done!'
+        print 'Time for sorting:', datetime.now()-start_time_variant_sorting
+        print ''
+        print 'Time for analyis:', datetime.now() - start_time_analysis
     
-        
-    os.remove(temp_file.name)    
-
+    shutil.rmtree(temp_dir)
+    # try:
+    #     for chrom in file_handles:
+    #         os.remove(temp_files[chrom])
+    # except KeyError:
+    #     pass
+    
 
 if __name__ == '__main__':
     main()

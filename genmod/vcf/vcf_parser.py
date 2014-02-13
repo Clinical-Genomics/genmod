@@ -16,9 +16,8 @@ Copyright (c) 2013 __MyCompanyName__. All rights reserved.
 import sys
 import os
 import argparse
-import shelve
 from datetime import datetime
-from tempfile import NamedTemporaryFile
+from tempfile import gettempdir
 
 
 if sys.version_info < (2, 7):
@@ -35,7 +34,7 @@ from genmod.utils import get_genes
 
 class VariantFileParser(object):
     """docstring for VariantParser"""
-    def __init__(self, variant_file, batch_queue, head, interval_tree, chromosomes, verbosity = False):
+    def __init__(self, variant_file, batch_queue, head, interval_tree, verbosity = False):
         super(VariantFileParser, self).__init__()
         self.variant_file = variant_file
         self.batch_queue = batch_queue
@@ -43,7 +42,7 @@ class VariantFileParser(object):
         self.individuals = head.individuals
         self.header_line = head.header
         self.interval_tree = interval_tree
-        self.chromosomes = chromosomes
+        self.chromosomes = []
     
     def parse(self):
         """Start the parsing"""        
@@ -56,6 +55,7 @@ class VariantFileParser(object):
         current_chrom = None
         current_features = []
         nr_of_variants = 0
+        temp_dir = gettempdir()
         with open(self.variant_file, 'rb') as f:
             for line in f:
                 
@@ -99,14 +99,15 @@ class VariantFileParser(object):
                             batch = self.add_variant(batch, variant, new_features) # Add variant batch
 
                     if new_chrom != current_chrom:
-                        self.chromosomes[current_chrom] = ''
+                        self.chromosomes.append(current_chrom)
 
                         if self.verbosity:
                             print 'Chromosome', current_chrom, 'parsed!'
                             print 'Time to parse chromosome', datetime.now()-start_chrom
                             current_chrom = new_chrom
                             start_chrom = datetime.now()
-        self.chromosomes[current_chrom] = ''
+        
+        self.chromosomes.append(current_chrom)
         if self.verbosity:
             print 'Chromosome', current_chrom, 'parsed!'
             print 'Time to parse chromosome', datetime.now()-start_chrom
@@ -138,8 +139,13 @@ class VariantFileParser(object):
         variant_chrom = my_variant['CHROM']
         variant_interval = [int(my_variant['POS']), int(my_variant['POS'])]
         
-        features_overlapped = self.interval_tree.interval_trees[variant_chrom].findRange(variant_interval)
-        my_variant['Annotation'] = features_overlapped
+        try:
+            features_overlapped = self.interval_tree.interval_trees[variant_chrom].findRange(variant_interval)
+            my_variant['Annotation'] = features_overlapped
+        except KeyError:
+            if self.verbosity:
+                print 'Chromosome', variant_chrom, 'is not in annotation file!'
+            my_variant['Annotation'] = []
         return my_variant, features_overlapped
 
 def main():
