@@ -77,9 +77,6 @@ def check_genetic_models(variant_batch, family, verbose = False, proc_name = Non
         compound_candidates = []
         compound_pairs = []
         # We look at compounds only when variants are in genes:
-        if gene == 'NBPF9':
-            print variant_batch
-            print len(variant_batch[gene])
         if gene != '-':
             # First remove all variants that can't be compounds to reduce the number of lookup's:
             compound_candidates = check_compound_candidates(variant_batch[gene], family)
@@ -87,7 +84,7 @@ def check_genetic_models(variant_batch, family, verbose = False, proc_name = Non
             # Now check the compound candidates:
                 if len(compound_candidates) > 100:
                     print 'Compound Candidates!', len(compound_candidates), gene
-                compound_pairs = check_compound(compound_candidates, family, gene)
+                compound_pairs = check_compounds(compound_candidates, family, gene)
         
         for variant_id in variant_batch[gene]:
             variant_batch[gene][variant_id]['Inheritance_model'] = {'X' : True, 'X_dn' : True, 'AD' : True, 'AD_denovo' : True, 
@@ -121,10 +118,6 @@ def check_genetic_models(variant_batch, family, verbose = False, proc_name = Non
                 variant_batch[gene][variant_pair[0]]['Inheritance_model']['AR_compound'] = True
                 variant_batch[gene][variant_pair[1]]['Inheritance_model']['AR_compound'] = True
                 
-        # for variant_id in variant_batch[gene]:
-        #     for model in variant_batch[gene][variant_id]['Inheritance_model']:
-        #         if variant_batch[gene][variant_id]['Inheritance_model'][model]:
-        #             print variant_batch[gene][variant_id]
     
     return variant_batch
 
@@ -134,40 +127,33 @@ def check_compound_candidates(variants, family):
     comp_candidates = dict((variant_id, variants[variant_id]) for variant_id in variants)
     for individual in family.individuals:
         individual_variants = {}
-        for variant_id in variants:
+        for variant_id in comp_candidates:
             individual_genotype = variants[variant_id]['Genotypes'].get(individual.individual_id, genotype.Genotype())
-            # If an individual is affected:
-            if individual.affected():
-                # It has to be heterozygote for the variant to be a candidate
-                if not individual_genotype.heterozygote:
-                    if variant_id in comp_candidates:
-                        del comp_candidates[variant_id]
-                else:
-                    individual_variants[variant_id] = ''
-            else:#If individual is healthy or not known
-                if individual_genotype.homo_alt:
-                    if variant_id in comp_candidates:
-                        del comp_candidates[variant_id]
-                elif individual_genotype.heterozygote:
-                    individual_variants[variant_id] = ''
+            # If any individual is homozygpte alternative this can not be a compound candidate:
+            if individual_genotype.homo_alt:
+                comp_candidates.pop(variant_id, 0)
+            else:
+                if individual.affected():
+                    # It has to be heterozygote for the variant to be a candidate
+                    if not individual_genotype.heterozygote:
+                        comp_candidates.pop(variant_id, 0)
+                    else: # Now we have a potential candidate:
+                        individual_variants[variant_id] = ''
         #If the individual is sick then all potential compound candidates of a gene must exist in that individual.
+        #So we remove all variants that the sick individual don't have
         if individual.affected():
             if len(individual_variants) > 1:
                 for variant_id in comp_candidates:
                     if variant_id not in individual_variants:
-                        del comp_candidates[variant_id]
+                        comp_candidates.pop(variant_id, 0)
             else:
                 # If a sick individual dont have any compounds pairs there are no compound candidates.
                 comp_candidates = {}
     return comp_candidates
 
-def check_compound(variants, family, gene):
-    """Check which variants in the list that follow the compound heterozygous model. 
-    We need to go through all variants and sort them into their corresponding genes 
-    to see which that are candidates for compound heterozygotes first. 
-    The cheapest way to store them are in a hash table. After this we need to go
-     through all pairs, if both variants of a pair is found in a healthy individual
-      the pair is not a deleterious compound heterozygote."""
+def check_compounds(variants, family, gene):
+    """Check which variants in the list that follow the compound heterozygous model. At this stage we\
+        know that none of the individuals are homozygote alternative for the variants."""
                 
     true_variant_pairs = []
     
@@ -175,7 +161,6 @@ def check_compound(variants, family, gene):
     my_pairs = pair_generator.Pair_Generator(variants.keys())
     for pair in my_pairs.generate_pairs():
         true_variant_pairs.append(pair)
-        # print len(true_variant_pairs), type(true_variant_pairs), gene
         variant_pair = []
         for variant in pair:
             variant_pair.append(variant)
@@ -188,23 +173,26 @@ def check_compound(variants, family, gene):
             # If the individual is not sick and have both variants it can not be compound
             if individual.phenotype != 2:
                 if genotype_1.has_variant and genotype_2.has_variant:
-                    true_variant_pairs.remove(pair)
                     break
-            else:# The case where the individual is affected
-                mother_id = individual.mother
-                mother_genotype_1 = variants[variant_1]['Genotypes'].get(mother_id, genotype.Genotype())
-                mother_genotype_2 = variants[variant_2]['Genotypes'].get(mother_id, genotype.Genotype())
-                mother_phenotype = family.get_phenotype(mother_id)
-                
-                father_id = individual.father
-                father_genotype_1 = variants[variant_1]['Genotypes'].get(father_id, genotype.Genotype())
-                father_genotype_2 = variants[variant_2]['Genotypes'].get(father_id, genotype.Genotype())
-                father_phenotype = family.get_phenotype(father_id)
-                # If a parent has both variants and is unaffected it can not be a compound.
-                # This will change when we get the phasing information.
-                if ((mother_genotype_1.heterozygote and mother_genotype_2.heterozygote and mother_phenotype == 1) or (father_genotype_1.heterozygote and father_genotype_2.heterozygote and father_phenotype == 1)):
-                    true_variant_pairs.remove(pair)
-                    break
+            # The case where the individual is affected or phenotype unknown
+            else:
+            # We no know that this individual is affected and have both variants
+                if individual.has_parents:
+                    mother_id = individual.mother
+                    mother_genotype_1 = variants[variant_1]['Genotypes'].get(mother_id, genotype.Genotype())
+                    mother_genotype_2 = variants[variant_2]['Genotypes'].get(mother_id, genotype.Genotype())
+                    mother_phenotype = family.get_phenotype(mother_id)
+                    
+                    father_id = individual.father
+                    father_genotype_1 = variants[variant_1]['Genotypes'].get(father_id, genotype.Genotype())
+                    father_genotype_2 = variants[variant_2]['Genotypes'].get(father_id, genotype.Genotype())
+                    father_phenotype = family.get_phenotype(father_id)
+                    # If a parent has both variants and is unaffected it can not be a compound.
+                    # This will change when we get the phasing information.
+                    if ((mother_genotype_1.heterozygote and mother_genotype_2.heterozygote and mother_phenotype == 1) 
+                        or (father_genotype_1.heterozygote and father_genotype_2.heterozygote and father_phenotype == 1)):
+                        break
+                true_variant_pairs.append(pair)
     return true_variant_pairs
 
 def check_X(variant, family):
@@ -343,3 +331,7 @@ def main():
 if __name__ == '__main__':
     main()
 
+=======
+>>>>>>> External Changes
+=======
+>>>>>>> External Changes
