@@ -136,14 +136,14 @@ class VariantFileParser(object):
         my_variant = OrderedDict(zip(self.header_line, splitted_variant_line))
         variant_chrom = my_variant['CHROM']
         variant_interval = [int(my_variant['POS']), int(my_variant['POS'])]
+        features_overlapped = []
         
         try:
             features_overlapped = self.interval_tree.interval_trees[variant_chrom].findRange(variant_interval)
-            my_variant['Annotation'] = features_overlapped
         except KeyError:
             if self.verbosity:
                 print 'Chromosome', variant_chrom, 'is not in annotation file!'
-            my_variant['Annotation'] = []
+        my_variant['Annotation'] = features_overlapped
         return my_variant, features_overlapped
 
 def main():
