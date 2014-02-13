@@ -28,8 +28,6 @@ else:
 from pprint import pprint as pp
 
 from genmod.variants import genotype
-from genmod.utils import get_genes
-
 
 
 class VariantFileParser(object):
