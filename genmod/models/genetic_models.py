@@ -77,12 +77,17 @@ def check_genetic_models(variant_batch, family, verbose = False, proc_name = Non
         compound_candidates = []
         compound_pairs = []
         # We look at compounds only when variants are in genes:
+        if gene == 'NBPF9':
+            print variant_batch
+            print len(variant_batch[gene])
         if gene != '-':
             # First remove all variants that can't be compounds to reduce the number of lookup's:
             compound_candidates = check_compound_candidates(variant_batch[gene], family)
             if len(compound_candidates) > 1:
             # Now check the compound candidates:
-                compound_pairs = check_compound(compound_candidates, family)
+                if len(compound_candidates) > 100:
+                    print 'Compound Candidates!', len(compound_candidates), gene
+                compound_pairs = check_compound(compound_candidates, family, gene)
         
         for variant_id in variant_batch[gene]:
             variant_batch[gene][variant_id]['Inheritance_model'] = {'X' : True, 'X_dn' : True, 'AD' : True, 'AD_denovo' : True, 
@@ -156,7 +161,7 @@ def check_compound_candidates(variants, family):
                 comp_candidates = {}
     return comp_candidates
 
-def check_compound(variants, family):
+def check_compound(variants, family, gene):
     """Check which variants in the list that follow the compound heterozygous model. 
     We need to go through all variants and sort them into their corresponding genes 
     to see which that are candidates for compound heterozygotes first. 
@@ -170,6 +175,7 @@ def check_compound(variants, family):
     my_pairs = pair_generator.Pair_Generator(variants.keys())
     for pair in my_pairs.generate_pairs():
         true_variant_pairs.append(pair)
+        # print len(true_variant_pairs), type(true_variant_pairs), gene
         variant_pair = []
         for variant in pair:
             variant_pair.append(variant)
