@@ -28,7 +28,7 @@ class Pair_Generator(object):
         """Yields all unordered pairs as tuples from the list of objects"""
         for i in range(len(self.list_of_objects)-1):
             for j in range(i+1, len(self.list_of_objects)):
-                yield {self.list_of_objects[i], self.list_of_objects[j]}
+                yield (self.list_of_objects[i], self.list_of_objects[j])
     
 
 def main():

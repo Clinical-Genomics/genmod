@@ -42,11 +42,8 @@ class VariantPrinter(multiprocessing.Process):
             if next_result is None:
                 if self.verbosity:
                     print 'All variants printed!'
-                    print 'File_handles:', self.file_handles
                 for chromosome in self.file_handles:
                     self.file_handles[chromosome].close()
-                print 'File_handles again:', self.file_handles
-                return self.file_handles
                 break
                 
             else:

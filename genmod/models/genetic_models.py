@@ -82,7 +82,7 @@ def check_genetic_models(variant_batch, family, verbose = False, proc_name = Non
             compound_candidates = check_compound_candidates(variant_batch[gene], family)
             if len(compound_candidates) > 1:
             # Now check the compound candidates:
-                compound_pairs = check_compound(compound_candidates, family)
+                compound_pairs = check_compounds(compound_candidates, family)
         
         for variant_id in variant_batch[gene]:
             variant_batch[gene][variant_id]['Inheritance_model'] = {'X' : True, 'X_dn' : True, 'AD' : True, 'AD_denovo' : True, 
@@ -145,7 +145,7 @@ def check_compound_candidates(variants, family):
                 comp_candidates = {}
     return comp_candidates
 
-def check_compounds(variants, family, gene):
+def check_compounds(variants, family):
     """Check which variants in the list that follow the compound heterozygous model. At this stage we\
         know that none of the individuals are homozygote alternative for the variants."""
                 

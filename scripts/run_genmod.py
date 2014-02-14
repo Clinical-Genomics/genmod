@@ -191,12 +191,6 @@ def main():
     
     print_headers(args, head)
     
-    # if not args.silent:
-    #     with open(temp_file.name, 'rb') as f:
-    #         for line in f:
-    #             print line.rstrip()
-
-    
     for chromosome in chromosome_list:
         for temp_file in os.listdir(temp_dir):
             if temp_file.split('_')[0] == chromosome:
@@ -210,11 +204,6 @@ def main():
         print 'Time for analyis:', datetime.now() - start_time_analysis
     
     shutil.rmtree(temp_dir)
-    # try:
-    #     for chrom in file_handles:
-    #         os.remove(temp_files[chrom])
-    # except KeyError:
-    #     pass
     
 
 if __name__ == '__main__':
