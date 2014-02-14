@@ -181,12 +181,9 @@ def main():
     var_printer.join()
     
     chromosome_list = var_parser.chromosomes
-    
-    print 'Temp dir', temp_dir
-    print 'Temp_files:', os.listdir(temp_dir)
-    
+        
     if args.verbose:
-        print 'Cromosomes', chromosome_list
+        print 'Cromosomes in variant file:', ','.join(chromosome_list)
         print 'Models checked!'
         print 'Start sorting the variants:'
         print ''

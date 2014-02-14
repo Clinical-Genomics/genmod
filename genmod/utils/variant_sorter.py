@@ -24,12 +24,7 @@ class FileSort(object):
         """ split size (in MB) """
         self._inFile = inFile
         self._silent = silent
-        
-        # if outFile is None:
-        #     self._print_to_screen = True
-        #     # self._outFile = inFile
-        # else:
-        
+                
         self._outFile = outFile
                     
         self._splitSize = splitSize * 1000000
@@ -42,7 +37,7 @@ class FileSort(object):
 
         if files is None:
             """ file size <= self._splitSize """            
-            self._sortFile(self._inFile, self._outFile, True)
+            self._sortFile(self._inFile, outFile=self._outFile, ready_to_print=True)
             return
 
         for fn in files:
@@ -53,7 +48,10 @@ class FileSort(object):
 
         
     def _sortFile(self, fileName, outFile=None, ready_to_print=False):
-        lines = open(fileName).readlines()
+        try:
+            lines = open(fileName).readlines()
+        except TypeError:
+            lines = open(fileName.name).readlines()
         get_key = self._getKey
         data = [(get_key(line), line) for line in lines if line!='']
         data.sort()
@@ -66,11 +64,12 @@ class FileSort(object):
                     print ''.join(lines)
         else:
         # In this case the temporary files are over witten.
-            with open(fileName.name, 'w') as f:
-                f.write(''.join(lines))
+            try: 
+                f = open(fileName, 'w')
+            except TypeError:
+                f = open(fileName.name, 'w')
+            f.write(''.join(lines))
     
-    
-
     def _splitFile(self):
         totalSize = os.path.getsize(self._inFile)
         if totalSize <= self._splitSize:
@@ -88,7 +87,7 @@ class FileSort(object):
                 lines.append(line)
                 if size >= self._splitSize:
                     tmpFile = NamedTemporaryFile(delete=False)
-                    fileNames.append(tmpFile)
+                    fileNames.append(tmpFile.name)
                     tmpFile.write(''.join(lines))
                     tmpFile.close()
                     del lines[:]
@@ -96,17 +95,17 @@ class FileSort(object):
                                                        
             if size > 0:
                 tmpFile = NamedTemporaryFile(delete=False)
-                fileNames.append(tmpFile)
+                fileNames.append(tmpFile.name)
                 tmpFile.write(''.join(lines))
                 tmpFile.close()
-            for tmp_file in fileNames:
-                for line in open(tmp_file.name, 'rb'):
-                    if not is_number(line.rstrip().split('\t')[-1]):
-                        print line
             return fileNames
 
     def _mergeFiles(self, files):
-        files = [open(f.name, 'r+b') for f in files]
+        try:
+            files = [open(f, 'r+b') for f in files]
+        except TypeError:
+            files = [open(f.name, 'r+b') for f in files]
+            
         lines = []
         keys = []
         
@@ -163,8 +162,12 @@ class FileSort(object):
                 output.close()
     
     def _deleteFiles(self, files):   
-        for fn in files:
-            os.remove(fn.name)
+        try:
+            for fn in files:
+                os.remove(fn)
+        except TypeError:
+            for fn in files:
+                os.remove(fn.name)
     
 
 
