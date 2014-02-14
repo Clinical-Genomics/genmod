@@ -181,24 +181,15 @@ def main():
     var_printer.join()
     
     chromosome_list = var_parser.chromosomes
-    
-    print 'Temp dir', temp_dir
-    print 'Temp_files:', os.listdir(temp_dir)
-    
+        
     if args.verbose:
-        print 'Cromosomes', chromosome_list
+        print 'Cromosomes in variant file:', ','.join(chromosome_list)
         print 'Models checked!'
         print 'Start sorting the variants:'
         print ''
         start_time_variant_sorting = datetime.now()
     
     print_headers(args, head)
-    
-    # if not args.silent:
-    #     with open(temp_file.name, 'rb') as f:
-    #         for line in f:
-    #             print line.rstrip()
-
     
     for chromosome in chromosome_list:
         for temp_file in os.listdir(temp_dir):
@@ -213,11 +204,6 @@ def main():
         print 'Time for analyis:', datetime.now() - start_time_analysis
     
     shutil.rmtree(temp_dir)
-    # try:
-    #     for chrom in file_handles:
-    #         os.remove(temp_files[chrom])
-    # except KeyError:
-    #     pass
     
 
 if __name__ == '__main__':
