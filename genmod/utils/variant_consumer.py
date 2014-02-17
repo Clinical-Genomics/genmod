@@ -14,6 +14,7 @@ Copyright (c) 2013 __MyCompanyName__. All rights reserved.
 import sys
 import os
 import multiprocessing
+
 from pprint import pprint as pp
 
 from genmod.models import genetic_models
@@ -37,8 +38,6 @@ class VariantConsumer(multiprocessing.Process):
             # A batch is a dictionary on the form {gene:{variant_id:variant_dict}}
             next_batch = self.task_queue.get()
             if self.verbosity:
-                # if self.task_queue.empty():
-                #     print 'No variants to parse!', proc_name
                 if self.results_queue.full():
                     print 'Batch results queue Full!', proc_name
                 if self.task_queue.full():
@@ -48,17 +47,18 @@ class VariantConsumer(multiprocessing.Process):
                 if self.verbosity:
                     print '%s: Exiting' % proc_name
                 break
-            # print '%s: %s' % (proc_name, next_batch)
             variant_batch = genetic_models.check_genetic_models(next_batch, self.family, self.verbosity, proc_name)
+            # Make shure we only have one copy of each variant:            
             fixed_variants = {}
-            # Make shore we only have one copy of each variant:
             for feature in variant_batch:
                 #Make one dictionary for each feature:
-                variant_dict = dict((variant_id, variant_info) for variant_id, variant_info in variant_batch[feature].items())
+                variant_dict = dict((variant_id, variant_info) for variant_id, variant_info in 
+                                                                    variant_batch[feature].items())
                 for variant_id in variant_dict:
                     #Remove the 'Genotypes' post since we will not need them for now
                     variant_dict[variant_id].pop('Genotypes', 0)
                     if variant_id in fixed_variants:
+                        # We need to add compound information from different features
                         if len(variant_dict[variant_id]['Compounds']) > 0:
                             fixed_variants[variant_id]['Compounds'] = dict(variant_dict[variant_id]['Compounds'].items() +
                                                                     fixed_variants[variant_id]['Compounds'].items())
@@ -93,7 +93,6 @@ class VariantConsumer(multiprocessing.Process):
                 # if we should include genetic models:
                 vcf_info.append('GM=' + ':'.join(model_list))
                 fixed_variants[variant_id]['INFO'] = ';'.join(vcf_info)
-                # pp(fixed_variants[variant_id])
             self.results_queue.put(fixed_variants)
             self.task_queue.task_done()
         return

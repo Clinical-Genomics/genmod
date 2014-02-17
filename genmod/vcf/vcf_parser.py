@@ -17,9 +17,6 @@ import sys
 import os
 import argparse
 from datetime import datetime
-from tempfile import gettempdir
-
-
 if sys.version_info < (2, 7):
     from ordereddict import OrderedDict
 else:
@@ -32,14 +29,14 @@ from genmod.variants import genotype
 
 class VariantFileParser(object):
     """docstring for VariantParser"""
-    def __init__(self, variant_file, batch_queue, head, interval_tree, verbosity = False):
+    def __init__(self, variant_file, batch_queue, head, interval_trees, verbosity = False):
         super(VariantFileParser, self).__init__()
         self.variant_file = variant_file
         self.batch_queue = batch_queue
         self.verbosity = verbosity
         self.individuals = head.individuals
         self.header_line = head.header
-        self.interval_tree = interval_tree
+        self.interval_trees = interval_trees
         self.chromosomes = []
     
     def parse(self):
@@ -53,10 +50,9 @@ class VariantFileParser(object):
         current_chrom = None
         current_features = []
         nr_of_variants = 0
-        temp_dir = gettempdir()
         with open(self.variant_file, 'rb') as f:
             for line in f:
-                
+                # Variant lines do not start with '#'
                 if not line.startswith('#'):
                     variant, new_features = self.vcf_variant(line.rstrip().split('\t'))
                     new_chrom = variant['CHROM']
@@ -76,9 +72,7 @@ class VariantFileParser(object):
                         current_chrom = new_chrom
                     else:
                         send = True
-                    
                     # Check if we are in a space between features:
-                        # print current_features, new_features
                         if len(new_features) == 0:
                             if len(current_features) == 0:
                                 send = False
@@ -87,8 +81,6 @@ class VariantFileParser(object):
                             send = False
                         
                         if send:
-                            # If there is an intergenetic region we do not look at the compounds.
-                            # The tasks are tuples like (variant_list, bool(if compounds))
                             self.batch_queue.put(batch)
                             current_features = new_features
                             batch = self.add_variant({}, variant, new_features)
@@ -139,7 +131,7 @@ class VariantFileParser(object):
         features_overlapped = []
         
         try:
-            features_overlapped = self.interval_tree.interval_trees[variant_chrom].findRange(variant_interval)
+            features_overlapped = self.interval_trees.interval_trees[variant_chrom].findRange(variant_interval)
         except KeyError:
             if self.verbosity:
                 print 'Chromosome', variant_chrom, 'is not in annotation file!'

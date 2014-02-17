@@ -20,7 +20,7 @@ from pprint import pprint as pp
 
 class VariantPrinter(multiprocessing.Process):
     """docstring for VariantPrinter"""
-    def __init__(self, task_queue, temp_dir,verbosity=False):
+    def __init__(self, task_queue, temp_dir, verbosity=False):
         multiprocessing.Process.__init__(self)
         self.task_queue = task_queue
         self.verbosity = verbosity
@@ -52,14 +52,10 @@ class VariantPrinter(multiprocessing.Process):
                     if variant_chrom in self.file_handles:
                         self.file_handles[variant_chrom].write('\t'.join(next_result[variant_id].values()) + '\n')
                     else:
-                        self.file_handles[variant_chrom] = NamedTemporaryFile(prefix=variant_chrom+'_', dir=self.temp_dir, delete=False)
+                        self.file_handles[variant_chrom] = NamedTemporaryFile(prefix=variant_chrom+'_', 
+                                                                                dir=self.temp_dir, delete=False)
         return
     
-    def get_temp_files(self):
-        """Return the dictionary with temp files"""
-        print self.file_handles
-        return self.file_handles
-
 def main():
     pass
 

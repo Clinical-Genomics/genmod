@@ -22,10 +22,7 @@ if sys.version_info < (2, 7):
 else:
     from collections import OrderedDict
 
-
 from pprint import pprint as pp
-
-# pp(sys.path)
 
 from ped_parser import parser
 
@@ -140,10 +137,6 @@ def main():
         print 'Annotation Parsed!'
         print 'Time to parse annotation:', datetime.now() - start_time_annotation
         print ''
-        print 'Parsing variants ...'
-        print ''
-    
-    start_time_variant_parsing = datetime.now()
         
     # The task queue is where all jobs(in this case batches that represents variants in a region) is put
     # the consumers will then pick their jobs from this queue.
@@ -151,10 +144,13 @@ def main():
     # The consumers will put their results in the results queue
     results = Manager().Queue()
     
+    # Create a directory to keep track of temp files
     temp_dir = mkdtemp()
-    # Create a temporary file for the variants:
         
     num_model_checkers = (cpu_count()*2-1)
+    
+    if args.verbose:
+        print 'Number of CPU:s ', cpu_count()
     
     model_checkers = [variant_consumer.VariantConsumer(variant_queue, results, my_family, 
                      args.verbose) for i in xrange(num_model_checkers)]
@@ -183,7 +179,7 @@ def main():
     chromosome_list = var_parser.chromosomes
         
     if args.verbose:
-        print 'Cromosomes in variant file:', ','.join(chromosome_list)
+        print 'Cromosomes found in variant file:', ','.join(chromosome_list)
         print 'Models checked!'
         print 'Start sorting the variants:'
         print ''
@@ -194,15 +190,17 @@ def main():
     for chromosome in chromosome_list:
         for temp_file in os.listdir(temp_dir):
             if temp_file.split('_')[0] == chromosome:
-                var_sorter = variant_sorter.FileSort(os.path.join(temp_dir, temp_file), outFile=args.outfile[0], silent=args.silent)
+                var_sorter = variant_sorter.FileSort(os.path.join(temp_dir, temp_file), 
+                                                outFile=args.outfile[0], silent=args.silent)
                 var_sorter.sort()
     
     if args.verbose:
         print 'Sorting done!'
         print 'Time for sorting:', datetime.now()-start_time_variant_sorting
         print ''
-        print 'Time for analyis:', datetime.now() - start_time_analysis
+        print 'Time for whole analyis:', datetime.now() - start_time_analysis
     
+    # Remove all temp files:
     shutil.rmtree(temp_dir)
     
 
