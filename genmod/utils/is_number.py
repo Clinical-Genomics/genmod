@@ -23,7 +23,7 @@ def is_number(number):
 
 def main():
     number = sys.argv[1]
-    print is_number(number)
+    print(is_number(number))
 
 
 if __name__ == '__main__':

@@ -186,9 +186,9 @@ class intervalTree:
 def main():
     features = [[20,400,'id01'],[1020,2400,'id02'],[35891,29949,'id03'],[900000,'id04'],[999000,'id05']]
     myTree = intervalTree(features, 0, 1, 1, 1000000)
-    print 'Ranges between 200 and 1200:', myTree.findRange([200, 1200])
-    print 'Range in only position 34000:', myTree.findRange([900000, 900000])
-    print myTree.elementaryIntervals
+    print('Ranges between 200 and 1200:', myTree.findRange([200, 1200]))
+    print('Range in only position 34000:', myTree.findRange([900000, 900000]))
+    print(myTree.elementaryIntervals)
 
 
 if __name__ == '__main__':

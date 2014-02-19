@@ -100,35 +100,35 @@ class HeaderParser(object):
             if not match:
                 raise SyntaxError("One of the INFO lines is malformed: %s" % line)
             matches = [match.group('id'), match.group('number'), match.group('type'), match.group('desc')]
-            self.info_lines.append(dict(zip(self.header_keys['info'],matches)))
+            self.info_lines.append(dict(list(zip(self.header_keys['info'],matches))))
             self.info_dict[match.group('id')] = line
         elif line_info[0] == 'FILTER':
             match = self.filter_pattern.match(line)
             if not match:
                 raise SyntaxError("One of the FILTER lines is malformed: %s" % line)
             matches = [match.group('id'), match.group('desc')]
-            self.filter_lines.append(dict(zip(self.header_keys['filt'],matches)))
+            self.filter_lines.append(dict(list(zip(self.header_keys['filt'],matches))))
             self.filter_dict[match.group('id')] = line
         elif line_info[0] == 'contig':
             match = self.contig_pattern.match(line)
             if not match:
                 raise SyntaxError("One of the contig lines is malformed: %s" % line)
             matches = [match.group('id'), match.group('length')]
-            self.contig_lines.append(dict(zip(self.header_keys['contig'],matches)))
+            self.contig_lines.append(dict(list(zip(self.header_keys['contig'],matches))))
             self.contig_dict[match.group('id')] = line
         elif line_info[0] == 'FORMAT':
             match = self.format_pattern.match(line)
             if not match:
                 raise SyntaxError("One of the FORMAT lines is malformed: %s" % line)
             matches = [match.group('id'), match.group('number'), match.group('type'), match.group('desc')]
-            self.format_lines.append(dict(zip(self.header_keys['form'],matches)))
+            self.format_lines.append(dict(list(zip(self.header_keys['form'],matches))))
             self.format_dict[match.group('id')] = line
         elif line_info[0] == 'ALT':
             match = self.alt_pattern.match(line)
             if not match:
                 raise SyntaxError("One of the ALT lines is malformed: %s" % line)
             matches = [match.group('id'), match.group('desc')]
-            self.alt_lines.append(dict(zip(self.header_keys['alt'],matches)))
+            self.alt_lines.append(dict(list(zip(self.header_keys['alt'],matches))))
             self.alt_dict[match.group('id')] = line
         else:
             match = self.meta_pattern.match(line)

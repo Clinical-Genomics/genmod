@@ -88,7 +88,7 @@ class Variant(object):
         elif is_number(start):
             self.start = int(start)
         else:
-            print 'Start position', start, 'is not an integer.'
+            print('Start position', start, 'is not an integer.')
             sys.exit()
         self.ref = reference # Reference nucleotide(s) STRING
         self.alt = alternative # Alternative sequence LIST
@@ -192,7 +192,7 @@ class Variant(object):
     def __str__(self):
         """Print information about the variant"""
         variant_info = [self.chr, str(self.start) , str(self.stop), self.alt, self.ref]
-        for ind, geno in self.genotypes.items():
+        for ind, geno in list(self.genotypes.items()):
             geno_info = ind+':'+geno.genotype
             variant_info.append(geno_info)
         models = ';'.join(self.models)
@@ -202,7 +202,7 @@ class Variant(object):
         variant_info.append(models)
         variant_info.append(str(self.rank_score))
         variant_info.append(', '.join(self.genes))
-        variant_info.append(', '.join(self.ar_comp_variants.keys()))
+        variant_info.append(', '.join(list(self.ar_comp_variants.keys())))
         return '\t'.join(variant_info)
     
 
@@ -215,7 +215,7 @@ def main():
     variant_info = example_variant.split('\t')
     variant_dict = {}
     for i in range(len(header_info)):
-        print i, len(header_info), len(variant_info), header_info[i], variant_info[i]
+        print(i, len(header_info), len(variant_info), header_info[i], variant_info[i])
         variant_dict[header_info[i]] = variant_info[i]
     my_variant = Cmms(**variant_dict)
     my_variant.print_original_info(header_info)

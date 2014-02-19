@@ -61,7 +61,7 @@ class FileSort(object):
                 open(outFile, 'a').write(''.join(lines))
             else:
                 if not self._silent:
-                    print ''.join(lines)
+                    print(''.join(lines))
         else:
         # In this case the temporary files are over witten.
             try: 
@@ -82,7 +82,7 @@ class FileSort(object):
             lines = []
             for line in f:
                 if not is_number(line.rstrip().split('\t')[1]):
-                    print 'hej',line
+                    print('hej',line)
                 size += len(line)
                 lines.append(line)
                 if size >= self._splitSize:
@@ -131,7 +131,7 @@ class FileSort(object):
                             output.write(''.join(buff))
                         else:
                             if not self._silent:
-                                print ''.join(buff)
+                                print(''.join(buff))
                         del buff[:]
                             
                     line = files[index].readline()
@@ -156,7 +156,7 @@ class FileSort(object):
                     output.write(''.join(buff))
                 else:
                     if not self._silent:
-                        print ''.join(buff)
+                        print(''.join(buff))
         finally:
             if self._outFile:
                 output.close()
@@ -184,8 +184,8 @@ def main():
                 new_file.write(line)
     for line in new_file.readlines():
         if not is_number(line.rstrip().split('\t')[-1]):
-            print 'du', line
-    print 'no errors'
+            print('du', line)
+    print('no errors')
     fs = FileSort(new_file, args.outfile[0])
     fs.sort()
                     
