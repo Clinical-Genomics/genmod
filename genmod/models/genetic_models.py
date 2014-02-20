@@ -152,7 +152,7 @@ def check_compounds(variants, family):
     true_variant_pairs = {}
     
     # Returns a generator with all possible pairs for this individual, the pairs are python sets:
-    my_pairs = pair_generator.Pair_Generator(variants.keys())
+    my_pairs = pair_generator.Pair_Generator(list(variants.keys()))
     for pair in my_pairs.generate_pairs():
         true_variant_pairs[pair] = ''
         variant_1 = pair[0]

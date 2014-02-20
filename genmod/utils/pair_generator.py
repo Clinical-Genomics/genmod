@@ -13,6 +13,7 @@ Copyright (c) 2013 __MyCompanyName__. All rights reserved.
 
 import sys
 import os
+import argparse
 
 class Pair_Generator(object):
     """Yeilds all unordered pairs from a list of objects as tuples, like (obj_1, obj_2)"""
@@ -20,8 +21,7 @@ class Pair_Generator(object):
         super(Pair_Generator, self).__init__()
         if len(list_of_objects) < 2:
             #TODO raise a proper exception here
-            print 'List must include at least 2 objects!'
-            sys.exit()
+            raise SyntaxError('List must include at least 2 objects!. List: %s' % list_of_objects)
         self.list_of_objects = list_of_objects
     
     def generate_pairs(self):
@@ -32,12 +32,12 @@ class Pair_Generator(object):
     
 
 def main():
-    my_list = ['a', 'b', 'c', 'd']
-    for pairs in Pair_Generator(my_list).generate_pairs():
-        print pairs
-    my_short_list = ['1', '2']
-    for pairs in Pair_Generator(my_short_list).generate_pairs():
-        print pairs
+    parser = argparse.ArgumentParser(description="Generate all unordered pairs of a sequence.")
+    parser.add_argument('-seq','--sequence', nargs='+', default=['a', 'b', 'c', 'd'], help='A sequence of objects.')
+    args = parser.parse_args()
+    
+    for pairs in Pair_Generator(args.sequence).generate_pairs():
+        print(pairs)
 
 
 if __name__ == '__main__':

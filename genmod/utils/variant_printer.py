@@ -33,15 +33,15 @@ class VariantPrinter(multiprocessing.Process):
         number_of_finished = 0
         proc_name = self.name
         if self.verbosity:
-            print proc_name ,'starting!'
+            print(('%s: starting!' % proc_name))
         while True:
             next_result = self.task_queue.get()
             if self.verbosity:
                 if self.task_queue.full():
-                    print 'Printing queue full'
+                    print('Printing queue full')
             if next_result is None:
                 if self.verbosity:
-                    print 'All variants printed!'
+                    print('All variants printed!')
                 for chromosome in self.file_handles:
                     self.file_handles[chromosome].close()
                 break
@@ -50,10 +50,10 @@ class VariantPrinter(multiprocessing.Process):
                 for variant_id in next_result:
                     variant_chrom = next_result[variant_id]['CHROM']
                     if variant_chrom in self.file_handles:
-                        self.file_handles[variant_chrom].write('\t'.join(next_result[variant_id].values()) + '\n')
+                        self.file_handles[variant_chrom].write('\t'.join(list(next_result[variant_id].values())) + '\n')
                     else:
                         self.file_handles[variant_chrom] = NamedTemporaryFile(prefix=variant_chrom+'_', 
-                                                                                dir=self.temp_dir, delete=False)
+                                                                                dir=self.temp_dir, delete=False, mode='w+')
         return
     
 def main():

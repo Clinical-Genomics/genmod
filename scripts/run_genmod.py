@@ -60,7 +60,7 @@ def print_headers(args, header_object):
     else:
         if not args.silent:
             for line in header_object.print_header():
-                print line
+                print(line)
     return
 
 def main():
@@ -87,8 +87,8 @@ def main():
     
     parser.add_argument('--version', 
         action="version", 
-        version=pkg_resources.require("genmod")[0].version)
-    
+        version=pkg_resources.require("genmod")[0].version
+    )
     
     parser.add_argument('-v', '--verbose', 
         action="store_true", 
@@ -125,8 +125,8 @@ def main():
     # Parse the annotation file and make annotation trees:
 
     if args.verbose:
-        print 'Parsing annotation ...'
-        print ''
+        print('Parsing annotation ...')
+        print('')
         start_time_annotation = datetime.now()
     
     annotation_trees = annotation_parser.AnnotationParser(anno_file, args.annotation_type[0])
@@ -134,9 +134,9 @@ def main():
     # # Check the variants:
     
     if args.verbose:
-        print 'Annotation Parsed!'
-        print 'Time to parse annotation:', datetime.now() - start_time_annotation
-        print ''
+        print('Annotation Parsed!')
+        print('Time to parse annotation: %s' % (datetime.now() - start_time_annotation))
+        print('')
         
     # The task queue is where all jobs(in this case batches that represents variants in a region) is put
     # the consumers will then pick their jobs from this queue.
@@ -150,10 +150,10 @@ def main():
     num_model_checkers = (cpu_count()*2-1)
     
     if args.verbose:
-        print 'Number of CPU:s ', cpu_count()
+        print('Number of CPU:s %s' % cpu_count())
     
     model_checkers = [variant_consumer.VariantConsumer(variant_queue, results, my_family, 
-                     args.verbose) for i in xrange(num_model_checkers)]
+                     args.verbose) for i in range(num_model_checkers)]
     
     for w in model_checkers:
         w.start()
@@ -162,14 +162,14 @@ def main():
     var_printer.start()
     
     if args.verbose:
-        print 'Start parsing the variants ...'
-        print ''
+        print('Start parsing the variants ...')
+        print('')
         start_time_variant_parsing = datetime.now()    
-    
+        
     var_parser = vcf_parser.VariantFileParser(var_file, variant_queue, head, annotation_trees, args.verbose)
     var_parser.parse()
     
-    for i in xrange(num_model_checkers):
+    for i in range(num_model_checkers):
         variant_queue.put(None)
     
     variant_queue.join()
@@ -179,10 +179,10 @@ def main():
     chromosome_list = var_parser.chromosomes
         
     if args.verbose:
-        print 'Cromosomes found in variant file:', ','.join(chromosome_list)
-        print 'Models checked!'
-        print 'Start sorting the variants:'
-        print ''
+        print('Cromosomes found in variant file: %s' % ','.join(chromosome_list))
+        print('Models checked!')
+        print('Start sorting the variants:')
+        print('')
         start_time_variant_sorting = datetime.now()
     
     print_headers(args, head)
@@ -195,10 +195,10 @@ def main():
                 var_sorter.sort()
     
     if args.verbose:
-        print 'Sorting done!'
-        print 'Time for sorting:', datetime.now()-start_time_variant_sorting
-        print ''
-        print 'Time for whole analyis:', datetime.now() - start_time_analysis
+        print('Sorting done!')
+        print('Time for sorting: %s' % str(datetime.now()-start_time_variant_sorting))
+        print('')
+        print('Time for whole analyis: %s' % str(datetime.now() - start_time_analysis))
     
     # Remove all temp files:
     shutil.rmtree(temp_dir)
