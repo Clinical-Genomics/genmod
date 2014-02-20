@@ -33,15 +33,15 @@ class VariantConsumer(multiprocessing.Process):
         """Run the consuming"""
         proc_name = self.name
         if self.verbosity:
-            print(proc_name, 'Starting!')
+            print('%s: Starting!' % proc_name)
         while True:
             # A batch is a dictionary on the form {gene:{variant_id:variant_dict}}
             next_batch = self.task_queue.get()
             if self.verbosity:
                 if self.results_queue.full():
-                    print('Batch results queue Full!', proc_name)
+                    print('Batch results queue Full! %s' % proc_name)
                 if self.task_queue.full():
-                    print('Variant queue full!', proc_name)
+                    print('Variant queue full! %s' % proc_name)
             if next_batch is None:
                 self.task_queue.task_done()
                 if self.verbosity:

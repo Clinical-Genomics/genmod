@@ -88,7 +88,7 @@ class Variant(object):
         elif is_number(start):
             self.start = int(start)
         else:
-            print('Start position', start, 'is not an integer.')
+            print(('Start position', start, 'is not an integer.'))
             sys.exit()
         self.ref = reference # Reference nucleotide(s) STRING
         self.alt = alternative # Alternative sequence LIST
@@ -209,18 +209,7 @@ class Variant(object):
 
 
 def main():
-    ranked_header = 'Chr    Start    Stop    Ref_allele    Alt_allele    IDN:Filter:GT=Genotype:AD=Allelic_depths_for_the_ref_and_alt_alleles:DP=Approximate_read_depth:GQ=Genotype Quality:PL=Normalized_Phred-scaled_likelihoods_for_genotypes    IDN:Filter:GT=Genotype:AD=Allelic_depths_for_the_ref_and_alt_alleles:DP=Approximate_read_depth:GQ=Genotype Quality:PL=Normalized_Phred-scaled_likelihoods_for_genotypes    IDN:Filter:GT=Genotype:AD=Allelic_depths_for_the_ref_and_alt_alleles:DP=Approximate_read_depth:GQ=Genotype Quality:PL=Normalized_Phred-scaled_likelihoods_for_genotypes    IDN:Filter:GT=Genotype:AD=Allelic_depths_for_the_ref_and_alt_alleles:DP=Approximate_read_depth:GQ=Genotype Quality:PL=Normalized_Phred-scaled_likelihoods_for_genotypes    HGNC_symbol    HGNC_approved_name    HGNC_Synonyms    Ensemble_GeneID    OMIM_gene_description    OMIM_morbid_description    Disease_group(dbIEMv.1.2)    HGMD    Gene_annotation    Functional_annotation    HGNC:Transcript_ID:Exon:cDNA_change:AA_change    phastConsElements    gerp++elem    genomicSuperDups    Pseudogene    1000G    dbsnp129    dbsnp132    dbsnp135    dbsnp135_Id    Esp6500    SIFT_Whole-exome    PolyPhen_version_2_HumDiv_Whole-exome    MutationTaster_Whole-exome    GERP++_Whole-exome    LRT_Whole-exome    PhyloP_Whole-exome    Main_Location_HPASubCL(120821)    Other_location_HPASubCL(120821)    Expression_type_HPASubCL(120821)    Reliability_HPASubCL(120821)    Gwas_catalog    Tfbs_transfac_Matrix_Database_(v7.0)    snoRNA_&_miRNA_annotations    GeneModel    Rank_Score    IDN:PASS;TotalFeaturesPASS||IDN:Chr:Start:Stop:Fraction_ME_Ten-Coverage_Bases:;TotalFeaturesPASS    IDN:PASS;TotalFeaturesPASS||IDN:Chr:Start:Stop:Fraction_ME_Ten-Coverage_Bases:;TotalFeaturesPASS    IDN:PASS;TotalFeaturesPASS||IDN:Chr:Start:Stop:Fraction_ME_Ten-Coverage_Bases:;TotalFeaturesPASS    IDN:PASS;TotalFeaturesPASS||IDN:Chr:Start:Stop:Fraction_ME_Ten-Coverage_Bases:;TotalFeaturesPASS'
-    header_info = ranked_header.split('\t')
-    example_variant = 'chr13    26153950    26153950    G    T    30-1-2A:PASS:0/1:3,0:42:42,0,93    30-1-3A:PASS:0/1:2,1:55:59,0,55    30-2-1U:PASS:0/1:3,0:24:24,0,68    30-2-2U:PASS:0/0:1,0:3:0,3,37    ATP8A2    ATPase, aminophospholipid transporter, class I, type 8A, member 2;    ATPIB, ML-1;    ENSG00000132932;    -;     ATPase, CLASS I, TYPE 8A, MEMBER 2; ATP8A2;    -;    -    exonic    nonsynonymous SNV    ATP8A2:NM_016529:exon22:c.1872G>T:p.L624F,    Score=446;Name=lod=87    Name=461.3    -    processed_pseudogene;    -    -    -    -    -    -    0    0.98    0.99321    5.49    1.0    0.999729    Nucleoli;    Nucleus but not nucleoli;    Staining;    Uncertain;    -    -    -    AR_compound;    25    30-2-2U:chr13:25946208:25946473:0.000:;48/49,     30-1-2A:chr13:25946208:25946473:0.611:;48/49,     30-1-3A:chr13:25946208:25946473:0.570:;48/49,     30-2-1U:chr13:25946208:25946473:0.000:30-2-1U:chr13:26153969:26154172:0.985:;47/49, '
-    variant_info = example_variant.split('\t')
-    variant_dict = {}
-    for i in range(len(header_info)):
-        print(i, len(header_info), len(variant_info), header_info[i], variant_info[i])
-        variant_dict[header_info[i]] = variant_info[i]
-    my_variant = Cmms(**variant_dict)
-    my_variant.print_original_info(header_info)
-        
-
+    pass
 
 if __name__ == '__main__':
     main()

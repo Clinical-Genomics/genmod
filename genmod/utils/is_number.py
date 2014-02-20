@@ -9,6 +9,7 @@ Copyright (c) 2013 __MyCompanyName__. All rights reserved.
 
 import sys
 import os
+import argparse
 
 def is_number(number):
     """Returns true if the string is a number or False otherwise"""
@@ -22,7 +23,15 @@ def is_number(number):
         return False
 
 def main():
-    number = sys.argv[1]
+    parser = argparse.ArgumentParser(description="Annotate genetic models in variant files..")
+    
+    parser.add_argument('input', nargs=1, 
+        help='give an input to see if it is a number.'
+    )
+    args = parser.parse_args()
+    
+    number = args.input[0]
+    
     print(is_number(number))
 
 

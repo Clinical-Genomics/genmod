@@ -181,7 +181,7 @@ class VCFParser(object):
         if file_extension == '.gz':
             self.vcf = gzip.open(self.infile)
         elif file_extension == '.vcf':
-            self.vcf = open(self.infile, 'rb')
+            self.vcf = open(self.infile, 'r')
         else:
             raise SyntaxError('File is not in a supported format.')
             

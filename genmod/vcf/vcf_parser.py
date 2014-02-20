@@ -50,7 +50,7 @@ class VariantFileParser(object):
         current_chrom = None
         current_features = []
         nr_of_variants = 0
-        with open(self.variant_file, 'rb') as f:
+        with open(self.variant_file, 'r') as f:
             for line in f:
                 # Variant lines do not start with '#'
                 if not line.startswith('#'):
@@ -59,8 +59,8 @@ class VariantFileParser(object):
                     if self.verbosity:
                         nr_of_variants += 1
                         if nr_of_variants % 20000 == 0:
-                            print(nr_of_variants, 'variants parsed!')
-                            print('Last 20.000 took', datetime.now() - start_twenty, 'to parse.')
+                            print(('%s variants parsed!' % nr_of_variants))
+                            print(('Last 20.000 took %s to parse.' % str(datetime.now() - start_twenty)))
                             print('')
                             start_twenty = datetime.now()
                     # If we look at the first variant, setup boundary conditions:
@@ -92,18 +92,18 @@ class VariantFileParser(object):
                         self.chromosomes.append(current_chrom)
 
                         if self.verbosity:
-                            print('Chromosome', current_chrom, 'parsed!')
-                            print('Time to parse chromosome', datetime.now()-start_chrom)
+                            print(('Chromosome %s parsed!' % current_chrom))
+                            print(('Time to parse chromosome %s' % str(datetime.now()-start_chrom)))
                             current_chrom = new_chrom
                             start_chrom = datetime.now()
         
         self.chromosomes.append(current_chrom)
         if self.verbosity:
-            print('Chromosome', current_chrom, 'parsed!')
-            print('Time to parse chromosome', datetime.now()-start_chrom)
+            print(('Chromosome %s parsed!' % current_chrom))
+            print(('Time to parse chromosome %s' % str(datetime.now()-start_chrom)))
             print('')
             print('Variants parsed!')
-            print('Time to parse variants:', datetime.now() - start_parsing)
+            print(('Time to parse variants:%s' % str(datetime.now() - start_parsing)))
         self.batch_queue.put(batch)
         return
     
@@ -134,7 +134,7 @@ class VariantFileParser(object):
             features_overlapped = self.interval_trees.interval_trees[variant_chrom].findRange(variant_interval)
         except KeyError:
             if self.verbosity:
-                print('Chromosome', variant_chrom, 'is not in annotation file!')
+                print(('Chromosome', variant_chrom, 'is not in annotation file!'))
         my_variant['Annotation'] = features_overlapped
         return my_variant, features_overlapped
 
@@ -155,13 +155,13 @@ def main():
         print(tree)
     my_head_parser = vcf_header.VCFParser(infile)
     my_head_parser.parse()
-    print(my_head_parser.__dict__)
+    print((my_head_parser.__dict__))
     variant_queue = JoinableQueue()
     start_time = datetime.now()
     my_parser = VariantFileParser(infile, variant_queue, my_head_parser,my_anno_parser, args.verbose)
     my_parser.parse()
 
-    print('Time to parse variants:', datetime.now()-start_time)
+    print('Time to parse variants: %s ' % str(datetime.now()-start_time))
 
 if __name__ == '__main__':
     main()

@@ -33,7 +33,7 @@ class VariantPrinter(multiprocessing.Process):
         number_of_finished = 0
         proc_name = self.name
         if self.verbosity:
-            print(proc_name ,'starting!')
+            print(('%s: starting!' % proc_name))
         while True:
             next_result = self.task_queue.get()
             if self.verbosity:
@@ -53,7 +53,7 @@ class VariantPrinter(multiprocessing.Process):
                         self.file_handles[variant_chrom].write('\t'.join(list(next_result[variant_id].values())) + '\n')
                     else:
                         self.file_handles[variant_chrom] = NamedTemporaryFile(prefix=variant_chrom+'_', 
-                                                                                dir=self.temp_dir, delete=False)
+                                                                                dir=self.temp_dir, delete=False, mode='w+')
         return
     
 def main():
