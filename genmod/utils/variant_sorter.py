@@ -61,7 +61,7 @@ class FileSort(object):
                 open(outFile, 'a').write(''.join(lines))
             else:
                 if not self._silent:
-                    print ''.join(lines)
+                    print(''.join(lines))
         else:
         # In this case the temporary files are over witten.
             try: 
@@ -76,13 +76,11 @@ class FileSort(object):
             # do not split file, the file isn't so big.
             return None
 
-        fileNames = []            
+        fileNames = []
         with open(self._inFile, 'r+b') as f:
             size = 0
             lines = []
             for line in f:
-                if not is_number(line.rstrip().split('\t')[1]):
-                    print 'hej',line
                 size += len(line)
                 lines.append(line)
                 if size >= self._splitSize:
@@ -131,7 +129,7 @@ class FileSort(object):
                             output.write(''.join(buff))
                         else:
                             if not self._silent:
-                                print ''.join(buff)
+                                print(''.join(buff))
                         del buff[:]
                             
                     line = files[index].readline()
@@ -156,7 +154,7 @@ class FileSort(object):
                     output.write(''.join(buff))
                 else:
                     if not self._silent:
-                        print ''.join(buff)
+                        print(''.join(buff))
         finally:
             if self._outFile:
                 output.close()
@@ -178,19 +176,13 @@ def main():
     args = parser.parse_args()
     infile = args.infile[0]
     new_file = NamedTemporaryFile(delete=False)
-    with open(infile, 'rb') as f:
+    with open(infile, 'r') as f:
         for line in f:
             if not line.startswith('#'):
                 new_file.write(line)
-    for line in new_file.readlines():
-        if not is_number(line.rstrip().split('\t')[-1]):
-            print 'du', line
-    print 'no errors'
+    print('no errors')
     fs = FileSort(new_file, args.outfile[0])
     fs.sort()
-                    
-                
-             
 
 
 if __name__ == '__main__':

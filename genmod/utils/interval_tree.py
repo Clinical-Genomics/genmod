@@ -37,6 +37,7 @@ class intervalTree:
         to make a tree:
             myTree = intervalTree(features, 0, 1, 1, 1000000)
         '''
+        
         self.si = si
         self.ei = ei
         self.start = start
@@ -52,7 +53,6 @@ class intervalTree:
         [coords.extend([x[si],x[ei]]) for x in data]
         coords = list(set(coords))
         coords.sort()
-
         return coords
 
     def recursiveBuildTree(self, elIntervals):
@@ -184,11 +184,11 @@ class intervalTree:
         pp.pprint(self.tree)
 
 def main():
-    features = [[20,400,'id01'],[1020,2400,'id02'],[35891,29949,'id03'],[900000,'id04'],[999000,'id05']]
+    features = [[20,400,'id01'],[1020,2400,'id02'],[35891,29949,'id03'],[899999,900000,'id04'],[999000,999000,'id05']]
     myTree = intervalTree(features, 0, 1, 1, 1000000)
-    print 'Ranges between 200 and 1200:', myTree.findRange([200, 1200])
-    print 'Range in only position 34000:', myTree.findRange([900000, 900000])
-    print myTree.elementaryIntervals
+    print('Ranges between 200 and 1200: %s' % myTree.findRange([200, 1200]))
+    print('Range in only position 90000: %s'  % myTree.findRange([900000, 900000]))
+    print(myTree.elementaryIntervals)
 
 
 if __name__ == '__main__':
