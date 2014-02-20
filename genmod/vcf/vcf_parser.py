@@ -81,6 +81,12 @@ class VariantFileParser(object):
                             send = False
                         
                         if send:
+                            batch_length = 0
+                            for gene in batch:
+                                batch_length += len(batch[gene])
+                            if batch_length > 100:
+                                print('Size of batch: %s' % str(batch_length))
+                                print(','.join(batch.keys()))
                             self.batch_queue.put(batch)
                             current_features = new_features
                             batch = self.add_variant({}, variant, new_features)
@@ -105,6 +111,7 @@ class VariantFileParser(object):
             print('Variants parsed!')
             print(('Time to parse variants:%s' % str(datetime.now() - start_parsing)))
         self.batch_queue.put(batch)
+        print('Size of batch: %s' % str(sys.getsizeof(batch)))
         return
     
     def add_variant(self, batch, variant, features):
