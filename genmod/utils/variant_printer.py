@@ -20,12 +20,13 @@ from pprint import pprint as pp
 
 class VariantPrinter(multiprocessing.Process):
     """docstring for VariantPrinter"""
-    def __init__(self, task_queue, temp_dir, verbosity=False):
+    def __init__(self, task_queue, temp_dir, head, verbosity=False):
         multiprocessing.Process.__init__(self)
         self.task_queue = task_queue
         self.verbosity = verbosity
         self.file_handles = {}
         self.temp_dir = temp_dir
+        self.header = head.header
     
     def run(self):
         """Starts the printing"""
@@ -49,11 +50,13 @@ class VariantPrinter(multiprocessing.Process):
             else:
                 for variant_id in next_result:
                     variant_chrom = next_result[variant_id]['CHROM']
+                    print_line = [next_result[variant_id].get(entry, '-') for entry in self.header]
                     if variant_chrom in self.file_handles:
-                        self.file_handles[variant_chrom].write('\t'.join(list(next_result[variant_id].values())) + '\n')
+                        self.file_handles[variant_chrom].write('\t'.join(print_line) + '\n')
                     else:
                         self.file_handles[variant_chrom] = NamedTemporaryFile(prefix=variant_chrom+'_', 
                                                                                 dir=self.temp_dir, delete=False, mode='w+')
+                        self.file_handles[variant_chrom].write('\t'.join(print_line) + '\n')
         return
     
 def main():

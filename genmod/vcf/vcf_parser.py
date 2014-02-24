@@ -17,6 +17,7 @@ import sys
 import os
 import argparse
 from datetime import datetime
+import time
 if sys.version_info < (2, 7):
     from ordereddict import OrderedDict
 else:
@@ -50,6 +51,7 @@ class VariantFileParser(object):
         current_chrom = None
         current_features = []
         nr_of_variants = 0
+        nr_of_batches = 0
         with open(self.variant_file, 'r') as f:
             for line in f:
                 # Variant lines do not start with '#'
@@ -59,8 +61,8 @@ class VariantFileParser(object):
                     if self.verbosity:
                         nr_of_variants += 1
                         if nr_of_variants % 20000 == 0:
-                            print(('%s variants parsed!' % nr_of_variants))
-                            print(('Last 20.000 took %s to parse.' % str(datetime.now() - start_twenty)))
+                            print('%s variants parsed!' % nr_of_variants)
+                            print('Last 20.000 took %s to parse.' % str(datetime.now() - start_twenty))
                             print('')
                             start_twenty = datetime.now()
                     # If we look at the first variant, setup boundary conditions:
@@ -76,17 +78,12 @@ class VariantFileParser(object):
                         if len(new_features) == 0:
                             if len(current_features) == 0:
                                 send = False
-                    #If not check if we are in a consecutive region
+                    #If not check if we are in a region with overlapping genes
                         elif len(set.intersection(set(new_features),set(current_features))) > 0:
                             send = False
                         
                         if send:
-                            batch_length = 0
-                            for gene in batch:
-                                batch_length += len(batch[gene])
-                            if batch_length > 100:
-                                print('Size of batch: %s' % str(batch_length))
-                                print(','.join(batch.keys()))
+                            nr_of_batches += 1
                             self.batch_queue.put(batch)
                             current_features = new_features
                             batch = self.add_variant({}, variant, new_features)
@@ -98,21 +95,20 @@ class VariantFileParser(object):
                         self.chromosomes.append(current_chrom)
 
                         if self.verbosity:
-                            print(('Chromosome %s parsed!' % current_chrom))
-                            print(('Time to parse chromosome %s' % str(datetime.now()-start_chrom)))
+                            print('Chromosome %s parsed!' % current_chrom)
+                            print('Time to parse chromosome %s' % str(datetime.now()-start_chrom))
                             current_chrom = new_chrom
                             start_chrom = datetime.now()
         
         self.chromosomes.append(current_chrom)
         if self.verbosity:
-            print(('Chromosome %s parsed!' % current_chrom))
-            print(('Time to parse chromosome %s' % str(datetime.now()-start_chrom)))
-            print('')
+            print('Chromosome %s parsed!' % current_chrom)
+            print('Time to parse chromosome %s \n' % str(datetime.now()-start_chrom))
             print('Variants parsed!')
-            print(('Time to parse variants:%s' % str(datetime.now() - start_parsing)))
+            print('Time to parse variants:%s' % str(datetime.now() - start_parsing))
+        nr_of_batches += 1
         self.batch_queue.put(batch)
-        print('Size of batch: %s' % str(sys.getsizeof(batch)))
-        return
+        return nr_of_batches
     
     def add_variant(self, batch, variant, features):
         """Adds the variant to the proper gene(s) in the batch."""
@@ -132,16 +128,19 @@ class VariantFileParser(object):
     
     def vcf_variant(self, splitted_variant_line):
         """Returns a variant object in the cmms format."""
-        my_variant = OrderedDict(list(zip(self.header_line, splitted_variant_line)))
+        my_variant = dict(zip(self.header_line, splitted_variant_line))
         variant_chrom = my_variant['CHROM']
-        variant_interval = [int(my_variant['POS']), int(my_variant['POS'])]
+        if variant_chrom.startswith('chr') or variant_chrom.startswith('Chr'):
+            variant_chrom = variant_chrom[3:]
+        variant_interval = [int(my_variant['POS']), (int(my_variant['POS']) + 
+                            max([len(alternative) for alternative in my_variant['ALT'].split(',')]) -1)]
         features_overlapped = []
         
         try:
             features_overlapped = self.interval_trees.interval_trees[variant_chrom].findRange(variant_interval)
         except KeyError:
             if self.verbosity:
-                print(('Chromosome', variant_chrom, 'is not in annotation file!'))
+                print('Chromosome', variant_chrom, 'is not in annotation file!')
         my_variant['Annotation'] = features_overlapped
         return my_variant, features_overlapped
 
@@ -156,18 +155,19 @@ def main():
     
     args = parser.parse_args()
     infile = args.variant_file[0]
-    anno_file = args.annotation_file[0]
-    my_anno_parser = annotation_parser.AnnotationParser(anno_file, 'ref_gene')
-    for tree in my_anno_parser.interval_trees:
-        print(tree)
+    my_anno_parser = annotation_parser.AnnotationParser(args.annotation_file[0], 'ref_gene')
     my_head_parser = vcf_header.VCFParser(infile)
     my_head_parser.parse()
-    print((my_head_parser.__dict__))
+    print(my_head_parser.__dict__)
     variant_queue = JoinableQueue()
     start_time = datetime.now()
-    my_parser = VariantFileParser(infile, variant_queue, my_head_parser,my_anno_parser, args.verbose)
-    my_parser.parse()
-
+    my_parser = VariantFileParser(infile, variant_queue, my_head_parser, my_anno_parser, args.verbose)
+    nr_of_batches = my_parser.parse()
+    for i in xrange(nr_of_batches):
+        variant_queue.get()
+        variant_queue.task_done()
+    
+    variant_queue.join()
     print('Time to parse variants: %s ' % str(datetime.now()-start_time))
 
 if __name__ == '__main__':

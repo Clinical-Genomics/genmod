@@ -158,7 +158,7 @@ def main():
     for w in model_checkers:
         w.start()
     
-    var_printer = variant_printer.VariantPrinter(results, temp_dir, args.verbose)
+    var_printer = variant_printer.VariantPrinter(results, temp_dir, head, args.verbose)
     var_printer.start()
     
     if args.verbose:

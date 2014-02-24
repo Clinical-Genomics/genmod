@@ -47,34 +47,33 @@ class VariantConsumer(multiprocessing.Process):
                 if self.verbosity:
                     print('%s: Exiting' % proc_name)
                 break
-            variant_batch = genetic_models.check_genetic_models(next_batch, self.family, self.verbosity, proc_name)
+            genetic_models.check_genetic_models(next_batch, self.family, self.verbosity, proc_name)
             # Make shure we only have one copy of each variant:            
             fixed_variants = {}
-            for feature in variant_batch:
-                #Make one dictionary for each feature:
-                variant_dict = dict((variant_id, variant_info) for variant_id, variant_info in 
-                                                                    list(variant_batch[feature].items()))
-                for variant_id in variant_dict:
-                    #Remove the 'Genotypes' post since we will not need them for now
-                    variant_dict[variant_id].pop('Genotypes', 0)
+            for feature in next_batch:
+                for variant_id in next_batch[feature]:
                     if variant_id in fixed_variants:
                         # We need to add compound information from different features
-                        if len(variant_dict[variant_id]['Compounds']) > 0:
-                            fixed_variants[variant_id]['Compounds'] = dict(list(variant_dict[variant_id]['Compounds'].items()) +
-                                                                    list(fixed_variants[variant_id]['Compounds'].items()))
-                            fixed_variants[variant_id]['Inheritance_model']['AR_compound'] = True
+                        if len(next_batch[feature][variant_id]['Compounds']) > 0:
+                            fixed_variants[variant_id]['Compounds'] = (
+                             dict(list(next_batch[feature][variant_id]['Compounds'].items()) +
+                                        list(fixed_variants[variant_id]['Compounds'].items())))
                     else:
-                        fixed_variants[variant_id] = variant_dict[variant_id]
+                        fixed_variants[variant_id] = next_batch[feature][variant_id]
                         
             # Now we want to make versions of the variants that are ready for printing.
             for variant_id in fixed_variants:
                 model_list = []
                 compounds_list = []
+                #Remove the 'Genotypes' post since we will not need them for now
+                fixed_variants[variant_id].pop('Genotypes', 0)
+                
                 feature_list = fixed_variants[variant_id]['Annotation']
                 if len(fixed_variants[variant_id]['Compounds']) > 0:
                     #We do not want reference to itself as a compound:
                     fixed_variants[variant_id]['Compounds'].pop(variant_id, 0)
                     compounds_list = list(fixed_variants[variant_id]['Compounds'].keys())
+                    fixed_variants[variant_id]['Inheritance_model']['AR_compound'] = True
                 else:
                     compounds_list = ['-']
                 for model in fixed_variants[variant_id]['Inheritance_model']:
