@@ -8,7 +8,7 @@ with open('README.txt') as file:
     long_description = file.read()
 
 setup(name='genmod',
-    version='0.6',
+    version='0.7',
     description='Annotate genetic inheritance models in variant files',
     author = 'Mans Magnusson',
     author_email = 'mans.magnusson@scilifelab.se',
