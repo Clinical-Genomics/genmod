@@ -58,7 +58,9 @@ class Genotype(object):
         self.allele_2_base = allele_2
         self.ref_depth = '.'
         self.alt_depth = '.'
+        self.phased = False
         self.original_info = original_info
+        #Genotype info:
         if len(AD) > 2:
             if AD[0].isdigit():
                 self.ref_depth = int(AD.split(',')[0])
@@ -68,8 +70,7 @@ class Genotype(object):
         self.genotype_quality = float(GQ)
         self.phred_likelihoods = []
         if PL :
-            for score in PL.split(','):
-                self.phred_likelihoods.append(int(score))
+            self.phred_likelihoods = [int(score) for score in PL.split(',')]
         
         # These are the different genotypes:
         self.nocall = True
@@ -112,10 +113,7 @@ class Genotype(object):
     
     def get_vcf_genotype(self):
         """Returns the genotype in the original vcf-format"""
-        
         return self.original_info
-                    
-            
     
     def __str__(self):
         """Specifies what will be printed when printing the object."""
