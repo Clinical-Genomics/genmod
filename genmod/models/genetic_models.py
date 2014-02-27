@@ -68,7 +68,13 @@ def check_genetic_models(variant_batch, family, verbose = False, proc_name = Non
         for variant_id in variant_batch[gene]:
             genotypes = {}
             for individual in family.individuals:
+                # try:
                 gt_info = variant_batch[gene][variant_id][individual].split(':')[0]
+                # except KeyError:# If individual not in variant file
+                    # if verbose:
+                        # print('Warning! Individual %s is not in variant file!' % individual)
+                    # gt_info = './.'
+                
                 individual_genotype = genotype.Genotype(GT=gt_info)
                 genotypes[individual] = individual_genotype
             variant_batch[gene][variant_id]['Genotypes'] = genotypes
@@ -84,12 +90,12 @@ def check_genetic_models(variant_batch, family, verbose = False, proc_name = Non
         if gene != '-':
             # First remove all variants that can't be compounds to reduce the number of lookup's:
             compound_candidates = check_compound_candidates(variant_batch[gene], family)
+            pp('compound_candidates: %s' % str(compound_candidates))
             # if len(compound_candidates) > 100:
             #     print('%s : %s' % (gene, str(len(compound_candidates))))
         
         for variant_id in variant_batch[gene]:
             
-            variant_batch[gene][variant_id]['Compounds'] = {}
             # Only check X-linked for the variants in the X-chromosome:
             # For X-linked we do not need to check the other models
             if variant_batch[gene][variant_id]['CHROM'] == 'X':
@@ -112,9 +118,11 @@ def check_genetic_models(variant_batch, family, verbose = False, proc_name = Non
             
             for pair in compound_pairs.generate_pairs():
                 # Add the compound pair id to each variant
-                if check_compounds(variant_batch[gene][pair[0]], variant_batch[gene][pair[0]], family):
+                if check_compounds(variant_batch[gene][pair[0]], variant_batch[gene][pair[1]], family):
                     variant_batch[gene][pair[0]]['Compounds'][pair[1]] = 0
                     variant_batch[gene][pair[1]]['Compounds'][pair[0]] = 0
+                    variant_batch[gene][pair[0]]['Inheritance_model']['AR_compound'] = True
+                    variant_batch[gene][pair[1]]['Inheritance_model']['AR_compound'] = True
     return
 
 def check_compound_candidates(variants, family):
@@ -280,20 +288,27 @@ def check_parents(model, individual, variant, family):
             if ((mother_genotype.homo_alt or father_genotype.homo_alt) or 
                 (mother_genotype.has_variant and father_genotype.has_variant)):
                 variant['Inheritance_model']['AR_hom_denovo'] = False
-                # If de novo is true then the it is only de novo in this case
-            if variant['Inheritance_model']['AR_hom_denovo']:
+                return
+            # If both parents are called but none of the above is fullfilled it is denovo
+            elif not (mother_genotype.nocall or father_genotype.nocall):
                 variant['Inheritance_model']['AR_hom'] = False
-        else:   
+                
+        else:
+        #If one of the parents is missing it is not denovo only if a parents is homozygote alternative
             if (mother_genotype.homo_alt or father_genotype.homo_alt):
                 variant['Inheritance_model']['AR_hom_denovo'] = False
+                return
                 
                 
     elif model == 'dominant':
-    # If one of the parents have the variant on any form the de novo model is NOT followed.
-        if mother_genotype.has_variant or father_genotype.has_variant:
-            variant['Inheritance_model']['AD_denovo'] = False
-        if variant['Inheritance_model']['AD_denovo']:# If variant is ad de novo then it is not ad
+        # If none of the parents are affected and pattern is followed we have to have a de novo mutation.
+        if not (mother_phenotype == 2 or father_phenotype == 2):
             variant['Inheritance_model']['AD'] = False
+            return
+        # Else if one or both parents are affected it is de novo if none of them have a variant
+        elif mother_genotype.has_variant or father_genotype.has_variant:
+            variant['Inheritance_model']['AD_denovo'] = False
+            return
             
     elif model == 'X':
         #If the individual is a male:

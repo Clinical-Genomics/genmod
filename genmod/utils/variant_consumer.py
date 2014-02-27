@@ -73,7 +73,6 @@ class VariantConsumer(multiprocessing.Process):
                     #We do not want reference to itself as a compound:
                     fixed_variants[variant_id]['Compounds'].pop(variant_id, 0)
                     compounds_list = list(fixed_variants[variant_id]['Compounds'].keys())
-                    fixed_variants[variant_id]['Inheritance_model']['AR_compound'] = True
                 else:
                     compounds_list = ['-']
                 for model in fixed_variants[variant_id]['Inheritance_model']:
