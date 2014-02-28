@@ -17,6 +17,7 @@ from datetime import datetime
 from tempfile import mkdtemp
 import shutil
 import pkg_resources
+from pysam import tabix_index, tabix_compress
 if sys.version_info < (2, 7):
     from ordereddict import OrderedDict
 else:
@@ -105,6 +106,11 @@ def main():
         help='Specify the path to a file where results should be stored.'
     )
     
+    parser.add_argument('-cadd', '--cadd_file', 
+        type=str, nargs=1, default=[None],
+        help='Specify the path to a file cadd file with variant scores.'
+    )
+    
     
     args = parser.parse_args()
     var_file = args.variant_file[0]
@@ -130,7 +136,17 @@ def main():
         start_time_annotation = datetime.now()
     
     annotation_trees = annotation_parser.AnnotationParser(anno_file, args.annotation_type[0])
-            
+    
+    # Check if the ccds-file is compressed and indexed:
+    
+    if args.cadd_file[0]:
+        try:
+            tabix_index(args.cadd_file[0], seq_col=0, start_col=1, end_col=1, meta_char='#')
+        except IOError as e:
+            if args.verbose:
+                print e
+            pass
+    
     # # Check the variants:
     
     if args.verbose:
@@ -152,7 +168,7 @@ def main():
     if args.verbose:
         print('Number of CPU:s %s' % cpu_count())
     
-    model_checkers = [variant_consumer.VariantConsumer(variant_queue, results, my_family, 
+    model_checkers = [variant_consumer.VariantConsumer(variant_queue, results, my_family, args.cadd_file[0],
                      args.verbose) for i in range(num_model_checkers)]
     
     for w in model_checkers:
@@ -166,7 +182,7 @@ def main():
         print('')
         start_time_variant_parsing = datetime.now()    
         
-    var_parser = vcf_parser.VariantFileParser(var_file, variant_queue, head, annotation_trees, args.verbose)
+    var_parser = vcf_parser.VariantFileParser(var_file, variant_queue, head, annotation_trees, args.cadd_file[0], args.verbose)
     var_parser.parse()
     
     for i in range(num_model_checkers):

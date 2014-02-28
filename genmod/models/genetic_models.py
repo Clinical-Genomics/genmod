@@ -68,12 +68,12 @@ def check_genetic_models(variant_batch, family, verbose = False, proc_name = Non
         for variant_id in variant_batch[gene]:
             genotypes = {}
             for individual in family.individuals:
-                # try:
-                gt_info = variant_batch[gene][variant_id][individual].split(':')[0]
-                # except KeyError:# If individual not in variant file
-                    # if verbose:
-                        # print('Warning! Individual %s is not in variant file!' % individual)
-                    # gt_info = './.'
+                try:
+                    gt_info = variant_batch[gene][variant_id][individual].split(':')[0]
+                except KeyError:# If individual not in variant file
+                    if verbose:
+                        print('Warning! Individual %s is not in variant file!' % individual)
+                    gt_info = './.'
                 
                 individual_genotype = genotype.Genotype(GT=gt_info)
                 genotypes[individual] = individual_genotype
@@ -90,9 +90,6 @@ def check_genetic_models(variant_batch, family, verbose = False, proc_name = Non
         if gene != '-':
             # First remove all variants that can't be compounds to reduce the number of lookup's:
             compound_candidates = check_compound_candidates(variant_batch[gene], family)
-            pp('compound_candidates: %s' % str(compound_candidates))
-            # if len(compound_candidates) > 100:
-            #     print('%s : %s' % (gene, str(len(compound_candidates))))
         
         for variant_id in variant_batch[gene]:
             
