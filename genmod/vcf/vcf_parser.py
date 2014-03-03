@@ -18,7 +18,7 @@ import os
 import argparse
 from datetime import datetime
 from pysam import Tabixfile, asTuple
-import sqlite3
+import sqlite3 as lite
 
 from pprint import pprint as pp
 
@@ -36,10 +36,15 @@ class VariantFileParser(object):
         self.header_line = head.header
         self.interval_trees = interval_trees
         self.chromosomes = []
-        self.cadd_db = None
+        self.cadd_db = cadd_db
+        self.cadd_file = cadd_file
         if cadd_db:
-            self.conn = sqlite3.connect(cadd_db)
-            self.cadd_db = self.conn.cursor() 
+            self.db_name = os.path.splitext(os.path.split(cadd_db)[1])[0]
+            self.conn = lite.connect(cadd_db)
+            self.conn.row_factory = lite.Row
+            self.cadd_db = self.conn.cursor()
+        if cadd_file:
+            self.cadd_file = Tabixfile(cadd_file, parser = asTuple())
     
     def parse(self):
         """Start the parsing"""        
@@ -150,21 +155,35 @@ class VariantFileParser(object):
 
         
         cadd_score = 0
+        nuc_key = {'A':'1', 'C':'2', 'G':'3', 'T':'4'}
         if self.cadd_db:
             #Only check for snps:
+            nuc_column = {'A':5, 'C':6, 'G':7, 'T':8}
+            
             if longest_alt == 1 and len(my_variant['REF']) == 1:
-                cadd_key = '_'.join([variant_chrom, my_variant['REF']])
+                
+                cadd_key = (int(my_variant['POS'] + nuc_key[alternatives[0]]),)
+                selection_string = 'SELECT * FROM `%s` WHERE pos=?' % self.db_name
                 try:
-                    cad_score = self.cadd_db.execute(reference=variant_chrom, start=int(my_variant['POS'])-1, end=int(my_variant['POS'])):
-                        if my_variant['ALT'].split(',')[0] == tpl[3]:
-        #                     cad_score = float(tpl[5])
-        #         except KeyError:
-        #             pass
-        # my_variant['CADD'] = cad_score
-        # if self.verbosity:
-        #     if cad_score > 30:
-        #         print('High sore! Cadd score %s' % str(cad_score))
-        #         print('%s \n' % '\t'.join([key+':'+my_variant[key] for key in self.header_line]))
+                    # cadd_score = self.cadd_db.execute('SELECT '+cadd_table+' FROM '+self.db_name+' WHERE pos=?', cadd_key)
+                    for cadd_line in self.cadd_db.execute(selection_string, cadd_key):
+                        cadd_score = float(cadd_line[nuc_column[alternatives[0]]])
+                except KeyError:
+                    pass
+        
+        if self.cadd_file:
+            # CADD vales are only for snps:
+            if longest_alt == 1 and len(my_variant['REF']) == 1:
+                cadd_key = int(my_variant['POS'])
+                try:
+                    for tpl in self.cadd_file.fetch(variant_chrom, cadd_key-1, cadd_key):
+                        if tpl[3] in alternatives:
+                            cadd_score = float(tpl[5])
+                except (IndexError, KeyError) as e:
+                    print(e, variant_chrom, my_variant['POS'])
+                    pass
+        
+        my_variant['CADD'] = cadd_score
                 
         return my_variant, features_overlapped
 
@@ -177,6 +196,7 @@ def main():
     parser.add_argument('variant_file', type=str, nargs=1 , help='A file with variant information.')
     parser.add_argument('annotation_file', type=str, nargs=1 , help='A file with feature annotations.')
     parser.add_argument('-cadd_db', '--cadd_db', type=str, nargs=1 , default=[None], help='A sqlite db with cadd values.')
+    parser.add_argument('-cadd_file', '--cadd_file', type=str, nargs=1 , default=[None], help='A db with cadd values.')
     parser.add_argument('-v', '--verbose', action="store_true", help='Increase output verbosity.')
     
     args = parser.parse_args()
@@ -204,7 +224,7 @@ def main():
             pass
         
     
-    my_parser = VariantFileParser(infile, variant_queue, my_head_parser, my_anno_parser, args.cadd_file[0], args.verbose)
+    my_parser = VariantFileParser(infile, variant_queue, my_head_parser, my_anno_parser, args.cadd_db[0], args.cadd_file[0], args.verbose)
     nr_of_batches = my_parser.parse()
     for i in xrange(nr_of_batches):
         variant_queue.get()

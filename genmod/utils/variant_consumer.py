@@ -23,15 +23,15 @@ from genmod.models import genetic_models
 class VariantConsumer(multiprocessing.Process):
     """Yeilds all unordered pairs from a list of objects as tuples, like (obj_1, obj_2)"""
     
-    def __init__(self, task_queue, results_queue, family, cadd_file = None, verbosity = False):
+    def __init__(self, task_queue, results_queue, family, args):
         multiprocessing.Process.__init__(self)
         self.task_queue = task_queue
         self.family = family
         self.results_queue = results_queue
-        self.verbosity = verbosity
-        self.cadd_file = cadd_file
-        if cadd_file:
-            self.cadd_file = Tabixfile(cadd_file, parser=asTuple())
+        self.verbosity = args.verbose
+        self.cadd = False
+        if args.cadd_file or args.cadd_db:
+            self.cadd = True
     
     def run(self):
         """Run the consuming"""
@@ -73,30 +73,7 @@ class VariantConsumer(multiprocessing.Process):
                 fixed_variants[variant_id].pop('Genotypes', 0)
                 
                 feature_list = fixed_variants[variant_id]['Annotation']
-                
-                cad_score = 0        
-                if self.cadd_file:
-                    #Only check for snps:
-                    
-                    longest_alt = max([len(alternative) for alternative in fixed_variants[variant_id]['ALT'].split(',')])
-                    
-                    if longest_alt == 1 and len(fixed_variants[variant_id]['REF']) == 1:
-                        try:
-                            for tpl in self.cadd_file.fetch(reference=fixed_variants[variant_id]['CHROM'], 
-                                                                start=int(fixed_variants[variant_id]['POS'])-1, end=int(fixed_variants[variant_id]['POS'])):
-                                if fixed_variants[variant_id]['ALT'].split(',')[0] == tpl[3]:
-                                    cad_score = float(tpl[5])
-                        except KeyError:
-                            pass
-                
-                fixed_variants[variant_id]['CADD'] = cad_score
-                
-                if self.verbosity:
-                    if cad_score > 30:
-                        print('High sore! Cadd score %s' % str(cad_score))
-                        print('%s \n' % '\t'.join([fixed_variants[variant_id]['CHROM'], fixed_variants[variant_id]['POS']]))
-                
-                
+                                
                 if len(fixed_variants[variant_id]['Compounds']) > 0:
                     #We do not want reference to itself as a compound:
                     fixed_variants[variant_id]['Compounds'].pop(variant_id, 0)
@@ -118,6 +95,8 @@ class VariantConsumer(multiprocessing.Process):
                 vcf_info.append('Comp=' + ':'.join(compounds_list))
                 # if we should include genetic models:
                 vcf_info.append('GM=' + ':'.join(model_list))
+                if self.cadd:
+                    vcf_info.append('CADD = %s' % str(fixed_variants[variant_id].pop('CADD', '-')))
                 fixed_variants[variant_id]['INFO'] = ';'.join(vcf_info)
             self.results_queue.put(fixed_variants)
             self.task_queue.task_done()

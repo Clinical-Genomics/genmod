@@ -45,11 +45,13 @@ def get_header(variant_file):
     head.parse()
     return head
 
-def add_metadata(head):
+def add_metadata(head, args):
     """Add metadata for the information added by this script."""
     head.metadataparser.add_info('ANN', '.', 'String', 'Annotates what feature(s) this variant belongs to.')
     head.metadataparser.add_info('Comp', '.', 'String', "':'-separated list of compound pairs for this variant.")
     head.metadataparser.add_info('GM', '.', 'String', "':'-separated list of genetic models for this variant.")
+    if args.cadd_file or args.cadd_db:
+        head.metadataparser.add_info('CADD', '1', 'Float', "The CADD relative score for this alternative.")
     return
 
 def print_headers(args, header_object):
@@ -110,6 +112,11 @@ def main():
         type=str, nargs=1, default=[None],
         help='Specify the path to a file cadd file with variant scores.'
     )
+
+    parser.add_argument('-db', '--cadd_db', 
+        type=str, nargs=1, default=[None],
+        help='Specify the path to cadd db with variant scores.'
+    )
     
     
     args = parser.parse_args()
@@ -127,7 +134,7 @@ def main():
     # Parse the header of the vcf:
     
     head = get_header(var_file)
-    add_metadata(head)
+    add_metadata(head, args)
     # Parse the annotation file and make annotation trees:
 
     if args.verbose:
@@ -168,8 +175,7 @@ def main():
     if args.verbose:
         print('Number of CPU:s %s' % cpu_count())
     
-    model_checkers = [variant_consumer.VariantConsumer(variant_queue, results, my_family, args.cadd_file[0],
-                     args.verbose) for i in range(num_model_checkers)]
+    model_checkers = [variant_consumer.VariantConsumer(variant_queue, results, my_family, args) for i in range(num_model_checkers)]
     
     for w in model_checkers:
         w.start()
@@ -182,7 +188,8 @@ def main():
         print('')
         start_time_variant_parsing = datetime.now()    
         
-    var_parser = vcf_parser.VariantFileParser(var_file, variant_queue, head, annotation_trees, args.cadd_file[0], args.verbose)
+    var_parser = vcf_parser.VariantFileParser(var_file, variant_queue, head, annotation_trees, 
+                                                    args.cadd_db[0], args.cadd_file[0], args.verbose)
     var_parser.parse()
     
     for i in range(num_model_checkers):
