@@ -23,28 +23,31 @@ import sqlite3 as lite
 from pprint import pprint as pp
 
 from genmod.variants import genotype
+from genmod.utils import interval_tree
+
 
 
 class VariantFileParser(object):
     """docstring for VariantParser"""
-    def __init__(self, variant_file, batch_queue, head, interval_trees, cadd_db = None, cadd_file = None, verbosity = False):
+    def __init__(self, variant_file, batch_queue, head, interval_trees, args):
         super(VariantFileParser, self).__init__()
         self.variant_file = variant_file
         self.batch_queue = batch_queue
-        self.verbosity = verbosity
+        self.verbosity = args.verbose
+        self.phased = args.phased
         self.individuals = head.individuals
         self.header_line = head.header
         self.interval_trees = interval_trees
         self.chromosomes = []
-        self.cadd_db = cadd_db
-        self.cadd_file = cadd_file
-        if cadd_db:
-            self.db_name = os.path.splitext(os.path.split(cadd_db)[1])[0]
-            self.conn = lite.connect(cadd_db)
+        self.cadd_db = args.cadd_db[0]
+        self.cadd_file = args.cadd_file[0]
+        if self.cadd_db:
+            self.db_name = os.path.splitext(os.path.split(self.cadd_db)[1])[0]
+            self.conn = lite.connect(self.cadd_db)
             self.conn.row_factory = lite.Row
             self.cadd_db = self.conn.cursor()
-        if cadd_file:
-            self.cadd_file = Tabixfile(cadd_file, parser = asTuple())
+        if self.cadd_file:
+            self.cadd_file = Tabixfile(self.cadd_file, parser = asTuple())
     
     def parse(self):
         """Start the parsing"""        
@@ -53,11 +56,14 @@ class VariantFileParser(object):
         start_twenty = start_parsing
         beginning = True
         batch = {}
+        # Intervals is a dictionary with list of lists like {ind_id:[[start, stop, id],[start, stop,id],...], ...}
+        intervals = {ind_id:[] for ind_id in self.individuals}
         new_chrom = None
         current_chrom = None
         current_features = []
         nr_of_variants = 0
         nr_of_batches = 0
+        interval_id = 1
         with open(self.variant_file, 'r') as f:
             for line in f:
                 # Variant lines do not start with '#'
@@ -77,8 +83,22 @@ class VariantFileParser(object):
                         # Add the variant to each of its features in a batch
                         batch = self.add_variant(batch, variant, new_features)
                         current_chrom = new_chrom
+                        if self.phased:
+                            starts = {ind_id:int(variant['POS']) for ind_id in self.individuals}
+                            batch['intervals'] = {}
                     else:
                         send = True
+                        if self.phased:
+                            for ind_id in self.individuals:
+                                #A new haploblock is indicated by '/' if the data is phased
+                                if '/' in variant.get(ind_id, './.'):
+                                #If call is not passed we consider it to be on same haploblock(GATK recommendations)
+                                    if variant.get('FILTER', '.') == 'PASS':
+                                        int_stop = int(variant['POS']) - 1
+                                        intervals[ind_id].append([starts[ind_id], int_stop, str(interval_id)])
+                                        interval_id += 1
+                                        starts[ind_id] = int(variant['POS'])
+                        
                     # Check if we are in a space between features:
                         if len(new_features) == 0:
                             if len(current_features) == 0:
@@ -88,10 +108,22 @@ class VariantFileParser(object):
                             send = False
                         
                         if send:
+                            if self.phased:
+                            # Create an interval tree for each individual with the phaing intervals 
+                                for ind_id in self.individuals:
+                                #check if we have just finished an interval
+                                    if starts[ind_id] != int(variant['POS']):                                        
+                                        int_stop = int(variant['POS']) - 1
+                                        intervals[ind_id].append([starts[ind_id], int_stop, str(interval_id)])
+                                        interval_id += 1
+                                    batch['intervals'][ind_id] = interval_tree.intervalTree(intervals[ind_id], 
+                                                        0, 1, intervals[ind_id][0][0], intervals[ind_id][-1][1])
+                                intervals = {ind_id:[] for ind_id in self.individuals}
                             nr_of_batches += 1
                             self.batch_queue.put(batch)
                             current_features = new_features
                             batch = self.add_variant({}, variant, new_features)
+                            batch['intervals'] = {}
                         else:
                             current_features = list(set(current_features) | set(new_features))
                             batch = self.add_variant(batch, variant, new_features) # Add variant batch
@@ -112,6 +144,19 @@ class VariantFileParser(object):
             print('Variants parsed!')
             print('Time to parse variants:%s' % str(datetime.now() - start_parsing))
         nr_of_batches += 1
+        if self.phased:
+        # Create an interval tree for each individual with the phaing intervals 
+            for ind_id in self.individuals:
+        #check if we have just finished an interval
+                if starts[ind_id] != int(variant['POS']):                                        
+                    int_stop = int(variant['POS']) - 1
+                    intervals[ind_id].append([starts[ind_id], int_stop, str(interval_id)])
+                    interval_id += 1
+                try:
+                    batch['intervals'][ind_id] = interval_tree.intervalTree(intervals[ind_id], 
+                                        0, 1, intervals[ind_id][0][0], intervals[ind_id][-1][1])
+                except IndexError:
+                    pass
         self.batch_queue.put(batch)
         return nr_of_batches
     
@@ -197,6 +242,7 @@ def main():
     parser.add_argument('annotation_file', type=str, nargs=1 , help='A file with feature annotations.')
     parser.add_argument('-cadd_db', '--cadd_db', type=str, nargs=1 , default=[None], help='A sqlite db with cadd values.')
     parser.add_argument('-cadd_file', '--cadd_file', type=str, nargs=1 , default=[None], help='A db with cadd values.')
+    parser.add_argument('-phased', '--phased', action="store_true", help='If variant file is phased.')    
     parser.add_argument('-v', '--verbose', action="store_true", help='Increase output verbosity.')
     
     args = parser.parse_args()
@@ -220,13 +266,13 @@ def main():
             tabix_index(args.cadd_file[0], seq_col=0, start_col=1, end_col=1, meta_char='#')
         except IOError as e:
             if args.verbose:
-                print e
+                print(e)
             pass
         
     
-    my_parser = VariantFileParser(infile, variant_queue, my_head_parser, my_anno_parser, args.cadd_db[0], args.cadd_file[0], args.verbose)
+    my_parser = VariantFileParser(infile, variant_queue, my_head_parser, my_anno_parser, args)
     nr_of_batches = my_parser.parse()
-    for i in xrange(nr_of_batches):
+    for i in range(nr_of_batches):
         variant_queue.get()
         variant_queue.task_done()
     

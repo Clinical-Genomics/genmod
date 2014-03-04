@@ -60,15 +60,17 @@ from pprint import pprint as pp
 from genmod.variants import genotype
 from genmod.utils import pair_generator
 
-def check_genetic_models(variant_batch, family, verbose = False, proc_name = None):
+def check_genetic_models(variant_batch, family, verbose = False, phased = False, proc_name = None):
     #A variant batch is a dictionary on the form {gene_id: {variant_id:variant_dict}}
     # Start by getting the genotypes for each variant:
     individuals = family.individuals.values()
+    intervals = variant_batch.pop('intervals', {})
     for gene in variant_batch:
         for variant_id in variant_batch[gene]:
             genotypes = {}
             for individual in family.individuals:
                 try:
+                    # print(variant_batch[gene][variant_id])
                     gt_info = variant_batch[gene][variant_id][individual].split(':')[0]
                 except KeyError:# If individual not in variant file
                     if verbose:
@@ -111,11 +113,10 @@ def check_genetic_models(variant_batch, family, verbose = False, proc_name = Non
             
         if len(compound_candidates) > 1:
             
-            compound_pairs = pair_generator.Pair_Generator(compound_candidates.keys())
-            
+            compound_pairs = pair_generator.Pair_Generator(compound_candidates)
             for pair in compound_pairs.generate_pairs():
                 # Add the compound pair id to each variant
-                if check_compounds(variant_batch[gene][pair[0]], variant_batch[gene][pair[1]], family):
+                if check_compounds(variant_batch[gene][pair[0]], variant_batch[gene][pair[1]], family, phased, intervals):
                     variant_batch[gene][pair[0]]['Compounds'][pair[1]] = 0
                     variant_batch[gene][pair[1]]['Compounds'][pair[0]] = 0
                     variant_batch[gene][pair[0]]['Inheritance_model']['AR_compound'] = True
@@ -150,9 +151,9 @@ def check_compound_candidates(variants, family):
             else:
                 # If a sick individual dont have any compounds pairs there are no compound candidates.
                 comp_candidates = {}
-    return comp_candidates
+    return list(comp_candidates.keys())
 
-def check_compounds(variant_1, variant_2, family):
+def check_compounds(variant_1, variant_2, family, phased, intervals):
     """Check which variants in the list that follow the compound heterozygous model. At this stage we\
         know that none of the individuals are homozygote alternative for the variants."""
     
@@ -160,12 +161,31 @@ def check_compounds(variant_1, variant_2, family):
     for individual in family.individuals:
         genotype_1 = variant_1['Genotypes'].get(individual, genotype.Genotype())
         genotype_2 = variant_2['Genotypes'].get(individual, genotype.Genotype())
-        # If the individual is not sick and have both variants it can not be compound
         if family.individuals[individual].phenotype != 2:
+        # If the individual is not sick and have both variants it can not be compound
             if genotype_1.has_variant and genotype_2.has_variant:
-                return False
+                if phased:
+                # If the family is phased we need to check if a healthy individual have both variants on same allele
+                    if len(set(intervals[individual].findRange([int(variant_1['POS']),int(variant_1['POS'])])
+                                ).intersection(intervals[individual].findRange([int(variant_2['POS']),int(variant_2['POS'])]))) > 0:
+                        # If the variants are on different alleles it can not be a compound pair:
+                        if genotype_1.allele_1 == '0' and genotype_2.allele_1 != '0':
+                            return False
+                        
+                    #In this case we can not tell if the variants are on the same haplotype so we assume that compound is not ok
+                    else:
+                        return False
+                else:
+                    return False
         else:# The case where the individual is affected
-            if family.individuals[individual].has_parents:
+            if phased:
+                #If the individual is sick and phased it has to have one variant on each allele
+                if len(set(intervals[individual].findRange([int(variant_1['POS']),int(variant_1['POS'])])
+                            ).intersection(intervals[individual].findRange([int(variant_2['POS']),int(variant_2['POS'])]))) > 0:
+                    if genotype_1.allele_1 == '0' and genotype_2.allele_1 == '0':
+                        return False
+                    
+            elif family.individuals[individual].has_parents:
                 mother_id = family.individuals[individual].mother
                 mother_genotype_1 = variant_1['Genotypes'].get(mother_id, genotype.Genotype())
                 mother_genotype_2 = variant_2['Genotypes'].get(mother_id, genotype.Genotype())
@@ -298,8 +318,8 @@ def check_parents(model, individual, variant, family):
                 
                 
     elif model == 'dominant':
-        # If none of the parents are affected and pattern is followed we have to have a de novo mutation.
-        if not (mother_phenotype == 2 or father_phenotype == 2):
+        # If both parents are healthy we have to have a de novo mutation.
+        if (mother_phenotype == 1 and father_phenotype == 1):
             variant['Inheritance_model']['AD'] = False
             return
         # Else if one or both parents are affected it is de novo if none of them have a variant
@@ -329,7 +349,6 @@ def check_parents(model, individual, variant, family):
 
 def main():
     pass
-
 
 if __name__ == '__main__':
     main()

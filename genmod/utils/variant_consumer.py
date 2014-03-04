@@ -29,6 +29,7 @@ class VariantConsumer(multiprocessing.Process):
         self.family = family
         self.results_queue = results_queue
         self.verbosity = args.verbose
+        self.phased = args.phased
         self.cadd = False
         if args.cadd_file or args.cadd_db:
             self.cadd = True
@@ -51,7 +52,7 @@ class VariantConsumer(multiprocessing.Process):
                 if self.verbosity:
                     print('%s: Exiting' % proc_name)
                 break
-            genetic_models.check_genetic_models(next_batch, self.family, self.verbosity, proc_name)
+            genetic_models.check_genetic_models(next_batch, self.family, self.verbosity, self.phased, proc_name)
             # Make shure we only have one copy of each variant:            
             fixed_variants = {}
             for feature in next_batch:

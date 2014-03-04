@@ -103,6 +103,11 @@ def main():
         help='Do not print the variants.'
     )
     
+    parser.add_argument('-phased', '--phased', 
+        action="store_true", 
+        help='Do not print the variants.'
+    )
+    
     parser.add_argument('-o', '--outfile', 
         type=str, nargs=1, default=[None],
         help='Specify the path to a file where results should be stored.'
@@ -151,7 +156,7 @@ def main():
             tabix_index(args.cadd_file[0], seq_col=0, start_col=1, end_col=1, meta_char='#')
         except IOError as e:
             if args.verbose:
-                print e
+                print(e)
             pass
     
     # # Check the variants:
@@ -188,8 +193,7 @@ def main():
         print('')
         start_time_variant_parsing = datetime.now()    
         
-    var_parser = vcf_parser.VariantFileParser(var_file, variant_queue, head, annotation_trees, 
-                                                    args.cadd_db[0], args.cadd_file[0], args.verbose)
+    var_parser = vcf_parser.VariantFileParser(var_file, variant_queue, head, annotation_trees, args)
     var_parser.parse()
     
     for i in range(num_model_checkers):
