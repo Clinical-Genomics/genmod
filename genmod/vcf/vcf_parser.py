@@ -41,6 +41,7 @@ class VariantFileParser(object):
         self.chromosomes = []
         self.cadd_db = args.cadd_db[0]
         self.cadd_file = args.cadd_file[0]
+        print(args.cadd_file[0])
         if self.cadd_db:
             self.db_name = os.path.splitext(os.path.split(self.cadd_db)[1])[0]
             self.conn = lite.connect(self.cadd_db)
@@ -201,29 +202,30 @@ class VariantFileParser(object):
         
         cadd_score = 0
         nuc_key = {'A':'1', 'C':'2', 'G':'3', 'T':'4'}
-        if self.cadd_db:
-            #Only check for snps:
-            nuc_column = {'A':5, 'C':6, 'G':7, 'T':8}
-            
-            if longest_alt == 1 and len(my_variant['REF']) == 1:
-                
-                cadd_key = (int(my_variant['POS'] + nuc_key[alternatives[0]]),)
-                selection_string = 'SELECT * FROM `%s` WHERE pos=?' % self.db_name
-                try:
-                    # cadd_score = self.cadd_db.execute('SELECT '+cadd_table+' FROM '+self.db_name+' WHERE pos=?', cadd_key)
-                    for cadd_line in self.cadd_db.execute(selection_string, cadd_key):
-                        cadd_score = float(cadd_line[nuc_column[alternatives[0]]])
-                except KeyError:
-                    pass
+        # if self.cadd_db:
+        #     #Only check for snps:
+        #     nuc_column = {'A':5, 'C':6, 'G':7, 'T':8}
+        #     
+        #     if longest_alt == 1 and len(my_variant['REF']) == 1:
+        #         
+        #         cadd_key = (int(my_variant['POS'] + nuc_key[alternatives[0]]),)
+        #         selection_string = 'SELECT * FROM `%s` WHERE pos=?' % self.db_name
+        #         try:
+        #             # cadd_score = self.cadd_db.execute('SELECT '+cadd_table+' FROM '+self.db_name+' WHERE pos=?', cadd_key)
+        #             for cadd_line in self.cadd_db.execute(selection_string, cadd_key):
+        #                 cadd_score = float(cadd_line[nuc_column[alternatives[0]]])
+        #         except KeyError:
+        #             pass
         
         if self.cadd_file:
             # CADD vales are only for snps:
+            nuc_column = {'A':7, 'C':8, 'G':9, 'T':10}
             if longest_alt == 1 and len(my_variant['REF']) == 1:
                 cadd_key = int(my_variant['POS'])
                 try:
                     for tpl in self.cadd_file.fetch(variant_chrom, cadd_key-1, cadd_key):
-                        if tpl[3] in alternatives:
-                            cadd_score = float(tpl[5])
+                        print(cadd_key)
+                        cadd_score = float(tpl[nuc_column[alternatives[0]]])
                 except (IndexError, KeyError) as e:
                     print(e, variant_chrom, my_variant['POS'])
                     pass
