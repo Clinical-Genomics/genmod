@@ -124,6 +124,8 @@ def test_phased_data():
 	assert not my_genotype.homo_ref
 	assert not my_genotype.homo_alt
 	assert my_genotype.has_variant
+	assert my_genotype.allele_1 == '1'# If asked about the genotype, it should still be on the same form.
+	assert my_genotype.allele_2 == '0'# If asked about the genotype, it should still be on the same form.
 
 	
 def main():
