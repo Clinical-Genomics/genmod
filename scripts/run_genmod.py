@@ -168,7 +168,7 @@ def main():
         
     # The task queue is where all jobs(in this case batches that represents variants in a region) is put
     # the consumers will then pick their jobs from this queue.
-    variant_queue = JoinableQueue()
+    variant_queue = JoinableQueue(maxsize=1000)
     # The consumers will put their results in the results queue
     results = Manager().Queue()
     

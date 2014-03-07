@@ -39,16 +39,6 @@ class VariantFileParser(object):
         self.header_line = head.header
         self.interval_trees = interval_trees
         self.chromosomes = []
-        self.cadd_db = args.cadd_db[0]
-        self.cadd_file = args.cadd_file[0]
-        print(args.cadd_file[0])
-        if self.cadd_db:
-            self.db_name = os.path.splitext(os.path.split(self.cadd_db)[1])[0]
-            self.conn = lite.connect(self.cadd_db)
-            self.conn.row_factory = lite.Row
-            self.cadd_db = self.conn.cursor()
-        if self.cadd_file:
-            self.cadd_file = Tabixfile(self.cadd_file, parser = asTuple())
     
     def parse(self):
         """Start the parsing"""        
@@ -66,6 +56,9 @@ class VariantFileParser(object):
         nr_of_batches = 0
         interval_id = 1
         with open(self.variant_file, 'r') as f:
+            if self.verbosity:
+                if self.batch_queue.full():
+                    print('Queue full!!')
             for line in f:
                 # Variant lines do not start with '#'
                 if not line.startswith('#'):
@@ -198,40 +191,7 @@ class VariantFileParser(object):
                 print('Chromosome', variant_chrom, 'is not in annotation file!')
 
         my_variant['Annotation'] = features_overlapped
-
-        
-        cadd_score = 0
-        nuc_key = {'A':'1', 'C':'2', 'G':'3', 'T':'4'}
-        # if self.cadd_db:
-        #     #Only check for snps:
-        #     nuc_column = {'A':5, 'C':6, 'G':7, 'T':8}
-        #     
-        #     if longest_alt == 1 and len(my_variant['REF']) == 1:
-        #         
-        #         cadd_key = (int(my_variant['POS'] + nuc_key[alternatives[0]]),)
-        #         selection_string = 'SELECT * FROM `%s` WHERE pos=?' % self.db_name
-        #         try:
-        #             # cadd_score = self.cadd_db.execute('SELECT '+cadd_table+' FROM '+self.db_name+' WHERE pos=?', cadd_key)
-        #             for cadd_line in self.cadd_db.execute(selection_string, cadd_key):
-        #                 cadd_score = float(cadd_line[nuc_column[alternatives[0]]])
-        #         except KeyError:
-        #             pass
-        
-        if self.cadd_file:
-            # CADD vales are only for snps:
-            nuc_column = {'A':7, 'C':8, 'G':9, 'T':10}
-            if longest_alt == 1 and len(my_variant['REF']) == 1:
-                cadd_key = int(my_variant['POS'])
-                try:
-                    for tpl in self.cadd_file.fetch(variant_chrom, cadd_key-1, cadd_key):
-                        print(cadd_key)
-                        cadd_score = float(tpl[nuc_column[alternatives[0]]])
-                except (IndexError, KeyError) as e:
-                    print(e, variant_chrom, my_variant['POS'])
-                    pass
-        
-        my_variant['CADD'] = cadd_score
-                
+                        
         return my_variant, features_overlapped
 
 def main():
@@ -242,8 +202,6 @@ def main():
     parser = argparse.ArgumentParser(description="Parse different kind of pedigree files.")
     parser.add_argument('variant_file', type=str, nargs=1 , help='A file with variant information.')
     parser.add_argument('annotation_file', type=str, nargs=1 , help='A file with feature annotations.')
-    parser.add_argument('-cadd_db', '--cadd_db', type=str, nargs=1 , default=[None], help='A sqlite db with cadd values.')
-    parser.add_argument('-cadd_file', '--cadd_file', type=str, nargs=1 , default=[None], help='A db with cadd values.')
     parser.add_argument('-phased', '--phased', action="store_true", help='If variant file is phased.')    
     parser.add_argument('-v', '--verbose', action="store_true", help='Increase output verbosity.')
     
@@ -261,16 +219,7 @@ def main():
     my_head_parser.parse()
     print(my_head_parser.__dict__)
     variant_queue = JoinableQueue()
-    start_time = datetime.now()
-    
-    if args.cadd_file[0]:
-        try:
-            tabix_index(args.cadd_file[0], seq_col=0, start_col=1, end_col=1, meta_char='#')
-        except IOError as e:
-            if args.verbose:
-                print(e)
-            pass
-        
+    start_time = datetime.now()        
     
     my_parser = VariantFileParser(infile, variant_queue, my_head_parser, my_anno_parser, args)
     nr_of_batches = my_parser.parse()
