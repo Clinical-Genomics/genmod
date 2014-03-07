@@ -55,7 +55,7 @@ class VariantPrinter(multiprocessing.Process):
                         self.file_handles[variant_chrom].write('\t'.join(print_line) + '\n')
                     else:
                         self.file_handles[variant_chrom] = NamedTemporaryFile(prefix=variant_chrom+'_', 
-                                                                                dir=self.temp_dir, delete=False, mode='w+')
+                            dir=self.temp_dir, delete=False, mode='w', encoding='utf-8')
                         self.file_handles[variant_chrom].write('\t'.join(print_line) + '\n')
         return
     

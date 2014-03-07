@@ -55,7 +55,7 @@ class VariantFileParser(object):
         nr_of_variants = 0
         nr_of_batches = 0
         interval_id = 1
-        with open(self.variant_file, 'r') as f:
+        with open(self.variant_file, mode='r', encoding='utf-8') as f:
             if self.verbosity:
                 if self.batch_queue.full():
                     print('Queue full!!')
