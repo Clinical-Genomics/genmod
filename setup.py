@@ -8,13 +8,13 @@ with open('README.txt') as file:
     long_description = file.read()
 
 setup(name='genmod',
-    version='0.7.2',
+    version='0.7.3',
     description='Annotate genetic inheritance models in variant files',
     author = 'Mans Magnusson',
     author_email = 'mans.magnusson@scilifelab.se',
     url = 'http://github.commoonso/genmod',
     license = 'Modified BSD',
-    install_requires=['ped_parser'],
+    install_requires=['ped_parser', 'pysam'],
     packages = ['genmod', 'genmod.utils', 'genmod.models', 'genmod.variants', 'genmod.vcf'],
     scripts = ['scripts/run_genmod.py'],
     keywords = ['inheritance', 'vcf', 'variants'],
