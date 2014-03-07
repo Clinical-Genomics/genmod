@@ -49,25 +49,25 @@ class FileSort(object):
         
     def _sortFile(self, fileName, outFile=None, ready_to_print=False):
         try:
-            lines = open(fileName).readlines()
+            lines = open(fileName, mode='r', encoding='utf-8').readlines()
         except TypeError:
-            lines = open(fileName.name).readlines()
+            lines = open(fileName.name, mode='r', encoding='utf-8').readlines()
         get_key = self._getKey
         data = [(get_key(line), line) for line in lines if line!='']
         data.sort()
         lines = [line[1] for line in data]
         if ready_to_print:
             if outFile:
-                open(outFile, 'a').write(''.join(lines))
+                open(outFile, mode = 'a', encoding = 'utf-8').write(''.join(lines))
             else:
                 if not self._silent:
                     print(''.join(lines))
         else:
         # In this case the temporary files are over witten.
             try: 
-                f = open(fileName, 'w')
+                f = open(fileName, mode='w', encoding='utf-8')
             except TypeError:
-                f = open(fileName.name, 'w')
+                f = open(fileName.name, mode='w', encoding='utf-8')
             f.write(''.join(lines))
     
     def _splitFile(self):
@@ -77,32 +77,31 @@ class FileSort(object):
             return None
 
         fileNames = []
-        with open(self._inFile, 'r+b') as f:
+        with open(self._inFile, mode='r', encoding='utf-8') as f:
             size = 0
             lines = []
             for line in f:
                 size += len(line)
                 lines.append(line)
                 if size >= self._splitSize:
-                    tmpFile = NamedTemporaryFile(delete=False)
+                    with NamedTemporaryFile(delete=False, mode='w', encoding='utf-8') as tmpFile:
+                        fileNames.append(tmpFile.name)
+                        tmpFile.write(''.join(lines))
+                        del lines[:]
+                        size = 0
+                                                       
+            if size > 0:
+                with NamedTemporaryFile(delete=False, mode='w', encoding='utf-8') as tmpFile:
                     fileNames.append(tmpFile.name)
                     tmpFile.write(''.join(lines))
                     tmpFile.close()
-                    del lines[:]
-                    size = 0
-                                                       
-            if size > 0:
-                tmpFile = NamedTemporaryFile(delete=False)
-                fileNames.append(tmpFile.name)
-                tmpFile.write(''.join(lines))
-                tmpFile.close()
             return fileNames
 
     def _mergeFiles(self, files):
         try:
-            files = [open(f, 'r+b') for f in files]
+            files = [open(f, mode='r', encoding='utf-8') for f in files]
         except TypeError:
-            files = [open(f.name, 'r+b') for f in files]
+            files = [open(f.name, mode='r', encoding='utf-8') for f in files]
             
         lines = []
         keys = []
@@ -116,7 +115,7 @@ class FileSort(object):
         buffSize = self._splitSize/2
         append = buff.append
         if self._outFile:
-            output = open(self._outFile,'a')
+            output = open(self._outFile, mode='a', encoding = 'utf-8')
         try:
             key = max(keys)
             index = keys.index(key)
@@ -175,7 +174,7 @@ def main():
     parser.add_argument('-out', '--outfile', type=str, nargs=1, default=[None], help='Specify the path to the outfile.')
     args = parser.parse_args()
     infile = args.infile[0]
-    new_file = NamedTemporaryFile(delete=False)
+    new_file = NamedTemporaryFile(delete=False, mode='w', encoding='utf-8')
     with open(infile, 'r') as f:
         for line in f:
             if not line.startswith('#'):

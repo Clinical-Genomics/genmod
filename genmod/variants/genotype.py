@@ -47,18 +47,32 @@ import os
 
 class Genotype(object):
     """Holds information about a genotype"""
-    def __init__(self, GT='./.', AD='.,.', DP='0', GQ='0', PL=[],
-                 allele_1 = '.', allele_2 = '.', FILTER = '.', original_info = ''):
+    def __init__(self, GT='./.', AD='.,.', DP='0', GQ='0', PL=[], FILTER = '.', original_info = ''):
         super(Genotype, self).__init__()        
+        # These are the different genotypes:
+        self.nocall = True
+        self.heterozygote = False
+        self.homo_alt = False
+        self.homo_ref = False
+        self.has_variant = False
+        
+        if len(GT) < 3: #This is the case when only one allele is present(eg. X-chromosome) and presented like '0' or '1'.
+            self.allele_1 = GT
+            self.allele_2 = '.'
+        else:
+            self.allele_1 = GT[0]
+            self.allele_2 = GT[-1]
+        self.genotype = self.allele_1 +'/'+ self.allele_2 # The genotype should allways be represented on the same form
+        
+        if self.genotype != './.':
+            self.nocall = False
+            self.check_alleles(self.allele_1, self.allele_2)
+            self.check_alleles(self.allele_2, self.allele_1)
+        if self.heterozygote or self.homo_alt:
+            self.has_variant = True
         # Genotype call, ./., 1/1, 0/1, 0|1 ...
-        self.genotype = GT
-        self.allele_1 = '.'
-        self.allele_2 = '.'
-        self.allele_1_base = allele_1
-        self.allele_2_base = allele_2
-        self.ref_depth = '.'
-        self.alt_depth = '.'
-        self.phased = False
+        self.ref_depth = AD[0]
+        self.alt_depth = AD[-1]
         self.original_info = original_info
         #Genotype info:
         if len(AD) > 2:
@@ -72,48 +86,24 @@ class Genotype(object):
         if PL :
             self.phred_likelihoods = [int(score) for score in PL.split(',')]
         
-        # These are the different genotypes:
-        self.nocall = True
-        self.heterozygote = False
-        self.homo_alt = False
-        self.homo_ref = False
-        self.has_variant = False
-        
-        if len(self.genotype) < 3: #This is the case when only one allele is present(eg. X-chromosome) and presented like '0' or '1'.
-            self.allele_1 = self.genotype
-            self.allele_2 = '.'
-        else:
-            self.allele_1 = self.genotype[0]
-            self.allele_2 = self.genotype[-1]
-        self.genotype = self.allele_1 +'/'+ self.allele_2 # The genotype should allways be represented on the same form
-        if self.genotype != './.':
-            self.nocall = False
-            self.check_alleles(self.allele_1, self.allele_2)
-            self.check_alleles(self.allele_2, self.allele_1)
-        if self.heterozygote or self.homo_alt:
-            self.has_variant = True
     
     def check_alleles(self, variant1, variant2):
         """Check if the genotype is heterozygote, homozygote etc..."""
-        if variant1 == '.':# First is the case with './x' or 'x/.'
-            if variant2 == '0':
+        if variant1 == '.' or variant2 == '.':# First is the case with './x' or 'x/.'
+        # This is the case of './0' or '0/.':
+            if variant1 == '0' or variant2 == '0':
+                self.homo_ref = True
+        # Now we have './1' or '1/.' => homo alt
+            else:
+                self.homo_alt = True
+        elif variant1 == variant2:
+            if variant1 == '0':
                 self.homo_ref = True
             else:
                 self.homo_alt = True
-        elif variant1 == '0':
-            if variant2 == variant1:
-                self.homo_ref = True
-            elif variant2 != '.':
-                self.heterozygote = True
         else:
-            if variant1 == variant2:
-                self.homo_alt = True
-            elif variant2 != '.':
-                self.heterozygote = True
-    
-    def get_vcf_genotype(self):
-        """Returns the genotype in the original vcf-format"""
-        return self.original_info
+            self.heterozygote = True
+        return
     
     def __str__(self):
         """Specifies what will be printed when printing the object."""
