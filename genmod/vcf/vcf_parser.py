@@ -18,6 +18,7 @@ import os
 import argparse
 from datetime import datetime
 from pysam import Tabixfile, asTuple
+from codecs import open
 import sqlite3 as lite
 
 from pprint import pprint as pp

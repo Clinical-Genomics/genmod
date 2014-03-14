@@ -19,6 +19,7 @@ import os
 import gzip
 import re
 import argparse
+from codecs import open
 if sys.version_info < (2, 7):
     from ordereddict import OrderedDict
 else:
