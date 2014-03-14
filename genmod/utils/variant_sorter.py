@@ -15,6 +15,8 @@ import sys
 import os
 import argparse
 from tempfile import NamedTemporaryFile
+from codecs import open
+
 
 from genmod.utils.is_number import is_number
 

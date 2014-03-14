@@ -13,6 +13,7 @@ import sys
 import os
 import argparse
 from multiprocessing import JoinableQueue, Manager, cpu_count, Lock
+from codecs import open
 from datetime import datetime
 from tempfile import mkdtemp
 import shutil
@@ -58,7 +59,7 @@ def add_metadata(head, args):
 def print_headers(args, header_object):
     """Print the headers to a results file."""
     if args.outfile[0]:
-        with open(args.outfile[0], 'w') as f: 
+        with open(args.outfile[0], 'w', encoding='utf-8') as f: 
             for head_count in header_object.print_header():
                 f.write(head_count+'\n')
     else:
