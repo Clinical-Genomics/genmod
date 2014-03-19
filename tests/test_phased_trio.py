@@ -18,8 +18,8 @@ from genmod.models import genetic_models
 from genmod.variants import genotype
 
 
-class TestModelsCompound(object):
-    """Test class for testing how the genetic models behave with a recessive variant"""
+class TestPhasedTrio(object):
+    """Check how the inheritnace patterns are followed in a phased trio."""
 
     def setup_class(self):
         """Setup a simple family with family id 1, sick son id 1,
@@ -33,7 +33,8 @@ class TestModelsCompound(object):
         self.recessive_family.add_individual(sick_son)
         self.recessive_family.add_individual(healthy_mother)
         
-        intervals = {ind_id:interval_tree.intervalTree([[1,100, '1']], 0, 1, 1, 100) for ind_id in self.recessive_family.individuals}
+        interval = [1,100, '1']
+        intervals = {ind_id:interval_tree.IntervalTree([interval], 1, 100) for ind_id in self.recessive_family.individuals}
         
         #Setup two variants with only autosomal recessive pattern
         self.recessive_comp_simple_1 = {'CHROM':'1', 'POS':'5', 'ALT':'A', 'REF':'C', 'ID':'rs2230749',
@@ -73,7 +74,7 @@ class TestModelsCompound(object):
         genetic_models.check_genetic_models(batch, self.recessive_family, phased=True)
     
     def test_recessive_comp_simple(self):
-        """Check if the genetic models are followed for the heterozygote variant"""
+        """Check if the compound inheritance pattern are followed."""
         assert not self.recessive_comp_simple_1['Inheritance_model']['AR_hom']
         assert not self.recessive_comp_simple_1['Inheritance_model']['AR_hom_denovo']
         assert not self.recessive_comp_simple_1['Inheritance_model']['AD']
@@ -83,7 +84,7 @@ class TestModelsCompound(object):
         assert self.recessive_comp_simple_1['Inheritance_model']['AR_compound']
     
     def test_recessive_comp_not_simple(self):
-        """docstring for test_recessive_comp_2"""
+        """Check if the compound inheritance pattern are followed."""
         assert not self.recessive_comp_not_simple_2['Inheritance_model']['AR_hom']
         assert not self.recessive_comp_not_simple_2['Inheritance_model']['AR_hom_denovo']
         assert not self.recessive_comp_not_simple_2['Inheritance_model']['AD']
@@ -94,7 +95,7 @@ class TestModelsCompound(object):
         
     
     def test_not_recessive_comp(self):
-        """docstring for test_not_recessive_comp"""
+        """This variants should not follow any inheritance patterns."""
         assert not self.not_recessive_comp_1['Inheritance_model']['AR_hom']
         assert not self.not_recessive_comp_1['Inheritance_model']['AR_hom_denovo']
         assert not self.not_recessive_comp_1['Inheritance_model']['AD']
@@ -104,7 +105,7 @@ class TestModelsCompound(object):
         assert not self.not_recessive_comp_1['Inheritance_model']['AR_compound']
     
     def test_recessive_comp_missing(self):
-        """docstring for test_recessive_comp_missing"""
+        """This variant should follow the compound inheritnce pattern."""
         assert not self.recessive_comp_missing_2['Inheritance_model']['AR_hom']
         assert not self.recessive_comp_missing_2['Inheritance_model']['AR_hom_denovo']
         assert not self.recessive_comp_missing_2['Inheritance_model']['AD']

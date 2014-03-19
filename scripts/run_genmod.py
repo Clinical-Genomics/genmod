@@ -51,7 +51,8 @@ def add_metadata(head, args):
     head.metadataparser.add_info('ANN', '.', 'String', 'Annotates what feature(s) this variant belongs to.')
     head.metadataparser.add_info('Comp', '.', 'String', "':'-separated list of compound pairs for this variant.")
     head.metadataparser.add_info('GM', '.', 'String', "':'-separated list of genetic models for this variant.")
-    if args.cadd_file or args.cadd_db:
+    head.metadataparser.add_info('MS', '1', 'Integer', "PHRED score for genotype models.")
+    if args.cadd_file[0] or args.cadd_db[0]:
         head.metadataparser.add_info('CADD', '1', 'Float', "The CADD relative score for this alternative.")
     return
 

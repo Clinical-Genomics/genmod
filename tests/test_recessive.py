@@ -17,7 +17,7 @@ from genmod.models import genetic_models
 from genmod.variants import genotype
 
 
-class TestModelsCompound(object):
+class TestRecessiveModels(object):
     """Test class for testing how the genetic models behave with a recessive variant"""
 
     def setup_class(self):
@@ -47,7 +47,7 @@ class TestModelsCompound(object):
         genetic_models.check_genetic_models(batch, self.recessive_family)
     
     def test_recessive_variant(self):
-        """Check if the genetic models are followed for the heterozygote variant"""
+        """Check if variant follows the heterozygous inheritance pattern."""
         assert self.recessive_variant['Inheritance_model']['AR_hom']
         assert not self.recessive_variant['Inheritance_model']['AR_hom_denovo']
         assert not self.recessive_variant['Inheritance_model']['AD']
@@ -57,7 +57,7 @@ class TestModelsCompound(object):
         assert not self.recessive_variant['Inheritance_model']['AR_compound']
     
     def test_recessive_dn(self):
-        """docstring for test_recessive_comp_2"""
+        """Check if variant follows the heterozygous de novo inheritance pattern."""
         assert not self.recessive_dn['Inheritance_model']['AR_hom']
         assert self.recessive_dn['Inheritance_model']['AR_hom_denovo']
         assert not self.recessive_dn['Inheritance_model']['AD']
@@ -67,7 +67,7 @@ class TestModelsCompound(object):
         assert not self.recessive_dn['Inheritance_model']['AR_compound']
     
     def test_recessive_missing(self):
-        """docstring for test_not_recessive_comp"""
+        """Check if variant follows both heterozygous inheritance patterns."""
         assert self.recessive_missing['Inheritance_model']['AR_hom']
         assert self.recessive_missing['Inheritance_model']['AR_hom_denovo']
         assert not self.recessive_missing['Inheritance_model']['AD']
@@ -77,7 +77,7 @@ class TestModelsCompound(object):
         assert not self.recessive_missing['Inheritance_model']['AR_compound']
     
     def test_not_recessive(self):
-        """docstring for test_recessive_comp_missing"""
+        """Check that the the variant does not follow any inheritance pattern."""
         assert not self.not_recessive['Inheritance_model']['AR_hom']
         assert not self.not_recessive['Inheritance_model']['AR_hom_denovo']
         assert not self.not_recessive['Inheritance_model']['AD']

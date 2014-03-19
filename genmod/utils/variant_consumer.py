@@ -11,10 +11,14 @@ Created by Måns Magnusson on 2013-03-01.
 Copyright (c) 2013 __MyCompanyName__. All rights reserved.
 """
 
+from __future__ import division
 import sys
 import os
 import multiprocessing
 import sqlite3
+import operator
+from functools import reduce
+from math import log10
 from pysam import Tabixfile, asTuple
 
 from pprint import pprint as pp
@@ -34,11 +38,11 @@ class VariantConsumer(multiprocessing.Process):
         self.cadd_db = args.cadd_db[0]
         self.cadd_file = args.cadd_file[0]
         
-        if self.cadd_db:
-            if self.verbosity:
-                print('Cadd db! %s' % self.cadd_db)
-            self.cadd_db=sqlite3.connect(self.cadd_db)
-            self.cursor = self.cadd_db.cursor()
+        # if self.cadd_db:
+        #     if self.verbosity:
+        #         print('Cadd db! %s' % self.cadd_db)
+        #     self.cadd_db=sqlite3.connect(self.cadd_db)
+        #     self.cursor = self.cadd_db.cursor()
             
         if self.cadd_file:
             if self.verbosity:
@@ -68,11 +72,7 @@ class VariantConsumer(multiprocessing.Process):
         alternatives = variant['ALT'].split(',')
         # CADD vales are only for snps:
         if max([len(alt) for alt in alternatives]) == 1 and len(variant['REF']) == 1:
-            if self.cadd_db:
-                values = (variant['CHROM'], int(variant['POS']), variant['REF'], variant['ALT'])
-                print(self.cursor.execute('SELECT phred FROM cadd_db WHERE chr=? AND pos=? AND ref=? AND alt=?', values))
-                return(cadd_score)
-            elif self.cadd_file:
+            if self.cadd_file:
                 cadd_key = int(variant['POS'])
                 try:
                     for tpl in self.cadd_file.fetch(variant['CHROM'], cadd_key-1, cadd_key):
@@ -81,6 +81,10 @@ class VariantConsumer(multiprocessing.Process):
                 except (IndexError, KeyError) as e:
                     if self.verbosity:
                         print(e, variant['CHROM'], variant['POS'])
+            # elif self.cadd_db:
+            #     values = (variant['CHROM'], int(variant['POS']), variant['REF'], variant['ALT'])
+            #     print(self.cursor.execute('SELECT phred FROM cadd_db WHERE chr=? AND pos=? AND ref=? AND alt=?', values))
+            #     return(cadd_score)
                     
         return cadd_score
 
@@ -108,6 +112,21 @@ class VariantConsumer(multiprocessing.Process):
                     model_list.append(model)
             if len(model_list) == 0:
                 model_list = ['NA']
+            model_score = '-'
+            genotype_scores = []
+            for individual in self.family.individuals:
+                gt_call = variant_dict[variant_id][individual].split(':')
+                gt_info = variant_dict[variant_id]['FORMAT'].split(':')
+                if len(gt_call) == 1:
+                    gt_call = {'GT':gt_call[0]}
+                else:
+                    gt_call = dict(zip(gt_info, gt_call))
+                if 'GQ' in gt_call:
+                    # Add the error probabilities to genptype scores
+                    genotype_scores.append(10**-(float(gt_call['GQ'])/10))
+            if len(genotype_scores) > 0:
+                model_score = (str(round(-10*log10(1-reduce(operator.mul, [1-score for score in genotype_scores])))))
+            # print('Model Score: %s' % model_score)
             variant_dict[variant_id].pop('Compounds',0)
             variant_dict[variant_id].pop('Inheritance_model',0)
             variant_dict[variant_id].pop('Annotation',0)
@@ -118,10 +137,14 @@ class VariantConsumer(multiprocessing.Process):
             vcf_info.append('Comp=' + ':'.join(compounds_list))
             # if we should include genetic models:
             vcf_info.append('GM=' + ':'.join(model_list))
+            if model_list == ['NA']:
+                model_score = '-'
+            vcf_info.append('MS=' + model_score)
             if self.cadd_file or self.cadd_db:
                 vcf_info.append('CADD=%s' % str(variant_dict[variant_id].pop('CADD', '-')))
             variant_dict[variant_id]['INFO'] = ';'.join(vcf_info)
-            
+            # pp(variant_dict[variant_id])
+        return
     
     def run(self):
         """Run the consuming"""

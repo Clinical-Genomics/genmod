@@ -166,8 +166,8 @@ def check_compounds(variant_1, variant_2, family, phased, intervals):
             if genotype_1.has_variant and genotype_2.has_variant:
                 if phased:
                 # If the family is phased we need to check if a healthy individual have both variants on same allele
-                    if len(set(intervals[individual].findRange([int(variant_1['POS']),int(variant_1['POS'])])
-                                ).intersection(intervals[individual].findRange([int(variant_2['POS']),int(variant_2['POS'])]))) > 0:
+                    if len(set(intervals[individual].find_range([int(variant_1['POS']),int(variant_1['POS'])])
+                                ).intersection(intervals[individual].find_range([int(variant_2['POS']),int(variant_2['POS'])]))) > 0:
                         # If the variants are on different alleles it can not be a compound pair:
                         if genotype_1.allele_1 == '0' and genotype_2.allele_1 != '0':
                             return False
@@ -180,8 +180,8 @@ def check_compounds(variant_1, variant_2, family, phased, intervals):
         else:# The case where the individual is affected
             if phased:
                 #If the individual is sick and phased it has to have one variant on each allele
-                if len(set(intervals[individual].findRange([int(variant_1['POS']),int(variant_1['POS'])])
-                            ).intersection(intervals[individual].findRange([int(variant_2['POS']),int(variant_2['POS'])]))) > 0:
+                if len(set(intervals[individual].find_range([int(variant_1['POS']),int(variant_1['POS'])])
+                            ).intersection(intervals[individual].find_range([int(variant_2['POS']),int(variant_2['POS'])]))) > 0:
                     if genotype_1.allele_1 == '0' and genotype_2.allele_1 == '0':
                         return False
                     
@@ -351,31 +351,29 @@ def main():
     from ped_parser import family, individual
     from genmod.utils import interval_tree
     
-    family = family.Family(family_id = '1')
-    sick_son = individual.Individual(ind='1', family='1',mother='4', father='3', sex=1, phenotype=2)
-    sick_daughter = individual.Individual(ind='2', family='1',mother='4', father='3', sex=2, phenotype=2)
-    healthy_father = individual.Individual(ind='3', family='1',mother='0', father='0', sex=1, phenotype=1)
-    healthy_mother = individual.Individual(ind='4', family='1',mother='0', father='0', sex=2, phenotype=1)
-    family.add_individual(healthy_father)
-    family.add_individual(sick_son)
-    family.add_individual(sick_daughter)
-    family.add_individual(healthy_mother)
+    duo_family = family.Family(family_id = '1')
+    sick_son = individual.Individual(ind='1', family='1',mother='3', father='0', sex=1, phenotype=2)
+    healthy_mother = individual.Individual(ind='3', family='1',mother='0', father='0', sex=2, phenotype=1)
+    duo_family.add_individual(sick_son)
+    duo_family.add_individual(healthy_mother)
     
-    intervals = {ind_id:interval_tree.intervalTree([[1,7, '1'], [8,15, '2']], 0, 1, 1, 100) for ind_id in family.individuals}
-    
-    #Setup two variants with only autosomal recessive pattern
-    comp_test_1 = {'CHROM':'1', 'POS':'5', 'ALT':'C', 'REF':'T', 'ID':'rs2230749',
-                                             '1':'1|0', '2':'1|0', '3':'0|1', '4':'1|0'
-                    }
-    comp_test_2 = {'CHROM':'1', 'POS':'10', 'ALT':'C', 'REF':'G', 'ID':'.', 
-                                            '1':'0|1', '2':'1|0', '3':'1|0', '4':'1|0'}
+    pp(duo_family.individuals)
+    intervals = {ind_id:interval_tree.intervalTree([[1,100, '1']], 0, 1, 1, 100) for ind_id in duo_family.individuals}
 
+    pp(intervals)
     
-    batch = {'ABC':{'1_5_C_T':comp_test_1, '1_10_C_G':comp_test_2},
-            }
+    #Setup two variants with autosomal recessive compound pattern
+    recessive_comp_simple_1 = {'CHROM':'1', 'POS':'5', 'ALT':'A', 'REF':'C', 'ID':'rs2230749',
+                                             '1':'0|1', '3':'0|0'}
     
+    recessive_comp_simple_2 = {'CHROM':'1', 'POS':'10', 'ALT':'C', 'REF':'T', 'ID':'.', 
+                                            '1':'1|0', '3':'0|1'}
+    
+    
+    batch = {'ABC':{'1_5_A_C':recessive_comp_simple_1, '1_10_C_T':recessive_comp_simple_2}}
     batch['intervals'] = intervals
-    check_genetic_models(batch, family, phased=True)
+    
+    check_genetic_models(batch, duo_family, phased=True)
     for gene in batch:
         pp(batch[gene])
     
