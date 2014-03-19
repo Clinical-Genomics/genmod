@@ -358,7 +358,7 @@ def main():
     duo_family.add_individual(healthy_mother)
     
     pp(duo_family.individuals)
-    intervals = {ind_id:interval_tree.intervalTree([[1,100, '1']], 0, 1, 1, 100) for ind_id in duo_family.individuals}
+    intervals = {ind_id:interval_tree.IntervalTree([[1,100, '1']], 0, 1, 1, 100) for ind_id in duo_family.individuals}
 
     pp(intervals)
     

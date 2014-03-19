@@ -12,7 +12,7 @@ end: posotion of the end position of the element range
 for example, a reference genome of a million base pairs with the following features:
 features = [[20,400,'id01'],[1020,2400,'id02'],[35891,29949,'id03'],[900000,'id04'],[999000,'id05']]
 to make a tree:
-myTree = intervalTree(features, 0, 1, 1, 1000000)
+myTree = IntervalTree(features, 0, 1, 1, 1000000)
 
 
 Created by unknown.
@@ -35,7 +35,7 @@ class IntervalTree:
         for example, a reference genome of a million base pairs with the following features:
             features = [[20,400,'id01'],[1020,2400,'id02'],[35891,29949,'id03'],[900000,900000,'id04'],[999000,999000,'id05']]
         to make a tree:
-            myTree = intervalTree(features, 0, 1, 1, 1000000)
+            myTree = IntervalTree(features, 0, 1, 1, 1000000)
         """
         
         self.start = start

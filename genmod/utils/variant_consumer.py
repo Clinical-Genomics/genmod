@@ -35,15 +35,8 @@ class VariantConsumer(multiprocessing.Process):
         self.results_queue = results_queue
         self.verbosity = args.verbose
         self.phased = args.phased
-        self.cadd_db = args.cadd_db[0]
         self.cadd_file = args.cadd_file[0]
-        
-        # if self.cadd_db:
-        #     if self.verbosity:
-        #         print('Cadd db! %s' % self.cadd_db)
-        #     self.cadd_db=sqlite3.connect(self.cadd_db)
-        #     self.cursor = self.cadd_db.cursor()
-            
+                    
         if self.cadd_file:
             if self.verbosity:
                 print('Cadd file! %s' % self.cadd_file)            
@@ -75,24 +68,23 @@ class VariantConsumer(multiprocessing.Process):
             if self.cadd_file:
                 cadd_key = int(variant['POS'])
                 try:
-                    for tpl in self.cadd_file.fetch(variant['CHROM'], cadd_key-1, cadd_key):
-                        if alternatives[0] == str(tpl[3], encoding='utf-8'):
-                            return str(tpl[5], encoding='utf-8')
+                    for tpl in self.cadd_file.fetch(str(variant['CHROM']), cadd_key-1, cadd_key):
+                        if alternatives[0] == str(tpl[3]):
+                            try:
+                                return str(tpl[5], encoding='utf-8')
+                            except TypeError:
+                                return str(unicode(tpl[5], encoding='utf-8'))
                 except (IndexError, KeyError) as e:
                     if self.verbosity:
                         print(e, variant['CHROM'], variant['POS'])
-            # elif self.cadd_db:
-            #     values = (variant['CHROM'], int(variant['POS']), variant['REF'], variant['ALT'])
-            #     print(self.cursor.execute('SELECT phred FROM cadd_db WHERE chr=? AND pos=? AND ref=? AND alt=?', values))
-            #     return(cadd_score)
-                    
+                            
         return cadd_score
 
     
     def make_print_version(self, variant_dict):
         """Get the variants ready for printing"""
         for variant_id in variant_dict:
-            if self.cadd_db or self.cadd_file:
+            if self.cadd_file:
                 variant_dict[variant_id]['CADD'] = self.get_cadd_score(variant_dict[variant_id])
             model_list = []
             compounds_list = []
@@ -140,7 +132,7 @@ class VariantConsumer(multiprocessing.Process):
             if model_list == ['NA']:
                 model_score = '-'
             vcf_info.append('MS=' + model_score)
-            if self.cadd_file or self.cadd_db:
+            if self.cadd_file:
                 vcf_info.append('CADD=%s' % str(variant_dict[variant_id].pop('CADD', '-')))
             variant_dict[variant_id]['INFO'] = ';'.join(vcf_info)
             # pp(variant_dict[variant_id])
