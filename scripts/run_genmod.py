@@ -19,10 +19,6 @@ from tempfile import mkdtemp
 import shutil
 import pkg_resources
 from pysam import tabix_index, tabix_compress
-if sys.version_info < (2, 7):
-    from ordereddict import OrderedDict
-else:
-    from collections import OrderedDict
 
 from pprint import pprint as pp
 
@@ -51,7 +47,8 @@ def add_metadata(head, args):
     head.metadataparser.add_info('ANN', '.', 'String', 'Annotates what feature(s) this variant belongs to.')
     head.metadataparser.add_info('Comp', '.', 'String', "':'-separated list of compound pairs for this variant.")
     head.metadataparser.add_info('GM', '.', 'String', "':'-separated list of genetic models for this variant.")
-    if args.cadd_file or args.cadd_db:
+    head.metadataparser.add_info('MS', '1', 'Integer', "PHRED score for genotype models.")
+    if args.cadd_file[0]:
         head.metadataparser.add_info('CADD', '1', 'Float', "The CADD relative score for this alternative.")
     return
 
@@ -117,13 +114,7 @@ def main():
     parser.add_argument('-cadd', '--cadd_file', 
         type=str, nargs=1, default=[None],
         help='Specify the path to a file cadd file with variant scores.'
-    )
-
-    parser.add_argument('-db', '--cadd_db', 
-        type=str, nargs=1, default=[None],
-        help='Specify the path to cadd db with variant scores.'
-    )
-    
+    )    
     
     args = parser.parse_args()
     var_file = args.variant_file[0]
@@ -153,12 +144,13 @@ def main():
     # Check if the ccds-file is compressed and indexed:
     
     if args.cadd_file[0]:
+        if args.verbose:
+            print('Cadd file! %s' % args.cadd_file[0])            
         try:
             tabix_index(args.cadd_file[0], seq_col=0, start_col=1, end_col=1, meta_char='#')
         except IOError as e:
             if args.verbose:
                 print(e)
-            pass
     
     # # Check the variants:
     

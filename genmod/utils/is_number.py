@@ -13,7 +13,7 @@ import argparse
 
 def is_number(number):
     """Returns true if the string is a number or False otherwise"""
-    if type(number) == type(1) or type(number) == type(0.1) or type(number) == type(''):
+    if type(number) == type(1) or type(number) == type(0.1) or type(number) == type('') or type(u''):
         try:
             float(number)
             return True

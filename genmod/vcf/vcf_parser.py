@@ -111,7 +111,7 @@ class VariantFileParser(object):
                                         int_stop = int(variant['POS']) - 1
                                         intervals[ind_id].append([starts[ind_id], int_stop, str(interval_id)])
                                         interval_id += 1
-                                    batch['intervals'][ind_id] = interval_tree.intervalTree(intervals[ind_id], 
+                                    batch['intervals'][ind_id] = interval_tree.IntervalTree(intervals[ind_id], 
                                                         0, 1, intervals[ind_id][0][0], intervals[ind_id][-1][1])
                                 intervals = {ind_id:[] for ind_id in self.individuals}
                             nr_of_batches += 1
@@ -148,7 +148,7 @@ class VariantFileParser(object):
                     intervals[ind_id].append([starts[ind_id], int_stop, str(interval_id)])
                     interval_id += 1
                 try:
-                    batch['intervals'][ind_id] = interval_tree.intervalTree(intervals[ind_id], 
+                    batch['intervals'][ind_id] = interval_tree.IntervalTree(intervals[ind_id], 
                                         0, 1, intervals[ind_id][0][0], intervals[ind_id][-1][1])
                 except IndexError:
                     pass
@@ -186,7 +186,7 @@ class VariantFileParser(object):
         features_overlapped = []
         
         try:
-            features_overlapped = self.interval_trees.interval_trees[variant_chrom].findRange(variant_interval)
+            features_overlapped = self.interval_trees.interval_trees[variant_chrom].find_range(variant_interval)
         except KeyError:
             if self.verbosity:
                 print('Chromosome', variant_chrom, 'is not in annotation file!')

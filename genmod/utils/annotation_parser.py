@@ -8,15 +8,20 @@ So self.chromosomes will look like:
 
 {'1':intervalTree, '2':intervalTree, ..., 'X':intervalTree}
 
+The intervals represent features that are annotated in the infile.
+
 Create a family object and its family members from different types of input file
 Created by Måns Magnusson on 2013-01-17.
 Copyright (c) 2013 __MyCompanyName__. All rights reserved.
 """
 
+from __future__ import unicode_literals
 import sys
 import os
 import argparse
 import gzip
+from codecs import open
+
 
 from pprint import pprint as pp
 
@@ -34,15 +39,16 @@ class AnnotationParser(object):
         chromosome_stops = {}# A dictionary with information about the last positions on each chromosome:
         
         if zipped:
-            f = gzip.open(infile, 'r')
+            f = gzip.open(infile, mode='r', encoding='utf-8')
         else: 
-            f = open(infile, 'r')
+            f = open(infile, mode='r', encoding='utf-8')
         line_count = 0
         for line in f:
-            if line[0] != '#' and len(line) > 1:
+            if not line.startswith('#') and len(line) > 1:
                 line = line.rstrip()
+                # Info allways contain the important information that is needed to create a feature
                 info = {'chrom':'Na', 'start':0, 'stop':0, 'transcript_id':'0', 'gene_id':'0', 'feature_id':str(line_count)}
-                
+                # print(line)
                 if self.annotation_type == 'ccds':
                     info = self.ccds_parser(line, info, line_count)
                 elif self.annotation_type == 'bed':
@@ -58,20 +64,18 @@ class AnnotationParser(object):
                     chromosomes[info['chrom']].append(feature)
                 else:
                     chromosomes[info['chrom']] = [feature]
-                # Update the last end position, is it is bigger than before:
+                # Update the last end position, if it is bigger than before:
+                
                 if info['stop'] > chromosome_stops.get(info['chrom'], 0):
                     chromosome_stops[info['chrom']] = info['stop'] + 1
             line_count += 1
         
         number_of_intervals = 0
-        # for chrom, stop in self.chromosome_stops.items():
-        #     print chrom, stop, len(self.chromosomes[chrom])
-        #     number_of_intervals += len(self.chromosomes[chrom])
-        
+
         #Build one interval tree for each chromosome:
+        
         for chrom in chromosomes:
-            self.interval_trees[chrom] = interval_tree.intervalTree(chromosomes[chrom], 
-                                        0, 1, 1, chromosome_stops[chrom])
+            self.interval_trees[chrom] = interval_tree.IntervalTree(chromosomes[chrom], 1, chromosome_stops[chrom])
                     
     def bed_parser(self, line, info, line_count):
         """Parse a .bed."""

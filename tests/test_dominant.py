@@ -17,8 +17,8 @@ from genmod.models import genetic_models
 from genmod.variants import genotype
 
 
-class TestModelsCompound(object):
-    """Test class for testing how the genetic models behave with a recessive variant"""
+class TestDominantModel(object):
+    """Test class for testing how the genetic models behave with a dominant variant"""
 
     def setup_class(self):
         """Setup a simple family with family id 1, sick son id 1,
@@ -43,38 +43,35 @@ class TestModelsCompound(object):
         #This batch simulates two genes, one variant is present in both genes
         batch = {'ABC':{'1_5_A_C':self.dominant_variant, '1_10_C_T':self.dominant_missing, '1_15_C_T':self.not_dominant}}
         
-        genetic_models.check_genetic_models(batch_1, self.dominant_family, verbose=True)
+        genetic_models.check_genetic_models(batch, self.dominant_family, verbose=True)
 
             
     def test_dominant_variant(self):
-        """Check if the genetic models are followed for the heterozygote variant"""
+        """This variant should only follow the dominant pattern."""
         assert not self.dominant_variant['Inheritance_model']['AR_hom']
         assert not self.dominant_variant['Inheritance_model']['AR_hom_denovo']
         assert self.dominant_variant['Inheritance_model']['AD']
         assert not self.dominant_variant['Inheritance_model']['AD_denovo']
         assert not self.dominant_variant['Inheritance_model']['X']
         assert not self.dominant_variant['Inheritance_model']['X_dn']
-        # assert not self.dominant_variant['Inheritance_model']['AR_compound']
     
     def test_dominant_missing(self):
-        """docstring for test_not_dominant_comp"""
+        """This variant should follow dominant and dominant de novo patterns."""
         assert not self.dominant_missing['Inheritance_model']['AR_hom']
         assert not self.dominant_missing['Inheritance_model']['AR_hom_denovo']
         assert self.dominant_missing['Inheritance_model']['AD']
         assert self.dominant_missing['Inheritance_model']['AD_denovo']
         assert not self.dominant_missing['Inheritance_model']['X']
         assert not self.dominant_missing['Inheritance_model']['X_dn']
-        # assert not self.dominant_missing['Inheritance_model']['AR_compound']
     
     def test_not_dominant(self):
-        """docstring for test_dominant_comp_missing"""
+        """This variant should not follow any inheritance patterns"""
         assert not self.not_dominant['Inheritance_model']['AR_hom']
         assert not self.not_dominant['Inheritance_model']['AR_hom_denovo']
         assert not self.not_dominant['Inheritance_model']['AD']
         assert not self.not_dominant['Inheritance_model']['AD_denovo']
         assert not self.not_dominant['Inheritance_model']['X']
         assert not self.not_dominant['Inheritance_model']['X_dn']
-        # assert not self.not_dominant['Inheritance_model']['AR_compound']
             
 
 

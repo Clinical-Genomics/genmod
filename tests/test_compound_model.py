@@ -18,7 +18,7 @@ from genmod.variants import genotype
 
 
 class TestModelsCompound(object):
-    """Test class for testing how the genetic models behave with a recessive variant"""
+    """Test class for testing how the genetic models behave with combinations of compound variants."""
 
     def setup_class(self):
         """Setup a simple family with family id 1, sick son id 1,
@@ -46,7 +46,7 @@ class TestModelsCompound(object):
         genetic_models.check_genetic_models(batch, self.recessive_family)
     
     def test_recessive_comp_1(self):
-        """Check if the genetic models are followed for the heterozygote variant"""
+        """The compound inheritnace pattern should be followed for this variant."""
         assert not self.recessive_comp_variant_1['Inheritance_model']['AR_hom']
         assert not self.recessive_comp_variant_1['Inheritance_model']['AR_hom_denovo']
         assert not self.recessive_comp_variant_1['Inheritance_model']['AD']
@@ -56,7 +56,7 @@ class TestModelsCompound(object):
         assert self.recessive_comp_variant_1['Inheritance_model']['AR_compound']
     
     def test_recessive_comp_2(self):
-        """docstring for test_recessive_comp_2"""
+        """The compound inheritnace pattern should be followed for this variant."""
         assert not self.recessive_comp_variant_2['Inheritance_model']['AR_hom']
         assert not self.recessive_comp_variant_2['Inheritance_model']['AR_hom_denovo']
         assert not self.recessive_comp_variant_2['Inheritance_model']['AD']
@@ -66,7 +66,7 @@ class TestModelsCompound(object):
         assert self.recessive_comp_variant_2['Inheritance_model']['AR_compound']
     
     def test_not_recessive_comp(self):
-        """docstring for test_not_recessive_comp"""
+        """No inheritance pattern should be followed for this model."""
         assert not self.not_recessive_comp['Inheritance_model']['AR_hom']
         assert not self.not_recessive_comp['Inheritance_model']['AR_hom_denovo']
         assert not self.not_recessive_comp['Inheritance_model']['AD']
@@ -76,7 +76,7 @@ class TestModelsCompound(object):
         assert not self.not_recessive_comp['Inheritance_model']['AR_compound']
     
     def test_recessive_comp_missing(self):
-        """docstring for test_recessive_comp_missing"""
+        """Compound pattern should be followed here."""
         assert not self.recessive_comp_missing['Inheritance_model']['AR_hom']
         assert not self.recessive_comp_missing['Inheritance_model']['AR_hom_denovo']
         assert not self.recessive_comp_missing['Inheritance_model']['AD']
@@ -85,26 +85,6 @@ class TestModelsCompound(object):
         assert not self.recessive_comp_missing['Inheritance_model']['X_dn']
         assert self.recessive_comp_missing['Inheritance_model']['AR_compound']
     
-    # def test_compound(self):
-    #     """Check if the variants are labeled as a compound pair"""
-    #     assert self.recessive_family.variants[self.recessive_comp_variant_1.variant_id].ar_comp
-    #     assert self.recessive_family.variants[self.recessive_comp_variant_2.variant_id].ar_comp
-    
-    # def test_recessive(self):
-    #     """Check if the genetic models are followed for the homozygote variant"""
-    #     assert self.recessive_family.variants[self.recessive_variant.variant_id].ar
-    #     assert not self.recessive_family.variants[self.recessive_variant.variant_id].ar_dn
-    #     assert not self.recessive_family.variants[self.recessive_variant.variant_id].ad
-    #     assert not self.recessive_family.variants[self.recessive_variant.variant_id].ad_dn
-    #     assert not self.recessive_family.variants[self.recessive_variant.variant_id].ar_comp
-    #     assert not self.recessive_family.variants[self.recessive_variant.variant_id].x_linked
-    #     assert not self.recessive_family.variants[self.recessive_variant.variant_id].x_linked_dn
-    #     self.recessive_variant.check_models()
-    #     assert 'AR_hom' in self.recessive_variant.models
-    #     assert len(self.recessive_variant.models) == 1
-    
-
-
 
 
 def main():
