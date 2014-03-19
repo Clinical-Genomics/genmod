@@ -144,12 +144,13 @@ def main():
     # Check if the ccds-file is compressed and indexed:
     
     if args.cadd_file[0]:
+        if args.verbose:
+            print('Cadd file! %s' % args.cadd_file[0])            
         try:
             tabix_index(args.cadd_file[0], seq_col=0, start_col=1, end_col=1, meta_char='#')
         except IOError as e:
             if args.verbose:
                 print(e)
-            pass
     
     # # Check the variants:
     
