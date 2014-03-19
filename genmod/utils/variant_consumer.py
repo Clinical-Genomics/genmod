@@ -38,8 +38,6 @@ class VariantConsumer(multiprocessing.Process):
         self.cadd_file = args.cadd_file[0]
                     
         if self.cadd_file:
-            if self.verbosity:
-                print('Cadd file! %s' % self.cadd_file)            
             self.cadd_file = Tabixfile(self.cadd_file, parser = asTuple())
             self.nuc_column = {'A':7, 'C':8, 'G':9, 'T':10}
     
