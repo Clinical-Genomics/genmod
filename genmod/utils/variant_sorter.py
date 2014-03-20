@@ -69,6 +69,7 @@ class FileSort(object):
             try: 
                 f = open(fileName, mode='w', encoding='utf-8')
             except TypeError:
+            #If we deal with temporary files:
                 f = open(fileName.name, mode='w', encoding='utf-8')
             f.write(''.join(lines))
     
@@ -86,18 +87,22 @@ class FileSort(object):
                 size += len(line)
                 lines.append(line)
                 if size >= self._splitSize:
-                    with NamedTemporaryFile(delete=False, mode='w', encoding='utf-8') as tmpFile:
-                        fileNames.append(tmpFile.name)
-                        tmpFile.write(''.join(lines))
+                    temp_file = NamedTemporaryFile(delete=False)
+                    temp_file.close()
+                    with open(temp_file, mode='w', encoding='utf-8') as f:
+                        fileNames.append(tmp_file.name)
+                        f.write(''.join(lines))
                         del lines[:]
                         size = 0
                                                        
             if size > 0:
-                with NamedTemporaryFile(delete=False, mode='w', encoding='utf-8') as tmpFile:
-                    fileNames.append(tmpFile.name)
-                    tmpFile.write(''.join(lines))
-                    tmpFile.close()
-            return fileNames
+                temp_file = NamedTemporaryFile(delete=False)
+                temp_file.close()
+                with open(temp_file, mode='w', encoding='utf-8') as f:
+                    fileNames.append(tmp_file.name)
+                    f.write(''.join(lines))
+            
+        return fileNames
 
     def _mergeFiles(self, files):
         try:
@@ -176,13 +181,15 @@ def main():
     parser.add_argument('-out', '--outfile', type=str, nargs=1, default=[None], help='Specify the path to the outfile.')
     args = parser.parse_args()
     infile = args.infile[0]
-    new_file = NamedTemporaryFile(delete=False, mode='w', encoding='utf-8')
-    with open(infile, 'r') as f:
-        for line in f:
-            if not line.startswith('#'):
-                new_file.write(line)
+    temp_file = NamedTemporaryFile(delete=False)
+    temp_file.close()
+    with open(infile, mode='r', encoding = 'utf-8') as f:
+        with open(temp_file.name, mode='w', encoding = 'utf-8') as g:
+            for line in f:
+                if not line.startswith('#'):
+                    g.write(line)
     print('no errors')
-    fs = FileSort(new_file, args.outfile[0])
+    fs = FileSort(temp_file.name, args.outfile[0])
     fs.sort()
 
 
