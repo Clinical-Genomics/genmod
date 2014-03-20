@@ -90,7 +90,7 @@ class FileSort(object):
                     temp_file = NamedTemporaryFile(delete=False)
                     temp_file.close()
                     with open(temp_file.name, mode='w', encoding='utf-8') as f:
-                        fileNames.append(tmp_file.name)
+                        fileNames.append(temp_file.name)
                         f.write(''.join(lines))
                         del lines[:]
                         size = 0
