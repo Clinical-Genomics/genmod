@@ -66,7 +66,7 @@ class FileSort(object):
                     print(''.join(lines))
         else:
         # In this case the temporary files are over witten.
-            try: 
+            try:
                 f = open(fileName, mode='w', encoding='utf-8')
             except TypeError:
             #If we deal with temporary files:
@@ -89,7 +89,7 @@ class FileSort(object):
                 if size >= self._splitSize:
                     temp_file = NamedTemporaryFile(delete=False)
                     temp_file.close()
-                    with open(temp_file, mode='w', encoding='utf-8') as f:
+                    with open(temp_file.name, mode='w', encoding='utf-8') as f:
                         fileNames.append(tmp_file.name)
                         f.write(''.join(lines))
                         del lines[:]
@@ -98,7 +98,7 @@ class FileSort(object):
             if size > 0:
                 temp_file = NamedTemporaryFile(delete=False)
                 temp_file.close()
-                with open(temp_file, mode='w', encoding='utf-8') as f:
+                with open(temp_file.name, mode='w', encoding='utf-8') as f:
                     fileNames.append(tmp_file.name)
                     f.write(''.join(lines))
             
