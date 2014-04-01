@@ -4,11 +4,11 @@ except ImportError:
     from distutils.core import setup
     
 
-with open('README.txt') as file:
-    long_description = file.read()
+# with open('README.txt') as file:
+#     long_description = file.read()
 
 setup(name='genmod',
-    version='0.9',
+    version='0.9.1',
     description='Annotate genetic inheritance models in variant files',
     author = 'Mans Magnusson',
     author_email = 'mans.magnusson@scilifelab.se',
@@ -28,5 +28,5 @@ setup(name='genmod',
         "Intended Audience :: Science/Research",
         "Topic :: Scientific/Engineering :: Bio-Informatics",
     ],
-    long_description = long_description,
+    # long_description = long_description,
 )
