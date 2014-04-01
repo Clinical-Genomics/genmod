@@ -103,7 +103,7 @@ def main():
     
     parser.add_argument('-phased', '--phased', 
         action="store_true", 
-        help='Do not print the variants.'
+        help='If data is phased use this flag.'
     )
     
     parser.add_argument('-o', '--outfile', 
@@ -113,7 +113,8 @@ def main():
     
     parser.add_argument('-cadd', '--cadd_file', 
         type=str, nargs=1, default=[None],
-        help='Specify the path to a file cadd file with variant scores.'
+        help='Specify the path to a bgzipped cadd file with variant scores.\
+            If no index is present it will be created.'
     )    
     
     args = parser.parse_args()

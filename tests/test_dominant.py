@@ -52,8 +52,6 @@ class TestDominantModel(object):
         assert not self.dominant_variant['Inheritance_model']['AR_hom_denovo']
         assert self.dominant_variant['Inheritance_model']['AD']
         assert not self.dominant_variant['Inheritance_model']['AD_denovo']
-        assert not self.dominant_variant['Inheritance_model']['X']
-        assert not self.dominant_variant['Inheritance_model']['X_dn']
     
     def test_dominant_missing(self):
         """This variant should follow dominant and dominant de novo patterns."""
@@ -61,8 +59,6 @@ class TestDominantModel(object):
         assert not self.dominant_missing['Inheritance_model']['AR_hom_denovo']
         assert self.dominant_missing['Inheritance_model']['AD']
         assert self.dominant_missing['Inheritance_model']['AD_denovo']
-        assert not self.dominant_missing['Inheritance_model']['X']
-        assert not self.dominant_missing['Inheritance_model']['X_dn']
     
     def test_not_dominant(self):
         """This variant should not follow any inheritance patterns"""
@@ -70,8 +66,6 @@ class TestDominantModel(object):
         assert not self.not_dominant['Inheritance_model']['AR_hom_denovo']
         assert not self.not_dominant['Inheritance_model']['AD']
         assert not self.not_dominant['Inheritance_model']['AD_denovo']
-        assert not self.not_dominant['Inheritance_model']['X']
-        assert not self.not_dominant['Inheritance_model']['X_dn']
             
 
 

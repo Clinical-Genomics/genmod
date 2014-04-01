@@ -82,8 +82,6 @@ class TestPhasedDuo(object):
         assert not self.recessive_comp_simple_1['Inheritance_model']['AR_hom_denovo']
         assert self.recessive_comp_simple_1['Inheritance_model']['AD']
         assert self.recessive_comp_simple_1['Inheritance_model']['AD_denovo']
-        assert not self.recessive_comp_simple_1['Inheritance_model']['X']
-        assert not self.recessive_comp_simple_1['Inheritance_model']['X_dn']
         assert self.recessive_comp_simple_1['Inheritance_model']['AR_compound']
     
     def test_recessive_comp_duo_not_simple(self):
@@ -92,8 +90,6 @@ class TestPhasedDuo(object):
         assert not self.recessive_comp_not_simple_2['Inheritance_model']['AR_hom_denovo']
         assert not self.recessive_comp_not_simple_2['Inheritance_model']['AD']
         assert not self.recessive_comp_not_simple_2['Inheritance_model']['AD_denovo']
-        assert not self.recessive_comp_not_simple_2['Inheritance_model']['X']
-        assert not self.recessive_comp_not_simple_2['Inheritance_model']['X_dn']
         assert self.recessive_comp_not_simple_2['Inheritance_model']['AR_compound']
     
     def test_not_recessive_comp_duo(self):
@@ -102,8 +98,6 @@ class TestPhasedDuo(object):
         assert not self.not_recessive_comp_1['Inheritance_model']['AR_hom_denovo']
         assert self.not_recessive_comp_1['Inheritance_model']['AD']
         assert self.not_recessive_comp_1['Inheritance_model']['AD_denovo']
-        assert not self.not_recessive_comp_1['Inheritance_model']['X']
-        assert not self.not_recessive_comp_1['Inheritance_model']['X_dn']
         assert not self.not_recessive_comp_1['Inheritance_model']['AR_compound']
     
     def test_recessive_comp_duo_missing(self):
@@ -112,8 +106,6 @@ class TestPhasedDuo(object):
         assert not self.recessive_comp_missing_2['Inheritance_model']['AR_hom_denovo']
         assert self.recessive_comp_missing_2['Inheritance_model']['AD']
         assert self.recessive_comp_missing_2['Inheritance_model']['AD_denovo']
-        assert not self.recessive_comp_missing_2['Inheritance_model']['X']
-        assert not self.recessive_comp_missing_2['Inheritance_model']['X_dn']
         assert self.recessive_comp_missing_2['Inheritance_model']['AR_compound']
 
 

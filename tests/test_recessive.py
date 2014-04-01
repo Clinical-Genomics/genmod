@@ -52,8 +52,6 @@ class TestRecessiveModels(object):
         assert not self.recessive_variant['Inheritance_model']['AR_hom_denovo']
         assert not self.recessive_variant['Inheritance_model']['AD']
         assert not self.recessive_variant['Inheritance_model']['AD_denovo']
-        assert not self.recessive_variant['Inheritance_model']['X']
-        assert not self.recessive_variant['Inheritance_model']['X_dn']
         assert not self.recessive_variant['Inheritance_model']['AR_compound']
     
     def test_recessive_dn(self):
@@ -62,8 +60,6 @@ class TestRecessiveModels(object):
         assert self.recessive_dn['Inheritance_model']['AR_hom_denovo']
         assert not self.recessive_dn['Inheritance_model']['AD']
         assert not self.recessive_dn['Inheritance_model']['AD_denovo']
-        assert not self.recessive_dn['Inheritance_model']['X']
-        assert not self.recessive_dn['Inheritance_model']['X_dn']
         assert not self.recessive_dn['Inheritance_model']['AR_compound']
     
     def test_recessive_missing(self):
@@ -72,8 +68,6 @@ class TestRecessiveModels(object):
         assert self.recessive_missing['Inheritance_model']['AR_hom_denovo']
         assert not self.recessive_missing['Inheritance_model']['AD']
         assert not self.recessive_missing['Inheritance_model']['AD_denovo']
-        assert not self.recessive_missing['Inheritance_model']['X']
-        assert not self.recessive_missing['Inheritance_model']['X_dn']
         assert not self.recessive_missing['Inheritance_model']['AR_compound']
     
     def test_not_recessive(self):
@@ -82,8 +76,6 @@ class TestRecessiveModels(object):
         assert not self.not_recessive['Inheritance_model']['AR_hom_denovo']
         assert not self.not_recessive['Inheritance_model']['AD']
         assert not self.not_recessive['Inheritance_model']['AD_denovo']
-        assert not self.not_recessive['Inheritance_model']['X']
-        assert not self.not_recessive['Inheritance_model']['X_dn']
         assert not self.not_recessive['Inheritance_model']['AR_compound']
     
 

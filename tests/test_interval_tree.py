@@ -39,7 +39,7 @@ class TestAnnotationParser(object):
             tree = IntervalTree([[2,'id01']],1,2)
         with pytest.raises(SyntaxError):
             self.simplest_tree.find_range([1])
-        with pytest.raises(TypeError):
+        with pytest.raises(ValueError):
             self.simplest_tree.find_range([1, 'a'])
         
     def test_simplest_tree(self):
