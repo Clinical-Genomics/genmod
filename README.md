@@ -1,68 +1,53 @@
-# genmod #
+# GENMOD #
 
 
-Tool for analyzing variants in a family setting in variant files.
+Tool for annotating patterns of inheritance Variant Call Format (VCF) files.
 
-Basic usage:
+Each variant in the VCF-file will be annotated with which genetic models that are followed in the family.
+The genetic models that are checked are the following:
 
-genmod needs *setuptools* to install proper.
-Setuptools is included in python version 2.7.
-If other version please do 
+    * Autsomal Recessive, denoted 'AR'
+    * Autsomal Recessive denovo, denoted 'AR_denovo'
+    * Autsomal Dominant, 'AD'
+    * Autsomal Dominant denovo, 'AD_denovo'
+    * Autosomal Compound Heterozygote, 'AR_compound'
+    * X-linked dominant, 'XD'
+    * X-linked dominant de novo, 'XD_denovo'
+    * X-linked Recessive, 'XR'
+    * X-linked Recessive de novo, 'XR_denovo'
+
+**GENMOD** will add entrys to the INFO column for the given VCF file. The new entrys are: 
+    
+    - GM: A colon separated list with genetic models followed
+    - ANN: Colon separated list with features overlapped in the annotation file
+    - Comp: Colon separated list with compound pairs(if any). These are described like CHR_POS_REF_ALT.
+    - MS: Model Score, a phred-score based on the genotype qualities to describe the uncertainty of the genetic model.
+
+
+###Installation:###
+
+genmod works with Python 2.7 and Python 3.
+
 
 ```
- pip install setuptools 
- 
-```
+pip install genmod
+´´´
+
 or
-
-```
- easy_install setuptools 
- 
-```
-
-before installing genmod.
 
 ```
  git clone git@github.com:moonso/genmod.git
  cd genmod
  python setup.py install
 
-genmod ped_file variant_file
+genmod ped_file variant_file annotation_file
 
 ```
 
-## Structure ##
-
-The package includes the following classes, from bottom up:
-
-### Genotype ###
-
-Store the genotype information of a variant that is specific for an *individual*
-
-### Variant ###
-
-Holds the info of a variant and it's specific behaviour in a *family*.
-
-### Individual ###
-
-Holds the information about an individual and the individual specific genotypes.
-
-*Has*
-
-* Genotype
-
-### Family ###
-
-Store the information of a family, including all family members and the union of all variants for this family.
-
-*Has*
-
-* Individual
-* Variant
 
 ## Conditions for Genetic Models ##
 
-Short explanation of the genotype calls in vcf format.
+### Short explanation of genotype calls in VCF format:###
 
 Since we only look at humans, that are diploid, the genotypes represent what we see on both alleles in a single position.
 0 represents the reference sequence, 1 is the first of the alternative alleles, 2 second alternative and so on.
@@ -75,19 +60,11 @@ If phasing has been done the pairs are not unordered anymore and the delimiter i
 
 ### Autosomal Recessive ###
 
-For this model an individual can be a carrier, so healthy individuals can be heterozygous. Both alleles need to have the variant for an individual to be sick so a healthy individual can not be homozygous alternative and a sick individual has to be homozygous alternative.
+For this model individuals can be carriers so healthy individuals can be heterozygous. Both alleles need to have the variant for an individual to be sick so a healthy individual can not be homozygous alternative and a sick individual *has* to be homozygous alternative.
 
-1. If individual is healthy:
-	* Can be a carrier so 0/1 is ok
-	* Can have ref call or no call so 0/0 and ./. is ok
-	* Can not be homozygote alternative, so 1/1 is NOT ok.
-  	
-  
-2. If individual is sick:
-	* Can not be a carrier so 0/1 is not ok.
-	* Can not have ref call 0/0 is not ok
-	* Must be homozygote alternative so 1/1, 2/2, ... are ok if parents are heterozygotes, otherwise the variant follows follows Autosomal Recessive De Novo.
-	* No call, ./., is ok since we can not exclude the model by this.
+    * Affected individuals have to be homozygous alternative (hom. alt.)
+    * Healthy individuals cannot be hom. alt.
+    * Variant is considered \emph{de novo} if both parents are genotyped and do not carry the variant
 
 ### Autosomal Recessive De Novo ###
 
@@ -97,16 +74,7 @@ Same as above but with the difference that one or both of the parents are missin
 
 Here it is enough that one of the alleles have the variant for an individual to be sick.
 
-1. If individual is healthy:
-	* Can not be a carrier so 0/1 is NOT ok
-	* Can have ref call or no call so 0/0 and ./. is ok
-	* Can not be homozygote so 1/1 is NOT ok.
-	
-
-2. If individual is sick:
-	* Can be heterozygous so 0/1 is ok, should be found in any of the parents otherwise de novo.
-	* Can not have ref call, so 0/0 is not ok
-	* Can be homozygote alternative so 1/1, 2/2, ... are ok if parents are sick and heterozygote or affected homozygotes, otherwise the individual follows Autosomal Dominant De Novo.
+    
 
 
 ### Autosomal Dominant De Novo ###
