@@ -24,25 +24,22 @@ The genetic models that are checked are the following:
 - MS: Model Score, a phred-score based on the genotype qualities to describe the uncertainty of the genetic model.
 
 
-###Installation:###
+##Installation:##
 
 genmod works with Python 2.7 and Python 3.
 
-
-```
-pip install genmod
-´´´
+    pip install genmod
 
 or
 
-```
- git clone git@github.com:moonso/genmod.git
- cd genmod
- python setup.py install
 
-genmod ped_file variant_file annotation_file
+    git clone git@github.com:moonso/genmod.git
+    cd genmod
+    python setup.py install
 
-```
+###USAGE:###
+
+    genmod ped_file variant_file annotation_file
 
 
 ## Conditions for Genetic Models ##
