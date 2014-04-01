@@ -62,73 +62,52 @@ If phasing has been done the pairs are not unordered anymore and the delimiter i
 
 For this model individuals can be carriers so healthy individuals can be heterozygous. Both alleles need to have the variant for an individual to be sick so a healthy individual can not be homozygous alternative and a sick individual *has* to be homozygous alternative.
 
-    * Affected individuals have to be homozygous alternative (hom. alt.)
-    * Healthy individuals cannot be hom. alt.
-    * Variant is considered \emph{de novo} if both parents are genotyped and do not carry the variant
+* Affected individuals have to be homozygous alternative (hom. alt.)
+* Healthy individuals cannot be hom. alt.
+* Variant is considered _de novo_ if both parents are genotyped and do not carry the variant
 
-### Autosomal Recessive De Novo ###
-
-Same as above but with the difference that one or both of the parents are missing the genotypes.
 
 ### Autosomal Dominant ###
 
-Here it is enough that one of the alleles have the variant for an individual to be sick.
-
-    
-
-
-### Autosomal Dominant De Novo ###
-
-Same as above but with the difference that one or both of the parents are missing the genotypes.
+* Affected individuals have to be heterozygous (het.)
+* Healthy individuals cannot have the alternative variant
+* Variant is considered _de novo_ if both parents are genotyped and do not carry the variant
 
 
 ### Autosomal Compound Heterozygote ###
 
-Here we are looking at pairs of *heterozygote* variants that are located within the same gene. For two variants to qualify for being compound pair they have to be present together in a affected individual but can **not** be present together in any of the healthy individuals.
-So *one and only one*, variant should be found in each parent, otherwise the variant follows the pattern of compound heterozygote de novo.
+This model includes pairs of variants that are present within the same feature.
 
-One of the problems here is that a compound heterozygote can exist in different ways such that they can be deleterious or not.  
-If we do not have the phasing information from the individuals, that is if we have not resolved on which alleles the variants that we look at are located on, we can not say if a pair is deleterious or not.
-
-Right now this is how we do this:
-
-1. If individual is healthy:
-	* Can be a carrier so 0/1 is ok
-	* Can have ref call or no call so 0/0 and ./. is ok
-	* Can not be homozygote alternative, so 1/1 is NOT ok.
+1. Non-phased data:
+	* Affected individuals have to be het. for both variants
+	* Healthy individuals can be het. for one of the variants but cannot have both variants
+	* Variant is considered _de novo_ if only one or no variant is found in the parents
   	
   
-2. If individual is sick:
-	* Can be a carrier so 0/1 is not ok.
-	* Can not have ref call, 0/0 is not ok
-	* Must make sure that each of the parents carry one (and only one) of the variants in the potential pair each.
-	* No call, ./., is ok since we can not exclude the model by this.
+2. Phased data:
+	* All affected individuals have to be het. for both variants and the variants has to be on two different alleles
+	* Healthy individuals can be heterozygous for one or both of the variants if they are on the \emph{same} allele
+	* If only one or no variant is found in parents it is considered _de novo_
+
+
+### X-Linked Dominant###
+
+These traits are inherited on the x-chromosome, of which men have one allele and women have two. 
+
+* Variant has to be on chromosome X
+* Affected individuals have to be het. or hom. alt.
+* Healthy individuals cannot carry the variant
+* Variant is considered _de novo__ if mother is genotyped and does not carry the variant
     
-### Autosomal Compound Heterozygote De Novo ###
 
-Same as above but one of the variants are not seen in the parents.
+### X Linked Recessive ###
 
-### X Linked ###
-
-These traits are inherited on the x-chromosome, of which men have one allele and women have two. This means that woman's can be carries but men get affected if they get the variant. It is rare that women get these type of disease since they have to inherit a variant from both parents which implies that the father has to be sick. 
-
-1. If individual is healthy:
-	* If woman: can be a carrier so 0/1 is ok
-	* If man: can not be a carrier so 0/1 is not ok
-	* Can have ref call or no call so 0/0 and ./. is ok
-	* Can not be homozygote alternative, so 1/1 is NOT ok.
-  	
-  
-2. If individual is sick:
-	* If woman: can be a carrier so 0/1 is not ok.
-	* Can not have ref call, 0/0 is not ok
-	* No call, ./., is ok since we can not exclude the model by this.
+* Variant has to be on chromosome X
+* Affected individuals have to be het. or hom. alt.
+* Healthy individuals cannot be hom. alt.
+* Variant is considered _de novo__ if mother is genotyped and does not carry the variant
 
 
-
-### X Linked De Novo ###
-
-Same as above but variant is not seen in any of the parents.
 
 ## Detailed Structure ##
 
