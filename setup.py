@@ -8,11 +8,11 @@ except ImportError:
 #     long_description = file.read()
 
 setup(name='genmod',
-    version='0.9.1',
+    version='0.9.2',
     description='Annotate genetic inheritance models in variant files',
     author = 'Mans Magnusson',
     author_email = 'mans.magnusson@scilifelab.se',
-    url = 'http://github.commoonso/genmod',
+    url = 'http://github.com/moonso/genmod',
     license = 'Modified BSD',
     install_requires=['ped_parser', 'pysam'],
     packages = ['genmod', 'genmod.utils', 'genmod.models', 'genmod.variants', 'genmod.vcf'],
