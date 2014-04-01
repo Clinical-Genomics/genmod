@@ -6,22 +6,22 @@ Tool for annotating patterns of inheritance Variant Call Format (VCF) files.
 Each variant in the VCF-file will be annotated with which genetic models that are followed in the family.
 The genetic models that are checked are the following:
 
-    * Autsomal Recessive, denoted 'AR'
-    * Autsomal Recessive denovo, denoted 'AR_denovo'
-    * Autsomal Dominant, 'AD'
-    * Autsomal Dominant denovo, 'AD_denovo'
-    * Autosomal Compound Heterozygote, 'AR_compound'
-    * X-linked dominant, 'XD'
-    * X-linked dominant de novo, 'XD_denovo'
-    * X-linked Recessive, 'XR'
-    * X-linked Recessive de novo, 'XR_denovo'
+* Autsomal Recessive, denoted 'AR'
+* Autsomal Recessive denovo, denoted 'AR_denovo'
+* Autsomal Dominant, 'AD'
+* Autsomal Dominant denovo, 'AD_denovo'
+* Autosomal Compound Heterozygote, 'AR_compound'
+* X-linked dominant, 'XD'
+* X-linked dominant de novo, 'XD_denovo'
+* X-linked Recessive, 'XR'
+* X-linked Recessive de novo, 'XR_denovo'
 
 **GENMOD** will add entrys to the INFO column for the given VCF file. The new entrys are: 
     
-    - GM: A colon separated list with genetic models followed
-    - ANN: Colon separated list with features overlapped in the annotation file
-    - Comp: Colon separated list with compound pairs(if any). These are described like CHR_POS_REF_ALT.
-    - MS: Model Score, a phred-score based on the genotype qualities to describe the uncertainty of the genetic model.
+- GM: A colon separated list with genetic models followed
+- ANN: Colon separated list with features overlapped in the annotation file
+- Comp: Colon separated list with compound pairs(if any). These are described like CHR_POS_REF_ALT.
+- MS: Model Score, a phred-score based on the genotype qualities to describe the uncertainty of the genetic model.
 
 
 ###Installation:###
