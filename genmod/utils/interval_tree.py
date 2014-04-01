@@ -97,10 +97,10 @@ class IntervalTree:
     def pt_within(self, pt, subject):
         """Accessory function to check if a point is within a range"""
         try:
-            if pt >= subject[0] and pt <= subject[1]:
+            if pt >= int(subject[0]) and pt <= int(subject[1]):
                 return True
-        except TypeError:
-            raise TypeError('Interval start and stop has to be integers. %s' % str(subject))
+        except ValueError:
+            raise ValueError('Interval start and stop has to be integers. %s' % str(subject))
 
         return False
 

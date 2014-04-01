@@ -7,6 +7,7 @@ Sort a variant file based on position or rank score.
 
 
 Created by Tomasz Beiruta on 2005-05-31.
+
 Modified by Måns Magnusson on 2014-01-14.
 
 """
