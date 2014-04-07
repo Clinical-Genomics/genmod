@@ -7,14 +7,14 @@ Each variant in the VCF-file will be annotated with which genetic models that ar
 The genetic models that are checked are the following:
 
 * Autsomal Recessive, denoted 'AR'
-* Autsomal Recessive denovo, denoted 'AR_denovo'
+* Autsomal Recessive denovo, denoted 'AR_dn'
 * Autsomal Dominant, 'AD'
-* Autsomal Dominant denovo, 'AD_denovo'
+* Autsomal Dominant denovo, 'AD_dn'
 * Autosomal Compound Heterozygote, 'AR_compound'
 * X-linked dominant, 'XD'
-* X-linked dominant de novo, 'XD_denovo'
+* X-linked dominant de novo, 'XD_dn'
 * X-linked Recessive, 'XR'
-* X-linked Recessive de novo, 'XR_denovo'
+* X-linked Recessive de novo, 'XR_dn'
 
 **GENMOD** will add entrys to the INFO column for the given VCF file. The new entrys are: 
     
@@ -94,7 +94,8 @@ These traits are inherited on the x-chromosome, of which men have one allele and
 * Variant has to be on chromosome X
 * Affected individuals have to be het. or hom. alt.
 * Healthy individuals cannot carry the variant
-* Variant is considered _de novo__ if mother is genotyped and does not carry the variant
+* If sex is male the variant is considered _de novo_ if mother is genotyped and does not carry the variant
+* If sex is female variant is considered _de novo_ if none of the parents carry the variant
     
 
 ### X Linked Recessive ###
@@ -102,11 +103,12 @@ These traits are inherited on the x-chromosome, of which men have one allele and
 * Variant has to be on chromosome X
 * Affected individuals have to be het. or hom. alt.
 * Healthy individuals cannot be hom. alt.
-* Variant is considered _de novo__ if mother is genotyped and does not carry the variant
+* If sex is male the variant is considered _de novo_ if mother is genotyped and does not carry the variant
+* If sex is female variant is considered _de novo_ if not both parents carry the variant
 
 
 
-## Detailed Structure ##
+<!-- ## Detailed Structure ##
 
 Here all attributes and methods of the classes will be showed:
 
@@ -159,17 +161,17 @@ Holds the info of a variant and it's specific behaviour in a family.
 **Methods**
 
 * get_variant(self):
-	Returns a dictionary with basic info to stdout
+    Returns a dictionary with basic info to stdout
 * print_model_info(self):
-	Print for each variant which patterns of inheritance they follow.	
+    Print for each variant which patterns of inheritance they follow.    
 * print_vcf_variant(self):
-	Print the variant in vcf-format to stdout
+    Print the variant in vcf-format to stdout
 * print_original_version(self, header_columns):
-	Prints the variant in its original format.
+    Prints the variant in its original format.
 * check_noncomplete_call(self):
-	Check if GATK have missed to report some info.
+    Check if GATK have missed to report some info.
 * get_genotype(self):
-	Returns the list with genotypes for this variant.
+    Returns the list with genotypes for this variant.
 
 
 ### Individual ###
@@ -192,4 +194,4 @@ Holds the information about an individual and the individual specific genotypes.
 **Attributes**
 
 * individuals DICT dictionary with family members on the form {<ind_id>:<Individual>}
-* variants DICT dictionary with all the variants that exists in the family on the form {<var_id>:<Variant>}
+* variants DICT dictionary with all the variants that exists in the family on the form {<var_id>:<Variant>} -->

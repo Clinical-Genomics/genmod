@@ -50,11 +50,11 @@ class Genotype(object):
     def __init__(self, GT='./.', AD='.,.', DP='0', GQ='0', PL=[], FILTER = '.', original_info = ''):
         super(Genotype, self).__init__()        
         # These are the different genotypes:
-        self.nocall = True
         self.heterozygote = False
         self.homo_alt = False
         self.homo_ref = False
         self.has_variant = False
+        self.genotyped = False
         
         if len(GT) < 3: #This is the case when only one allele is present(eg. X-chromosome) and presented like '0' or '1'.
             self.allele_1 = GT
@@ -65,7 +65,7 @@ class Genotype(object):
         self.genotype = self.allele_1 +'/'+ self.allele_2 # The genotype should allways be represented on the same form
         
         if self.genotype != './.':
-            self.nocall = False
+            self.genotyped = True
             self.check_alleles(self.allele_1, self.allele_2)
             self.check_alleles(self.allele_2, self.allele_1)
         if self.heterozygote or self.homo_alt:

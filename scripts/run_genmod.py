@@ -12,19 +12,18 @@ Copyright (c) 2013 __MyCompanyName__. All rights reserved.
 import sys
 import os
 import argparse
-from multiprocessing import JoinableQueue, Manager, cpu_count, Lock
+from multiprocessing import JoinableQueue, Manager, cpu_count
 from codecs import open
 from datetime import datetime
 from tempfile import mkdtemp
 import shutil
 import pkg_resources
-from pysam import tabix_index, tabix_compress
 
-from pprint import pprint as pp
+from pysam import tabix_index, tabix_compress
 
 from ped_parser import parser
 
-from genmod.utils import is_number, variant_consumer, variant_sorter, annotation_parser, variant_printer
+from genmod.utils import variant_consumer, variant_sorter, annotation_parser, variant_printer
 from genmod.vcf import vcf_header, vcf_parser
 
 def get_family(args):
@@ -65,6 +64,9 @@ def print_headers(args, header_object):
     return
 
 def main():
+    
+    info_string = """Individuals that are not present in ped file will not be considered in the analysis."""
+    
     parser = argparse.ArgumentParser(description="Annotate genetic models in variant files..")
     
     parser.add_argument('family_file', 
@@ -94,6 +96,11 @@ def main():
     parser.add_argument('-v', '--verbose', 
         action="store_true", 
         help='Increase output verbosity.'
+    )
+
+    parser.add_argument('-chr', '--chr_prefix', 
+        action="store_true", 
+        help='If chr prefix is used in vcf.'
     )
     
     parser.add_argument('-s', '--silent', 
@@ -174,11 +181,13 @@ def main():
     if args.verbose:
         print('Number of CPU:s %s' % cpu_count())
     
+    # These are the workers that do the analysis
     model_checkers = [variant_consumer.VariantConsumer(variant_queue, results, my_family, args) for i in range(num_model_checkers)]
     
     for w in model_checkers:
         w.start()
     
+    # This process prints the variants to temporary files
     var_printer = variant_printer.VariantPrinter(results, temp_dir, head, args.verbose)
     var_printer.start()
     
@@ -186,7 +195,8 @@ def main():
         print('Start parsing the variants ...')
         print('')
         start_time_variant_parsing = datetime.now()    
-        
+    
+    # For parsing the vcf:
     var_parser = vcf_parser.VariantFileParser(var_file, variant_queue, head, annotation_trees, args)
     var_parser.parse()
     

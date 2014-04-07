@@ -36,10 +36,10 @@ class VariantConsumer(multiprocessing.Process):
         self.verbosity = args.verbose
         self.phased = args.phased
         self.cadd_file = args.cadd_file[0]
+        self.chr_prefix = args.chr_prefix
                     
         if self.cadd_file:
             self.cadd_file = Tabixfile(self.cadd_file, parser = asTuple())
-            self.nuc_column = {'A':7, 'C':8, 'G':9, 'T':10}
     
     def fix_variants(self, variant_batch):
         """Merge the variants into one dictionary, make shure that the compounds are treated right."""
@@ -97,6 +97,7 @@ class VariantConsumer(multiprocessing.Process):
                 compounds_list = list(variant_dict[variant_id]['Compounds'].keys())
             else:
                 compounds_list = ['-']
+            
             for model in variant_dict[variant_id]['Inheritance_model']:
                 if variant_dict[variant_id]['Inheritance_model'][model]:
                     model_list.append(model)
@@ -112,15 +113,17 @@ class VariantConsumer(multiprocessing.Process):
                 else:
                     gt_call = dict(zip(gt_info, gt_call))
                 if 'GQ' in gt_call:
-                    # Add the error probabilities to genptype scores
+                    # Add the error probabilities to genotype scores
                     genotype_scores.append(10**-(float(gt_call['GQ'])/10))
             if len(genotype_scores) > 0:
                 model_score = (str(round(-10*log10(1-reduce(operator.mul, [1-score for score in genotype_scores])))))
-            # print('Model Score: %s' % model_score)
             variant_dict[variant_id].pop('Compounds',0)
             variant_dict[variant_id].pop('Inheritance_model',0)
             variant_dict[variant_id].pop('Annotation',0)
             vcf_info = variant_dict[variant_id]['INFO'].split(';')
+            
+            if self.chr_prefix:
+                variant_dict[variant_id]['CHROM'] = 'chr'+variant_dict[variant_id]['CHROM']
             # if we should include the annotation:
             vcf_info.append('ANN=' + ':'.join(feature_list))
             # if we should include compounds:
@@ -133,7 +136,6 @@ class VariantConsumer(multiprocessing.Process):
             if self.cadd_file:
                 vcf_info.append('CADD=%s' % str(variant_dict[variant_id].pop('CADD', '-')))
             variant_dict[variant_id]['INFO'] = ';'.join(vcf_info)
-            # pp(variant_dict[variant_id])
         return
     
     def run(self):
