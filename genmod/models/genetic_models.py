@@ -102,14 +102,14 @@ def check_genetic_models(variant_batch, family, verbose = False, phased = False,
                 check_X_recessive(variant_batch[gene][variant_id], family)
                 check_X_dominant(variant_batch[gene][variant_id], family)
                 variant_batch[gene][variant_id]['Inheritance_model']['AD'] = False
-                variant_batch[gene][variant_id]['Inheritance_model']['AD_denovo'] = False
+                variant_batch[gene][variant_id]['Inheritance_model']['AD_dn'] = False
                 variant_batch[gene][variant_id]['Inheritance_model']['AR_hom'] = False
-                variant_batch[gene][variant_id]['Inheritance_model']['AR_hom_denovo'] = False
+                variant_batch[gene][variant_id]['Inheritance_model']['AR_hom_dn'] = False
             else:
                 variant_batch[gene][variant_id]['Inheritance_model']['XR'] = False
-                variant_batch[gene][variant_id]['Inheritance_model']['XR_denovo'] = False
+                variant_batch[gene][variant_id]['Inheritance_model']['XR_dn'] = False
                 variant_batch[gene][variant_id]['Inheritance_model']['XD'] = False
-                variant_batch[gene][variant_id]['Inheritance_model']['XD_denovo'] = False
+                variant_batch[gene][variant_id]['Inheritance_model']['XD_dn'] = False
             # Check the dominant model:
                 check_dominant(variant_batch[gene][variant_id], family)
             # Check the recessive model:
