@@ -3,12 +3,19 @@ try:
 except ImportError:
     from distutils.core import setup
     
+# For making things look nice on pypi:
+try:
+    import pypandoc
+    long_description = pypandoc.convert('README.md', 'rst')
+except (IOError, ImportError):
+    long_description = ''
+
 
 # with open('README.txt') as file:
 #     long_description = file.read()
 
 setup(name='genmod',
-    version='0.9.2',
+    version='0.9.3',
     description='Annotate genetic inheritance models in variant files',
     author = 'Mans Magnusson',
     author_email = 'mans.magnusson@scilifelab.se',
@@ -28,5 +35,5 @@ setup(name='genmod',
         "Intended Audience :: Science/Research",
         "Topic :: Scientific/Engineering :: Bio-Informatics",
     ],
-    # long_description = long_description,
+    long_description = long_description,
 )
