@@ -8,14 +8,14 @@ try:
     import pypandoc
     long_description = pypandoc.convert('README.md', 'rst')
 except (IOError, ImportError):
-    long_description = ''
+    long_description = 'Tool for annotating patterns of genetic inheritance in Variant Call Format (VCF) files.'
 
 
 # with open('README.txt') as file:
 #     long_description = file.read()
 
 setup(name='genmod',
-    version='0.9.4',
+    version='0.9.5',
     description='Annotate genetic inheritance models in variant files',
     author = 'Mans Magnusson',
     author_email = 'mans.magnusson@scilifelab.se',

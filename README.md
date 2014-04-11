@@ -10,7 +10,7 @@ The genetic models that are checked are the following:
 * Autsomal Recessive denovo, denoted 'AR_dn'
 * Autsomal Dominant, 'AD'
 * Autsomal Dominant denovo, 'AD_dn'
-* Autosomal Compound Heterozygote, 'AR_compound'
+* Autosomal Compound Heterozygote, 'AR_comp'
 * X-linked dominant, 'XD'
 * X-linked dominant de novo, 'XD_dn'
 * X-linked Recessive, 'XR'
