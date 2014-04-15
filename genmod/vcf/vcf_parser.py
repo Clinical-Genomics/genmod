@@ -8,7 +8,8 @@ Parse a file with variant info in vcf format.
 Creates batches and put them into a queue object.
 The batches are dictionary objects with overlapping features where the feature id:s are keys and the values are dictionarys with variants.
 
-Batch = {feature_1_id:{variant_1_id:variant_1_info, variant_2_id: variant_2_info},feature_2_id:... }   
+
+Batch = {feature_1_id:{variant_1_id:variant_1_info, variant_2_id: variant_2_info}, feature_2_id:... }   
 
 Created by Måns Magnusson on 2014-03-17.
 Copyright (c) 2014 __MyCompanyName__. All rights reserved.
