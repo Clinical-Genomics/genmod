@@ -10,6 +10,32 @@ So self.chromosomes will look like:
 
 The intervals represent features that are annotated in the infile.
 
+
+###UPDATE 2014-04-15###
+
+This parser has been a bit naive since files can have one transcript per line and some one gene per line.
+It is hard to write a tool to parse everything. I will now focus on the refGene format that is one transcript per line and each line is like:
+
+from http://genome.ucsc.edu/FAQ/FAQformat.html#format9:
+
+table refFlat
+"A gene prediction with additional geneName field."
+    (
+    string  geneName;           "Name of gene as it appears in Genome Browser."
+    string  name;               "Name of gene"
+    string  chrom;              "Chromosome name"
+    char[1] strand;             "+ or - for strand"
+    uint    txStart;            "Transcription start position"
+    uint    txEnd;              "Transcription end position"
+    uint    cdsStart;           "Coding region start"
+    uint    cdsEnd;             "Coding region end"
+    uint    exonCount;          "Number of exons"
+    uint[exonCount] exonStarts; "Exon start positions"
+    uint[exonCount] exonEnds;   "Exon end positions"
+    )
+
+
+
 Create a family object and its family members from different types of input file
 Created by Måns Magnusson on 2013-01-17.
 Copyright (c) 2013 __MyCompanyName__. All rights reserved.
@@ -20,8 +46,7 @@ import sys
 import os
 import argparse
 import gzip
-from codecs import open
-
+from codecs import open, getreader
 
 from pprint import pprint as pp
 
@@ -35,40 +60,50 @@ class AnnotationParser(object):
                 
         self.interval_trees = {}# A dictionary with {<chr>:<intervalTree>}
         
-        chromosomes = {} # A dictionary with {<chr>: [feature_1, feature_2, ...]} 
-        chromosome_stops = {}# A dictionary with information about the last positions on each chromosome:
+        file_name, file_extension = os.path.splitext(infile)
         
+        if file_extension == '.gz':
+            zipped = True
+                
         if zipped:
-            f = gzip.open(infile, mode='r', encoding='utf-8')
+            f = getreader('utf-8')(gzip.open(infile), errors='replace')
         else: 
             f = open(infile, mode='r', encoding='utf-8')
         line_count = 0
-        for line in f:
-            if not line.startswith('#') and len(line) > 1:
-                line = line.rstrip()
-                # Info allways contain the important information that is needed to create a feature
-                info = {'chrom':'Na', 'start':0, 'stop':0, 'transcript_id':'0', 'gene_id':'0', 'feature_id':str(line_count)}
-                # print(line)
-                if self.annotation_type == 'ccds':
-                    info = self.ccds_parser(line, info, line_count)
-                elif self.annotation_type == 'bed':
-                    info = self.bed_parser(line, info, line_count)
-                elif self.annotation_type == 'gtf':
-                    info = self.gtf_parser(line, info, line_count)
-                elif self.annotation_type == 'ref_gene':
-                    info = self.ref_gene_parser(line, info, line_count)
-                #Feature is a list with [start, stop, id]
-                feature = [info['start'], info['stop'], info['feature_id']]
-                
-                if info['chrom'] in chromosomes:
-                    chromosomes[info['chrom']].append(feature)
-                else:
-                    chromosomes[info['chrom']] = [feature]
-                # Update the last end position, if it is bigger than before:
-                
-                if info['stop'] > chromosome_stops.get(info['chrom'], 0):
-                    chromosome_stops[info['chrom']] = info['stop'] + 1
-            line_count += 1
+        
+        if self.annotation_type == 'ref_gene':
+            chromosomes, chromosome_stops = self.ref_gene_parser(f)
+        
+        else:
+            chromosomes = {} # A dictionary with {<chr>: [feature_1, feature_2, ...]} 
+            chromosome_stops = {}# A dictionary with information about the last positions on each chromosome:
+            
+            for line in f:
+                if not line.startswith('#') and len(line) > 1:
+                    line = line.rstrip()
+                    # Info allways contain the important information that is needed to create a feature
+                    info = {'chrom':'Na', 'start':0, 'stop':0, 'transcript_id':'0', 'gene_id':'0', 'feature_id':str(line_count)}
+                    # print(line)
+                    if self.annotation_type == 'ccds':
+                        info = self.ccds_parser(line, info, line_count)
+                    elif self.annotation_type == 'bed':
+                        info = self.bed_parser(line, info, line_count)
+                    elif self.annotation_type == 'gtf':
+                        info = self.gtf_parser(line, info, line_count)
+                    elif self.annotation_type == 'ref_gene':
+                        info = self.ref_gene_parser(line, info, line_count)
+                    #Feature is a list with [start, stop, id]
+                    feature = [info['start'], info['stop'], info['feature_id']]
+                    
+                    if info['chrom'] in chromosomes:
+                        chromosomes[info['chrom']].append(feature)
+                    else:
+                        chromosomes[info['chrom']] = [feature]
+                    # Update the last end position, if it is bigger than before:
+                    
+                    if info['stop'] > chromosome_stops.get(info['chrom'], 0):
+                        chromosome_stops[info['chrom']] = info['stop'] + 1
+                line_count += 1
         
         number_of_intervals = 0
 
@@ -126,20 +161,51 @@ class AnnotationParser(object):
         info['feature_id'] = info['gene_id']
         return info
     
-    def ref_gene_parser(self, line, info, line_count):
-        """Parse a file in the refGene format"""
-        line = line.split('\t')
-        if 'hr' in line[2]:
-            info['chrom'] = line[2][3:]
-        else:
-            info['chrom'] = line[2]
-        if is_number.is_number(line[4]) and is_number.is_number(line[5]):
-            info['start'] = int(line[4])
-            info['stop'] = int(line[5])
-        info['transcript_id'] = line[1] #???
-        info['gene_id'] = line[12]
-        info['feature_id'] = info['gene_id']
-        return info
+    def ref_gene_parser(self, ref_file_handle):
+        """Parse a file in the refGene format, we should add the information about gene or transcript here"""
+        chromosomes = {} # A dictionary with {<chr>: [feature_1, feature_2, ...]} 
+        chromosome_stops = {}# A dictionary with information about the last positions on each chromosome:
+        genes = {} # {gene_id:{chrom:'x', gene_start:n, gene_stop:n, transcripts: []}}
+        
+        for line in ref_file_handle:
+            line = line.split('\t')
+            transcript = line[1]
+            chrom = line[2]
+            if 'hr' in chrom:
+                chrom = chrom[3:]
+            direction = line[3]
+            transc_start = int(line[4])
+            transc_stop = int(line[5])
+            coding_start = int(line[6])
+            coding_stop = int(line[7])
+            nr_of_exons = int(line[8])
+            exon_starts = [int(boundary) for boundary in line[9].split(',')[:-1]]
+            exon_stops = [int(boundary) for boundary in line[10].split(',')[:-1]]
+            gene_id = line[12]
+            
+            if gene_id in genes:
+                if transc_start < genes[gene_id]['gene_start']:
+                    genes[gene_id]['gene_start'] = transc_start
+                if transc_stop > genes[gene_id]['gene_stop']:
+                    genes[gene_id]['gene_stop'] = transc_stop
+                genes[gene_id]['transcripts'].append(transcript)
+            else:
+                genes[gene_id] = {'chrom':chrom, 'gene_start':transc_start, 'gene_stop':transc_stop, 
+                                'transcripts':[transcript]}
+        
+        # print('Number of genes: %s' % len(genes))
+        
+        for gene_id in genes:
+            feature = [genes[gene_id]['gene_start'], genes[gene_id]['gene_stop'], gene_id]
+            if genes[gene_id]['chrom'] in chromosomes:
+                chromosomes[genes[gene_id]['chrom']].append(feature)
+            else:
+                chromosomes[genes[gene_id]['chrom']] = [feature]
+            
+            if genes[gene_id]['gene_stop'] > chromosome_stops.get(genes[gene_id]['chrom'], 0):
+                chromosome_stops[genes[gene_id]['chrom']] = genes[gene_id]['gene_stop'] + 1
+        
+        return chromosomes, chromosome_stops
         
         
 

@@ -62,6 +62,7 @@ class Genotype(object):
         else:
             self.allele_1 = GT[0]
             self.allele_2 = GT[-1]
+        
         self.genotype = self.allele_1 +'/'+ self.allele_2 # The genotype should allways be represented on the same form
         
         if self.genotype != './.':
