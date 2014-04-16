@@ -24,13 +24,14 @@ from codecs import open
 from pprint import pprint as pp
 
 from genmod.variants import genotype
-from genmod.utils import interval_tree
+
+from interval_tree import interval_tree
 
 
 
 class VariantFileParser(object):
     """Creates parser objects for parsing variant files"""
-    def __init__(self, variant_file, batch_queue, head, interval_trees, args):
+    def __init__(self, variant_file, batch_queue, head, gene_trees, args):
         super(VariantFileParser, self).__init__()
         self.variant_file = variant_file
         self.batch_queue = batch_queue
@@ -38,7 +39,7 @@ class VariantFileParser(object):
         self.phased = args.phased
         self.individuals = head.individuals
         self.header_line = head.header
-        self.interval_trees = interval_trees
+        self.gene_trees  = gene_trees
         self.chromosomes = []
     
     def parse(self):
@@ -51,6 +52,7 @@ class VariantFileParser(object):
         haploblock_id = 1
         # Haploblocks is a dictionary with list of lists like {ind_id:[[start, stop, id],[start, stop,id],...], ...}
         haploblocks = {ind_id:[] for ind_id in self.individuals}
+        nr_of_batches = 0
         # Parse the vcf file:
         with open(self.variant_file, mode='r', encoding='utf-8') as f:
             
@@ -59,7 +61,6 @@ class VariantFileParser(object):
                 start_chrom_time = start_parsing_time
                 start_twenty_time = start_parsing_time
                 nr_of_variants = 0
-                nr_of_batches = 0
                 if self.batch_queue.full():
                     print('Queue full!!')
             
@@ -122,9 +123,9 @@ class VariantFileParser(object):
                                     batch['haploblocks'][ind_id] = interval_tree.IntervalTree(haploblocks[ind_id], 
                                                         0, 1, haploblocks[ind_id][0][0], haploblocks[ind_id][-1][1])
                                 haploblocks = {ind_id:[] for ind_id in self.individuals}
-                            nr_of_batches += 1
                             # Put the job in the queue
                             self.batch_queue.put(batch)
+                            nr_of_batches += 1
                             #Reset the variables
                             current_features = new_features
                             batch = self.add_variant({}, variant, new_features)
@@ -164,7 +165,8 @@ class VariantFileParser(object):
                     pass
         
         self.batch_queue.put(batch)
-        return
+        nr_of_batches += 1
+        return nr_of_batches
     
     def add_variant(self, batch, variant, features):
         """Adds the variant to the proper gene(s) in the batch."""
@@ -198,9 +200,17 @@ class VariantFileParser(object):
         variant_interval = [int(my_variant['POS']), (int(my_variant['POS']) + 
                             longest_alt - 1)]
         
+        # if self.exon_annotation:
+        #     try:
+        #         my_variant['Annotation'] = self.gene_trees.exon_trees[variant_chrom].find_range(variant_interval)
+        #     except KeyError:
+        #         if self.verbosity:
+        #             print('Chromosome', variant_chrom, 'is not in annotation file!')
+        #         my_variant['Annotation'] = []
+        
         # The feature files does not have to include all chromosomes that are in the vcf:
         try:
-            my_variant['Annotation'] = self.interval_trees.interval_trees[variant_chrom].find_range(variant_interval)
+            my_variant['Annotation'] = self.gene_trees.gene_trees[variant_chrom].find_range(variant_interval)
         except KeyError:
             if self.verbosity:
                 print('Chromosome', variant_chrom, 'is not in annotation file!')
@@ -236,6 +246,7 @@ def main():
     
     my_parser = VariantFileParser(infile, variant_queue, my_head_parser, my_anno_parser, args)
     nr_of_batches = my_parser.parse()
+    print(nr_of_batches)
     for i in range(nr_of_batches):
         variant_queue.get()
         variant_queue.task_done()
