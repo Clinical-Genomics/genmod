@@ -16,7 +16,7 @@ import os
 from pprint import pprint as pp
 
 from ped_parser import family, individual
-from genmod.utils import interval_tree
+from interval_tree import interval_tree
 from genmod.models import genetic_models
 from genmod.variants import genotype
 
@@ -33,7 +33,9 @@ class TestPhasedDuo(object):
         self.duo_family.add_individual(sick_son)
         self.duo_family.add_individual(healthy_mother)
         
+        # This is a dummy phased interval:
         interval = [1,100, '1']
+        
         intervals = {ind_id:interval_tree.IntervalTree([interval], 1, 100) for ind_id in self.duo_family.individuals}
         
         #Setup two variants with autosomal recessive compound pattern
@@ -70,7 +72,7 @@ class TestPhasedDuo(object):
                 'CBC':{'1_27_G_T':self.not_recessive_comp_1, '1_35_C_T':self.not_recessive_comp_2}
                 }
         
-        batch['intervals'] = intervals
+        batch['haploblocks'] = intervals
         pp(self.duo_family)
         pp(batch)
         pp(sys.path)
@@ -79,34 +81,34 @@ class TestPhasedDuo(object):
     def test_recessive_comp_duo_simple(self):
         """Check if the variant follows dominant pattern and compound pattern of inheritance."""
         assert not self.recessive_comp_simple_1['Inheritance_model']['AR_hom']
-        assert not self.recessive_comp_simple_1['Inheritance_model']['AR_hom_denovo']
+        assert not self.recessive_comp_simple_1['Inheritance_model']['AR_hom_dn']
         assert self.recessive_comp_simple_1['Inheritance_model']['AD']
-        assert self.recessive_comp_simple_1['Inheritance_model']['AD_denovo']
-        assert self.recessive_comp_simple_1['Inheritance_model']['AR_compound']
+        assert self.recessive_comp_simple_1['Inheritance_model']['AD_dn']
+        assert self.recessive_comp_simple_1['Inheritance_model']['AR_comp']
     
     def test_recessive_comp_duo_not_simple(self):
         """Check in the variant follows the compound inheritance pattern."""
         assert not self.recessive_comp_not_simple_2['Inheritance_model']['AR_hom']
-        assert not self.recessive_comp_not_simple_2['Inheritance_model']['AR_hom_denovo']
+        assert not self.recessive_comp_not_simple_2['Inheritance_model']['AR_hom_dn']
         assert not self.recessive_comp_not_simple_2['Inheritance_model']['AD']
-        assert not self.recessive_comp_not_simple_2['Inheritance_model']['AD_denovo']
-        assert self.recessive_comp_not_simple_2['Inheritance_model']['AR_compound']
+        assert not self.recessive_comp_not_simple_2['Inheritance_model']['AD_dn']
+        assert self.recessive_comp_not_simple_2['Inheritance_model']['AR_comp']
     
     def test_not_recessive_comp_duo(self):
         """This variant should not follow the compound inheritance pattern."""
         assert not self.not_recessive_comp_1['Inheritance_model']['AR_hom']
-        assert not self.not_recessive_comp_1['Inheritance_model']['AR_hom_denovo']
+        assert not self.not_recessive_comp_1['Inheritance_model']['AR_hom_dn']
         assert self.not_recessive_comp_1['Inheritance_model']['AD']
-        assert self.not_recessive_comp_1['Inheritance_model']['AD_denovo']
-        assert not self.not_recessive_comp_1['Inheritance_model']['AR_compound']
+        assert self.not_recessive_comp_1['Inheritance_model']['AD_dn']
+        assert not self.not_recessive_comp_1['Inheritance_model']['AR_comp']
     
     def test_recessive_comp_duo_missing(self):
         """Check if the variant follows the compound inheritance pattern."""
         assert not self.recessive_comp_missing_2['Inheritance_model']['AR_hom']
-        assert not self.recessive_comp_missing_2['Inheritance_model']['AR_hom_denovo']
+        assert not self.recessive_comp_missing_2['Inheritance_model']['AR_hom_dn']
         assert self.recessive_comp_missing_2['Inheritance_model']['AD']
-        assert self.recessive_comp_missing_2['Inheritance_model']['AD_denovo']
-        assert self.recessive_comp_missing_2['Inheritance_model']['AR_compound']
+        assert self.recessive_comp_missing_2['Inheritance_model']['AD_dn']
+        assert self.recessive_comp_missing_2['Inheritance_model']['AR_comp']
 
 
 def main():

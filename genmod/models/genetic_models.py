@@ -9,9 +9,9 @@ The following models are checked:
 
 - Autosomal Dominant(AD)
 - Autosomal Dominant De Novo(AD_DN)
-- Autosomal Recessive(AR)
+- Autosomal Recessive(AR_hom)
 - Autosomal Recessive De Novo(AR_DN)
-- Autosomal Recesive Compound.
+- Autosomal Recesive Compound(AR_comp).
 
 In this model a variant must imply affected status, otherwise it can not be dominant. All sick has to be ay least heterozygote for the variant and all healthy can not have it.
 
@@ -220,13 +220,14 @@ def check_dominant(variant, family):
                 return
         elif family.individuals[individual].phenotype == 2:
             # The case when the individual is sick
-            if not individual_genotype.heterozygote:
-            # Individual has to be heterozygote i AD can be true
-                variant['Inheritance_model']['AD'] = False
-                variant['Inheritance_model']['AD_dn'] = False
-                return
+            if individual_genotype.genotyped:
+                if not individual_genotype.heterozygote:
+                # Individual has to be heterozygote i AD can be true
+                    variant['Inheritance_model']['AD'] = False
+                    variant['Inheritance_model']['AD_dn'] = False
+                    return
             # Now the ind is sick and have a variant ≠ ref, check parents for de novo
-            elif family.individuals[individual].has_parents:
+            if family.individuals[individual].has_parents:
                 check_parents('dominant', individual, variant, family)
     return
 
@@ -284,13 +285,13 @@ def check_X_recessive(variant, family):
                 return
         # Women have to be hom alt to be sick (almost allways carriers)
             elif family.individuals[individual].sex == 2:
-                if not individual_genotype.homo_alt:
-                    variant['Inheritance_model']['XR'] = False
-                    variant['Inheritance_model']['XR_dn'] = False
-                    return
-            elif individual_genotype.has_variant:
-                if family.individuals[individual].has_parents:
-                    check_parents('X_recessive', individual, variant, family)
+                if individual_genotype.genotyped:
+                    if not individual_genotype.homo_alt:
+                        variant['Inheritance_model']['XR'] = False
+                        variant['Inheritance_model']['XR_dn'] = False
+                        return
+            if family.individuals[individual].has_parents:
+                check_parents('X_recessive', individual, variant, family)
     return
 
 def check_X_dominant(variant, family):
@@ -300,7 +301,7 @@ def check_X_dominant(variant, family):
         individual_genotype = variant['Genotypes'].get(individual, genotype.Genotype())
         # The case where the individual is healthy
         if not family.individuals[individual].affected():
-        # Womans can be carriers but not homozygote:
+        # Healthy womans can be carriers but not homozygote:
             if family.individuals[individual].sex == 2:
                 if individual_genotype.homo_alt:
                     variant['Inheritance_model']['XD'] = False
