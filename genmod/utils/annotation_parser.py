@@ -50,7 +50,9 @@ from codecs import open, getreader
 
 from pprint import pprint as pp
 
-from genmod.utils import interval_tree, is_number
+from genmod.utils import is_number
+
+from interval_tree import interval_tree
 
 class AnnotationParser(object):
     """Parses a file with family info and creates a family object with individuals."""
@@ -58,7 +60,9 @@ class AnnotationParser(object):
         super(AnnotationParser, self).__init__()
         self.annotation_type = annotation_type
                 
-        self.interval_trees = {}# A dictionary with {<chr>:<intervalTree>}
+        self.gene_trees = {}# A dictionary with {<chr>:<intervalTree>} the trees are intervals with genes
+        
+        self.exon_trees = {}# A dictionary with {<chr>:<intervalTree>} the trees are intervals with exons
         
         file_name, file_extension = os.path.splitext(infile)
         
@@ -72,7 +76,7 @@ class AnnotationParser(object):
         line_count = 0
         
         if self.annotation_type == 'ref_gene':
-            chromosomes, chromosome_stops = self.ref_gene_parser(f)
+            chromosomes,exons, chromosome_stops = self.ref_gene_parser(f)
         
         else:
             chromosomes = {} # A dictionary with {<chr>: [feature_1, feature_2, ...]} 
@@ -110,7 +114,9 @@ class AnnotationParser(object):
         #Build one interval tree for each chromosome:
         
         for chrom in chromosomes:
-            self.interval_trees[chrom] = interval_tree.IntervalTree(chromosomes[chrom], 1, chromosome_stops[chrom])
+            self.gene_trees[chrom] = interval_tree.IntervalTree(chromosomes[chrom], 1, chromosome_stops[chrom])
+        for chrom in chromosomes:
+            self.exon_trees[chrom] = interval_tree.IntervalTree(exons[chrom], 1, chromosome_stops[chrom])
                     
     def bed_parser(self, line, info, line_count):
         """Parse a .bed."""
@@ -163,9 +169,12 @@ class AnnotationParser(object):
     
     def ref_gene_parser(self, ref_file_handle):
         """Parse a file in the refGene format, we should add the information about gene or transcript here"""
-        chromosomes = {} # A dictionary with {<chr>: [feature_1, feature_2, ...]} 
+        genes = {} # A dictionary with {<chr>: [feature_1, feature_2, ...]} 
+        raw_exons = {} # A dictionary with {exon_start:{exon_stop:[<feature_id_1>...]}}
+        exons = {} # A dictionary with {<chr>: [feature_1, feature_2, ...]} 
+        chromosomes = {}# A dictionary with information about the last positions on each chromosome:
         chromosome_stops = {}# A dictionary with information about the last positions on each chromosome:
-        genes = {} # {gene_id:{chrom:'x', gene_start:n, gene_stop:n, transcripts: []}}
+        genes = {}
         
         for line in ref_file_handle:
             line = line.split('\t')
@@ -182,30 +191,55 @@ class AnnotationParser(object):
             exon_starts = [int(boundary) for boundary in line[9].split(',')[:-1]]
             exon_stops = [int(boundary) for boundary in line[10].split(',')[:-1]]
             gene_id = line[12]
+            transcript_id = ':'.join([transcript, gene_id])
             
-            if gene_id in genes:
-                if transc_start < genes[gene_id]['gene_start']:
-                    genes[gene_id]['gene_start'] = transc_start
-                if transc_stop > genes[gene_id]['gene_stop']:
-                    genes[gene_id]['gene_stop'] = transc_stop
-                genes[gene_id]['transcripts'].append(transcript)
-            else:
-                genes[gene_id] = {'chrom':chrom, 'gene_start':transc_start, 'gene_stop':transc_stop, 
-                                'transcripts':[transcript]}
-        
-        # print('Number of genes: %s' % len(genes))
-        
-        for gene_id in genes:
-            feature = [genes[gene_id]['gene_start'], genes[gene_id]['gene_stop'], gene_id]
-            if genes[gene_id]['chrom'] in chromosomes:
-                chromosomes[genes[gene_id]['chrom']].append(feature)
-            else:
-                chromosomes[genes[gene_id]['chrom']] = [feature]
+            if chrom not in genes:
+                genes[chrom] = {}
+                raw_exons[chrom] = {}
             
-            if genes[gene_id]['gene_stop'] > chromosome_stops.get(genes[gene_id]['chrom'], 0):
-                chromosome_stops[genes[gene_id]['chrom']] = genes[gene_id]['gene_stop'] + 1
+            if gene_id in genes[chrom]:
+                # If this transcript starts before update the start of the gene:
+                if transc_start < genes[chrom][gene_id]['gene_start']:
+                    genes[chrom][gene_id]['gene_start'] = transc_start
+                # If this transcript ends after update the stop of the gene:
+                if transc_stop > genes[chrom][gene_id]['gene_stop']:
+                    genes[chrom][gene_id]['gene_stop'] = transc_stop
+            else:
+                genes[chrom][gene_id] = {'gene_start':transc_start, 'gene_stop':transc_stop}
+            
+            
+            for i in range(len(exon_starts)):
+                start = exon_starts[i]
+                stop = exon_stops[i]
+                # Check if the exon is already seen
+                if start in raw_exons[chrom]:
+                    if stop in raw_exons[chrom][start]:
+                        raw_exons[chrom][start][stop].append(transcript_id)
+                    else:
+                        raw_exons[chrom][start][stop] = [transcript_id]
+                else:
+                    raw_exons[chrom][start] = {stop:[transcript_id]}
         
-        return chromosomes, chromosome_stops
+        for chrom in genes:
+            # prepare the intervals for the tree:
+            if chrom not in chromosomes:
+                chromosomes[chrom] = []
+                exons[chrom] = []
+            for gene_id in genes[chrom]:
+                feature = [genes[chrom][gene_id]['gene_start'],
+                        genes[chrom][gene_id]['gene_stop'], gene_id]
+                chromosomes[chrom].append(feature)
+                
+                # Update the end position of the interval
+                if genes[chrom][gene_id]['gene_stop'] > chromosome_stops.get(chrom, 0):
+                    chromosome_stops[chrom] = genes[chrom][gene_id]['gene_stop'] + 1
+            
+            for start in raw_exons[chrom]:
+                for stop in raw_exons[chrom][start]:
+                    feature = [start, stop, ';'.join(raw_exons[chrom][start][stop])]
+                    exons[chrom].append(feature)
+        
+        return chromosomes,exons,chromosome_stops
         
         
 
@@ -215,11 +249,11 @@ def main():
     parser.add_argument('-bed', '--bed', action="store_true", help='Annotation file is in bed format.')
     parser.add_argument('-ccds', '--ccds', action="store_true", help='Annotation file is in ccds format.')
     parser.add_argument('-gtf', '--gtf', action="store_true", help='Annotation file is in gtf format.')
-    parser.add_argument('-ref_gene', '--ref_gene', action="store_true", help='Annotation file is in gtf format.')
+    parser.add_argument('-gene_pred', '--gene_pred', action="store_true", help='Annotation file is in gene pred format. This is the format for the ref_seq and ensembl gene files.')
     args = parser.parse_args()
     infile = args.annotation_file[0]
     # TODO write a check for zipped files
-    file_type = 'ccds'
+    file_type = 'gene_pred'
     if args.bed:
         file_type = 'bed'
     if args.ccds:
@@ -227,10 +261,15 @@ def main():
     if args.gtf:
         file_type = 'gtf'
     if args.ref_gene:
-        file_type = 'ref_gene'
+        file_type = 'gene_pred'
         
     my_parser = AnnotationParser(infile, file_type)
-    pp(my_parser.interval_trees)
+    pp(my_parser.gene_trees)
+    pp(my_parser.gene_trees['1'])
+    pp(my_parser.gene_trees['1'].find_range([721289, 721290]))
+    pp(my_parser.gene_trees['1'].find_range([721290, 721291]))
+    pp(my_parser.exon_trees['1'].find_range([721190, 821290]))
+    pp(my_parser.gene_trees['1'].find_range([721190, 821290]))
 
 
 if __name__ == '__main__':

@@ -23,8 +23,9 @@ class TestXDominantModel(object):
     def setup_class(self):
         """Setup a simple family with family id 1, sick son id 1,
          healthy father id 2, healthy mother id 3"""
-        # Setup family with sick kid, sick father and healthy mother:
+        # Setup family with sick kid, healthy father and sick mother:
         self.dominant_family = family.Family(family_id = '1')
+        #The son will only inherit x variants from the mother
         sick_son = individual.Individual(ind='1', family='1',mother='3', father='2', sex=1, phenotype=2)
         healthy_father = individual.Individual(ind='2', family='1',mother='0', father='0', sex=1, phenotype=1)
         sick_mother = individual.Individual(ind='3', family='1',mother='0', father='0', sex=2, phenotype=2)
@@ -50,32 +51,33 @@ class TestXDominantModel(object):
 
             
     def test_x_dominant_het_variant(self):
-        """This variant should only follow the x dominant denovo pattern."""
+        """This variant should only follow the x dominant pattern."""
         assert self.x_dominant_het_variant['Inheritance_model']['XD']
-        assert not self.x_dominant_het_variant['Inheritance_model']['XD_denovo']
-        assert self.x_dominant_het_variant['Inheritance_model']['XR']
-        assert not self.x_dominant_het_variant['Inheritance_model']['XR_denovo']
+        assert not self.x_dominant_het_variant['Inheritance_model']['XD_dn']
+        # Since mother is sick she has to be 1/1 for the variant to be recessive:
+        assert not self.x_dominant_het_variant['Inheritance_model']['XR']
+        assert not self.x_dominant_het_variant['Inheritance_model']['XR_dn']
     
     def test_x_dominant_dn_missing(self):
-        """This variant should only follow the dominant pattern."""
+        """This variant should follow all x-patterns."""
         assert self.x_dominant_dn_missing['Inheritance_model']['XD']
-        assert self.x_dominant_dn_missing['Inheritance_model']['XD_denovo']
+        assert self.x_dominant_dn_missing['Inheritance_model']['XD_dn']
         assert self.x_dominant_dn_missing['Inheritance_model']['XR']
-        assert self.x_dominant_dn_missing['Inheritance_model']['XR_denovo']
+        assert self.x_dominant_dn_missing['Inheritance_model']['XR_dn']
     
     def test_x_dominant_variant(self):
-        """This variant should only follow the dominant pattern."""
+        """This variant should only follow the x dominant pattern."""
         assert self.x_dominant_variant['Inheritance_model']['XD']
-        assert not self.x_dominant_variant['Inheritance_model']['XD_denovo']
-        assert self.x_dominant_variant['Inheritance_model']['XR']
-        assert not self.x_dominant_variant['Inheritance_model']['XR_denovo']
+        assert not self.x_dominant_variant['Inheritance_model']['XD_dn']
+        assert not self.x_dominant_variant['Inheritance_model']['XR']
+        assert not self.x_dominant_variant['Inheritance_model']['XR_dn']
         
     def test_not_x_dominant(self):
-        """This variant should only follow the dominant pattern."""
+        """This variant should not follow any pattern."""
         assert not self.not_x_dominant['Inheritance_model']['XD']
-        assert not self.not_x_dominant['Inheritance_model']['XD_denovo']
+        assert not self.not_x_dominant['Inheritance_model']['XD_dn']
         assert not self.not_x_dominant['Inheritance_model']['XR']
-        assert not self.not_x_dominant['Inheritance_model']['XR_denovo']
+        assert not self.not_x_dominant['Inheritance_model']['XR_dn']
     
 
 

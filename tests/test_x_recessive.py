@@ -52,30 +52,30 @@ class TestXRecessiveModel(object):
     def test_x_recessive_dn_variant(self):
         """This variant should follow the x-dominant dn and x-recessive dn patterns."""
         assert not self.x_recessive_dn_variant['Inheritance_model']['XD']
-        assert self.x_recessive_dn_variant['Inheritance_model']['XD_denovo']
+        assert self.x_recessive_dn_variant['Inheritance_model']['XD_dn']
         assert not self.x_recessive_dn_variant['Inheritance_model']['XR']
-        assert self.x_recessive_dn_variant['Inheritance_model']['XR_denovo']
+        assert not self.x_recessive_dn_variant['Inheritance_model']['XR_dn']
     
     def test_x_recessive_missing(self):
         """This variant should follow the x-dominant and x-recessive patterns."""
         assert self.x_recessive_missing['Inheritance_model']['XD']
-        assert self.x_recessive_missing['Inheritance_model']['XD_denovo']
+        assert self.x_recessive_missing['Inheritance_model']['XD_dn']
         assert self.x_recessive_missing['Inheritance_model']['XR']
-        assert self.x_recessive_missing['Inheritance_model']['XR_denovo']
+        assert self.x_recessive_missing['Inheritance_model']['XR_dn']
     
     def test_x_recessive_variant(self):
         """This variant should only follow the x-recessive pattern."""
-        assert not self.x_recessive_variant['Inheritance_model']['XD']
-        assert not self.x_recessive_variant['Inheritance_model']['XD_denovo']
-        assert self.x_recessive_variant['Inheritance_model']['XR']
-        assert not self.x_recessive_variant['Inheritance_model']['XR_denovo']
+        assert self.x_recessive_variant['Inheritance_model']['XD']
+        assert not self.x_recessive_variant['Inheritance_model']['XD_dn']
+        assert not self.x_recessive_variant['Inheritance_model']['XR']
+        assert self.x_recessive_variant['Inheritance_model']['XR_dn']
         
     def test_not_x_recessive(self):
         """This variant should not follow any pattern."""
         assert not self.not_x_recessive['Inheritance_model']['XD']
-        assert not self.not_x_recessive['Inheritance_model']['XD_denovo']
+        assert not self.not_x_recessive['Inheritance_model']['XD_dn']
         assert not self.not_x_recessive['Inheritance_model']['XR']
-        assert not self.not_x_recessive['Inheritance_model']['XR_denovo']
+        assert not self.not_x_recessive['Inheritance_model']['XR_dn']
     
 
 
