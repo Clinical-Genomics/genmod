@@ -196,9 +196,12 @@ class AnnotationParser(object):
             if chrom not in genes:
                 genes[chrom] = {}
                 raw_exons[chrom] = {}
+            
             if gene_id in genes[chrom]:
+                # If this transcript starts before update the start of the gene:
                 if transc_start < genes[chrom][gene_id]['gene_start']:
                     genes[chrom][gene_id]['gene_start'] = transc_start
+                # If this transcript ends after update the stop of the gene:
                 if transc_stop > genes[chrom][gene_id]['gene_stop']:
                     genes[chrom][gene_id]['gene_stop'] = transc_stop
             else:
@@ -208,6 +211,7 @@ class AnnotationParser(object):
             for i in range(len(exon_starts)):
                 start = exon_starts[i]
                 stop = exon_stops[i]
+                # Check if the exon is already seen
                 if start in raw_exons[chrom]:
                     if stop in raw_exons[chrom][start]:
                         raw_exons[chrom][start][stop].append(transcript_id)
@@ -217,15 +221,16 @@ class AnnotationParser(object):
                     raw_exons[chrom][start] = {stop:[transcript_id]}
         
         for chrom in genes:
+            # prepare the intervals for the tree:
             if chrom not in chromosomes:
                 chromosomes[chrom] = []
                 exons[chrom] = []
             for gene_id in genes[chrom]:
-                start = genes[chrom][gene_id]['gene_start']
-                stop = genes[chrom][gene_id]['gene_stop']
-                feature = [start, stop, gene_id]
+                feature = [genes[chrom][gene_id]['gene_start'],
+                        genes[chrom][gene_id]['gene_stop'], gene_id]
                 chromosomes[chrom].append(feature)
-            
+                
+                # Update the end position of the interval
                 if genes[chrom][gene_id]['gene_stop'] > chromosome_stops.get(chrom, 0):
                     chromosome_stops[chrom] = genes[chrom][gene_id]['gene_stop'] + 1
             
@@ -244,11 +249,11 @@ def main():
     parser.add_argument('-bed', '--bed', action="store_true", help='Annotation file is in bed format.')
     parser.add_argument('-ccds', '--ccds', action="store_true", help='Annotation file is in ccds format.')
     parser.add_argument('-gtf', '--gtf', action="store_true", help='Annotation file is in gtf format.')
-    parser.add_argument('-ref_gene', '--ref_gene', action="store_true", help='Annotation file is in gtf format.')
+    parser.add_argument('-gene_pred', '--gene_pred', action="store_true", help='Annotation file is in gene pred format. This is the format for the ref_seq and ensembl gene files.')
     args = parser.parse_args()
     infile = args.annotation_file[0]
     # TODO write a check for zipped files
-    file_type = 'ccds'
+    file_type = 'gene_pred'
     if args.bed:
         file_type = 'bed'
     if args.ccds:
@@ -256,7 +261,7 @@ def main():
     if args.gtf:
         file_type = 'gtf'
     if args.ref_gene:
-        file_type = 'ref_gene'
+        file_type = 'gene_pred'
         
     my_parser = AnnotationParser(infile, file_type)
     pp(my_parser.gene_trees)
