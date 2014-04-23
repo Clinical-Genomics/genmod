@@ -48,34 +48,34 @@ class TestModelsCompound(object):
     def test_recessive_comp_1(self):
         """The compound inheritnace pattern should be followed for this variant."""
         assert not self.recessive_comp_variant_1['Inheritance_model']['AR_hom']
-        assert not self.recessive_comp_variant_1['Inheritance_model']['AR_hom_denovo']
+        assert not self.recessive_comp_variant_1['Inheritance_model']['AR_hom_dn']
         assert not self.recessive_comp_variant_1['Inheritance_model']['AD']
-        assert not self.recessive_comp_variant_1['Inheritance_model']['AD_denovo']
-        assert self.recessive_comp_variant_1['Inheritance_model']['AR_compound']
+        assert not self.recessive_comp_variant_1['Inheritance_model']['AD_dn']
+        assert self.recessive_comp_variant_1['Inheritance_model']['AR_comp']
     
     def test_recessive_comp_2(self):
         """The compound inheritnace pattern should be followed for this variant."""
         assert not self.recessive_comp_variant_2['Inheritance_model']['AR_hom']
-        assert not self.recessive_comp_variant_2['Inheritance_model']['AR_hom_denovo']
+        assert not self.recessive_comp_variant_2['Inheritance_model']['AR_hom_dn']
         assert not self.recessive_comp_variant_2['Inheritance_model']['AD']
-        assert not self.recessive_comp_variant_2['Inheritance_model']['AD_denovo']
-        assert self.recessive_comp_variant_2['Inheritance_model']['AR_compound']
+        assert not self.recessive_comp_variant_2['Inheritance_model']['AD_dn']
+        assert self.recessive_comp_variant_2['Inheritance_model']['AR_comp']
     
     def test_not_recessive_comp(self):
         """No inheritance pattern should be followed for this model."""
         assert not self.not_recessive_comp['Inheritance_model']['AR_hom']
-        assert not self.not_recessive_comp['Inheritance_model']['AR_hom_denovo']
+        assert not self.not_recessive_comp['Inheritance_model']['AR_hom_dn']
         assert not self.not_recessive_comp['Inheritance_model']['AD']
-        assert not self.not_recessive_comp['Inheritance_model']['AD_denovo']
-        assert not self.not_recessive_comp['Inheritance_model']['AR_compound']
+        assert not self.not_recessive_comp['Inheritance_model']['AD_dn']
+        assert not self.not_recessive_comp['Inheritance_model']['AR_comp']
     
     def test_recessive_comp_missing(self):
         """Compound pattern should be followed here."""
         assert not self.recessive_comp_missing['Inheritance_model']['AR_hom']
-        assert not self.recessive_comp_missing['Inheritance_model']['AR_hom_denovo']
+        assert not self.recessive_comp_missing['Inheritance_model']['AR_hom_dn']
         assert not self.recessive_comp_missing['Inheritance_model']['AD']
-        assert not self.recessive_comp_missing['Inheritance_model']['AD_denovo']
-        assert self.recessive_comp_missing['Inheritance_model']['AR_compound']
+        assert not self.recessive_comp_missing['Inheritance_model']['AD_dn']
+        assert self.recessive_comp_missing['Inheritance_model']['AR_comp']
     
 
 
