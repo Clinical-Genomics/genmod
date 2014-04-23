@@ -195,3 +195,7 @@ Holds the information about an individual and the individual specific genotypes.
 
 * individuals DICT dictionary with family members on the form {<ind_id>:<Individual>}
 * variants DICT dictionary with all the variants that exists in the family on the form {<var_id>:<Variant>} -->
+
+
+[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/moonso/genmod/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
+
