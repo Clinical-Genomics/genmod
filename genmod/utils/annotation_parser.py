@@ -75,12 +75,13 @@ class AnnotationParser(object):
             f = open(infile, mode='r', encoding='utf-8')
         line_count = 0
         
-        if self.annotation_type == 'ref_gene':
-            chromosomes,exons, chromosome_stops = self.ref_gene_parser(f)
+        if self.annotation_type == 'gene_pred':
+            chromosomes, exons, chromosome_stops = self.ref_gene_parser(f)
         
         else:
             chromosomes = {} # A dictionary with {<chr>: [feature_1, feature_2, ...]} 
             chromosome_stops = {}# A dictionary with information about the last positions on each chromosome:
+            exons = []
             
             for line in f:
                 if not line.startswith('#') and len(line) > 1:
@@ -112,11 +113,11 @@ class AnnotationParser(object):
         number_of_intervals = 0
 
         #Build one interval tree for each chromosome:
-        
+                
         for chrom in chromosomes:
             self.gene_trees[chrom] = interval_tree.IntervalTree(chromosomes[chrom], 1, chromosome_stops[chrom])
         for chrom in chromosomes:
-            self.exon_trees[chrom] = interval_tree.IntervalTree(exons[chrom], 1, chromosome_stops[chrom])
+            self.exon_trees[chrom] = interval_tree.IntervalTree(exons.get(chrom,[]), 1, chromosome_stops[chrom])
                     
     def bed_parser(self, line, info, line_count):
         """Parse a .bed."""
@@ -168,11 +169,10 @@ class AnnotationParser(object):
         return info
     
     def ref_gene_parser(self, ref_file_handle):
-        """Parse a file in the refGene format, we should add the information about gene or transcript here"""
+        """Parse a file in the refGene format, we should add the information about gene or transcript here.
+        The interval tree will check if ranges overlap so do not have to deal with that problem here."""
         genes = {} # A dictionary with {<chr>: [feature_1, feature_2, ...]} 
-        raw_exons = {} # A dictionary with {exon_start:{exon_stop:[<feature_id_1>...]}}
         exons = {} # A dictionary with {<chr>: [feature_1, feature_2, ...]} 
-        chromosomes = {}# A dictionary with information about the last positions on each chromosome:
         chromosome_stops = {}# A dictionary with information about the last positions on each chromosome:
         genes = {}
         
@@ -195,51 +195,39 @@ class AnnotationParser(object):
             
             if chrom not in genes:
                 genes[chrom] = {}
-                raw_exons[chrom] = {}
+                exons[chrom] = []
+                chromosome_stops = {}
             
             if gene_id in genes[chrom]:
-                # If this transcript starts before update the start of the gene:
+                # If this transcript starts before the previous gene start we update the start position of the gene:
                 if transc_start < genes[chrom][gene_id]['gene_start']:
                     genes[chrom][gene_id]['gene_start'] = transc_start
-                # If this transcript ends after update the stop of the gene:
+                # If this transcript ends after the previous gene stop we update the stop position of the gene:
                 if transc_stop > genes[chrom][gene_id]['gene_stop']:
                     genes[chrom][gene_id]['gene_stop'] = transc_stop
             else:
                 genes[chrom][gene_id] = {'gene_start':transc_start, 'gene_stop':transc_stop}
             
-            
             for i in range(len(exon_starts)):
                 start = exon_starts[i]
                 stop = exon_stops[i]
-                # Check if the exon is already seen
-                if start in raw_exons[chrom]:
-                    if stop in raw_exons[chrom][start]:
-                        raw_exons[chrom][start][stop].append(transcript_id)
-                    else:
-                        raw_exons[chrom][start][stop] = [transcript_id]
-                else:
-                    raw_exons[chrom][start] = {stop:[transcript_id]}
-        
-        for chrom in genes:
+                exons[chrom].append([start, stop, transcript_id])
+                
+        for chrom in dict(genes):
             # prepare the intervals for the tree:
-            if chrom not in chromosomes:
-                chromosomes[chrom] = []
-                exons[chrom] = []
-            for gene_id in genes[chrom]:
+            intervals = []
+            for gene_id in dict(genes[chrom]):
                 feature = [genes[chrom][gene_id]['gene_start'],
                         genes[chrom][gene_id]['gene_stop'], gene_id]
-                chromosomes[chrom].append(feature)
+                intervals.append(feature)
                 
                 # Update the end position of the interval
                 if genes[chrom][gene_id]['gene_stop'] > chromosome_stops.get(chrom, 0):
                     chromosome_stops[chrom] = genes[chrom][gene_id]['gene_stop'] + 1
-            
-            for start in raw_exons[chrom]:
-                for stop in raw_exons[chrom][start]:
-                    feature = [start, stop, ';'.join(raw_exons[chrom][start][stop])]
-                    exons[chrom].append(feature)
-        
-        return chromosomes,exons,chromosome_stops
+                    
+            genes[chrom] = intervals
+                    
+        return genes,exons,chromosome_stops
         
         
 
@@ -260,16 +248,14 @@ def main():
         file_type = 'ccds'
     if args.gtf:
         file_type = 'gtf'
-    if args.ref_gene:
-        file_type = 'gene_pred'
         
     my_parser = AnnotationParser(infile, file_type)
     pp(my_parser.gene_trees)
-    pp(my_parser.gene_trees['1'])
-    pp(my_parser.gene_trees['1'].find_range([721289, 721290]))
-    pp(my_parser.gene_trees['1'].find_range([721290, 721291]))
-    pp(my_parser.exon_trees['1'].find_range([721190, 821290]))
-    pp(my_parser.gene_trees['1'].find_range([721190, 821290]))
+    # pp(my_parser.gene_trees['1'])
+    # pp(my_parser.gene_trees['1'].find_range([721289, 721290]))
+    # pp(my_parser.gene_trees['1'].find_range([721290, 721291]))
+    # pp(my_parser.exon_trees['1'].find_range([721190, 821290]))
+    # pp(my_parser.gene_trees['1'].find_range([721190, 821290]))
 
 
 if __name__ == '__main__':
