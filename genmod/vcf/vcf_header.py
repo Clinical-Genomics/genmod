@@ -191,8 +191,10 @@ class HeaderParser(object):
     def parse_header_line(self, line):
         """docstring for parse_header_line"""
         self.header = line[1:].rstrip().split('\t')
+        if len(self.header) < 9:
+            self.header = line[1:].rstrip().split()
         self.individuals = self.header[9:]
-        
+    
     def print_header(self):
         """Returns a list with the header lines if proper format"""
         lines_to_print = []
@@ -260,10 +262,11 @@ def main():
     infile = args.variant_file[0]
     my_parser = VCFParser(infile)
     my_parser.parse()
+    print('parsing')
     my_parser.metadataparser.add_info('ANN', '.', 'String', 'Annotates what feature(s) this variant belongs to.')
     my_parser.metadataparser.add_info('Comp', '.', 'String', "':'-separated list of compound pairs for this variant.")
     my_parser.metadataparser.add_info('GM', '.', 'String', "':'-separated list of genetic models for this variant.")
-    my_parser.print_header()
+    print(my_parser.print_header())
     # print my_parser.__dict__
     # for line in my_parser.metadata:
     #     print line, my_parser.metadata[line]
