@@ -66,6 +66,7 @@ class AnnotationParser(object):
         
         file_name, file_extension = os.path.splitext(infile)
         nr_of_genes = 0
+        
         if file_extension == '.gz':
             zipped = True
                 
@@ -159,6 +160,8 @@ class AnnotationParser(object):
             if not line.startswith('#') and len(line) > 1:
                 line_count += 1
                 line = line.split('\t')
+                if len(line) < 5:
+                    line = line.split()
                 chrom = line[0]
                 if 'hr' in line[0]:
                     chrom = line[0][3:]
