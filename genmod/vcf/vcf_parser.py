@@ -67,7 +67,10 @@ class VariantFileParser(object):
             for line in f:
                 # Only metadata lines start with '#'
                 if not line.startswith('#'):
-                    variant = self.vcf_variant(line.rstrip().split('\t'))
+                    splitted_line = line.rstrip().split('\t')
+                    if len(splitted_line) < 8:
+                        splitted_line = line.rstrip().split()
+                    variant = self.vcf_variant(splitted_line)
                     new_chrom = variant['CHROM']
                     new_features = variant['Annotation']
                     
