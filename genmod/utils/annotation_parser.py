@@ -46,6 +46,11 @@ import sys
 import os
 import argparse
 import gzip
+try:
+    import cPickle as pickle
+except:
+    import pickle
+
 from codecs import open, getreader
 
 from pprint import pprint as pp
@@ -76,7 +81,7 @@ class AnnotationParser(object):
             f = open(infile, mode='r', encoding='utf-8')
         line_count = 0
         
-        if self.annotation_type == 'ref_gene':
+        if self.annotation_type == 'gene_pred':
             chromosomes,exons, chromosome_stops = self.ref_gene_parser(f)
 
         elif self.annotation_type == 'gtf':
@@ -115,11 +120,15 @@ class AnnotationParser(object):
         number_of_intervals = 0
 
         #Build one interval tree for each chromosome:
-                
+        
         for chrom in chromosomes:
             self.gene_trees[chrom] = interval_tree.IntervalTree(chromosomes[chrom], 1, chromosome_stops[chrom])
-        for chrom in chromosomes:
-            self.exon_trees[chrom] = interval_tree.IntervalTree(exons.get(chrom,[]), 1, chromosome_stops[chrom])
+        for chrom in exons:
+            if len(exons[chrom]) > 0:
+                self.exon_trees[chrom] = interval_tree.IntervalTree(exons[chrom], 1, chromosome_stops[chrom])
+            # If no exons found
+            else:
+                self.exon_trees[chrom] = interval_tree.IntervalTree([[0,0,None]], 0, 0)
                     
     def bed_parser(self, line, info, line_count):
         """Parse a .bed."""
@@ -217,41 +226,42 @@ class AnnotationParser(object):
         chromosome_stops = {}# A dictionary with information about the last positions on each chromosome:
         
         for line in ref_file_handle:
-            line = line.split('\t')
-            transcript = line[1]
-            chrom = line[2]
-            if 'hr' in chrom:
-                chrom = chrom[3:]
-            direction = line[3]
-            transc_start = int(line[4])
-            transc_stop = int(line[5])
-            coding_start = int(line[6])
-            coding_stop = int(line[7])
-            nr_of_exons = int(line[8])
-            exon_starts = [int(boundary) for boundary in line[9].split(',')[:-1]]
-            exon_stops = [int(boundary) for boundary in line[10].split(',')[:-1]]
-            gene_id = line[12]
-            transcript_id = ':'.join([transcript, gene_id])
-            
-            if chrom not in genes:
-                genes[chrom] = {}
-                exons[chrom] = []
-                chromosome_stops = {}
-            
-            if gene_id in genes[chrom]:
-                # If this transcript starts before the previous gene start we update the start position of the gene:
-                if transc_start < genes[chrom][gene_id]['gene_start']:
-                    genes[chrom][gene_id]['gene_start'] = transc_start
-                # If this transcript ends after the previous gene stop we update the stop position of the gene:
-                if transc_stop > genes[chrom][gene_id]['gene_stop']:
-                    genes[chrom][gene_id]['gene_stop'] = transc_stop
-            else:
-                genes[chrom][gene_id] = {'gene_start':transc_start, 'gene_stop':transc_stop}
-            
-            for i in range(len(exon_starts)):
-                start = exon_starts[i]
-                stop = exon_stops[i]
-                exons[chrom].append([start, stop, transcript_id])
+            if not line.startswith('#') and len(line) > 1:
+                line = line.split('\t')
+                transcript = line[1]
+                chrom = line[2]
+                if 'hr' in chrom:
+                    chrom = chrom[3:]
+                direction = line[3]
+                transc_start = int(line[4])
+                transc_stop = int(line[5])
+                coding_start = int(line[6])
+                coding_stop = int(line[7])
+                nr_of_exons = int(line[8])
+                exon_starts = [int(boundary) for boundary in line[9].split(',')[:-1]]
+                exon_stops = [int(boundary) for boundary in line[10].split(',')[:-1]]
+                gene_id = line[12]
+                transcript_id = ':'.join([transcript, gene_id])
+                
+                if chrom not in genes:
+                    genes[chrom] = {}
+                    exons[chrom] = []
+                    chromosome_stops = {}
+                
+                if gene_id in genes[chrom]:
+                    # If this transcript starts before the previous gene start we update the start position of the gene:
+                    if transc_start < genes[chrom][gene_id]['gene_start']:
+                        genes[chrom][gene_id]['gene_start'] = transc_start
+                    # If this transcript ends after the previous gene stop we update the stop position of the gene:
+                    if transc_stop > genes[chrom][gene_id]['gene_stop']:
+                        genes[chrom][gene_id]['gene_stop'] = transc_stop
+                else:
+                    genes[chrom][gene_id] = {'gene_start':transc_start, 'gene_stop':transc_stop}
+                
+                for i in range(len(exon_starts)):
+                    start = exon_starts[i]
+                    stop = exon_stops[i]
+                    exons[chrom].append([start, stop, transcript_id])
                 
         for chrom in dict(genes):
             # prepare the intervals for the tree:
@@ -282,9 +292,9 @@ def main():
     infile = args.annotation_file[0]
     file_name, file_extension = os.path.splitext(infile)
     if file_extension == '.gz':
-        file_name, file_extension = os.path.splitext(infile)
-        
-    # TODO write a check for zipped files
+        print('hej')
+        file_name, file_extension = os.path.splitext(file_name)
+    
     file_type = 'gene_pred'
     if args.bed or file_extension[1:] == 'bed':
         file_type = 'bed'
@@ -296,11 +306,17 @@ def main():
         file_type = 'gene_pred'
         
     my_parser = AnnotationParser(infile, file_type)
+    with open('genes.db', 'wb') as f:
+        pickle.dump(my_parser.gene_trees, f)
+    
+    with open('exons.db', 'wb') as g:
+        pickle.dump(my_parser.exon_trees, g)
+    
     pp(my_parser.gene_trees)
     pp(my_parser.gene_trees['1'])
     pp(my_parser.gene_trees['1'].find_range([11900, 11901]))
     pp(my_parser.gene_trees['1'].find_range([721290, 721291]))
-    # pp(my_parser.exon_trees['1'].find_range([721190, 821290]))
+    pp(my_parser.exon_trees['1'].find_range([721190, 821290]))
     pp(my_parser.gene_trees['1'].find_range([721190, 821290]))
 
 
