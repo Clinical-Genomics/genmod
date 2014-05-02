@@ -65,6 +65,7 @@ class AnnotationParser(object):
         self.exon_trees = {}# A dictionary with {<chr>:<intervalTree>} the trees are intervals with exons
         
         file_name, file_extension = os.path.splitext(infile)
+        nr_of_genes = 0
         
         if file_extension == '.gz':
             zipped = True
@@ -75,8 +76,11 @@ class AnnotationParser(object):
             f = open(infile, mode='r', encoding='utf-8')
         line_count = 0
         
-        if self.annotation_type == 'gene_pred':
-            chromosomes, exons, chromosome_stops = self.ref_gene_parser(f)
+        if self.annotation_type == 'ref_gene':
+            chromosomes,exons, chromosome_stops = self.ref_gene_parser(f)
+
+        elif self.annotation_type == 'gtf':
+            chromosomes,exons, chromosome_stops = self.gtf_parser(f)
         
         else:
             chromosomes = {} # A dictionary with {<chr>: [feature_1, feature_2, ...]} 
@@ -93,8 +97,6 @@ class AnnotationParser(object):
                         info = self.ccds_parser(line, info, line_count)
                     elif self.annotation_type == 'bed':
                         info = self.bed_parser(line, info, line_count)
-                    elif self.annotation_type == 'gtf':
-                        info = self.gtf_parser(line, info, line_count)
                     elif self.annotation_type == 'ref_gene':
                         info = self.ref_gene_parser(line, info, line_count)
                     #Feature is a list with [start, stop, id]
@@ -148,25 +150,64 @@ class AnnotationParser(object):
             info['stop'] = int(line[8])
         return info
     
-    def gtf_parser(self, line, info, line_count):
-        """Parse a gtf line"""
-        line = line.split('\t')
-        if 'hr' in line[0]:
-            info['chrom'] = line[0][3:]
-        else:
-            info['chrom'] = line[0]
-        if is_number.is_number(line[3]) and is_number.is_number(line[4]):
-            info['start'] = int(line[3])
-            info['stop'] = int(line[4])
-        info_field = line[8].split(';')[:-1]
-        for information in info_field:
-            entry = information.split()
-            if entry[0] == 'transcript_id':
-                info['transcript_id'] = entry[1][1:-1]
-            if entry[0] == 'gene_id':
-                info['gene_id'] = entry[1][1:-1]
-        info['feature_id'] = info['gene_id']
-        return info
+    def gtf_parser(self, gtf_file_handle):
+        """Parse a gtf file"""
+        genes = {}
+        exons = {}
+        chromosomes = {}
+        chromosome_stops = {}
+        line_count = 0
+        
+        for line in gtf_file_handle:
+            if not line.startswith('#') and len(line) > 1:
+                line_count += 1
+                line = line.split('\t')
+                if len(line) < 5:
+                    line = line.split()
+                chrom = line[0]
+                if 'hr' in line[0]:
+                    chrom = line[0][3:]
+                if is_number.is_number(line[3]) and is_number.is_number(line[4]):
+                    feature_start = int(line[3])
+                    feature_stop = int(line[4])
+                info_field = line[8].split(';')[:-1]
+                for information in info_field:
+                    entry = information.split()
+                    if entry[0] == 'transcript_id':
+                        transcript_id = entry[1][1:-1]
+                    if entry[0] == 'gene_id':
+                        gene_id = entry[1][1:-1]
+                
+                if line[2] == 'gene':
+                    if chrom not in genes:
+                        genes[chrom] = {}
+                        # raw_exons[chrom] = {}
+                
+                    if gene_id in genes[chrom]:
+                        # If this transcript starts before update the start of the gene:
+                        if feature_start < genes[chrom][gene_id]['gene_start']:
+                            genes[chrom][gene_id]['gene_start'] = feature_start
+                        # If this transcript ends after update the stop of the gene:
+                        if feature_stop > genes[chrom][gene_id]['gene_stop']:
+                            genes[chrom][gene_id]['gene_stop'] = feature_stop
+                    else:
+                        genes[chrom][gene_id] = {'gene_start':feature_start, 'gene_stop':feature_stop}
+                        
+        for chrom in genes:
+            # prepare the intervals for the tree:
+            if chrom not in chromosomes:
+                chromosomes[chrom] = []
+                exons[chrom] = []
+            for gene_id in genes[chrom]:
+                feature = [genes[chrom][gene_id]['gene_start'],
+                        genes[chrom][gene_id]['gene_stop'], gene_id]
+                chromosomes[chrom].append(feature)
+                
+                # Update the end position of the interval
+                if genes[chrom][gene_id]['gene_stop'] > chromosome_stops.get(chrom, 0):
+                    chromosome_stops[chrom] = genes[chrom][gene_id]['gene_stop'] + 1
+        
+        return chromosomes,exons,chromosome_stops
     
     def ref_gene_parser(self, ref_file_handle):
         """Parse a file in the refGene format, we should add the information about gene or transcript here.
@@ -174,7 +215,6 @@ class AnnotationParser(object):
         genes = {} # A dictionary with {<chr>: [feature_1, feature_2, ...]} 
         exons = {} # A dictionary with {<chr>: [feature_1, feature_2, ...]} 
         chromosome_stops = {}# A dictionary with information about the last positions on each chromosome:
-        genes = {}
         
         for line in ref_file_handle:
             line = line.split('\t')
@@ -240,22 +280,28 @@ def main():
     parser.add_argument('-gene_pred', '--gene_pred', action="store_true", help='Annotation file is in gene pred format. This is the format for the ref_seq and ensembl gene files.')
     args = parser.parse_args()
     infile = args.annotation_file[0]
+    file_name, file_extension = os.path.splitext(infile)
+    if file_extension == '.gz':
+        file_name, file_extension = os.path.splitext(infile)
+        
     # TODO write a check for zipped files
     file_type = 'gene_pred'
-    if args.bed:
+    if args.bed or file_extension[1:] == 'bed':
         file_type = 'bed'
-    if args.ccds:
+    if args.ccds or file_extension[1:] == 'ccds':
         file_type = 'ccds'
-    if args.gtf:
+    if args.gtf or file_extension[1:] == 'gtf':
         file_type = 'gtf'
+    if args.gene_pred or file_extension[1:] in ['ref_gene', 'gene_pred']:
+        file_type = 'gene_pred'
         
     my_parser = AnnotationParser(infile, file_type)
     pp(my_parser.gene_trees)
-    # pp(my_parser.gene_trees['1'])
-    # pp(my_parser.gene_trees['1'].find_range([721289, 721290]))
-    # pp(my_parser.gene_trees['1'].find_range([721290, 721291]))
+    pp(my_parser.gene_trees['1'])
+    pp(my_parser.gene_trees['1'].find_range([11900, 11901]))
+    pp(my_parser.gene_trees['1'].find_range([721290, 721291]))
     # pp(my_parser.exon_trees['1'].find_range([721190, 821290]))
-    # pp(my_parser.gene_trees['1'].find_range([721190, 821290]))
+    pp(my_parser.gene_trees['1'].find_range([721190, 821290]))
 
 
 if __name__ == '__main__':
