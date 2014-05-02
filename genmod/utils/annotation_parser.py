@@ -64,25 +64,22 @@ class AnnotationParser(object):
     def __init__(self, infile, annotation_type, zipped = False):
         super(AnnotationParser, self).__init__()
         self.annotation_type = annotation_type
-                
+        
         self.gene_trees = {}# A dictionary with {<chr>:<intervalTree>} the trees are intervals with genes
         
         self.exon_trees = {}# A dictionary with {<chr>:<intervalTree>} the trees are intervals with exons
         
-        file_name, file_extension = os.path.splitext(infile)
         nr_of_genes = 0
-        
-        if file_extension == '.gz':
-            zipped = True
-                
+                        
         if zipped:
             f = getreader('utf-8')(gzip.open(infile), errors='replace')
         else: 
-            f = open(infile, mode='r', encoding='utf-8')
+            f = open(infile, mode='r', encoding='utf-8', errors='replace')
+        
         line_count = 0
         
         if self.annotation_type == 'gene_pred':
-            chromosomes,exons, chromosome_stops = self.ref_gene_parser(f)
+            chromosomes,exons, chromosome_stops = self.gene_pred_parser(f)
 
         elif self.annotation_type == 'gtf':
             chromosomes,exons, chromosome_stops = self.gtf_parser(f)
@@ -218,9 +215,8 @@ class AnnotationParser(object):
         
         return chromosomes,exons,chromosome_stops
     
-    def ref_gene_parser(self, ref_file_handle):
-        """Parse a file in the refGene format, we should add the information about gene or transcript here.
-        The interval tree will check if ranges overlap so do not have to deal with that problem here."""
+    def gene_pred_parser(self, ref_file_handle):
+        """Parse a file in the refGene format, we should add the information about gene or transcript here"""
         genes = {} # A dictionary with {<chr>: [feature_1, feature_2, ...]} 
         exons = {} # A dictionary with {<chr>: [feature_1, feature_2, ...]} 
         chromosome_stops = {}# A dictionary with information about the last positions on each chromosome:
@@ -291,10 +287,12 @@ def main():
     args = parser.parse_args()
     infile = args.annotation_file[0]
     file_name, file_extension = os.path.splitext(infile)
+    zipped = False
     if file_extension == '.gz':
-        print('hej')
+        zipped = True
         file_name, file_extension = os.path.splitext(file_name)
-    
+        
+    # TODO write a check for zipped files
     file_type = 'gene_pred'
     if args.bed or file_extension[1:] == 'bed':
         file_type = 'bed'
@@ -304,13 +302,15 @@ def main():
         file_type = 'gtf'
     if args.gene_pred or file_extension[1:] in ['ref_gene', 'gene_pred']:
         file_type = 'gene_pred'
+
+    my_parser = AnnotationParser(infile, file_type, zipped)
         
-    my_parser = AnnotationParser(infile, file_type)
     with open('genes.db', 'wb') as f:
         pickle.dump(my_parser.gene_trees, f)
     
     with open('exons.db', 'wb') as g:
         pickle.dump(my_parser.exon_trees, g)
+    
     
     pp(my_parser.gene_trees)
     pp(my_parser.gene_trees['1'])
