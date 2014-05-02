@@ -59,25 +59,22 @@ class AnnotationParser(object):
     def __init__(self, infile, annotation_type, zipped = False):
         super(AnnotationParser, self).__init__()
         self.annotation_type = annotation_type
-                
+        
         self.gene_trees = {}# A dictionary with {<chr>:<intervalTree>} the trees are intervals with genes
         
         self.exon_trees = {}# A dictionary with {<chr>:<intervalTree>} the trees are intervals with exons
         
-        file_name, file_extension = os.path.splitext(infile)
         nr_of_genes = 0
-        
-        if file_extension == '.gz':
-            zipped = True
-                
+                        
         if zipped:
             f = getreader('utf-8')(gzip.open(infile), errors='replace')
         else: 
-            f = open(infile, mode='r', encoding='utf-8')
+            f = open(infile, mode='r', encoding='utf-8', errors='replace')
+        
         line_count = 0
         
-        if self.annotation_type == 'ref_gene':
-            chromosomes,exons, chromosome_stops = self.ref_gene_parser(f)
+        if self.annotation_type == 'gene_pred':
+            chromosomes,exons, chromosome_stops = self.gene_pred_parser(f)
 
         elif self.annotation_type == 'gtf':
             chromosomes,exons, chromosome_stops = self.gtf_parser(f)
@@ -207,7 +204,7 @@ class AnnotationParser(object):
         
         return chromosomes,exons,chromosome_stops
     
-    def ref_gene_parser(self, ref_file_handle):
+    def gene_pred_parser(self, ref_file_handle):
         """Parse a file in the refGene format, we should add the information about gene or transcript here"""
         genes = {} # A dictionary with {<chr>: [feature_1, feature_2, ...]} 
         raw_exons = {} # A dictionary with {exon_start:{exon_stop:[<feature_id_1>...]}}
@@ -292,8 +289,10 @@ def main():
     args = parser.parse_args()
     infile = args.annotation_file[0]
     file_name, file_extension = os.path.splitext(infile)
+    zipped = False
     if file_extension == '.gz':
-        file_name, file_extension = os.path.splitext(infile)
+        zipped = True
+        file_name, file_extension = os.path.splitext(file_name)
         
     # TODO write a check for zipped files
     file_type = 'gene_pred'
@@ -306,7 +305,7 @@ def main():
     if args.gene_pred or file_extension[1:] in ['ref_gene', 'gene_pred']:
         file_type = 'gene_pred'
         
-    my_parser = AnnotationParser(infile, file_type)
+    my_parser = AnnotationParser(infile, file_type, zipped)
     pp(my_parser.gene_trees)
     pp(my_parser.gene_trees['1'])
     pp(my_parser.gene_trees['1'].find_range([11900, 11901]))

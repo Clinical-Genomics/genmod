@@ -84,8 +84,8 @@ def main():
     )
     
     parser.add_argument('-at', '--annotation_type',  
-        type=str, nargs=1, choices=['bed', 'ccds', 'gtf', 'ref_gene'],
-        default=['ref_gene'], help='Specify the format of the annotation file.'
+        type=str, nargs=1, choices=['bed', 'ccds', 'gtf', 'gene_pred'], 
+        help='Specify the format of the annotation file. gene_pred is default (this is the format of the refgene files.)'
     )    
     
     parser.add_argument('--version', 
@@ -147,7 +147,29 @@ def main():
         print('')
         start_time_annotation = datetime.now()
     
-    annotation_trees = annotation_parser.AnnotationParser(anno_file, args.annotation_type[0])
+    anno_file_name, anno_file_extension = os.path.splitext(anno_file)
+    anno_zipped = False
+    annotation = 'gene_pred'
+    
+    if anno_file_extension == '.gz':
+        anno_zipped = True
+        anno_file_name, anno_file_extension = os.path.splitext(anno_file_name)
+    
+    if args.annotation_type:
+        annotation = annotation_type[0]
+    
+    else:
+        
+        if  anno_file_extension[1:] == 'bed':
+            annotation = 'bed'
+        if  file_extension[1:] == 'ccds':
+            annotation = 'ccds'
+        if anno_file_extension[1:] == 'gtf':
+            annotation = 'gtf'
+        if anno_file_extension[1:] in ['ref_gene', 'gene_pred']:
+            annotation = 'gene_pred'
+    
+    annotation_trees = annotation_parser.AnnotationParser(anno_file, annotation, anno_zipped)
 
     if args.verbose:
         print('Annotation Parsed!')
