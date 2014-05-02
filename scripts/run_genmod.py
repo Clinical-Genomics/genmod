@@ -156,7 +156,7 @@ def main():
         anno_file_name, anno_file_extension = os.path.splitext(anno_file_name)
     
     if args.annotation_type:
-        annotation = annotation_type[0]
+        annotation = args.annotation_type[0]
     
     else:
         
