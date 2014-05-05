@@ -313,7 +313,7 @@ def main():
     
     
     pp(my_parser.gene_trees)
-    pp(my_parser.gene_trees['1'])
+    pp(my_parser.gene_trees.get('1',interval_tree.IntervalTree([[0,0,None]], 1, chromosome_stops[chrom])))
     pp(my_parser.gene_trees['1'].find_range([11900, 11901]))
     pp(my_parser.gene_trees['1'].find_range([721290, 721291]))
     pp(my_parser.exon_trees['1'].find_range([721190, 821290]))
