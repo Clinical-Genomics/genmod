@@ -79,42 +79,42 @@ class AnnotationParser(object):
         elif self.annotation_type == 'gtf':
             chromosomes,exons, chromosome_stops = self.gtf_parser(f)
         
-        else:
-            chromosomes = {} # A dictionary with {<chr>: [feature_1, feature_2, ...]} 
-            chromosome_stops = {}# A dictionary with information about the last positions on each chromosome:
-            
-            for line in f:
-                if not line.startswith('#') and len(line) > 1:
-                    line = line.rstrip()
-                    # Info allways contain the important information that is needed to create a feature
-                    info = {'chrom':'Na', 'start':0, 'stop':0, 'transcript_id':'0', 'gene_id':'0', 'feature_id':str(line_count)}
-                    # print(line)
-                    if self.annotation_type == 'ccds':
-                        info = self.ccds_parser(line, info, line_count)
-                    elif self.annotation_type == 'bed':
-                        info = self.bed_parser(line, info, line_count)
-                    elif self.annotation_type == 'ref_gene':
-                        info = self.ref_gene_parser(line, info, line_count)
-                    #Feature is a list with [start, stop, id]
-                    feature = [info['start'], info['stop'], info['feature_id']]
-                    
-                    if info['chrom'] in chromosomes:
-                        chromosomes[info['chrom']].append(feature)
-                    else:
-                        chromosomes[info['chrom']] = [feature]
-                    # Update the last end position, if it is bigger than before:
-                    
-                    if info['stop'] > chromosome_stops.get(info['chrom'], 0):
-                        chromosome_stops[info['chrom']] = info['stop'] + 1
-                line_count += 1
+        # else:
+        #     chromosomes = {} # A dictionary with {<chr>: [feature_1, feature_2, ...]} 
+        #     chromosome_stops = {}# A dictionary with information about the last positions on each chromosome:
+        #     
+        #     for line in f:
+        #         if not line.startswith('#') and len(line) > 1:
+        #             line = line.rstrip()
+        #             # Info allways contain the important information that is needed to create a feature
+        #             info = {'chrom':'Na', 'start':0, 'stop':0, 'transcript_id':'0', 'gene_id':'0', 'feature_id':str(line_count)}
+        #             # print(line)
+        #             if self.annotation_type == 'ccds':
+        #                 info = self.ccds_parser(line, info, line_count)
+        #             elif self.annotation_type == 'bed':
+        #                 info = self.bed_parser(line, info, line_count)
+        #             elif self.annotation_type == 'ref_gene':
+        #                 info = self.ref_gene_parser(line, info, line_count)
+        #             #Feature is a list with [start, stop, id]
+        #             feature = [info['start'], info['stop'], info['feature_id']]
+        #             
+        #             if info['chrom'] in chromosomes:
+        #                 chromosomes[info['chrom']].append(feature)
+        #             else:
+        #                 chromosomes[info['chrom']] = [feature]
+        #             # Update the last end position, if it is bigger than before:
+        #             
+        #             if info['stop'] > chromosome_stops.get(info['chrom'], 0):
+        #                 chromosome_stops[info['chrom']] = info['stop'] + 1
+        #         line_count += 1
         
         number_of_intervals = 0
 
         #Build one interval tree for each chromosome:
         for chrom in chromosomes:
             self.gene_trees[chrom] = interval_tree.IntervalTree(chromosomes[chrom], 1, chromosome_stops[chrom])
-        # for chrom in chromosomes:
-            # self.exon_trees[chrom] = interval_tree.IntervalTree(exons[chrom], 1, chromosome_stops[chrom])
+        for chrom in exons:
+            self.exon_trees[chrom] = interval_tree.IntervalTree(exons[chrom], 1, chromosome_stops[chrom])
                     
     def bed_parser(self, line, info, line_count):
         """Parse a .bed."""
@@ -304,13 +304,14 @@ def main():
         file_type = 'gtf'
     if args.gene_pred or file_extension[1:] in ['ref_gene', 'gene_pred']:
         file_type = 'gene_pred'
-        
+    
+    print(infile, file_type, zipped)
     my_parser = AnnotationParser(infile, file_type, zipped)
     pp(my_parser.gene_trees)
-    pp(my_parser.gene_trees['1'])
+    pp(my_parser.gene_trees.get('1',))
     pp(my_parser.gene_trees['1'].find_range([11900, 11901]))
     pp(my_parser.gene_trees['1'].find_range([721290, 721291]))
-    # pp(my_parser.exon_trees['1'].find_range([721190, 821290]))
+    pp(my_parser.exon_trees['1'].find_range([721190, 821290]))
     pp(my_parser.gene_trees['1'].find_range([721190, 821290]))
 
 
