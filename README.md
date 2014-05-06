@@ -93,7 +93,8 @@ These traits are inherited on the x-chromosome, of which men have one allele and
 
 * Variant has to be on chromosome X
 * Affected individuals have to be het. or hom. alt.
-* Healthy individuals cannot carry the variant
+* Healthy males cannot carry the variant
+* Healthy females can carry the variant
 * If sex is male the variant is considered _de novo_ if mother is genotyped and does not carry the variant
 * If sex is female variant is considered _de novo_ if none of the parents carry the variant
     
@@ -101,8 +102,10 @@ These traits are inherited on the x-chromosome, of which men have one allele and
 ### X Linked Recessive ###
 
 * Variant has to be on chromosome X
-* Affected individuals have to be het. or hom. alt.
-* Healthy individuals cannot be hom. alt.
+* Affected males have to be het. or hom. alt.
+* Affected females have to be hom. alt.
+* Healthy females cannot be hom. alt.
+* Healthy males cannot carry the variant
 * If sex is male the variant is considered _de novo_ if mother is genotyped and does not carry the variant
 * If sex is female variant is considered _de novo_ if not both parents carry the variant
 

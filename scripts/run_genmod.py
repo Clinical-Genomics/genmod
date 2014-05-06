@@ -18,6 +18,13 @@ from datetime import datetime
 from tempfile import mkdtemp
 import shutil
 import pkg_resources
+import genmod
+
+try:
+    import cPickle as pickle
+except:
+    import pickle
+
 
 from pysam import tabix_index, tabix_compress
 
@@ -25,6 +32,72 @@ from ped_parser import parser
 
 from genmod.utils import variant_consumer, variant_sorter, annotation_parser, variant_printer
 from genmod.vcf import vcf_header, vcf_parser
+
+
+def get_annotation(args):
+    """Initialize the annotation parser and return the gene and exon trees."""
+    
+    gene_trees = {}
+    exon_trees = {}
+    
+    if args.annotation_file:
+        anno_file = args.annotation_file[0]
+        
+        if args.verbose:
+            print('Parsing annotation ...')
+            print('')
+            start_time_annotation = datetime.now()
+        
+        anno_file_name, anno_file_extension = os.path.splitext(anno_file)
+        anno_zipped = False
+        annotation = 'gene_pred'
+        
+        if anno_file_extension == '.gz':
+            anno_zipped = True
+            anno_file_name, anno_file_extension = os.path.splitext(anno_file_name)
+        
+        if args.annotation_type:
+            annotation = args.annotation_type[0]
+        
+        else:
+            
+            if  anno_file_extension[1:] == 'bed':
+                annotation = 'bed'
+            if  file_extension[1:] == 'ccds':
+                annotation = 'ccds'
+            if anno_file_extension[1:] == 'gtf':
+                annotation = 'gtf'
+            if anno_file_extension[1:] in ['ref_gene', 'gene_pred']:
+                annotation = 'gene_pred'
+        
+        anno_parser = annotation_parser.AnnotationParser(anno_file, annotation, zipped=anno_zipped, verbosity=args.verbose)
+        
+        gene_trees = anno_parser.gene_trees
+        exon_trees = anno_parser.exon_trees
+        
+        if args.verbose:
+            print('Annotation Parsed!')
+            print('Cromosomes found in annotation file: %s' % ','.join(list(gene_trees.keys())))
+            print('Time to parse annotation: %s' % (datetime.now() - start_time_annotation))
+            print('')
+            
+    
+    else:
+        annopath = os.path.join(os.path.split(os.path.dirname(genmod.__file__))[0], 'annotations/')
+        gene_db = os.path.join(annopath, 'genes.db')
+        exon_db = os.path.join(annopath, 'exons.db')
+        
+        try:
+            with open(gene_db, 'rb') as f:
+                gene_trees = pickle.load(f)
+            with open(exon_db, 'rb') as g:
+                exon_trees = pickle.load(g)
+        except FileNotFoundError:
+            print('You need to build annotations! See documentation.')
+            pass
+        
+    return gene_trees, exon_trees 
+
 
 def get_family(args):
     """Return the family"""
@@ -78,15 +151,22 @@ def main():
         help='A variant file. Default is vcf format.'
     )
 
-    parser.add_argument('annotation_file', 
+    parser.add_argument('-an', '--annotation_file', 
         type=str, nargs=1, 
-        help='A annotations file. Default is ref_gene format.'
+        help='An annotation file. Default is gene_pred format.'
     )
     
     parser.add_argument('-at', '--annotation_type',  
-        type=str, nargs=1, choices=['bed', 'ccds', 'gtf', 'gene_pred'], 
+        type=str, nargs=1, 
+        choices=['bed', 'ccds', 'gtf', 'gene_pred'], 
+        default=['gene_pred'],
         help='Specify the format of the annotation file. gene_pred is default (this is the format of the refgene files.)'
     )    
+    
+    parser.add_argument('-vep', '--vep', 
+        action="store_true", 
+        help='If variants are annotated with the Variant Effect Predictor.'
+    )
     
     parser.add_argument('--version', 
         action="version", 
@@ -97,7 +177,7 @@ def main():
         action="store_true", 
         help='Increase output verbosity.'
     )
-
+    
     parser.add_argument('-chr', '--chr_prefix', 
         action="store_true", 
         help='If chr prefix is used in vcf.'
@@ -124,16 +204,21 @@ def main():
             If no index is present it will be created.'
     )    
     
+    parser.add_argument('-cadd1kg', '--cadd_1000g', 
+        type=str, nargs=1, default=[None],
+        help='Specify the path to a bgzipped cadd file with variant scores for all 1000g variants.\
+            If no index is present it will be created.'
+    )    
+    
     args = parser.parse_args()
     var_file = args.variant_file[0]
     file_name, file_extension = os.path.splitext(var_file)
-    anno_file = args.annotation_file[0]
-        
+    
     start_time_analysis = datetime.now()
     
-            
+    
     # Start by parsing at the pedigree file:
-
+    
     my_family = get_family(args)
     
     # Parse the header of the vcf:
@@ -141,43 +226,16 @@ def main():
     head = get_header(var_file)
     add_metadata(head, args)
     # Parse the annotation file and make annotation trees:
-
-    if args.verbose:
-        print('Parsing annotation ...')
-        print('')
-        start_time_annotation = datetime.now()
     
-    anno_file_name, anno_file_extension = os.path.splitext(anno_file)
-    anno_zipped = False
-    annotation = 'gene_pred'
+    gene_trees = {}
+    exon_trees = {}
     
-    if anno_file_extension == '.gz':
-        anno_zipped = True
-        anno_file_name, anno_file_extension = os.path.splitext(anno_file_name)
-    
-    if args.annotation_type:
-        annotation = args.annotation_type[0]
-    
-    else:
+    #If files are annotated with vep we do not need to annotate again:
+    if not args.vep:
+        # If annotation file is provided, use this annotation and make new .db files
+        gene_trees, exon_trees = get_annotation(args)
         
-        if  anno_file_extension[1:] == 'bed':
-            annotation = 'bed'
-        if  file_extension[1:] == 'ccds':
-            annotation = 'ccds'
-        if anno_file_extension[1:] == 'gtf':
-            annotation = 'gtf'
-        if anno_file_extension[1:] in ['ref_gene', 'gene_pred']:
-            annotation = 'gene_pred'
-    
-    annotation_trees = annotation_parser.AnnotationParser(anno_file, annotation, anno_zipped)
-
-    if args.verbose:
-        print('Annotation Parsed!')
-        print('Cromosomes found in annotation file: %s' % ','.join(list(annotation_trees.gene_trees.keys())))
-        print('Time to parse annotation: %s' % (datetime.now() - start_time_annotation))
-        print('')
-    
-    # Check if the ccds-file is compressed and indexed:
+    # Check if the cadd file is compressed and indexed:
     
     if args.cadd_file[0]:
         if args.verbose:
@@ -221,7 +279,7 @@ def main():
         start_time_variant_parsing = datetime.now()    
     
     # For parsing the vcf:
-    var_parser = vcf_parser.VariantFileParser(var_file, variant_queue, head, annotation_trees, args)
+    var_parser = vcf_parser.VariantFileParser(var_file, variant_queue, head, args, gene_trees, exon_trees)
     var_parser.parse()
     
     for i in range(num_model_checkers):

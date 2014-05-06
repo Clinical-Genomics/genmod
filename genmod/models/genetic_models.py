@@ -130,7 +130,7 @@ def check_genetic_models(variant_batch, family, verbose = False, phased = False,
 def check_compound_candidates(variants, family):
     """Sort out the compound candidates, this function is used to reduce the number of potential candidates."""
     #Make a copy of the dictionary to not change the original one. {variant_id:variant_dict}
-    comp_candidates = dict((variant_id, variants[variant_id]) for variant_id in variants)
+    comp_candidates = {variant_id: variants[variant_id] for variant_id in variants if variants[variant_id]['comp_candidate']}
     for individual in family.individuals:
         individual_variants = {}
         for variant_id in dict((variant_id, comp_candidates[variant_id]) for variant_id in comp_candidates):
@@ -263,7 +263,7 @@ def check_X_recessive(variant, family):
         
         # The case where the individual is healthy
         if not family.individuals[individual].affected():
-        # If individual is healthy and homozygote alternative the variant can not be deleterious:
+            # If individual is healthy and homozygote alternative the variant can not be deleterious:
             if individual_genotype.homo_alt:
                 variant['Inheritance_model']['XR'] = False
                 variant['Inheritance_model']['XR_dn'] = False
@@ -275,7 +275,7 @@ def check_X_recessive(variant, family):
                     variant['Inheritance_model']['XR'] = False
                     variant['Inheritance_model']['XR_dn'] = False
                     return
-    
+        
         # The case when the individual is sick
         elif family.individuals[individual].affected():
         #If the individual is sick and homozygote ref it can not be x-recessive

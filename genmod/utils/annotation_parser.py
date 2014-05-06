@@ -46,11 +46,13 @@ import sys
 import os
 import argparse
 import gzip
+import genmod
 try:
     import cPickle as pickle
 except:
     import pickle
 
+from datetime import datetime
 from codecs import open, getreader
 
 from pprint import pprint as pp
@@ -61,23 +63,23 @@ from interval_tree import interval_tree
 
 class AnnotationParser(object):
     """Parses a file with family info and creates a family object with individuals."""
-    def __init__(self, infile, annotation_type, splice_padding = 2, zipped = False):
+    def __init__(self, infile, annotation_type, zipped = False, splice_padding = 2, verbosity=False):
         super(AnnotationParser, self).__init__()
+        self.verbosity = verbosity
         self.annotation_type = annotation_type
         
         self.gene_trees = {}# A dictionary with {<chr>:<intervalTree>} the trees are intervals with genes
         self.exon_trees = {}# A dictionary with {<chr>:<intervalTree>} the trees are intervals with exons
         chromosome_stops = {}## A dictionary with information about the last positions on each chromosome:
         
-        
+        genes = {}
+        exons = {}
         nr_of_genes = 0
                         
         if zipped:
             f = getreader('utf-8')(gzip.open(infile), errors='replace')
         else: 
             f = open(infile, mode='r', encoding='utf-8', errors='replace')
-        
-        line_count = 0
         
         if self.annotation_type == 'gene_pred':
             genes,exons = self.gene_pred_parser(f, splice_padding)
@@ -112,8 +114,11 @@ class AnnotationParser(object):
             exons[chrom] = exon_intervals
         
         #Build one interval tree for each chromosome:
+                
+        nr_of_genes = 0
         
         for chrom in genes:
+            nr_of_genes += len(genes[chrom])
             self.gene_trees[chrom] = interval_tree.IntervalTree(genes[chrom], 1, chromosome_stops[chrom])
         for chrom in exons:
             if len(exons[chrom]) > 0:
@@ -121,32 +126,47 @@ class AnnotationParser(object):
             # If no exons found
             else:
                 self.exon_trees[chrom] = interval_tree.IntervalTree([[0,0,None]], 0, 0)
+        
+        if self.verbosity:
+            print('Number of genes in annotation file: %s' % nr_of_genes)
+        
+        outpath = os.path.join(os.path.split(os.path.dirname(genmod.__file__))[0], 'annotations/')
+        gene_db = os.path.join(outpath, 'genes.db')
+        exon_db = os.path.join(outpath, 'exons.db')
+        
+        with open(gene_db, 'wb') as f:
+            pickle.dump(self.gene_trees, f)
+        
+        with open(exon_db, 'wb') as g:
+            pickle.dump(self.exon_trees, g)
+        
         return
     
     def add_gene(self, genes, chrom, start, stop, gene_id):
         """Add a gene to a gene dict"""
         if chrom not in genes:
             genes[chrom] = {}
-            if gene_id in genes[chrom]:
-                # If this transcript starts before the previous, update the start of the gene:
-                if start < genes[chrom][gene_id]['gene_start']:
-                    genes[chrom][gene_id]['gene_start'] = start
-                # If this transcript ends after the previous update the stop of the gene:
-                if stop > genes[chrom][gene_id]['gene_stop']:
-                    genes[chrom][gene_id]['gene_stop'] = stop
-            else:
-                genes[chrom][gene_id] = {'gene_start':start, 'gene_stop':stop}
+        
+        if gene_id in genes[chrom]:
+            # If this transcript starts before the previous, update the start of the gene:
+            if start < genes[chrom][gene_id]['gene_start']:
+                genes[chrom][gene_id]['gene_start'] = start
+            # If this transcript ends after the previous update the stop of the gene:
+            if stop > genes[chrom][gene_id]['gene_stop']:
+                genes[chrom][gene_id]['gene_stop'] = stop
+        else:
+            genes[chrom][gene_id] = {'gene_start':start, 'gene_stop':stop}
         return
     
     def add_exon(self, exons, chrom, start, stop, feature_id, splice_padding):
         """Add a exon to a exon dict"""
         if chrom not in exons:
             exons[chrom] = {}
-            exon = (start - splice_padding, stop + splice_padding)
-            if exon in exons[chrom]:
-                exons[chrom][exon].append(feature_id)
-            else:
-                exons[chrom][exon] = [feature_id]
+        exon = (start - splice_padding, stop + splice_padding)
+        if exon in exons[chrom]:
+            exons[chrom][exon].append(feature_id)
+        else:
+            exons[chrom][exon] = [feature_id]
         return
     
     def bed_parser(self, bed_file_handle, splice_padding):
@@ -157,10 +177,7 @@ class AnnotationParser(object):
             if not line.startswith('#') and len(line) > 1:
                 line = line.split()
                 feature_id = 'None'
-                if 'hr' in line[0]:
-                    chrom = line[0][3:]
-                else:
-                    chrom = line[0]
+                chrom = line[0].lstrip('chr')
                 feature_start = int(line[1])
                 feature_stop = int(line[2])
                 if len(line) > 3:
@@ -178,12 +195,8 @@ class AnnotationParser(object):
         
         for line in ccds_file_handle:
             if not line.startswith('#') and len(line) > 1:
-                line = line.split('\t')
-            
-                if 'hr' in line[0]:
-                    chrom = line[0][3:]
-                else:
-                    chrom = line[0]
+                line = line.split('\t')                
+                chrom = line[0].lstrip('chr')
                 transcript_id = line[1]
                 gene_id = line[2]
                 if is_number.is_number(line[7]) and is_number.is_number(line[8]):
@@ -214,9 +227,7 @@ class AnnotationParser(object):
                 line = line.split('\t')
                 if len(line) < 5:
                     line = line.split()
-                chrom = line[0]
-                if 'hr' in line[0]:
-                    chrom = line[0][3:]
+                chrom = line[0].lstrip('chr')
                 if is_number.is_number(line[3]) and is_number.is_number(line[4]):
                     feature_start = int(line[3])
                     feature_stop = int(line[4])
@@ -245,14 +256,13 @@ class AnnotationParser(object):
         genes = {} # A dictionary with {<chr>: {gene_id:{'gene_start':0,'gene_stop':0}}
         exons = {} # A dictionary with {<chr>: {(exon_start, exon_stop, transcript_id_1):[gene_id_1, ..]
         ### Features look like [start,stop, feature_id] ###
-        
+        nr_of_lines = 0
         for line in ref_file_handle:
             if not line.startswith('#') and len(line) > 1:
                 line = line.split('\t')
+                nr_of_lines += 1
                 transcript = line[1]
-                chrom = line[2]
-                if 'hr' in chrom:
-                    chrom = chrom[3:]
+                chrom = line[2].lstrip('chr')
                 direction = line[3]
                 transc_start = int(line[4])
                 transc_stop = int(line[5])
@@ -263,13 +273,10 @@ class AnnotationParser(object):
                 exon_stops = [int(boundary) for boundary in line[10].split(',')[:-1]]
                 gene_id = line[12]
                 transcript_id = ':'.join([transcript, gene_id])
-                
-                
+                                
                 self.add_gene(genes, chrom, transc_start, transc_stop, gene_id)
-                
                 for i in range(len(exon_starts)):
                     self.add_exon(exons, chrom, exon_starts[i], exon_stops[i], transcript_id, splice_padding)
-                
                 
         return genes,exons
         
@@ -282,13 +289,21 @@ def main():
     parser.add_argument('-ccds', '--ccds', action="store_true", help='Annotation file is in ccds format.')
     parser.add_argument('-gtf', '--gtf', action="store_true", help='Annotation file is in gtf format.')
     parser.add_argument('-gene_pred', '--gene_pred', action="store_true", help='Annotation file is in gene pred format. This is the format for the ref_seq and ensembl gene files.')
+    parser.add_argument('-v', '--verbose', action="store_true", help='Increase output verbosity.')
     args = parser.parse_args()
     anno_file = args.annotation_file[0]
     gene_trees = {}
     exon_trees = {}
     
-    gene_db = 'genes.db'
-    exon_db = 'exons.db'
+    outpath = os.path.join(os.path.split(os.path.dirname(genmod.__file__))[0], 'annotations/')
+    gene_db = os.path.join(outpath, 'genes.db')
+    exon_db = os.path.join(outpath, 'exons.db')
+    
+    if args.verbose:
+        print(gene_db)
+        print(exon_db)
+        print('Start parsing annotation!')
+        start = datetime.now()
     
     if anno_file:
         file_name, file_extension = os.path.splitext(anno_file)
@@ -307,35 +322,33 @@ def main():
         if args.gene_pred or file_extension[1:] in ['ref_gene', 'gene_pred']:
             file_type = 'gene_pred'
         
-        my_parser = AnnotationParser(anno_file, file_type, zipped)
+        my_parser = AnnotationParser(anno_file, file_type, zipped=zipped, verbosity=args.verbose)
         
         gene_trees = my_parser.gene_trees
         exon_trees = my_parser.exon_trees
-        
-        with open(gene_db, 'wb') as f:
-            pickle.dump(gene_trees, f)
-        
-        with open(exon_db, 'wb') as g:
-            pickle.dump(exon_trees, g)
-        
     
     else:
-        
-        with open(gene_db, 'rb') as f:
-            gene_trees = pickle.load(f)
-        with open(exon_db, 'rb') as g:
-            exon_trees = pickle.load(g)
-        
-    print('Gene_trees:')
-    pp(gene_trees)
-    print('Exon_trees:')
-    pp(exon_trees)
-    pp(gene_trees.get('1',interval_tree.IntervalTree([[0,0,None]], 1, 1)))
-    pp(gene_trees.get('1',interval_tree.IntervalTree([[0,0,None]], 1, 1)).find_range([11900, 11901]))
-    pp(gene_trees.get('8',interval_tree.IntervalTree([[0,0,None]], 1, 1)).find_range([6913070, 6913071]))
-    pp(exon_trees.get('8',interval_tree.IntervalTree([[0,0,None]], 1, 1)).find_range([6913070, 6913071]))
-    pp(gene_trees.get('1',interval_tree.IntervalTree([[0,0,None]], 1, 1)).find_range([721190, 821290]))
-    pp(exon_trees.get('1',interval_tree.IntervalTree([[0,0,None]], 1, 1)).find_range([721190, 821290]))
+        try:
+            with open(gene_db, 'rb') as f:
+                gene_trees = pickle.load(f)
+            with open(exon_db, 'rb') as g:
+                exon_trees = pickle.load(g)
+        except FileNotFoundError:
+            print('You need to build annotations! See documentation.')
+            pass
+            # raise FileNotFoundError("You need to make annotations for genmod with an annotation file!")
+            #TODO write help line
+    
+    if args.verbose:
+        print('Gene chromosomes:%s' % sorted(gene_trees.keys()))
+        print('Exon chromosomes:%s' % sorted(exon_trees.keys()))
+        pp(gene_trees.get('1',interval_tree.IntervalTree([[0,0,None]], 1, 1)))
+        pp(gene_trees.get('1',interval_tree.IntervalTree([[0,0,None]], 1, 1)).find_range([11900, 11901]))
+        pp(gene_trees.get('8',interval_tree.IntervalTree([[0,0,None]], 1, 1)).find_range([6913070, 6913071]))
+        pp(exon_trees.get('8',interval_tree.IntervalTree([[0,0,None]], 1, 1)).find_range([6913070, 6913071]))
+        pp(gene_trees.get('1',interval_tree.IntervalTree([[0,0,None]], 1, 1)).find_range([721190, 821290]))
+        pp(exon_trees.get('1',interval_tree.IntervalTree([[0,0,None]], 1, 1)).find_range([721190, 821290]))
+        print('Time to parse file: %s' % str(datetime.now()-start))
 
 
 if __name__ == '__main__':
