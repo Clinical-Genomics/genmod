@@ -36,10 +36,13 @@ class VariantConsumer(multiprocessing.Process):
         self.verbosity = args.verbose
         self.phased = args.phased
         self.cadd_file = args.cadd_file[0]
+        self.cadd_1000g = args.cadd_1000g[0]
         self.chr_prefix = args.chr_prefix
                     
         if self.cadd_file:
             self.cadd_file = Tabixfile(self.cadd_file, parser = asTuple())
+        if self.cadd_1000g:
+            self.cadd_1000g = Tabixfile(self.cadd_file, parser = asTuple())
     
     def fix_variants(self, variant_batch):
         """Merge the variants into one dictionary, make shure that the compounds are treated right."""
@@ -61,7 +64,7 @@ class VariantConsumer(multiprocessing.Process):
         """Get the cadd score and add it to the variant."""
         cadd_score = '-'
         alternatives = variant['ALT'].split(',')
-        # CADD vales are only for snps:
+        # CADD values are only for snps:
         if max([len(alt) for alt in alternatives]) == 1 and len(variant['REF']) == 1:
             if self.cadd_file:
                 cadd_key = int(variant['POS'])
@@ -75,6 +78,9 @@ class VariantConsumer(multiprocessing.Process):
                 except (IndexError, KeyError) as e:
                     if self.verbosity:
                         print(e, variant['CHROM'], variant['POS'])
+        # else:#Check in the 1000g file if the other is not available
+            # if self.cadd_1000g:
+            #     cadd_1000g_key = int(variant['POS'])
                             
         return cadd_score
 

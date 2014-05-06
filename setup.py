@@ -15,14 +15,14 @@ except (IOError, ImportError):
 #     long_description = file.read()
 
 setup(name='genmod',
-    version='0.9.9',
+    version='1.01',
     description='Annotate genetic inheritance models in variant files',
     author = 'Mans Magnusson',
     author_email = 'mans.magnusson@scilifelab.se',
     url = 'http://github.com/moonso/genmod',
     license = 'MIT License',
     install_requires=['ped_parser', 'pysam', 'pytest', 'interval_tree'],
-    packages = ['genmod', 'genmod.utils', 'genmod.models', 'genmod.variants', 'genmod.vcf'],
+    packages = ['genmod', 'genmod.utils', 'genmod.models', 'genmod.variants', 'genmod.vcf', 'annotations'],
     scripts = ['scripts/run_genmod.py'],
     keywords = ['inheritance', 'vcf', 'variants'],
     classifiers = [
