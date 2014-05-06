@@ -96,10 +96,7 @@ def get_annotation(args):
         except FileNotFoundError:
             print('You need to build annotations! See documentation.')
             pass
-        
-        print(gene_trees)
-        print(exon_trees)
-        
+                
     return gene_trees, exon_trees 
 
 
