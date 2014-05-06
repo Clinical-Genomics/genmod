@@ -70,7 +70,8 @@ def get_annotation(args):
             if anno_file_extension[1:] in ['ref_gene', 'gene_pred']:
                 annotation = 'gene_pred'
         
-        anno_parser = annotation_parser.AnnotationParser(anno_file, annotation, zipped=anno_zipped, verbosity=args.verbose)
+        anno_parser = annotation_parser.AnnotationParser(anno_file, annotation,
+                     zipped=anno_zipped, splice_padding = args.splice_padding[0], verbosity=args.verbose)
         
         gene_trees = anno_parser.gene_trees
         exon_trees = anno_parser.exon_trees
@@ -199,6 +200,11 @@ def main():
     parser.add_argument('-o', '--outfile', 
         type=str, nargs=1, default=[None],
         help='Specify the path to a file where results should be stored.'
+    )
+    
+    parser.add_argument('-splice', '--splice_padding', 
+        type=int, nargs=1, default=[2],
+        help='Specify the the number of bases that the exons should be padded with.'
     )
     
     parser.add_argument('-cadd', '--cadd_file', 
