@@ -44,6 +44,7 @@ class VariantFileParser(object):
         self.phased = args.phased
         self.vep = args.vep
         self.individuals = head.individuals
+        print(self.individuals)
         self.header_line = head.header
         self.gene_trees  = gene_trees
         self.exon_trees = exon_trees
@@ -80,11 +81,13 @@ class VariantFileParser(object):
             nr_of_comp_cand = 0
             for line in f:
                 # Only metadata lines start with '#'
-                if not line.startswith('#'):
+                if not line.startswith('#') and len(line) > 5:
                     splitted_line = line.rstrip().split('\t')
+                    print(splitted_line)
                     if len(splitted_line) < 8:
                         raise SyntaxError("VCF file has to be tab separated!")
                     variant = self.vcf_variant(splitted_line)
+                    pp(variant)
                     new_chrom = variant['CHROM']
                     nr_of_variants += 1
                     if variant['comp_candidate']:

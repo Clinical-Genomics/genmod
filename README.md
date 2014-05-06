@@ -18,20 +18,19 @@ The genetic models that are checked are the following:
 
 **GENMOD** will add entrys to the INFO column for the given VCF file. The new entrys are: 
     
-- GM: A colon separated list with genetic models followed
-- ANN: Colon separated list with features overlapped in the annotation file
-- Comp: Colon separated list with compound pairs(if any). These are described like CHR_POS_REF_ALT.
-- MS: Model Score, a phred-score based on the genotype qualities to describe the uncertainty of the genetic model.
+- **GM** A colon separated list with genetic models followed
+- **ANN** Colon separated list with features overlapped in the annotation file
+- **Comp** Colon separated list with compound pairs(if any). These are described like 'CHR\_POS\_REF\_ALT'.
+- **MS** Model Score, a phred-score based on the genotype qualities to describe the uncertainty of the genetic model.
 
 
 ##Installation:##
 
-genmod works with Python 2.7 and Python 3.
+genmod works with Python 2.7 and Python v3.2 and above
 
     pip install genmod
 
 or
-
 
     git clone git@github.com:moonso/genmod.git
     cd genmod
@@ -39,7 +38,25 @@ or
 
 ###USAGE:###
 
-    genmod ped_file variant_file annotation_file
+    run_genmod ped_file variant_file
+    
+###Distribution###
+
+- GENMOD now includes db like files in the genmod/annotations folder, this is the exon and genome definitions from ftp://hgdownload.cse.ucsc.edu/goldenPath/hg19/database/refGene.txt.gz.
+
+If the user wants to use another annotation:
+    
+    run_genmod ped_file variant_file -an "path/to/annotation" -at "Anontation type"
+
+In this case the new annotation will overwrite the previous one so next time GENMOD is run it will use this new build (no need to provide the -an flag again if you want to use the same annotation).
+
+- Compound heterozygote inheritance pattern will be checked if two variants are exonic (or in canonical splice sites) and if they reside in the same gene.
+
+- GENMOD supports phased data use the -phased flag. Data should follow the [GATK way](http://gatkforums.broadinstitute.org/discussion/45/read-backed-phasing) of phasing.
+
+- GENMOD support VCF files annotated with [VEP](http://www.ensembl.org/info/docs/tools/vep/index.html), use -vep flag. This means that GENMOD will use the **VEP** annotation for checking if variants are in the same gene. 
+
+- GENMOD can annotate variants with their [CADD](http://cadd.gs.washington.edu/) score. This is done by adding the flag -cadd "path/to/cadd_file".
 
 
 ## Conditions for Genetic Models ##
@@ -73,7 +90,7 @@ For this model individuals can be carriers so healthy individuals can be heteroz
 
 ### Autosomal Compound Heterozygote ###
 
-This model includes pairs of variants that are present within the same feature.
+This model includes pairs of exonic variants that are present within the same gene.
 
 1. Non-phased data:
 	* Affected individuals have to be het. for both variants
@@ -109,6 +126,34 @@ These traits are inherited on the x-chromosome, of which men have one allele and
 * If sex is male the variant is considered _de novo_ if mother is genotyped and does not carry the variant
 * If sex is female variant is considered _de novo_ if not both parents carry the variant
 
+
+
+
+##Details##
+
+###Exonic variants###
+
+Variants are defined as exonic if they are within an interval that is defined as an exon in the annotation file, and if they are in the canonical splice sites. The size of the canonical splice sites can be altered with -splice 'integer', in this case the annotation needs to be rebuilded. Example:
+
+    run_genmod ped_file variant_file -an refGene.txt -at gene_pred -splice 6
+
+In this case the exons will be padded by 6 bases on each side.
+
+If VEP annotation is used the following SO-terms is counted as compound candidate sites:
+
+**transcript ablation, splice donor variant, splice acceptor variant, stop gained, frameshift variant, stop lost,
+initiator codon variant, inframe insertion, inframe deletion, missense variant, transcript amplification, splice region variant,incomplete terminal codon variant, synonymous variant, stop retained variant, coding sequence variant**.
+
+###Annotation Formats###
+
+The following formats are supported:
+
+- [gene pred](http://genome.ucsc.edu/FAQ/FAQformat.html#format9). This is the format of the refSeq genes
+- [gtf](http://www.ensembl.org/info/website/upload/gff.html). This is the format use by ensembl
+- CCDS format
+- [BED](http://genome.ucsc.edu/FAQ/FAQformat.html#format1)format.
+
+When BED format is used all entrys will both count as exons and genes(for compounds).
 
 
 <!-- ## Detailed Structure ##
@@ -200,5 +245,5 @@ Holds the information about an individual and the individual specific genotypes.
 * variants DICT dictionary with all the variants that exists in the family on the form {<var_id>:<Variant>} -->
 
 
-[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/moonso/genmod/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
+<!-- [![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/moonso/genmod/trend.png)](https://bitdeli.com/free "Bitdeli Badge") -->
 
