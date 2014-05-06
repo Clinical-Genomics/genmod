@@ -20,6 +20,11 @@ import os
 import argparse
 from datetime import datetime
 from codecs import open
+import genmod
+try:
+    import cPickle as pickle
+except:
+    import pickle
 
 from pprint import pprint as pp
 
@@ -31,16 +36,25 @@ from interval_tree import interval_tree
 
 class VariantFileParser(object):
     """Creates parser objects for parsing variant files"""
-    def __init__(self, variant_file, batch_queue, head, gene_trees, args):
+    def __init__(self, variant_file, batch_queue, head, args, gene_trees = {}, exon_trees = {}):
         super(VariantFileParser, self).__init__()
         self.variant_file = variant_file
         self.batch_queue = batch_queue
         self.verbosity = args.verbose
         self.phased = args.phased
+        self.vep = args.vep
         self.individuals = head.individuals
+        print(self.individuals)
         self.header_line = head.header
         self.gene_trees  = gene_trees
+        self.exon_trees = exon_trees
         self.chromosomes = []
+        self.interesting_so_terms = {'transcript_ablation':0, 'splice_donor_variant':0, 
+                    'splice_acceptor_variant':0,'stop_gained':0, 'frameshift_variant':0, 'stop_lost':0,
+                    'initiator_codon_variant':0, 'inframe_insertion':0, 'inframe_deletion':0, 'missense_variant':0,
+                    'transcript_amplification':0, 'splice_region_variant':0,'incomplete_terminal_codon_variant':0,
+                    'synonymous_variant':0, 'stop_retained_variant':0, 'coding_sequence_variant':0}
+
     
     def parse(self):
         """Start the parsing"""        
@@ -60,22 +74,27 @@ class VariantFileParser(object):
                 start_parsing_time = datetime.now()
                 start_chrom_time = start_parsing_time
                 start_twenty_time = start_parsing_time
-                nr_of_variants = 0
                 if self.batch_queue.full():
                     print('Queue full!!')
             
+            nr_of_variants = 0
+            nr_of_comp_cand = 0
             for line in f:
                 # Only metadata lines start with '#'
-                if not line.startswith('#'):
+                if not line.startswith('#') and len(line) > 5:
                     splitted_line = line.rstrip().split('\t')
+                    print(splitted_line)
                     if len(splitted_line) < 8:
-                        splitted_line = line.rstrip().split()
+                        raise SyntaxError("VCF file has to be tab separated!")
                     variant = self.vcf_variant(splitted_line)
+                    pp(variant)
                     new_chrom = variant['CHROM']
+                    nr_of_variants += 1
+                    if variant['comp_candidate']:
+                        nr_of_comp_cand += 1
                     new_features = variant['Annotation']
-                    
+
                     if self.verbosity:
-                        nr_of_variants += 1
                         if nr_of_variants % 20000 == 0:
                             print('%s variants parsed!' % nr_of_variants)
                             print('Last 20.000 took %s to parse.\n' % str(datetime.now() - start_twenty_time))
@@ -94,7 +113,7 @@ class VariantFileParser(object):
                     else:
                         # If we should put the batch in the queue:
                         send = True
-                        
+                            
                         if self.phased:
                             for ind_id in self.individuals:
                                 #A new haploblock is indicated by '/' if the data is phased
@@ -124,7 +143,7 @@ class VariantFileParser(object):
                                                                     str(haploblock_id)])
                                         haploblock_id += 1
                                     batch['haploblocks'][ind_id] = interval_tree.IntervalTree(haploblocks[ind_id], 
-                                                        0, 1, haploblocks[ind_id][0][0], haploblocks[ind_id][-1][1])
+                                                        haploblocks[ind_id][0][0]-1, haploblocks[ind_id][-1][1]+1)
                                 haploblocks = {ind_id:[] for ind_id in self.individuals}
                             # Put the job in the queue
                             self.batch_queue.put(batch)
@@ -132,14 +151,15 @@ class VariantFileParser(object):
                             #Reset the variables
                             current_features = new_features
                             batch = self.add_variant({}, variant, new_features)
+                            batch['haploblocks'] = {}
                             batch['intervals'] = {}
                         else:
                             current_features = list(set(current_features) | set(new_features))
                             batch = self.add_variant(batch, variant, new_features) # Add variant batch
-
+        
                     if new_chrom != current_chrom:
                         self.chromosomes.append(current_chrom)
-
+        
                         if self.verbosity:
                             print('Chromosome %s parsed!' % current_chrom)
                             print('Time to parse chromosome %s' % str(datetime.now()-start_chrom_time))
@@ -153,17 +173,18 @@ class VariantFileParser(object):
             print('Time to parse chromosome %s \n' % str(datetime.now()-start_chrom_time))
             print('Variants parsed!')
             print('Time to parse variants:%s' % str(datetime.now() - start_parsing_time))
+            print('Number of variants in variant file:%s' % nr_of_variants)
         
         if self.phased:
-        # Create an interval tree for each individual with the phaing intervals
+        # Create an interval tree for each individual with the phasing intervals
             for ind_id in self.individuals:
                 #check if we have just finished an interval
                 if haploblock_starts[ind_id] != int(variant['POS']):
-                    intervals[ind_id].append([haploblock_starts[ind_id], int(variant['POS']) - 1, str(haploblock_id)])
+                    haploblocks[ind_id].append([haploblock_starts[ind_id], int(variant['POS']) - 1, str(haploblock_id)])
                     haploblock_id += 1
                 try:
-                    batch['haploblocks'][ind_id] = interval_tree.IntervalTree(intervals[ind_id], 
-                                        0, 1, intervals[ind_id][0][0], intervals[ind_id][-1][1])
+                    batch['haploblocks'][ind_id] = interval_tree.IntervalTree(haploblocks[ind_id], 
+                                                haploblocks[ind_id][0][0]-1, haploblocks[ind_id][-1][1]+1)
                 except IndexError:
                     pass
         
@@ -173,8 +194,7 @@ class VariantFileParser(object):
     
     def add_variant(self, batch, variant, features):
         """Adds the variant to the proper gene(s) in the batch."""
-        variant_id = [variant['CHROM'], variant['POS'], variant['REF'], variant['ALT']]
-        variant_id = '_'.join(variant_id)
+        variant_id = '_'.join([variant['CHROM'], variant['POS'], variant['REF'], variant['ALT']])
         # If we are in a region between features:
         if len(features) == 0:
             if len(batch) == 0:
@@ -188,36 +208,66 @@ class VariantFileParser(object):
                 batch[feature] = {variant_id:variant}
         return batch
     
+    def check_vep_annotatiion(self, vep_entry):
+        """docstring for check_vep_annotatiion"""
+        ### VEP: Allele|Gene|Feature|Feature_type|Consequence|cDNA_position|CDS_position|Protein_position|Amino_acids|Codons|Existing_variation|EXON|INTRON|DISTANCE|STRAND|SYMBOL|SYMBOL_SOURCE|SIFT|PolyPhen|HGVSc|HGVSp
+        ###
+            # Different genes are separated by ','
+        annotation = {}#Dict with genes that variant is included in
+        comp_candidate = False
+        
+        for gene in vep_entry.split(','):
+            annotation[gene.split('|')[15]] = 0
+            if not comp_candidate:
+                for so_term in gene.split('|')[4].split('&'):
+                    if so_term in self.interesting_so_terms:
+                        comp_candidate = True
+        
+        return list(annotation.keys()), comp_candidate
+        
+    
     def vcf_variant(self, splitted_variant_line):
         """Returns a variant object in the cmms format."""
         my_variant = dict(zip(self.header_line, splitted_variant_line))
         variant_chrom = my_variant['CHROM']
         alternatives = my_variant['ALT'].split(',')
         
-        # When checking what features that are overlapped we use the longest alternative
-        longest_alt = max([len(alternative) for alternative in alternatives])
+        my_variant['Annotation'] = []
+        my_variant['comp_candidate'] = False
         
-        # Internally we never use 'chr' in the chromosome names:
-        variant_chrom = variant_chrom.lstrip('chr')
+        #If annotated with vep we do not need to check interval trees
+        if self.vep:
+            for entry in my_variant['INFO'].split(';'):
+                entry = entry.split('=')
+                if entry[0] == 'CSQ':
+                    my_variant['Annotation'], my_variant['comp_candidate'] = self.check_vep_annotatiion(entry[1])
+                
         
-        variant_interval = [int(my_variant['POS']), (int(my_variant['POS']) + 
-                            longest_alt - 1)]
-        
-        # if self.exon_annotation:
-        #     try:
-        #         my_variant['Annotation'] = self.gene_trees.exon_trees[variant_chrom].find_range(variant_interval)
-        #     except KeyError:
-        #         if self.verbosity:
-        #             print('Chromosome', variant_chrom, 'is not in annotation file!')
-        #         my_variant['Annotation'] = []
-        
-        # The feature files does not have to include all chromosomes that are in the vcf:
-        try:
-            my_variant['Annotation'] = self.gene_trees.gene_trees[variant_chrom].find_range(variant_interval)
-        except KeyError:
-            if self.verbosity:
-                print('Chromosome', variant_chrom, 'is not in annotation file!')
-            my_variant['Annotation'] = []
+        else:
+            # When checking what features that are overlapped we use the longest alternative
+            longest_alt = max([len(alternative) for alternative in alternatives])
+            # Internally we never use 'chr' in the chromosome names:
+            variant_chrom = variant_chrom.lstrip('chr')
+            
+            variant_interval = [int(my_variant['POS']), (int(my_variant['POS']) + longest_alt-1)]
+            
+            try:
+                my_variant['Annotation'] = self.gene_trees[variant_chrom].find_range(variant_interval)
+                # if len(my_variant['Annotation']) > 0:
+                #     print(my_variant['Annotation'])
+                
+            except KeyError:
+                if self.verbosity:
+                    print('Chromosome', variant_chrom, 'is not in annotation file!')
+                my_variant['Annotation'] = []
+            
+            #Check if exonic:
+            try:
+                if len(self.exon_trees[variant_chrom].find_range(variant_interval)):
+                    my_variant['comp_candidate'] = True
+            except KeyError:
+                if self.verbosity:
+                    print('Chromosome', variant_chrom, 'is not in annotation file!')
         
         return my_variant
 
@@ -226,36 +276,84 @@ def main():
     from genmod.vcf import vcf_header
     from genmod.utils import annotation_parser
     parser = argparse.ArgumentParser(description="Parse different kind of pedigree files.")
-    parser.add_argument('variant_file', type=str, nargs=1 , help='A file with variant information.')
-    parser.add_argument('annotation_file', type=str, nargs=1 , help='A file with feature annotations.')
-    parser.add_argument('-phased', '--phased', action="store_true", help='If variant file is phased.')    
-    parser.add_argument('-v', '--verbose', action="store_true", help='Increase output verbosity.')
+    parser.add_argument('variant_file', 
+                            type=str, nargs=1, 
+                            help='A file with variant information.'
+    )
+    parser.add_argument('-an', '--annotation_file', 
+                            type=str, nargs=1, 
+                            help='A file with feature annotations.'
+    )
+    parser.add_argument('-at', '--annotation_type', 
+                            type=str, nargs=1,default=['gene_pred'], 
+                            choices=['gene_pred', 'bed', 'gtf', 'ccds'], 
+                            help='Specify annotation type.'
+    )
+    parser.add_argument('-phased', '--phased', 
+                            action="store_true", 
+                            help='If variant file is phased.'
+    )
+    parser.add_argument('-v', '--verbose', 
+                            action="store_true", 
+                            help='Increase output verbosity.'
+    )
+    parser.add_argument('-vep', '--vep', 
+                            action="store_true", 
+                            help='If variants are annotated with vep.'
+    )
     
     args = parser.parse_args()
     infile = args.variant_file[0]
-    if args.verbose:
-        print('Parsing annotationfile...')
-        start_time_annotation = datetime.now()
-    my_anno_parser = annotation_parser.AnnotationParser(args.annotation_file[0], 'ref_gene')
     
-    if args.verbose:
-        print('annotation parsed. Time to parse annotation: %s\n' % str(datetime.now() - start_time_annotation))
+    gene_trees = {}
+    exon_trees = {}
     
+    if not args.vep:
+        if args.annotation_file:
+            anno_file = args.annotation_file[0]
+            if args.verbose:
+                print('Parsing annotationfile...')
+                start_time_annotation = datetime.now()
+            file_name, file_extension = os.path.splitext(anno_file)
+            zipped = False
+            if file_extension == '.gz':
+                zipped = True
+                file_name, file_extension = os.path.splitext(file_name)
+            
+            my_anno_parser = annotation_parser.AnnotationParser(anno_file, args.annotation_type[0], zipped=zipped)
+            gene_trees = my_anno_parser.gene_trees
+            exon_trees = my_anno_parser.exon_trees
+            if args.verbose:
+                print('annotation parsed. Time to parse annotation: %s\n' % str(datetime.now() - start_time_annotation))
+        else:
+            annopath = os.path.join(os.path.split(os.path.dirname(genmod.__file__))[0], 'annotations/')
+            gene_db = os.path.join(annopath, 'genes.db')
+            exon_db = os.path.join(annopath, 'exons.db')
+        
+            try:
+                with open(gene_db, 'rb') as f:
+                    gene_trees = pickle.load(f)
+                with open(exon_db, 'rb') as g:
+                    exon_trees = pickle.load(g)
+            except FileNotFoundError:
+                print('You need to build annotations! See documentation.')
+                pass
+            
+        
     my_head_parser = vcf_header.VCFParser(infile)
     my_head_parser.parse()
-    print(my_head_parser.__dict__)
+    # print(my_head_parser.__dict__)
     variant_queue = JoinableQueue()
     start_time = datetime.now()        
-    
-    my_parser = VariantFileParser(infile, variant_queue, my_head_parser, my_anno_parser, args)
+    my_parser = VariantFileParser(infile, variant_queue, my_head_parser, args, gene_trees, exon_trees)
     nr_of_batches = my_parser.parse()
-    print(nr_of_batches)
     for i in range(nr_of_batches):
         variant_queue.get()
         variant_queue.task_done()
     
     variant_queue.join()
-    print('Time to parse variants: %s ' % str(datetime.now()-start_time))
+    if args.verbose:
+        print('Time to parse variants: %s ' % str(datetime.now()-start_time))
 
 if __name__ == '__main__':
     main()
