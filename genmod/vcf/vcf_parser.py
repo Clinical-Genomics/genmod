@@ -20,6 +20,11 @@ import os
 import argparse
 from datetime import datetime
 from codecs import open
+import genmod
+try:
+    import cPickle as pickle
+except:
+    import pickle
 
 from pprint import pprint as pp
 
@@ -87,7 +92,6 @@ class VariantFileParser(object):
                     new_features = variant['Annotation']
 
                     if self.verbosity:
-                        nr_of_variants += 1
                         if nr_of_variants % 20000 == 0:
                             print('%s variants parsed!' % nr_of_variants)
                             print('Last 20.000 took %s to parse.\n' % str(datetime.now() - start_twenty_time))
@@ -106,7 +110,7 @@ class VariantFileParser(object):
                     else:
                         # If we should put the batch in the queue:
                         send = True
-                        
+                            
                         if self.phased:
                             for ind_id in self.individuals:
                                 #A new haploblock is indicated by '/' if the data is phased
@@ -136,7 +140,7 @@ class VariantFileParser(object):
                                                                     str(haploblock_id)])
                                         haploblock_id += 1
                                     batch['haploblocks'][ind_id] = interval_tree.IntervalTree(haploblocks[ind_id], 
-                                                        0, 1, haploblocks[ind_id][0][0], haploblocks[ind_id][-1][1])
+                                                        haploblocks[ind_id][0][0]-1, haploblocks[ind_id][-1][1]+1)
                                 haploblocks = {ind_id:[] for ind_id in self.individuals}
                             # Put the job in the queue
                             self.batch_queue.put(batch)
@@ -144,6 +148,7 @@ class VariantFileParser(object):
                             #Reset the variables
                             current_features = new_features
                             batch = self.add_variant({}, variant, new_features)
+                            batch['haploblocks'] = {}
                             batch['intervals'] = {}
                         else:
                             current_features = list(set(current_features) | set(new_features))
@@ -168,15 +173,15 @@ class VariantFileParser(object):
             print('Number of variants in variant file:%s' % nr_of_variants)
         
         if self.phased:
-        # Create an interval tree for each individual with the phaing intervals
+        # Create an interval tree for each individual with the phasing intervals
             for ind_id in self.individuals:
                 #check if we have just finished an interval
                 if haploblock_starts[ind_id] != int(variant['POS']):
-                    intervals[ind_id].append([haploblock_starts[ind_id], int(variant['POS']) - 1, str(haploblock_id)])
+                    haploblocks[ind_id].append([haploblock_starts[ind_id], int(variant['POS']) - 1, str(haploblock_id)])
                     haploblock_id += 1
                 try:
-                    batch['haploblocks'][ind_id] = interval_tree.IntervalTree(intervals[ind_id], 
-                                        0, 1, intervals[ind_id][0][0], intervals[ind_id][-1][1])
+                    batch['haploblocks'][ind_id] = interval_tree.IntervalTree(haploblocks[ind_id], 
+                                                haploblocks[ind_id][0][0]-1, haploblocks[ind_id][-1][1]+1)
                 except IndexError:
                     pass
         
@@ -300,29 +305,41 @@ def main():
     gene_trees = {}
     exon_trees = {}
     
-    if args.annotation_file:
-        anno_file = args.annotation_file[0]
-        if args.verbose:
-            print('Parsing annotationfile...')
-            start_time_annotation = datetime.now()
-        file_name, file_extension = os.path.splitext(anno_file)
-        zipped = False
-        if file_extension == '.gz':
-            zipped = True
-            file_name, file_extension = os.path.splitext(file_name)
+    if not args.vep:
+        if args.annotation_file:
+            anno_file = args.annotation_file[0]
+            if args.verbose:
+                print('Parsing annotationfile...')
+                start_time_annotation = datetime.now()
+            file_name, file_extension = os.path.splitext(anno_file)
+            zipped = False
+            if file_extension == '.gz':
+                zipped = True
+                file_name, file_extension = os.path.splitext(file_name)
+            
+            my_anno_parser = annotation_parser.AnnotationParser(anno_file, args.annotation_type[0], zipped=zipped)
+            gene_trees = my_anno_parser.gene_trees
+            exon_trees = my_anno_parser.exon_trees
+            if args.verbose:
+                print('annotation parsed. Time to parse annotation: %s\n' % str(datetime.now() - start_time_annotation))
+        else:
+            annopath = os.path.join(os.path.split(os.path.dirname(genmod.__file__))[0], 'annotations/')
+            gene_db = os.path.join(annopath, 'genes.db')
+            exon_db = os.path.join(annopath, 'exons.db')
         
-        my_anno_parser = annotation_parser.AnnotationParser(anno_file, args.annotation_type[0], zipped=zipped)
-        gene_trees = my_anno_parser.gene_trees
-        exon_trees = my_anno_parser.exon_trees
-        pp(gene_trees)
-        print(gene_trees.get('15', interval_tree.IntervalTree([[0,0,None]], 1, 1)).find_range([23282265, 23282266]))
-        print(exon_trees.get('15', interval_tree.IntervalTree([[0,0,None]], 1, 1)).find_range([23282265, 23282266]))
-        if args.verbose:
-            print('annotation parsed. Time to parse annotation: %s\n' % str(datetime.now() - start_time_annotation))
+            try:
+                with open(gene_db, 'rb') as f:
+                    gene_trees = pickle.load(f)
+                with open(exon_db, 'rb') as g:
+                    exon_trees = pickle.load(g)
+            except FileNotFoundError:
+                print('You need to build annotations! See documentation.')
+                pass
+            
         
     my_head_parser = vcf_header.VCFParser(infile)
     my_head_parser.parse()
-    print(my_head_parser.__dict__)
+    # print(my_head_parser.__dict__)
     variant_queue = JoinableQueue()
     start_time = datetime.now()        
     my_parser = VariantFileParser(infile, variant_queue, my_head_parser, args, gene_trees, exon_trees)
