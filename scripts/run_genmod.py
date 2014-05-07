@@ -99,6 +99,11 @@ def get_annotation(args):
                 
     return gene_trees, exon_trees 
 
+def check_file_existence(infile):
+    """Check is the file exists. Quit if something is wrong."""
+    if not os.path.isfile(infile):
+        print('The file %s does not exist!!!\nPlease check what is wrong and rerun.\nExiting...' % infile)
+        sys.exit()
 
 def get_family(args):
     """Return the family"""
@@ -121,7 +126,7 @@ def add_metadata(head, args):
     head.metadataparser.add_info('Comp', '.', 'String', "':'-separated list of compound pairs for this variant.")
     head.metadataparser.add_info('GM', '.', 'String', "':'-separated list of genetic models for this variant.")
     head.metadataparser.add_info('MS', '1', 'Integer', "PHRED score for genotype models.")
-    if args.cadd_file[0]:
+    if args.cadd_file[0] or args.cadd_1000g[0]:
         head.metadataparser.add_info('CADD', '1', 'Float', "The CADD relative score for this alternative.")
     return
 
@@ -194,6 +199,11 @@ def main():
         help='If data is phased use this flag.'
     )
     
+    parser.add_argument('-gene', '--whole_gene', 
+        action="store_true", 
+        help='If compounds should be checked in the whole gene regions. Not only exonic/splice sites.'
+    )
+    
     parser.add_argument('-o', '--outfile', 
         type=str, nargs=1, default=[None],
         help='Specify the path to a file where results should be stored.'
@@ -210,7 +220,7 @@ def main():
             If no index is present it will be created.'
     )    
     
-    parser.add_argument('-cadd1kg', '--cadd_1000g', 
+    parser.add_argument('-c1kg', '--cadd_1000g', 
         type=str, nargs=1, default=[None],
         help='Specify the path to a bgzipped cadd file with variant scores for all 1000g variants.\
             If no index is present it will be created.'
@@ -222,7 +232,8 @@ def main():
     
     start_time_analysis = datetime.now()
     
-    
+    check_file_existence(var_file)
+    check_file_existence(args.family_file[0])
     # Start by parsing at the pedigree file:
     
     my_family = get_family(args)
@@ -230,7 +241,6 @@ def main():
     # Parse the header of the vcf:
     
     head = get_header(var_file)
-    add_metadata(head, args)
     # Parse the annotation file and make annotation trees:
     
     gene_trees = {}
@@ -244,13 +254,26 @@ def main():
     # Check if the cadd file is compressed and indexed:
     
     if args.cadd_file[0]:
+        check_file_existence(args.cadd_file[0])
         if args.verbose:
-            print('Cadd file! %s' % args.cadd_file[0])            
+            print('Cadd file! %s' % args.cadd_file[0])
         try:
             tabix_index(args.cadd_file[0], seq_col=0, start_col=1, end_col=1, meta_char='#')
         except IOError as e:
             if args.verbose:
                 print(e)
+            # args.cadd_file = [None]
+        
+    if args.cadd_1000g[0]:
+        check_file_existence(args.cadd_1000g[0])
+        if args.verbose:
+            print('Cadd 1000g file! %s' % args.cadd_1000g[0])
+        try:
+            tabix_index(args.cadd_1000g[0], seq_col=0, start_col=1, end_col=1, meta_char='#')
+        except IOError as e:
+            if args.verbose:
+                print(e)
+            # args.cadd_1000g = [None]
     
     # # Check the variants:
     
@@ -264,7 +287,8 @@ def main():
     # Create a directory to keep track of temp files
     temp_dir = mkdtemp()
         
-    num_model_checkers = (cpu_count()*2-1)
+    # num_model_checkers = (cpu_count()*2-1)
+    num_model_checkers = (1)
     
     if args.verbose:
         print('Number of CPU:s %s' % cpu_count())
@@ -304,6 +328,8 @@ def main():
         print('')
         start_time_variant_sorting = datetime.now()
     
+    # Add the new metadata to the headers:
+    add_metadata(head, args)
     print_headers(args, head)
     
     for chromosome in chromosome_list:
