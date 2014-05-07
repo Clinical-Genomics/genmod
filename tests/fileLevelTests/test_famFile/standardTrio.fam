@@ -1,0 +1,5 @@
+#Standard trio
+#FamilyID	SampleID	Father	Mother	Sex	Phenotype
+healthyParentsAffectedSon	proband	father	mother	1	2
+healthyParentsAffectedSon	mother	0	0	2	1
+healthyParentsAffectedSon	father	0	0	1	1
