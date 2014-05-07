@@ -43,6 +43,7 @@ class VariantFileParser(object):
         self.verbosity = args.verbose
         self.phased = args.phased
         self.vep = args.vep
+        self.whole_genes = args.whole_gene
         self.individuals = head.individuals
         self.header_line = head.header
         self.gene_trees  = gene_trees
@@ -90,7 +91,6 @@ class VariantFileParser(object):
                     if variant['comp_candidate']:
                         nr_of_comp_cand += 1
                     new_features = variant['Annotation']
-
                     if self.verbosity:
                         if nr_of_variants % 20000 == 0:
                             print('%s variants parsed!' % nr_of_variants)
@@ -104,13 +104,13 @@ class VariantFileParser(object):
                         # Add the variant to each of its features in a batch
                         batch = self.add_variant(batch, variant, new_features)
                         current_chrom = new_chrom
+                        batch['haploblocks'] = {}
                         if self.phased:
                             haploblock_starts = {ind_id:int(variant['POS']) for ind_id in self.individuals}
-                            batch['haploblocks'] = {}
                     else:
                         # If we should put the batch in the queue:
                         send = True
-                            
+                        
                         if self.phased:
                             for ind_id in self.individuals:
                                 #A new haploblock is indicated by '/' if the data is phased
@@ -129,6 +129,18 @@ class VariantFileParser(object):
                     #If not check if we are in a region with overlapping genes
                         elif len(set.intersection(set(new_features),set(current_features))) > 0:
                             send = False
+                        
+                        if new_chrom != current_chrom:
+                            self.chromosomes.append(current_chrom)
+                            # New chromosome means new batch
+                            send = True
+                            current_chrom = new_chrom
+                            
+                            if self.verbosity:
+                                print('Chromosome %s parsed!' % current_chrom)
+                                print('Time to parse chromosome %s' % str(datetime.now()-start_chrom_time))
+                                start_chrom_time = datetime.now()
+                            
                         
                         if send:
                             if self.phased:
@@ -149,19 +161,10 @@ class VariantFileParser(object):
                             current_features = new_features
                             batch = self.add_variant({}, variant, new_features)
                             batch['haploblocks'] = {}
-                            batch['intervals'] = {}
                         else:
                             current_features = list(set(current_features) | set(new_features))
                             batch = self.add_variant(batch, variant, new_features) # Add variant batch
         
-                    if new_chrom != current_chrom:
-                        self.chromosomes.append(current_chrom)
-        
-                        if self.verbosity:
-                            print('Chromosome %s parsed!' % current_chrom)
-                            print('Time to parse chromosome %s' % str(datetime.now()-start_chrom_time))
-                            current_chrom = new_chrom
-                            start_chrom_time = datetime.now()
         
         self.chromosomes.append(current_chrom)
         
@@ -265,6 +268,10 @@ class VariantFileParser(object):
             except KeyError:
                 if self.verbosity:
                     print('Chromosome', variant_chrom, 'is not in annotation file!')
+        
+        if self.whole_genes:
+            if len(my_variant['Annotation']) > 0:
+                my_variant['comp_candidate'] = True
         
         return my_variant
 

@@ -64,7 +64,8 @@ class FileSort(object):
                 open(outFile, mode = 'a', encoding = 'utf-8').write(''.join(lines))
             else:
                 if not self._silent:
-                    print(''.join(lines))
+                    for line in lines:
+                        print(line.rstrip())
         else:
         # In this case the temporary files are over witten.
             try:
