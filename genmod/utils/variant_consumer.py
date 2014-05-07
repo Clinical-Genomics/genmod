@@ -37,12 +37,14 @@ class VariantConsumer(multiprocessing.Process):
         self.phased = args.phased
         self.cadd_file = args.cadd_file[0]
         self.cadd_1000g = args.cadd_1000g[0]
+        self.thousand_g = args.thousand_g[0]
         self.chr_prefix = args.chr_prefix                    
         if self.cadd_1000g:
             self.cadd_1000g = Tabixfile(self.cadd_1000g, parser = asTuple())
         if self.cadd_file:
             self.cadd_file = Tabixfile(self.cadd_file, parser = asTuple())
-        print(self.cadd_file, self.cadd_1000g)
+        if self.thousand_g:
+            self.thousand_g = Tabixfile(self.thousand_g, parser = asTuple())
         
         
     def fix_variants(self, variant_batch):
@@ -77,31 +79,54 @@ class VariantConsumer(multiprocessing.Process):
                         except TypeError:
                             return str(unicode(tpl[-1], encoding='utf-8'))
             except (IndexError, KeyError) as e:
-                if self.verbosity:
-                    print(e, variant['CHROM'], variant['POS'])
+                pass
         #If cadd file was provided and the variant was found the score has been returned, otherwise check 1000g file:
         if self.cadd_1000g:
-            print(self.cadd_1000g)
             try:
-                print(str(variant['CHROM']), cadd_key, cadd_key+longest_alt)
                 for tpl in self.cadd_1000g.fetch(str(variant['CHROM']), cadd_key-1, cadd_key):
-                    print('Tuple: %s' % tpl)
                     #This is for compability between python versions:
                     try:
                         return str(tpl[-1], encoding='utf-8')
                     except TypeError:
                         return str(unicode(tpl[-1], encoding='utf-8'))
             except (IndexError, KeyError) as e:
-                if self.verbosity:
-                    print(e, variant['CHROM'], variant['POS'])
-        
+                pass
         return cadd_score
+    
+    def get_1000g_freq(self, variant):
+        """Get the frequency from 1000g."""
+        freq = '-'
+        alternatives = variant['ALT'].split(',')
+        longest_alt = max([len(alt) for alt in alternatives]+[len(variant['REF'])])
+        # CADD values are only for snps:
+        cadd_key = int(variant['POS'])
+        if self.thousand_g:
+            try:
+                for tpl in self.thousand_g.fetch(str(variant['CHROM']), cadd_key-1, cadd_key):
+                    #This is for compability between python versions:
+                    try:
+                        if str(tpl[3], encoding='utf-8') == variant['REF']:
+                            for info in str(tpl[7], encoding='utf-8').split(';'):
+                                if info.split('=')[0] == 'AF':
+                                    return info.split('=')[-1]
+                    except TypeError:
+                        if str(unicode(tpl[3], encoding='utf-8')) == variant['REF']:
+                            for info in str(unicode(tpl[7], encoding='utf-8')).split(';'):
+                                if info.split('=')[0] == 'AF':
+                                    return info.split('=')[-1]
+            except (IndexError, KeyError) as e:
+                pass
+        
+        return freq
+        
     
     def make_print_version(self, variant_dict):
         """Get the variants ready for printing"""
         for variant_id in variant_dict:
             if self.cadd_file or self.cadd_1000g:
                 variant_dict[variant_id]['CADD'] = self.get_cadd_score(variant_dict[variant_id])
+            if self.thousand_g:
+                variant_dict[variant_id]['1000G'] = self.get_1000g_freq(variant_dict[variant_id])
             model_list = []
             compounds_list = []
             #Remove the 'Genotypes' post since we will not need them for now
@@ -153,6 +178,8 @@ class VariantConsumer(multiprocessing.Process):
             vcf_info.append('MS=' + model_score)
             if self.cadd_file or self.cadd_1000g:
                 vcf_info.append('CADD=%s' % str(variant_dict[variant_id].pop('CADD', '-')))
+            if self.thousand_g:
+                vcf_info.append('1000G_freq=%s' % str(variant_dict[variant_id].pop('1000G', '-')))
             variant_dict[variant_id]['INFO'] = ';'.join(vcf_info)
         return
     

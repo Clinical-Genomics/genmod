@@ -128,6 +128,8 @@ def add_metadata(head, args):
     head.metadataparser.add_info('MS', '1', 'Integer', "PHRED score for genotype models.")
     if args.cadd_file[0] or args.cadd_1000g[0]:
         head.metadataparser.add_info('CADD', '1', 'Float', "The CADD relative score for this alternative.")
+    if args.thousand_g[0]:
+        head.metadataparser.add_info('1000G_freq', '1', 'Float', "Frequency in the 1000G database.")
     return
 
 def print_headers(args, header_object):
@@ -225,6 +227,12 @@ def main():
         help='Specify the path to a bgzipped cadd file with variant scores for all 1000g variants.\
             If no index is present it will be created.'
     )    
+
+    parser.add_argument('-kg', '--thousand_g', 
+        type=str, nargs=1, default=[None],
+        help='Specify the path to a bgzipped vcf file frequency info of all 1000g variants.\
+            If no index is present it will be created.'
+    )
     
     args = parser.parse_args()
     var_file = args.variant_file[0]
@@ -262,7 +270,6 @@ def main():
         except IOError as e:
             if args.verbose:
                 print(e)
-            # args.cadd_file = [None]
         
     if args.cadd_1000g[0]:
         check_file_existence(args.cadd_1000g[0])
@@ -273,7 +280,16 @@ def main():
         except IOError as e:
             if args.verbose:
                 print(e)
-            # args.cadd_1000g = [None]
+    
+    if args.thousand_g[0]:
+        check_file_existence(args.thousand_g[0])
+        if args.verbose:
+            print('1000g frequency file! %s' % args.thousand_g[0])
+        try:
+            tabix_index(args.thousand_g[0], preset='vcf')
+        except IOError as e:
+            if args.verbose:
+                print(e)
     
     # # Check the variants:
     
@@ -287,8 +303,7 @@ def main():
     # Create a directory to keep track of temp files
     temp_dir = mkdtemp()
         
-    # num_model_checkers = (cpu_count()*2-1)
-    num_model_checkers = (1)
+    num_model_checkers = (cpu_count()*2-1)
     
     if args.verbose:
         print('Number of CPU:s %s' % cpu_count())

@@ -110,7 +110,7 @@ class VariantFileParser(object):
                     else:
                         # If we should put the batch in the queue:
                         send = True
-                            
+                        
                         if self.phased:
                             for ind_id in self.individuals:
                                 #A new haploblock is indicated by '/' if the data is phased
@@ -134,12 +134,11 @@ class VariantFileParser(object):
                             self.chromosomes.append(current_chrom)
                             # New chromosome means new batch
                             send = True
-                            beginning = True
+                            current_chrom = new_chrom
                             
                             if self.verbosity:
                                 print('Chromosome %s parsed!' % current_chrom)
                                 print('Time to parse chromosome %s' % str(datetime.now()-start_chrom_time))
-                                current_chrom = new_chrom
                                 start_chrom_time = datetime.now()
                             
                         
