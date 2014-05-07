@@ -26,7 +26,7 @@ The genetic models that are checked are the following:
 
 ##Installation:##
 
-genmod works with Python 2.7 and Python v3.2 and above
+**GENMOD** works with Python 2.7 and Python v3.2 and above
 
     pip install genmod
 
@@ -36,13 +36,24 @@ or
     cd genmod
     python setup.py install
 
-###USAGE:###
+##USAGE:##
 
     run_genmod ped_file variant_file
-    
+
+
+###Alternatives###
+
+- **GENMOD** can annotate the variants with 1000 genome frequencies. Use the flag `-kg/--thousand_g path/to/bgzipped/thousand_genomes.vcf.gz`
+- Annotate with [CADD scores](http://cadd.gs.washington.edu/), use `-cadd/--cadd\_file path/to/huge_cadd_file.txt.gz`. There is also a cadd file with all 1000 genomes positions (this one include some indels), if annotation with this one use `-c1kg/--cadd_1000_g path/to/CADD_1000g.txt.gz`
+- If your VCF is already annotated with VEP, use `-vep/--vep`
+- If data is phased use `-phased/--phased`
+- If you want to allow compound pairs in intronic regions to use `-gene/--whole_gene`
+- If you want canonical splice site region to be bigger than 2 base pairs on each side of the exons, use `-splice/--splice_padding _integer_`
+
+
 ###Distribution###
 
-- GENMOD now includes db like files in the genmod/annotations folder, this is the exon and genome definitions from ftp://hgdownload.cse.ucsc.edu/goldenPath/hg19/database/refGene.txt.gz.
+- GENMOD now includes db like files in the genmod/annotations folder, this is the exon and gene definitions from ftp://hgdownload.cse.ucsc.edu/goldenPath/hg19/database/refGene.txt.gz.
 
 If the user wants to use another annotation:
     
@@ -90,7 +101,10 @@ For this model individuals can be carriers so healthy individuals can be heteroz
 
 ### Autosomal Compound Heterozygote ###
 
-This model includes pairs of exonic variants that are present within the same gene.
+This model includes pairs of exonic variants that are present within the same gene. 
+**The default behaviour of GENMOD is to look for compounds only in exonic/canonical splice sites**.
+The reason for this is that since some genes have huge intronic regions the data will be drowned in compound pairs.
+If the user wants all variants in genes checked use the flag -gene/--whole_gene.
 
 1. Non-phased data:
 	* Affected individuals have to be het. for both variants
@@ -111,7 +125,7 @@ These traits are inherited on the x-chromosome, of which men have one allele and
 * Variant has to be on chromosome X
 * Affected individuals have to be het. or hom. alt.
 * Healthy males cannot carry the variant
-* Healthy females can carry the variant
+* Healthy females can carry the variant (because of X inactivation)
 * If sex is male the variant is considered _de novo_ if mother is genotyped and does not carry the variant
 * If sex is female variant is considered _de novo_ if none of the parents carry the variant
     
@@ -119,7 +133,7 @@ These traits are inherited on the x-chromosome, of which men have one allele and
 ### X Linked Recessive ###
 
 * Variant has to be on chromosome X
-* Affected males have to be het. or hom. alt.
+* Affected males have to be het. or hom. alt. (het is theoretically not possible in males, but can occur due to Pseudo Autosomal Regions).
 * Affected females have to be hom. alt.
 * Healthy females cannot be hom. alt.
 * Healthy males cannot carry the variant
@@ -143,6 +157,8 @@ If VEP annotation is used the following SO-terms is counted as compound candidat
 
 **transcript ablation, splice donor variant, splice acceptor variant, stop gained, frameshift variant, stop lost,
 initiator codon variant, inframe insertion, inframe deletion, missense variant, transcript amplification, splice region variant,incomplete terminal codon variant, synonymous variant, stop retained variant, coding sequence variant**.
+
+
 
 ###Annotation Formats###
 
