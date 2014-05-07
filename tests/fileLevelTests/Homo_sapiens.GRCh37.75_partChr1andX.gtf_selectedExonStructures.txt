@@ -1,0 +1,64 @@
+Exon structure of genes on chromo 1 and X (useful for generating test cases of compound heterozygotes)
+
+Only protein coding CDS on the + strand to make it easy to place variants just outside exons
+
+
+cat Homo_sapiens.GRCh37.75_partChr1andX.gtf | awk 'BEGIN{OFS="\t"; FS="\t";};($1 == "1" && $2 == "protein_coding" && $3 == "CDS" && $7 == "+"){gsub(";.*","",$9); print $1,$2,$3,$4,$5,$7, $9};END{}' | head -n 300
+
+Manual selection of two exons (or less if only one exon) per gene
+
+1	protein_coding	CDS	69091	70005	+	gene_id "ENSG00000186092"
+1	protein_coding	CDS	367659	368594	+	gene_id "ENSG00000235249"
+1	protein_coding	CDS	818043	818058	+	gene_id "ENSG00000269308"
+1	protein_coding	CDS	819496	819513	+	gene_id "ENSG00000269308"
+1	protein_coding	CDS	874420	874509	+	gene_id "ENSG00000187634"
+1	protein_coding	CDS	874655	874840	+	gene_id "ENSG00000187634"
+1	protein_coding	CDS	897735	897851	+	gene_id "ENSG00000187961"
+1	protein_coding	CDS	898084	898297	+	gene_id "ENSG00000187961"
+1	protein_coding	CDS	905901	905981	+	gene_id "ENSG00000187583"
+1	protein_coding	CDS	906066	906138	+	gene_id "ENSG00000187583"
+1	protein_coding	CDS	948954	948956	+	gene_id "ENSG00000187608"
+1	protein_coding	CDS	949364	949855	+	gene_id "ENSG00000187608"
+1	protein_coding	CDS	979203	979403	+	gene_id "ENSG00000188157"
+1	protein_coding	CDS	979489	979637	+	gene_id "ENSG00000188157"
+1	protein_coding	CDS	1115863	1115981	+	gene_id "ENSG00000162571"
+1	protein_coding	CDS	1116111	1116240	+	gene_id "ENSG00000162571"
+1	protein_coding	CDS	1217622	1217695	+	gene_id "ENSG00000162572"
+1	protein_coding	CDS	1219358	1219470	+	gene_id "ENSG00000162572"
+1	protein_coding	CDS	1262621	1263140	+	gene_id "ENSG00000224051"
+1	protein_coding	CDS	1262291	1262412	+	gene_id "ENSG00000224051"
+1	protein_coding	CDS	1267018	1267318	+	gene_id "ENSG00000169962"
+1	protein_coding	CDS	1267404	1268186	+	gene_id "ENSG00000169962"
+1	protein_coding	CDS	1335538	1335683	+	gene_id "ENSG00000224870"
+1	protein_coding	CDS	1335985	1336111	+	gene_id "ENSG00000224870"
+1	protein_coding	CDS	1361508	1361765	+	gene_id "ENSG00000205116"
+1	protein_coding	CDS	1362934	1363164	+	gene_id "ENSG00000205116"
+1	protein_coding	CDS	1372307	1372864	+	gene_id "ENSG00000179403"
+1	protein_coding	CDS	1374461	1375164	+	gene_id "ENSG00000179403"
+
+
+
+
+% cat Homo_sapiens.GRCh37.75_partChr1andX.gtf | awk 'BEGIN{OFS="\t"; FS="\t";};($1 == "X" && $2 == "protein_coding" && $3 == "CDS" && $7 == "+"){gsub(";.*","",$9); print $1,$2,$3,$4,$5,$7, $9};END{}' | head -n 300
+
+Manually selecting a few exons per gene
+
+X	protein_coding	CDS	200855	200981	+	gene_id "ENSG00000182378"
+X	protein_coding	CDS	205400	205536	+	gene_id "ENSG00000182378"
+X	protein_coding	CDS	601734	601822	+	gene_id "ENSG00000185960"
+X	protein_coding	CDS	619520	619561	+	gene_id "ENSG00000185960"
+X	protein_coding	CDS	1404671	1404813	+	gene_id "ENSG00000198223"
+X	protein_coding	CDS	1407412	1407535	+	gene_id "ENSG00000198223"
+X	protein_coding	CDS	1475114	1475229	+	gene_id "ENSG00000185291"
+X	protein_coding	CDS	1477754	1477780	+	gene_id "ENSG00000185291"
+X	protein_coding	CDS	1714277	1714425	+	gene_id "ENSG00000197976"
+X	protein_coding	CDS	1718085	1718325	+	gene_id "ENSG00000197976"
+X	protein_coding	CDS	1743162	1743291	+	gene_id "ENSG00000196433"
+X	protein_coding	CDS	1746596	1746664	+	gene_id "ENSG00000196433"
+X	protein_coding	CDS	2638397	2638465	+	gene_id "ENSG00000002586"
+X	protein_coding	CDS	2640668	2640715	+	gene_id "ENSG00000002586"
+X	protein_coding	CDS	2692757	2692780	+	gene_id "ENSG00000124343"
+X	protein_coding	CDS	2700107	2700169	+	gene_id "ENSG00000124343"
+
+
+
