@@ -17,6 +17,7 @@ from genmod.models import genetic_models
 from genmod.variants import genotype
 
 
+
 class TestDominantModel(object):
     """Test class for testing how the genetic models behave with a dominant variant"""
 
@@ -24,6 +25,7 @@ class TestDominantModel(object):
         """Setup a simple family with family id 1, sick son id 1,
          healthy father id 2, healthy mother id 3"""
         # Setup family with sick kid, sick father and healthy mother:
+                
         self.dominant_family = family.Family(family_id = '1')
         sick_son = individual.Individual(ind='1', family='1',mother='3', father='2', sex=1, phenotype=2)
         sick_father = individual.Individual(ind='2', family='1',mother='0', father='0', sex=1, phenotype=2)
@@ -45,7 +47,7 @@ class TestDominantModel(object):
         
         genetic_models.check_genetic_models(batch, self.dominant_family, verbose=True)
 
-            
+        
     def test_dominant_variant(self):
         """This variant should only follow the dominant pattern."""
         assert not self.dominant_variant['Inheritance_model']['AR_hom']
@@ -71,7 +73,6 @@ class TestDominantModel(object):
 
 def main():
     pass
-
 
 if __name__ == '__main__':
     main()

@@ -12,13 +12,14 @@ Copyright (c) 2014 __MyCompanyName__. All rights reserved.
 
 import sys
 import os
+import pkg_resources
 
 from pprint import pprint as pp
 
 from ped_parser import family, individual
 from interval_tree import interval_tree
+import genmod
 from genmod.models import genetic_models
-from genmod.variants import genotype
 
 
 class TestPhasedDuo(object):
@@ -32,6 +33,9 @@ class TestPhasedDuo(object):
         healthy_mother = individual.Individual(ind='3', family='1',mother='0', father='0', sex=2, phenotype=1)
         self.duo_family.add_individual(sick_son)
         self.duo_family.add_individual(healthy_mother)
+        print(os.path.dirname(genmod.models.__file__))
+        print(pkg_resources.get_distribution('genmod').version)
+        print(sys.executable)
         
         # This is a dummy phased interval:
         interval = [1,100, '1']
@@ -73,9 +77,9 @@ class TestPhasedDuo(object):
                 }
         
         batch['haploblocks'] = intervals
-        pp(self.duo_family)
-        pp(batch)
-        pp(sys.path)
+        # pp(self.duo_family)
+        # pp(batch)
+        # pp(sys.path)
         genetic_models.check_genetic_models(batch, self.duo_family, phased=True)
     
     def test_recessive_comp_duo_simple(self):
@@ -84,6 +88,7 @@ class TestPhasedDuo(object):
         assert not self.recessive_comp_simple_1['Inheritance_model']['AR_hom_dn']
         assert self.recessive_comp_simple_1['Inheritance_model']['AD']
         assert self.recessive_comp_simple_1['Inheritance_model']['AD_dn']
+        pp(self.recessive_comp_simple_1['Inheritance_model'])
         assert self.recessive_comp_simple_1['Inheritance_model']['AR_comp']
     
     def test_recessive_comp_duo_not_simple(self):
