@@ -10,9 +10,7 @@
 1	1219359	.	A	T	100	PASS	MODEL=AR_comp_decoy;LOC=pair03_inSecExon;NOTE=bothAllelesFromSameParent	GT:GQ	0|0:60	1|0:60	0|1:60
 1	1262299	.	A	T	100	PASS	MODEL=AR_comp_decoy;LOC=pair04_inExon;NOTE=oneVariantIsIntronic	GT:GQ	0|0:60	0|1:60	0|1:60
 1	1262615	.	A	T	100	PASS	MODEL=AR_comp_decoy;LOC=pair04_inIntr;NOTE=oneVariantIsIntronic	GT:GQ	0|1:60	0|0:60	1|0:60
-1	1267025	.	A	T	100	PASS	MODEL=AR_comp_decoy;LOC=pair05_inOneExon;NOTE=breakInPhasing	GT:GQ	0|0:60	1|0:60	1|0:60
-1	1267035	.	A	T	100	PASS	MODEL=AR_comp_decoy;LOC=pair05_inOneExon;NOTE=breakInPhasing	GT:GQ	0/0:60	1/0:60	1/0:60
-1	1267409	.	A	T	100	PASS	MODEL=AR_comp_decoy;LOC=pair05_inSecExon;NOTE=breakInPhasing	GT:GQ	0|1:60	0|0:60	0|1:60
+
 
 
 
