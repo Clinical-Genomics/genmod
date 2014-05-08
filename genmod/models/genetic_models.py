@@ -130,7 +130,8 @@ def check_genetic_models(variant_batch, family, verbose = False, phased = False,
 def check_compound_candidates(variants, family):
     """Sort out the compound candidates, this function is used to reduce the number of potential candidates."""
     #Make a copy of the dictionary to not change the original one. {variant_id:variant_dict}
-    comp_candidates = {variant_id: variants[variant_id] for variant_id in variants if variants[variant_id]['comp_candidate']}
+    comp_candidates = {variant_id: variants[variant_id] for variant_id in variants if 
+                        variants[variant_id].get('comp_candidate',True)}
     for individual in family.individuals:
         individual_variants = {}
         for variant_id in dict((variant_id, comp_candidates[variant_id]) for variant_id in comp_candidates):
