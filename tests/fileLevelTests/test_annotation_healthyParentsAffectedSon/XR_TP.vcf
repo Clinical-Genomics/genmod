@@ -1,0 +1,8 @@
+##fileformat=VCFv4.1
+##contig=<ID=1,length=249250621,assembly=b37>
+##reference=file:///humgen/gsa-hpprojects/GATK/bundle/current/b37/human_g1k_v37.fasta
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	father	mother	proband
+X	1404679	.	A	T	100	PASS	MODEL=XR;LOC=inGene	GT:GQ	0/0:60	1/0:60	1/1:60
+X	1475119	.	A	T	100	PASS	MODEL=XR;LOC=inGene;NOTE=withPAR	GT:GQ	0/0:60	1/0:60	0/1:60
+X	1714279	.	A	T	100	PASS	MODEL=XR_dn;LOC=inGene	GT:GQ	0/0:60	0/0:60	1/1:60
+X	1743169	.	A	T	100	PASS	MODEL=XR_dn;LOC=inGene;NOTE=withPAR	GT:GQ	0/0:60	0/0:60	0/1:60
