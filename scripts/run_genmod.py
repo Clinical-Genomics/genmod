@@ -29,9 +29,9 @@ except:
 from pysam import tabix_index, tabix_compress
 
 from ped_parser import parser
+from vcf_parser import vcf_parser
 
-from genmod.utils import variant_consumer, variant_sorter, annotation_parser, variant_printer
-from genmod.vcf import vcf_header, vcf_parser
+from genmod.utils import variant_consumer, variant_sorter, annotation_parser, variant_printer, variant_annotator
 
 
 def get_annotation(args):
@@ -293,6 +293,7 @@ def main():
     
     # # Check the variants:
     
+    variant_parser = vcf_parser(var_file)
         
     # The task queue is where all jobs(in this case batches that represents variants in a region) is put
     # the consumers will then pick their jobs from this queue.
@@ -324,8 +325,8 @@ def main():
         start_time_variant_parsing = datetime.now()    
     
     # For parsing the vcf:
-    var_parser = vcf_parser.VariantFileParser(var_file, variant_queue, head, args, gene_trees, exon_trees)
-    var_parser.parse()
+    var_annotator = variant_annotator.VariantFileAnnotator(variant_parser, variant_queue, head, args, gene_trees, exon_trees)
+    var_annotator.annotate()
     
     for i in range(num_model_checkers):
         variant_queue.put(None)

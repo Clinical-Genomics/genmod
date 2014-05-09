@@ -141,20 +141,20 @@ class VariantFileParser(object):
                                 print('Time to parse chromosome %s' % str(datetime.now()-start_chrom_time))
                                 start_chrom_time = datetime.now()
                             
-                        
                         if send:
                             if self.phased:
                             # Create an interval tree for each individual with the phaing intervals 
                                 for ind_id in self.individuals:
                                     #Check if we have just finished an interval
                                     if haploblock_starts[ind_id] != int(variant['POS']):                                        
-                                        haploblocks[ind_id].append([haploblock_starts[ind_id], int(variant['POS']) - 1, 
+                                        haploblocks[ind_id].append([haploblock_starts[ind_id], int(variant['POS']), 
                                                                     str(haploblock_id)])
                                         haploblock_id += 1
                                     batch['haploblocks'][ind_id] = interval_tree.IntervalTree(haploblocks[ind_id], 
                                                         haploblocks[ind_id][0][0]-1, haploblocks[ind_id][-1][1]+1)
                                 haploblocks = {ind_id:[] for ind_id in self.individuals}
                             # Put the job in the queue
+                            pp(batch)
                             self.batch_queue.put(batch)
                             nr_of_batches += 1
                             #Reset the variables
@@ -180,14 +180,16 @@ class VariantFileParser(object):
             for ind_id in self.individuals:
                 #check if we have just finished an interval
                 if haploblock_starts[ind_id] != int(variant['POS']):
-                    haploblocks[ind_id].append([haploblock_starts[ind_id], int(variant['POS']) - 1, str(haploblock_id)])
+                    print('hej', variant['POS'])
+                    haploblocks[ind_id].append([haploblock_starts[ind_id], int(variant['POS']), str(haploblock_id)])
                     haploblock_id += 1
                 try:
+                    pp(haploblocks)
                     batch['haploblocks'][ind_id] = interval_tree.IntervalTree(haploblocks[ind_id], 
                                                 haploblocks[ind_id][0][0]-1, haploblocks[ind_id][-1][1]+1)
                 except IndexError:
                     pass
-        
+        pp(batch)
         self.batch_queue.put(batch)
         nr_of_batches += 1
         return nr_of_batches
