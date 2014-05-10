@@ -175,7 +175,6 @@ class VariantAnnotator(object):
                     haploblocks[ind_id].append([haploblock_starts[ind_id], int(variant['POS']), str(haploblock_id)])
                     haploblock_id += 1
                 try:
-                    pp(haploblocks)
                     batch['haploblocks'][ind_id] = interval_tree.IntervalTree(haploblocks[ind_id], 
                                                 haploblocks[ind_id][0][0]-1, haploblocks[ind_id][-1][1]+1)
                 except IndexError:

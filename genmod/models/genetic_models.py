@@ -189,7 +189,7 @@ def check_compounds(variant_1, variant_2, family, phased, intervals):
             if phased:
                 #If the individual is sick and phased it has to have one variant on each allele
                 if variant_1_interval == variant_2_interval:
-                    if genotype_1.allele_1 == genotype_2.allele_1 or genotype_1.allele_2 == genotype_1.allele_2:
+                    if genotype_1.allele_1 == genotype_2.allele_1 or genotype_1.allele_2 == genotype_2.allele_2:
                         return False
                     
             elif family.individuals[individual].has_parents:
