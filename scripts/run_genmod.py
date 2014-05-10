@@ -114,33 +114,27 @@ def get_family(args):
     # Stupid thing but for now when we only look at one family
     return my_family_parser.families.popitem()[1]
 
-def get_header(variant_file):
-    """Return a fixed header parser"""
-    head = vcf_header.VCFParser(variant_file)
-    head.parse()
-    return head
-
-def add_metadata(head, args):
+def add_metadata(variant_parser, args):
     """Add metadata for the information added by this script."""
-    head.metadataparser.add_info('ANN', '.', 'String', 'Annotates what feature(s) this variant belongs to.')
-    head.metadataparser.add_info('Comp', '.', 'String', "':'-separated list of compound pairs for this variant.")
-    head.metadataparser.add_info('GM', '.', 'String', "':'-separated list of genetic models for this variant.")
-    head.metadataparser.add_info('MS', '1', 'Integer', "PHRED score for genotype models.")
+    variant_parser.metadata.add_info('ANN', '.', 'String', 'Annotates what feature(s) this variant belongs to.')
+    variant_parser.metadata.add_info('Comp', '.', 'String', "':'-separated list of compound pairs for this variant.")
+    variant_parser.metadata.add_info('GM', '.', 'String', "':'-separated list of genetic models for this variant.")
+    variant_parser.metadata.add_info('MS', '1', 'Integer', "PHRED score for genotype models.")
     if args.cadd_file[0] or args.cadd_1000g[0]:
-        head.metadataparser.add_info('CADD', '1', 'Float', "The CADD relative score for this alternative.")
+        variant_parser.metadata.add_info('CADD', '1', 'Float', "The CADD relative score for this alternative.")
     if args.thousand_g[0]:
-        head.metadataparser.add_info('1000G_freq', '1', 'Float', "Frequency in the 1000G database.")
+        variant_parser.metadata.add_info('1000G_freq', '1', 'Float', "Frequency in the 1000G database.")
     return
 
-def print_headers(args, header_object):
+def print_headers(head, args):
     """Print the headers to a results file."""
     if args.outfile[0]:
         with open(args.outfile[0], 'w', encoding='utf-8') as f: 
-            for head_count in header_object.print_header():
+            for head_count in head.print_header():
                 f.write(head_count+'\n')
     else:
         if not args.silent:
-            for line in header_object.print_header():
+            for line in head.print_header():
                 print(line)
     return
 
@@ -248,7 +242,6 @@ def main():
     
     # Parse the header of the vcf:
     
-    head = get_header(var_file)
     # Parse the annotation file and make annotation trees:
     
     gene_trees = {}
@@ -293,8 +286,15 @@ def main():
     
     # # Check the variants:
     
-    variant_parser = vcf_parser(var_file)
+    my_vcf_parser = vcf_parser.VCFParser(var_file)
+    
+    if set(my_family.individuals.keys()) != set(my_vcf_parser.individuals):
+        print('There must be same individuals in ped file and vcf file! Aborting...')
+        print('Individuals in PED file: %s' % '\t'.join(list(my_family.individuals.keys())))
+        print('Individuals in VCF file: %s' % '\t'.join(list(my_vcf_parser.individuals)))
+        sys.exit()
         
+    
     # The task queue is where all jobs(in this case batches that represents variants in a region) is put
     # the consumers will then pick their jobs from this queue.
     variant_queue = JoinableQueue(maxsize=1000)
@@ -304,7 +304,8 @@ def main():
     # Create a directory to keep track of temp files
     temp_dir = mkdtemp()
         
-    num_model_checkers = (cpu_count()*2-1)
+    # num_model_checkers = (cpu_count()*2-1)
+    num_model_checkers = (1)
     
     if args.verbose:
         print('Number of CPU:s %s' % cpu_count())
@@ -316,7 +317,7 @@ def main():
         w.start()
     
     # This process prints the variants to temporary files
-    var_printer = variant_printer.VariantPrinter(results, temp_dir, head, args.verbose)
+    var_printer = variant_printer.VariantPrinter(results, temp_dir, my_vcf_parser.metadata, args.verbose)
     var_printer.start()
     
     if args.verbose:
@@ -325,7 +326,7 @@ def main():
         start_time_variant_parsing = datetime.now()    
     
     # For parsing the vcf:
-    var_annotator = variant_annotator.VariantFileAnnotator(variant_parser, variant_queue, head, args, gene_trees, exon_trees)
+    var_annotator = variant_annotator.VariantAnnotator(my_vcf_parser, variant_queue, args, gene_trees, exon_trees)
     var_annotator.annotate()
     
     for i in range(num_model_checkers):
@@ -335,7 +336,7 @@ def main():
     results.put(None)
     var_printer.join()
     
-    chromosome_list = var_parser.chromosomes
+    chromosome_list = var_annotator.chromosomes
         
     if args.verbose:
         print('Cromosomes found in variant file: %s' % ','.join(chromosome_list))
@@ -345,8 +346,8 @@ def main():
         start_time_variant_sorting = datetime.now()
     
     # Add the new metadata to the headers:
-    add_metadata(head, args)
-    print_headers(args, head)
+    add_metadata(my_vcf_parser, args)
+    print_headers(my_vcf_parser.metadata, args)
     
     for chromosome in chromosome_list:
         for temp_file in os.listdir(temp_dir):

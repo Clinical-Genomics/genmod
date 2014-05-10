@@ -34,10 +34,10 @@ from interval_tree import interval_tree
 
 
 
-class VariantFileAnnotator(object):
+class VariantAnnotator(object):
     """Creates parser objects for parsing variant files"""
     def __init__(self, variant_parser, batch_queue, args, gene_trees = {}, exon_trees = {}):
-        super(VariantFileAnnotator, self).__init__()
+        super(VariantAnnotator, self).__init__()
         self.variant_parser = variant_parser
         self.batch_queue = batch_queue
         self.verbosity = args.verbose
@@ -53,9 +53,9 @@ class VariantFileAnnotator(object):
                     'initiator_codon_variant':0, 'inframe_insertion':0, 'inframe_deletion':0, 'missense_variant':0,
                     'transcript_amplification':0, 'splice_region_variant':0,'incomplete_terminal_codon_variant':0,
                     'synonymous_variant':0, 'stop_retained_variant':0, 'coding_sequence_variant':0}
-
+        
     
-    def parse(self):
+    def annotate(self):
         """Start the parsing"""        
         beginning = True
         batch = {}
@@ -78,9 +78,7 @@ class VariantFileAnnotator(object):
         nr_of_comp_cand = 0
         for variant in self.variant_parser:
             # Only metadata lines start with '#'
-
             self.annotate_variant(variant)
-            batch[variant['variant_id']] = variant
             new_chrom = variant['CHROM']
             nr_of_variants += 1
             if variant['comp_candidate']:
@@ -149,7 +147,6 @@ class VariantFileAnnotator(object):
                                                 haploblocks[ind_id][0][0]-1, haploblocks[ind_id][-1][1]+1)
                         haploblocks = {ind_id:[] for ind_id in self.individuals}
                     # Put the job in the queue
-                    pp(batch)
                     self.batch_queue.put(batch)
                     nr_of_batches += 1
                     #Reset the variables
@@ -175,7 +172,6 @@ class VariantFileAnnotator(object):
             for ind_id in self.individuals:
                 #check if we have just finished an interval
                 if haploblock_starts[ind_id] != int(variant['POS']):
-                    print('hej', variant['POS'])
                     haploblocks[ind_id].append([haploblock_starts[ind_id], int(variant['POS']), str(haploblock_id)])
                     haploblock_id += 1
                 try:
@@ -184,7 +180,9 @@ class VariantFileAnnotator(object):
                                                 haploblocks[ind_id][0][0]-1, haploblocks[ind_id][-1][1]+1)
                 except IndexError:
                     pass
-        pp(batch)
+        # for gene in batch:
+        #     print(gene)
+        #     pp(batch[gene])
         self.batch_queue.put(batch)
         nr_of_batches += 1
         return nr_of_batches
@@ -339,8 +337,8 @@ def main():
     # print(my_head_parser.__dict__)
     variant_queue = JoinableQueue()
     start_time = datetime.now()        
-    my_anno_parser = VariantFileAnnotator(my_vcf_parser, variant_queue, args, gene_trees, exon_trees)
-    nr_of_batches = my_anno_parser.parse()
+    my_anno_parser = VariantAnnotator(my_vcf_parser, variant_queue, args, gene_trees, exon_trees)
+    nr_of_batches = my_anno_parser.annotate()
     for i in range(nr_of_batches):
         variant_queue.get()
         variant_queue.task_done()
