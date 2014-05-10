@@ -166,28 +166,30 @@ def check_compounds(variant_1, variant_2, family, phased, intervals):
     for individual in family.individuals:
         genotype_1 = variant_1['Genotypes'].get(individual, genotype.Genotype())
         genotype_2 = variant_2['Genotypes'].get(individual, genotype.Genotype())
+        #check if variants are in the same phased interval:
+        if phased:
+            variant_1_interval = intervals[individual].find_range([int(variant_1['POS']),int(variant_1['POS'])])
+            variant_2_interval = intervals[individual].find_range([int(variant_1['POS']),int(variant_1['POS'])])
         if family.individuals[individual].phenotype != 2:
         # If the individual is not sick and have both variants it can not be compound
             if genotype_1.has_variant and genotype_2.has_variant:
                 if phased:
                 # If the family is phased we need to check if a healthy individual have both variants on same allele
-                    if len(set(intervals[individual].find_range([int(variant_1['POS']),int(variant_1['POS'])])
-                                ).intersection(intervals[individual].find_range([int(variant_2['POS']),int(variant_2['POS'])]))) > 0:
+                    if variant_1_interval == variant_2_interval:
                         # If the variants are on different alleles it can not be a compound pair:
                         if genotype_1.allele_1 == '0' and genotype_2.allele_1 != '0':
-                            return False
-                        
-                    #In this case we can not tell if the variants are on the same haplotype so we assume that compound is not ok
+                            return False        
+                #In this case we can not tell if the variants are on the same haplotype so we assume that compound is not ok
                     else:
                         return False
                 else:
                     return False
-        else:# The case where the individual is affected
+        # The case where the individual is affected
+        else:
             if phased:
                 #If the individual is sick and phased it has to have one variant on each allele
-                if len(set(intervals[individual].find_range([int(variant_1['POS']),int(variant_1['POS'])])
-                            ).intersection(intervals[individual].find_range([int(variant_2['POS']),int(variant_2['POS'])]))) > 0:
-                    if genotype_1.allele_1 == '0' and genotype_2.allele_1 == '0':
+                if variant_1_interval == variant_2_interval:
+                    if genotype_1.allele_1 == genotype_2.allele_1 or genotype_1.allele_2 == genotype_2.allele_2:
                         return False
                     
             elif family.individuals[individual].has_parents:
