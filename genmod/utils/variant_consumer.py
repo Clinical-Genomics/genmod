@@ -35,6 +35,7 @@ class VariantConsumer(multiprocessing.Process):
         self.results_queue = results_queue
         self.verbosity = args.verbose
         self.phased = args.phased
+        self.vep = args.vep
         self.cadd_file = args.cadd_file[0]
         self.cadd_1000g = args.cadd_1000g[0]
         self.thousand_g = args.thousand_g[0]
@@ -120,6 +121,28 @@ class VariantConsumer(multiprocessing.Process):
         return freq
         
     
+    def get_model_score(self, individuals, variant):
+        """Return the model score for this variant."""
+        model_score = '-'
+        genotype_scores = []
+        
+        
+        for individual in individuals:
+            gt_call = variant[individual].split(':')
+            gt_info = variant['FORMAT'].split(':')
+            if len(gt_call) == 1:
+                gt_call = {'GT':gt_call[0]}
+            else:
+                gt_call = dict(zip(gt_info, gt_call))
+            if 'GQ' in gt_call:
+                # Add the error probabilities to genotype scores
+                genotype_scores.append(10**-(float(gt_call['GQ'])/10))
+        if len(genotype_scores) > 0:
+            model_score = (str(round(-10*log10(1-reduce(operator.mul, [1-score for score in genotype_scores])))))
+        
+        return model_score
+        
+    
     def make_print_version(self, variant_dict):
         """Get the variants ready for printing"""
         for variant_id in variant_dict:
@@ -133,7 +156,7 @@ class VariantConsumer(multiprocessing.Process):
             variant_dict[variant_id].pop('Genotypes', 0)
             
             feature_list = variant_dict[variant_id]['Annotation']
-                            
+            
             if len(variant_dict[variant_id]['Compounds']) > 0:
                 #We do not want reference to itself as a compound:
                 variant_dict[variant_id]['Compounds'].pop(variant_id, 0)
@@ -145,21 +168,8 @@ class VariantConsumer(multiprocessing.Process):
                 if variant_dict[variant_id]['Inheritance_model'][model]:
                     model_list.append(model)
             if len(model_list) == 0:
-                model_list = ['NA']
-            model_score = '-'
-            genotype_scores = []
-            for individual in self.family.individuals:
-                gt_call = variant_dict[variant_id][individual].split(':')
-                gt_info = variant_dict[variant_id]['FORMAT'].split(':')
-                if len(gt_call) == 1:
-                    gt_call = {'GT':gt_call[0]}
-                else:
-                    gt_call = dict(zip(gt_info, gt_call))
-                if 'GQ' in gt_call:
-                    # Add the error probabilities to genotype scores
-                    genotype_scores.append(10**-(float(gt_call['GQ'])/10))
-            if len(genotype_scores) > 0:
-                model_score = (str(round(-10*log10(1-reduce(operator.mul, [1-score for score in genotype_scores])))))
+                model_list = ['NA']            
+            
             variant_dict[variant_id].pop('Compounds',0)
             variant_dict[variant_id].pop('Inheritance_model',0)
             variant_dict[variant_id].pop('Annotation',0)
@@ -167,19 +177,25 @@ class VariantConsumer(multiprocessing.Process):
             
             if self.chr_prefix:
                 variant_dict[variant_id]['CHROM'] = 'chr'+variant_dict[variant_id]['CHROM']
-            # if we should include the annotation:
-            vcf_info.append('ANN=' + ':'.join(feature_list))
-            # if we should include compounds:
-            vcf_info.append('Comp=' + ':'.join(compounds_list))
+            
+            # We only want to include annotations where we have a value
+            
+            if not self.vep:
+                if len(feature_list) != 0 and feature_list != ['-']:
+                    vcf_info.append('ANN=' + ':'.join(feature_list))
+            if compounds_list != ['-']:
+                vcf_info.append('Comp=' + ':'.join(compounds_list))
             # if we should include genetic models:
             vcf_info.append('GM=' + ':'.join(model_list))
-            if model_list == ['NA']:
-                model_score = '-'
-            vcf_info.append('MS=' + model_score)
-            if self.cadd_file or self.cadd_1000g:
-                vcf_info.append('CADD=%s' % str(variant_dict[variant_id].pop('CADD', '-')))
+            if model_list != ['NA']:
+                vcf_info.append('MS=' +  self.get_model_score(self.family.individuals, variant_dict[variant_id]))
+            cadd_score = str(variant_dict[variant_id].pop('CADD', '-'))
+            if cadd_score != '-':
+                vcf_info.append('CADD=%s' % cadd_score)
+            thousand_g_freq = str(variant_dict[variant_id].pop('1000G', '-'))
             if self.thousand_g:
-                vcf_info.append('1000G_freq=%s' % str(variant_dict[variant_id].pop('1000G', '-')))
+                vcf_info.append('1000G_freq=%s' % thousand_g_freq)
+            
             variant_dict[variant_id]['INFO'] = ';'.join(vcf_info)
         return
     
