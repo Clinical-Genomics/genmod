@@ -116,7 +116,8 @@ def get_family(args):
 
 def add_metadata(head, args):
     """Add metadata for the information added by this script."""
-    head.add_info('ANN', '.', 'String', 'Annotates what feature(s) this variant belongs to.')
+    if not args.vep:
+        head.add_info('ANN', '.', 'String', 'Annotates what feature(s) this variant belongs to.')
     head.add_info('Comp', '.', 'String', "':'-separated list of compound pairs for this variant.")
     head.add_info('GM', '.', 'String', "':'-separated list of genetic models for this variant.")
     head.add_info('MS', '1', 'Integer', "PHRED score for genotype models.")
