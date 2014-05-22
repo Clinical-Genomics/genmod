@@ -23,6 +23,8 @@ The genetic models that are checked are the following:
 - **Comp** Colon separated list with compound pairs(if any). These are described like 'CHR\_POS\_REF\_ALT'.
 - **MS** Model Score, a phred-score based on the genotype qualities to describe the uncertainty of the genetic model.
 
+**GM** will allways be annotated, if no models are followed **GM=NA**. The other annotations will be present only if they have a value.
+If ```-vep/--vep``` is used **ANN** will not be annotated since all information is in the vep entry.
 
 ##Installation:##
 
