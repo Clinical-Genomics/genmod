@@ -71,15 +71,21 @@ class AnnotationParser(object):
         self.gene_trees = {}# A dictionary with {<chr>:<intervalTree>} the trees are intervals with genes
         self.exon_trees = {}# A dictionary with {<chr>:<intervalTree>} the trees are intervals with exons
         chromosome_stops = {}## A dictionary with information about the last positions on each chromosome:
+        infile_name, infile_extension = os.path.splitext(infile)
         
         genes = {}
         exons = {}
         nr_of_genes = 0
-                        
+        zipped = False
+    
+        if infile_extension == '.gz':
+            zipped = True        
+        
         if zipped:
             f = getreader('utf-8')(gzip.open(infile), errors='replace')
         else: 
             f = open(infile, mode='r', encoding='utf-8', errors='replace')
+        
         
         if self.annotation_type == 'gene_pred':
             genes,exons = self.gene_pred_parser(f, splice_padding)
@@ -129,17 +135,7 @@ class AnnotationParser(object):
         
         if self.verbosity:
             print('Number of genes in annotation file: %s' % nr_of_genes)
-        
-        outpath = os.path.join(os.path.split(os.path.dirname(genmod.__file__))[0], 'annotations/')
-        gene_db = os.path.join(outpath, 'genes.db')
-        exon_db = os.path.join(outpath, 'exons.db')
-        
-        with open(gene_db, 'wb') as f:
-            pickle.dump(self.gene_trees, f)
-        
-        with open(exon_db, 'wb') as g:
-            pickle.dump(self.exon_trees, g)
-        
+                
         return
     
     def add_gene(self, genes, chrom, start, stop, gene_id):

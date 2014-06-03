@@ -23,14 +23,14 @@ from genmod.utils.is_number import is_number
 
 
 class FileSort(object):
-    def __init__(self, inFile, outFile=None, splitSize=20, silent=False):
+    def __init__(self, inFile, **kwargs):
         """ split size (in MB) """
         self._inFile = inFile
-        self._silent = silent
+        self._silent = kwargs.get('silent', False)
                 
-        self._outFile = outFile
+        self._outFile = kwargs.get('outfile', None)
                     
-        self._splitSize = splitSize * 1000000
+        self._splitSize = kwargs.get('splitSize', 20) * 1000000
                 
         self._getKey = lambda variant_line: (int(variant_line.split('\t')[1]))
     

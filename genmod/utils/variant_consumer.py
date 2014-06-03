@@ -28,18 +28,18 @@ from genmod.models import genetic_models
 class VariantConsumer(multiprocessing.Process):
     """Yeilds all unordered pairs from a list of objects as tuples, like (obj_1, obj_2)"""
     
-    def __init__(self, task_queue, results_queue, family, args):
+    def __init__(self, task_queue, results_queue, family, **kwargs):
         multiprocessing.Process.__init__(self)
         self.task_queue = task_queue
         self.family = family
         self.results_queue = results_queue
-        self.verbosity = args.verbose
-        self.phased = args.phased
-        self.vep = args.vep
-        self.cadd_file = args.cadd_file[0]
-        self.cadd_1000g = args.cadd_1000g[0]
-        self.thousand_g = args.thousand_g[0]
-        self.chr_prefix = args.chr_prefix                    
+        self.verbosity = kwargs.get('verbosity', False)
+        self.phased = kwargs.get('phased', False)
+        self.vep = kwargs.get('vep', False)
+        self.cadd_file = kwargs.get('cadd_file', False)
+        self.cadd_1000g = kwargs.get('cadd_1000g', False)
+        self.thousand_g = kwargs.get('thousand_g', False)
+        self.chr_prefix = kwargs.get('chr_prefix', None)                    
         if self.cadd_1000g:
             self.cadd_1000g = Tabixfile(self.cadd_1000g, parser = asTuple())
         if self.cadd_file:
