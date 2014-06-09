@@ -2,7 +2,8 @@ try:
     from setuptools import setup
 except ImportError:
     from distutils.core import setup
-    
+import genmod
+
 # For making things look nice on pypi:
 try:
     import pypandoc
@@ -34,12 +35,13 @@ setup(name='genmod',
         'genmod.utils', 
         'genmod.models', 
         'genmod.variants',
-        'scripts'
     ],
-    # scripts = ['scripts/run_genmod.py'],
-    entry_points= { "console_scripts" : [
-        "run_genmod = scripts.run_genmod:main",
-    ]},
+    scripts = [
+        'scripts/genmod'
+    ],
+    # entry_points= { "console_scripts" : [
+    #     "run_genmod = scripts.run_genmod:main",
+    # ]},
     keywords = ['inheritance', 'vcf', 'variants'],
     classifiers = [
         "Programming Language :: Python",
