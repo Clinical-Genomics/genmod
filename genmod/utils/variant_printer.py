@@ -20,7 +20,7 @@ from pprint import pprint as pp
 
 class VariantPrinter(multiprocessing.Process):
     """docstring for VariantPrinter"""
-    def __init__(self, task_queue, temp_dir, head, verbosity=False):
+    def __init__(self, task_queue, temp_dir, head, verbosity):
         multiprocessing.Process.__init__(self)
         self.task_queue = task_queue
         self.verbosity = verbosity

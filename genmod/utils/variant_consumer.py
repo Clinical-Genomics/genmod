@@ -28,18 +28,19 @@ from genmod.models import genetic_models
 class VariantConsumer(multiprocessing.Process):
     """Yeilds all unordered pairs from a list of objects as tuples, like (obj_1, obj_2)"""
     
-    def __init__(self, task_queue, results_queue, family, args):
+    def __init__(self, task_queue, results_queue, family, phased=False, vep=False, 
+                    cadd_file=None, cadd_1000g=None, thousand_g=None, chr_prefix=False, verbosity=False):
         multiprocessing.Process.__init__(self)
         self.task_queue = task_queue
         self.family = family
         self.results_queue = results_queue
-        self.verbosity = args.verbose
-        self.phased = args.phased
-        self.vep = args.vep
-        self.cadd_file = args.cadd_file[0]
-        self.cadd_1000g = args.cadd_1000g[0]
-        self.thousand_g = args.thousand_g[0]
-        self.chr_prefix = args.chr_prefix                    
+        self.verbosity = verbosity
+        self.phased = phased
+        self.vep = vep
+        self.cadd_file = cadd_file
+        self.cadd_1000g = cadd_1000g
+        self.thousand_g = thousand_g
+        self.chr_prefix = chr_prefix
         if self.cadd_1000g:
             self.cadd_1000g = Tabixfile(self.cadd_1000g, parser = asTuple())
         if self.cadd_file:
@@ -186,14 +187,14 @@ class VariantConsumer(multiprocessing.Process):
             if compounds_list != ['-']:
                 vcf_info.append('Comp=' + ':'.join(compounds_list))
             # if we should include genetic models:
-            vcf_info.append('GM=' + ':'.join(model_list))
             if model_list != ['NA']:
+                vcf_info.append('GM=' + ':'.join(model_list))
                 vcf_info.append('MS=' +  self.get_model_score(self.family.individuals, variant_dict[variant_id]))
             cadd_score = str(variant_dict[variant_id].pop('CADD', '-'))
             if cadd_score != '-':
                 vcf_info.append('CADD=%s' % cadd_score)
             thousand_g_freq = str(variant_dict[variant_id].pop('1000G', '-'))
-            if self.thousand_g:
+            if thousand_g_freq != '-':
                 vcf_info.append('1000G_freq=%s' % thousand_g_freq)
             
             variant_dict[variant_id]['INFO'] = ';'.join(vcf_info)
