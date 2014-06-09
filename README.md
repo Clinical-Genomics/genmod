@@ -23,7 +23,8 @@ The genetic models that are checked are the following:
 - **Comp** Colon separated list with compound pairs(if any). These are described like 'CHR\_POS\_REF\_ALT'.
 - **MS** Model Score, a phred-score based on the genotype qualities to describe the uncertainty of the genetic model.
 
-**GM** will allways be annotated, if no models are followed **GM=NA**. The other annotations will be present only if they have a value.
+All annotations will be present only if they have a value.
+
 If ```-vep/--vep``` is used **ANN** will not be annotated since all information is in the vep entry.
 
 ##Installation:##
@@ -40,8 +41,16 @@ or
 
 ##USAGE:##
 
-    run_genmod ped_file variant_file
+###Basic functions###
 
+    run_genmod annotate ped_file variant_file
+
+This will print a new vcf to standard out with all variants annotated according to the statements above.
+
+	run_genmod build_annotation [--type] annotation_file
+
+Genmod is distributed with a annotation database that are built from the refGene data.
+If the user wants to build a new annotation set use the command described above.
 
 ###Alternatives###
 
@@ -58,10 +67,14 @@ or
 - GENMOD now includes db like files in the genmod/annotations folder, this is the exon and gene definitions from ftp://hgdownload.cse.ucsc.edu/goldenPath/hg19/database/refGene.txt.gz.
 
 If the user wants to use another annotation:
-    
-    run_genmod ped_file variant_file -an "path/to/annotation" -at "Anontation type"
 
-In this case the new annotation will overwrite the previous one so next time GENMOD is run it will use this new build (no need to provide the -an flag again if you want to use the same annotation).
+    run_genmod build_annotation [--type] "annotation type" path/to/annotation_file -o path/to/outdir
+
+In this case the new annotation will be built into the outdir specified (default is the genmods annotation dir).
+When the user want to annotate a vcf with this new annotation set use 
+
+    run_genmod annotate ped_file variant_file [-a/--annotation_dir] /path/to/new/annotation_dir
+
 
 - Compound heterozygote inheritance pattern will be checked if two variants are exonic (or in canonical splice sites) and if they reside in the same gene.
 
@@ -115,8 +128,8 @@ If the user wants all variants in genes checked use the flag -gene/--whole_gene.
   	
   
 2. Phased data:
-	* All affected individuals have to be het. for both variants and the variants has to be on two different alleles
-	* Healthy individuals can be heterozygous for one or both of the variants if they are on the \emph{same} allele
+	* All affected individuals have to be het. for both variants **and** the variants has to be on two different alleles
+	* Healthy individuals can be heterozygous for one but cannot have both variants
 	* If only one or no variant is found in parents it is considered _de novo_
 
 
