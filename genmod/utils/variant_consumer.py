@@ -187,14 +187,14 @@ class VariantConsumer(multiprocessing.Process):
             if compounds_list != ['-']:
                 vcf_info.append('Comp=' + ':'.join(compounds_list))
             # if we should include genetic models:
-            vcf_info.append('GM=' + ':'.join(model_list))
             if model_list != ['NA']:
+                vcf_info.append('GM=' + ':'.join(model_list))
                 vcf_info.append('MS=' +  self.get_model_score(self.family.individuals, variant_dict[variant_id]))
             cadd_score = str(variant_dict[variant_id].pop('CADD', '-'))
             if cadd_score != '-':
                 vcf_info.append('CADD=%s' % cadd_score)
             thousand_g_freq = str(variant_dict[variant_id].pop('1000G', '-'))
-            if self.thousand_g:
+            if thousand_g_freq != '-':
                 vcf_info.append('1000G_freq=%s' % thousand_g_freq)
             
             variant_dict[variant_id]['INFO'] = ';'.join(vcf_info)
