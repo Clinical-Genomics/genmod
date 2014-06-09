@@ -360,10 +360,10 @@ run_genmod.add_command(build_annotation)
 run_genmod.add_command(annotate)
 run_genmod.add_command(analyze)
 
-def main():
-    run_genmod()
+# def main():
+#     run_genmod()
         
 
 if __name__ == '__main__':
-    main()
-
+    # main()
+    run_genmod()

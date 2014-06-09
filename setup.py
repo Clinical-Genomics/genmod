@@ -2,7 +2,7 @@ try:
     from setuptools import setup
 except ImportError:
     from distutils.core import setup
-import genmod
+# import genmod
 
 # For making things look nice on pypi:
 try:
@@ -37,7 +37,7 @@ setup(name='genmod',
         'genmod.variants',
     ],
     scripts = [
-        'scripts/genmod'
+        'scripts/run_genmod'
     ],
     # entry_points= { "console_scripts" : [
     #     "run_genmod = scripts.run_genmod:main",
