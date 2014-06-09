@@ -36,17 +36,18 @@ from interval_tree import interval_tree
 
 class VariantAnnotator(object):
     """Creates parser objects for parsing variant files"""
-    def __init__(self, variant_parser, batch_queue, **kwargs):
+    def __init__(self, variant_parser, batch_queue, gene_trees={}, exon_trees={}, phased=False, 
+                    vep=False, whole_genes=False, verbosity=False):
         super(VariantAnnotator, self).__init__()
         self.variant_parser = variant_parser
         self.batch_queue = batch_queue
         self.individuals = self.variant_parser.individuals
-        self.verbosity = kwargs.get('verbose', False)
-        self.phased = kwargs.get('phased', False)
-        self.vep = kwargs.get('vep', False)
-        self.whole_genes = kwargs.get('whole_genes', False)
-        self.gene_trees  = kwargs.get('gene_trees', {})
-        self.exon_trees = kwargs.get('gene_trees', {})
+        self.verbosity = verbosity
+        self.phased = phased
+        self.vep = vep
+        self.whole_genes = whole_genes
+        self.gene_trees  = gene_trees
+        self.exon_trees = exon_trees
         self.chromosomes = []
         self.interesting_so_terms = {'transcript_ablation':0, 'splice_donor_variant':0, 
                     'splice_acceptor_variant':0,'stop_gained':0, 'frameshift_variant':0, 'stop_lost':0,

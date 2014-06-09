@@ -18,19 +18,18 @@ import argparse
 from tempfile import NamedTemporaryFile
 from codecs import open
 
-
 from genmod.utils.is_number import is_number
 
 
 class FileSort(object):
-    def __init__(self, inFile, **kwargs):
+    def __init__(self, inFile, outfile=None, splitSize=20, silent=False):
         """ split size (in MB) """
         self._inFile = inFile
-        self._silent = kwargs.get('silent', False)
+        self._silent = silent
                 
-        self._outFile = kwargs.get('outfile', None)
+        self._outFile = outfile
                     
-        self._splitSize = kwargs.get('splitSize', 20) * 1000000
+        self._splitSize = splitSize * 1000000
                 
         self._getKey = lambda variant_line: (int(variant_line.split('\t')[1]))
     

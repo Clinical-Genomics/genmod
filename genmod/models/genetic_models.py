@@ -115,7 +115,6 @@ def check_genetic_models(variant_batch, family, verbose = False, phased = False,
                     variant['Inheritance_model']['AD'] = True
                     for individual in family.individuals:
                         if family.individuals[individual].has_parents:
-                            print('Dominant', variant['variant_id'], individual)
                             check_parents('dominant', individual, family, variant)
                     
                 # Check the recessive model:

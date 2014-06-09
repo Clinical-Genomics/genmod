@@ -42,16 +42,16 @@ def get_family(family_file, family_type):
     # Stupid thing but for now when we only look at one family
     return my_family_parser.families.popitem()[1]
 
-def add_metadata(head, **kwargs):
+def add_metadata(head, vep=False, cadd_file=None, cadd_1000g=None, thousand_g=None):
     """Add metadata for the information added by this script."""
-    if not kwargs.get('vep', False):
+    if not vep:
         head.add_info('ANN', '.', 'String', 'Annotates what feature(s) this variant belongs to.')
     head.add_info('Comp', '.', 'String', "':'-separated list of compound pairs for this variant.")
     head.add_info('GM', '.', 'String', "':'-separated list of genetic models for this variant.")
     head.add_info('MS', '1', 'Integer', "PHRED score for genotype models.")
-    if kwargs.get('cadd_file', None) or kwargs.get('cadd_1000g', None):
+    if cadd_file or cadd_1000g:
         head.add_info('CADD', '1', 'Float', "The CADD relative score for this alternative.")
-    if kwargs.get('thousand_g', None):
+    if thousand_g:
         head.add_info('1000G_freq', '1', 'Float', "Frequency in the 1000G database.")
     return
 
@@ -124,7 +124,7 @@ def run_genmod(config, verbose):
                 nargs=1, 
                 type=click.Path(exists=True)
 )
-@click.option('-t' ,'--annotation_type', 
+@click.option('-t' ,'--type',
                 type=click.Choice(['bed', 'ccds', 'gtf', 'gene_pred']), 
                 default='gene_pred',
                 help='Specify the format of the annotation file.'
@@ -137,15 +137,15 @@ def run_genmod(config, verbose):
 )
 @click.option('--splice_padding',
                     type=int, nargs=1, default=2,
-                    help='Specify the the number of bases that the exons should be padded with.'
+                    help='Specify the the number of bases that the exons should be padded with. Default is 2 bases.'
 )
 @pass_config
-def build_annotation(config, annotation_file, annotation_type, outdir, splice_padding):
-    """Build a new annotation."""
+def build_annotation(config, annotation_file, type, outdir, splice_padding):
+    """Build a new annotation database."""
     if config.verbose:
         click.echo('Building new annotation databases from %s into %s.' % (annotation_file, outdir))
     
-    anno_parser = annotation_parser.AnnotationParser(annotation_file, annotation_type, 
+    anno_parser = annotation_parser.AnnotationParser(annotation_file, type, 
                             splice_padding = splice_padding, verbosity=config.verbose)
     
     gene_db = os.path.join(outdir, 'genes.db')
@@ -180,6 +180,10 @@ def build_annotation(config, annotation_file, annotation_type, outdir, splice_pa
 @click.option('--vep', 
                     is_flag=True,
                     help='If variants are annotated with the Variant Effect Predictor.'
+)
+@click.option('--chr_prefix', 
+                    is_flag=True,
+                    help='If chr prefix is used in vcf file.'
 )
 @click.option('-p' ,'--phased', 
                     is_flag=True,
@@ -221,20 +225,16 @@ def build_annotation(config, annotation_file, annotation_type, outdir, splice_pa
 
 @pass_config
 def annotate(config, family_file, variant_file, family_type, vep, silent, phased, whole_gene, 
-                annotation_dir, cadd_file, cadd_1000g, thousand_g, outfile):
+                annotation_dir, cadd_file, cadd_1000g, thousand_g, outfile, chr_prefix):
     """Annotate genetic inheritance patterns followed for all variants in a VCF file.
         
         Individuals that are not present in ped file will not be considered in the analysis.
-    """
-    kwargs = {'config':config, 'family_file':family_file, 'variant_file':variant_file, 
-                'family_type':family_type, 'vep':vep, 'silent':silent, 'phased':phased, 
-                'whole_gene':whole_gene, 'annotation_dir':annotation_dir, 
-                'cadd_file':cadd_file, 'cadd_1000g':cadd_1000g, 'thousand_g':thousand_g, 
-                'outfile':outfile, 'verbosity':config.verbose}
-    
+    """    
     verbosity = config.verbose
     gene_db = os.path.join(annotation_dir, 'genes.db')
     exon_db = os.path.join(annotation_dir, 'exons.db')
+    if verbosity:
+        start_time_analysis = datetime.now()
     try:
         with open(gene_db, 'rb') as f:
             gene_trees = pickle.load(f)
@@ -269,11 +269,11 @@ def annotate(config, family_file, variant_file, family_type, vep, silent, phased
         print('Individuals in VCF file: %s' % '\t'.join(list(variant_parser.individuals)))
         sys.exit()
     
-    ##################################################################
-    ### The task queue is where all jobs(in this case batches that ###
-    ### represents variants in a region) is put the consumers will ###
-    ### then pick their jobs from this queue.                      ###
-    ##################################################################
+    ###################################################################
+    ### The task queue is where all jobs(in this case batches that  ###
+    ### represents variants in a region) is put. The consumers will ###
+    ### then pick their jobs from this queue.                       ###
+    ###################################################################
     
     variant_queue = JoinableQueue(maxsize=1000)
     # The consumers will put their results in the results queue
@@ -281,22 +281,24 @@ def annotate(config, family_file, variant_file, family_type, vep, silent, phased
     
     # Create a directory to keep track of temp files
     temp_dir = mkdtemp()
+    print(temp_dir)
     #Adapt the number of processes to the machine that run the analysis    
-    # num_model_checkers = (cpu_count()*2-1)
-    num_model_checkers = (1)
+    num_model_checkers = (cpu_count()*2-1)
+    # num_model_checkers = (1)
     
     if verbosity:
         print('Number of CPU:s %s' % cpu_count())
     
     # These are the workers that do the analysis
-    model_checkers = [variant_consumer.VariantConsumer(variant_queue, results, kwargs) 
+    model_checkers = [variant_consumer.VariantConsumer(variant_queue, results, family, 
+                        phased, vep, cadd_file, cadd_1000g, thousand_g, chr_prefix, verbosity) 
                             for i in range(num_model_checkers)]
     
     for w in model_checkers:
         w.start()
     
     # This process prints the variants to temporary files
-    var_printer = variant_printer.VariantPrinter(results, temp_dir, head, kwargs)
+    var_printer = variant_printer.VariantPrinter(results, temp_dir, head, verbosity)
     var_printer.start()
     
     if verbosity:
@@ -305,7 +307,8 @@ def annotate(config, family_file, variant_file, family_type, vep, silent, phased
         start_time_variant_parsing = datetime.now()
     
     # For parsing the vcf:
-    var_annotator = variant_annotator.VariantAnnotator(variant_parser, variant_queue, kwargs)
+    var_annotator = variant_annotator.VariantAnnotator(variant_parser, variant_queue, 
+                        gene_trees, exon_trees, phased, vep, whole_gene, verbosity)
     var_annotator.annotate()
     
     for i in range(num_model_checkers):
@@ -325,13 +328,13 @@ def annotate(config, family_file, variant_file, family_type, vep, silent, phased
         start_time_variant_sorting = datetime.now()
     
     # Add the new metadata to the headers:
-    add_metadata(head, kwargs)
+    add_metadata(head, )
     print_headers(head, outfile, silent)
     
     for chromosome in chromosome_list:
         for temp_file in os.listdir(temp_dir):
             if temp_file.split('_')[0] == chromosome:
-                var_sorter = variant_sorter.FileSort(os.path.join(temp_dir, temp_file), kwargs)
+                var_sorter = variant_sorter.FileSort(os.path.join(temp_dir, temp_file), outfile, silent=silent)
                 var_sorter.sort()
     
     if verbosity:
