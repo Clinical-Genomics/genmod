@@ -18,17 +18,16 @@ import argparse
 from tempfile import NamedTemporaryFile
 from codecs import open
 
-
 from genmod.utils.is_number import is_number
 
 
 class FileSort(object):
-    def __init__(self, inFile, outFile=None, splitSize=20, silent=False):
+    def __init__(self, inFile, outfile=None, splitSize=20, silent=False):
         """ split size (in MB) """
         self._inFile = inFile
         self._silent = silent
                 
-        self._outFile = outFile
+        self._outFile = outfile
                     
         self._splitSize = splitSize * 1000000
                 

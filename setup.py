@@ -2,7 +2,8 @@ try:
     from setuptools import setup
 except ImportError:
     from distutils.core import setup
-    
+# import genmod
+
 # For making things look nice on pypi:
 try:
     import pypandoc
@@ -21,9 +22,26 @@ setup(name='genmod',
     author_email = 'mans.magnusson@scilifelab.se',
     url = 'http://github.com/moonso/genmod',
     license = 'MIT License',
-    install_requires=['ped_parser', 'vcf_parser', 'pysam', 'pytest', 'interval_tree'],
-    packages = ['genmod', 'genmod.utils', 'genmod.models', 'genmod.variants'],
-    scripts = ['scripts/run_genmod.py'],
+    install_requires=[
+        'ped_parser', 
+        'vcf_parser', 
+        'pysam', 
+        'pytest', 
+        'interval_tree', 
+        'click'
+    ],
+    packages = [
+        'genmod', 
+        'genmod.utils', 
+        'genmod.models', 
+        'genmod.variants',
+    ],
+    scripts = [
+        'scripts/run_genmod'
+    ],
+    # entry_points= { "console_scripts" : [
+    #     "run_genmod = scripts.run_genmod:main",
+    # ]},
     keywords = ['inheritance', 'vcf', 'variants'],
     classifiers = [
         "Programming Language :: Python",
