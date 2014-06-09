@@ -350,15 +350,15 @@ def annotate(config, family_file, variant_file, family_type, vep, silent, phased
 ###           This is for analyzing the variants       ###
 
 
-@click.command()    
-def analyze():
-    """Analyze the annotated variants in a VCF file."""
-    pass
+# @click.command()    
+# def analyze():
+#     """Analyze the annotated variants in a VCF file."""
+#     pass
 
 
 run_genmod.add_command(build_annotation)
 run_genmod.add_command(annotate)
-run_genmod.add_command(analyze)
+# run_genmod.add_command(analyze)
 
 # def main():
 #     run_genmod()
