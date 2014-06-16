@@ -11,12 +11,16 @@ Copyright (c) 2013 __MyCompanyName__. All rights reserved.
 
 import sys
 import os
-import argparse
 import click
 from multiprocessing import JoinableQueue, Manager, cpu_count
 from codecs import open
 from datetime import datetime
 from tempfile import mkdtemp
+from configobj import ConfigObj
+from pprint import pprint as pp
+
+import vcf
+
 import shutil
 import pkg_resources
 import genmod
@@ -157,6 +161,107 @@ def build_annotation(config, annotation_file, type, outdir, splice_padding):
     with open(exon_db, 'wb') as g:
         pickle.dump(anno_parser.exon_trees, g)
     
+
+###           This is for analyzing the variants       ###
+
+
+@click.command()    
+# @click.argument('family_file', 
+#                     nargs=1, 
+#                     type=click.Path(exists=True),
+#                     metavar='<ped_file>'
+# )
+@click.argument('variant_file', 
+                    nargs=1, 
+                    type=click.File('r'),
+                    metavar='<vcf_file> or "-"'
+)
+# @click.option('-c', '--config_file', 
+#                     type=click.Path(exists=True), 
+#                     help="""Specify the path to a config file."""
+# )
+@click.option('--freq',
+                    type=float, nargs=1,
+                    help='Specify the treshold for variants to be considered.'
+)
+@click.option('-p', '--patterns',
+                    type=click.Choice(['AR_comp', 'AR_comp_dn', 'AR_hom', 'AR_hom_dn', 
+                                        'AD', 'AD_dn', 'XD', 'XD_dn', 'XR', 'XR_dn']),
+                    nargs=1, multiple=True,
+                    help='Specify the inheritance patterns.'
+)
+def analyze(variant_file, freq, patterns):
+    """Analyze the annotated variants in a VCF file."""
+    # configs = ConfigObj(config_file)
+    # pp(configs)
+    # freq_treshold = configs.get('frequency', {}).get('thousand_g', 0.1)
+    # inheritance_patterns = {pattern:0 for pattern in configs.get('inheritance', {}).get('patterns',[])}
+    # if freq:
+    #     freq_treshold = freq
+    # if patterns:
+    #     inheritance_patterns = {pattern:0 for pattern in patterns}
+    # print('Frequency tres: %s' % freq_treshold)
+    # print('Inheritance models: %s' % str(inheritance_patterns))
+    print('Hallå')
+    vcf_reader = vcf.Reader(fsock=variant_file)
+    print(vcf_reader)
+    for record in vcf_reader:
+        print('Hej')
+        print(record)
+    
+    
+
+
+###           This is for scoring the variants       ###
+
+
+@click.command()    
+# @click.argument('family_file', 
+#                     nargs=1, 
+#                     type=click.Path(exists=True),
+#                     metavar='<ped_file>'
+# )
+@click.argument('variant_file', 
+                    nargs=1, 
+                    type=click.Path(exists=True),
+                    metavar='<vcf_file>'
+)
+# @click.option('-c', '--config_file', 
+#                     type=click.Path(exists=True), 
+#                     help="""Specify the path to a config file."""
+# )
+# @click.option('--freq',
+#                     type=float, nargs=1,
+#                     help='Specify the treshold for variants to be considered.'
+# )
+# @click.option('-p', '--patterns',
+#                     type=click.Choice(['AR_comp', 'AR_comp_dn', 'AR_hom', 'AR_hom_dn', 
+#                                         'AD', 'AD_dn', 'XD', 'XD_dn', 'XR', 'XR_dn']),
+#                     nargs=1, multiple=True,
+#                     help='Specify the inheritance patterns.'
+# )
+# , config_file, freq, patterns
+def analyze(variant_file):
+    """Analyze the annotated variants in a VCF file."""
+    # configs = ConfigObj(config_file)
+    # freq_treshold = configs.get('frequency', {}).get('thousand_g', 0.1)
+    # inheritance_patterns = {pattern:0 for pattern in configs.get('inheritance', {}).get('patterns',[])}
+    freq_treshold = 0.02
+    inheritance_patterns = {'AR', 'AD'}
+    # if freq:
+    #     freq_treshold = freq
+    # if patterns:
+    #     inheritance_patterns = {pattern:0 for pattern in patterns}
+    print('Frequency tres: %s' % freq_treshold)
+    print('Inheritance models: %s' % str(inheritance_patterns))
+    variant_parser = vcf_parser.VCFParser(variant_file)
+    for variant in variant_parser:
+        print('Frequency: %s' % str(variant['info_dict'].get('1000G_freq', 0)))
+        print('Gene models: %s' % str(variant['info_dict'].get('GN', 'NA')))
+        
+    
+    
+
 
 
 ###           This is for annotating the variants       ###
@@ -347,18 +452,10 @@ def annotate(config, family_file, variant_file, family_type, vep, silent, phased
     shutil.rmtree(temp_dir)
 
 
-###           This is for analyzing the variants       ###
-
-
-# @click.command()    
-# def analyze():
-#     """Analyze the annotated variants in a VCF file."""
-#     pass
-
 
 run_genmod.add_command(build_annotation)
 run_genmod.add_command(annotate)
-# run_genmod.add_command(analyze)
+run_genmod.add_command(analyze)
 
 # def main():
 #     run_genmod()
