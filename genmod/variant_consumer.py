@@ -23,13 +23,13 @@ from pysam import Tabixfile, asTuple
 
 from pprint import pprint as pp
 
-from genmod.models import genetic_models
+from genmod import genetic_models
 
 class VariantConsumer(multiprocessing.Process):
     """Yeilds all unordered pairs from a list of objects as tuples, like (obj_1, obj_2)"""
     
     def __init__(self, task_queue, results_queue, family, phased=False, vep=False, 
-                    cadd_file=None, cadd_1000g=None, thousand_g=None, chr_prefix=False, verbosity=False):
+                    cadd_file=None, cadd_1000g=None, thousand_g=None, chr_prefix=False, strict=False, verbosity=False):
         multiprocessing.Process.__init__(self)
         self.task_queue = task_queue
         self.family = family
@@ -41,6 +41,7 @@ class VariantConsumer(multiprocessing.Process):
         self.cadd_1000g = cadd_1000g
         self.thousand_g = thousand_g
         self.chr_prefix = chr_prefix
+        self.strict = strict
         if self.cadd_1000g:
             self.cadd_1000g = Tabixfile(self.cadd_1000g, parser = asTuple())
         if self.cadd_file:
@@ -218,7 +219,7 @@ class VariantConsumer(multiprocessing.Process):
                 if self.verbosity:
                     print('%s: Exiting' % proc_name)
                 break
-            genetic_models.check_genetic_models(next_batch, self.family, self.verbosity, self.phased, proc_name)
+            genetic_models.check_genetic_models(next_batch, self.family, self.verbosity, self.phased, self.strict, proc_name)
             # Make shure we only have one copy of each variant:
             fixed_variants = self.fix_variants(next_batch)
             

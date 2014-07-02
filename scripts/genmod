@@ -11,7 +11,6 @@ Copyright (c) 2013 __MyCompanyName__. All rights reserved.
 
 import sys
 import os
-import argparse
 import click
 from multiprocessing import JoinableQueue, Manager, cpu_count
 from codecs import open
@@ -19,6 +18,7 @@ from datetime import datetime
 from tempfile import mkdtemp
 import shutil
 import pkg_resources
+import pkgutil
 import genmod
 
 try:
@@ -29,16 +29,16 @@ except:
 
 from pysam import tabix_index, tabix_compress
 
-from ped_parser import parser
-from vcf_parser import vcf_parser
+from ped_parser import parser as ped_parser
+from vcf_parser import parser as vcf_parser
 
-from genmod.utils import variant_consumer, variant_sorter, annotation_parser, variant_printer, variant_annotator
+from genmod import variant_consumer, variant_sorter, annotation_parser, variant_printer, variant_annotator
 
 
 def get_family(family_file, family_type):
     """Return the family"""
     
-    my_family_parser = parser.FamilyParser(family_file, family_type)
+    my_family_parser = ped_parser.FamilyParser(family_file, family_type)
     # Stupid thing but for now when we only look at one family
     return my_family_parser.families.popitem()[1]
 
@@ -96,7 +96,6 @@ class Config(object):
         self.verbose = False
     
 pass_config = click.make_pass_decorator(Config, ensure=True)
-default_annotations = os.path.join(os.path.split(os.path.dirname(genmod.__file__))[0], 'annotations/')
 
 
 ###         This is the main script         ###
@@ -116,7 +115,6 @@ def run_genmod(config, verbose):
     """Annotate genetic models in variant files."""
     config.verbose = verbose
 
-
 ###        This is for building new annotations     ###
 
 @click.command()
@@ -131,7 +129,6 @@ def run_genmod(config, verbose):
 )
 @click.option('-o', '--outdir', 
                     type=click.Path(exists=True),
-                    default=default_annotations,
                     help=("""Specify the path to a folder where the annotation files should be stored. 
                             Default is the annotations dir of the ditribution.""")
 )
@@ -148,8 +145,12 @@ def build_annotation(config, annotation_file, type, outdir, splice_padding):
     anno_parser = annotation_parser.AnnotationParser(annotation_file, type, 
                             splice_padding = splice_padding, verbosity=config.verbose)
     
-    gene_db = os.path.join(outdir, 'genes.db')
-    exon_db = os.path.join(outdir, 'exons.db')
+    gene_db = pkg_resources.resource_filename('genmod', 'annotations/genes.db')
+    exon_db = pkg_resources.resource_filename('genmod', 'annotations/exons.db')
+    
+    if outdir:
+        gene_db = os.path.join(outdir, 'genes.db')
+        exon_db = os.path.join(outdir, 'exons.db')
     
     with open(gene_db, 'wb') as f:
         pickle.dump(anno_parser.gene_trees, f)
@@ -160,6 +161,7 @@ def build_annotation(config, annotation_file, type, outdir, splice_padding):
 
 
 ###           This is for annotating the variants       ###
+
 
 @click.command()
 @click.argument('family_file', 
@@ -189,6 +191,10 @@ def build_annotation(config, annotation_file, type, outdir, splice_padding):
                     is_flag=True,
                     help='If data is phased use this flag.'
 )
+@click.option('-strict' ,'--strict', 
+                    is_flag=True,
+                    help='If strict model annotations should be used(see documentation).'
+)
 @click.option('-s' ,'--silent', 
                     is_flag=True,
                     help='Do not print the variants.'
@@ -199,7 +205,6 @@ def build_annotation(config, annotation_file, type, outdir, splice_padding):
 )
 @click.option('-a' ,'--annotation_dir', 
                     type=click.Path(exists=True), 
-                    default=default_annotations,
                     help="""Specify the path to the directory where the annotation databases are. 
                             Default is the gene pred files that comes with the distribution."""
 )
@@ -224,15 +229,21 @@ def build_annotation(config, annotation_file, type, outdir, splice_padding):
 )
 
 @pass_config
-def annotate(config, family_file, variant_file, family_type, vep, silent, phased, whole_gene, 
+def annotate(config, family_file, variant_file, family_type, vep, silent, phased, strict, whole_gene, 
                 annotation_dir, cadd_file, cadd_1000g, thousand_g, outfile, chr_prefix):
     """Annotate genetic inheritance patterns followed for all variants in a VCF file.
         
         Individuals that are not present in ped file will not be considered in the analysis.
     """    
     verbosity = config.verbose
-    gene_db = os.path.join(annotation_dir, 'genes.db')
-    exon_db = os.path.join(annotation_dir, 'exons.db')
+    
+    gene_db = pkg_resources.resource_filename('genmod', 'annotations/genes.db')
+    exon_db = pkg_resources.resource_filename('genmod', 'annotations/exons.db')
+        
+    if annotation_dir:
+        gene_db = os.path.join(annotation_dir, 'genes.db')
+        exon_db = os.path.join(annotation_dir, 'exons.db')
+    
     if verbosity:
         start_time_analysis = datetime.now()
     try:
@@ -240,8 +251,9 @@ def annotate(config, family_file, variant_file, family_type, vep, silent, phased
             gene_trees = pickle.load(f)
         with open(exon_db, 'rb') as g:
             exon_trees = pickle.load(g)
-    except FileNotFoundError:
-        print('You need to build annotations! See documentation.')
+    except IOError as e:
+        if verbosity:
+            print('You need to build annotations! See documentation.')
         pass
     
     family = get_family(family_file, family_type)
@@ -281,17 +293,16 @@ def annotate(config, family_file, variant_file, family_type, vep, silent, phased
     
     # Create a directory to keep track of temp files
     temp_dir = mkdtemp()
-    print(temp_dir)
     #Adapt the number of processes to the machine that run the analysis    
-    num_model_checkers = (cpu_count()*2-1)
-    # num_model_checkers = (1)
+    # num_model_checkers = (cpu_count()*2-1)
+    num_model_checkers = (1)
     
     if verbosity:
         print('Number of CPU:s %s' % cpu_count())
     
     # These are the workers that do the analysis
     model_checkers = [variant_consumer.VariantConsumer(variant_queue, results, family, 
-                        phased, vep, cadd_file, cadd_1000g, thousand_g, chr_prefix, verbosity) 
+                        phased, vep, cadd_file, cadd_1000g, thousand_g, chr_prefix, strict, verbosity) 
                             for i in range(num_model_checkers)]
     
     for w in model_checkers:
