@@ -23,13 +23,13 @@ from pysam import Tabixfile, asTuple
 
 from pprint import pprint as pp
 
-from genmod.models import genetic_models
+from genmod import genetic_models
 
 class VariantConsumer(multiprocessing.Process):
     """Yeilds all unordered pairs from a list of objects as tuples, like (obj_1, obj_2)"""
     
     def __init__(self, task_queue, results_queue, family, phased=False, vep=False, 
-                    cadd_file=None, cadd_1000g=None, thousand_g=None, chr_prefix=False, verbosity=False):
+                    cadd_file=None, cadd_1000g=None, thousand_g=None, chr_prefix=False, strict=False, verbosity=False):
         multiprocessing.Process.__init__(self)
         self.task_queue = task_queue
         self.family = family
@@ -41,12 +41,13 @@ class VariantConsumer(multiprocessing.Process):
         self.cadd_1000g = cadd_1000g
         self.thousand_g = thousand_g
         self.chr_prefix = chr_prefix
+        self.strict = strict
         if self.cadd_1000g:
-            self.cadd_1000g = Tabixfile(self.cadd_1000g, parser = asTuple())
+            self.cadd_1000g = Tabixfile(self.cadd_1000g)
         if self.cadd_file:
-            self.cadd_file = Tabixfile(self.cadd_file, parser = asTuple())
+            self.cadd_file = Tabixfile(self.cadd_file)
         if self.thousand_g:
-            self.thousand_g = Tabixfile(self.thousand_g, parser = asTuple())
+            self.thousand_g = Tabixfile(self.thousand_g)
         
         
     def fix_variants(self, variant_batch):
@@ -65,62 +66,6 @@ class VariantConsumer(multiprocessing.Process):
         
         return fixed_variants
     
-    def get_cadd_score(self, variant):
-        """Get the cadd score and add it to the variant."""
-        cadd_score = '-'
-        alternatives = variant['ALT'].split(',')
-        longest_alt = max([len(alt) for alt in alternatives]+[len(variant['REF'])])
-        # CADD values are only for snps:
-        cadd_key = int(variant['POS'])
-        if self.cadd_file:
-            try:
-                for tpl in self.cadd_file.fetch(str(variant['CHROM']), cadd_key-1, cadd_key):
-                    if alternatives[0] == str(tpl[3]):
-                        try:
-                            return str(tpl[-1], encoding='utf-8')
-                        except TypeError:
-                            return str(unicode(tpl[-1], encoding='utf-8'))
-            except (IndexError, KeyError) as e:
-                pass
-        #If cadd file was provided and the variant was found the score has been returned, otherwise check 1000g file:
-        if self.cadd_1000g:
-            try:
-                for tpl in self.cadd_1000g.fetch(str(variant['CHROM']), cadd_key-1, cadd_key):
-                    #This is for compability between python versions:
-                    try:
-                        return str(tpl[-1], encoding='utf-8')
-                    except TypeError:
-                        return str(unicode(tpl[-1], encoding='utf-8'))
-            except (IndexError, KeyError) as e:
-                pass
-        return cadd_score
-    
-    def get_1000g_freq(self, variant):
-        """Get the frequency from 1000g."""
-        freq = '-'
-        alternatives = variant['ALT'].split(',')
-        longest_alt = max([len(alt) for alt in alternatives]+[len(variant['REF'])])
-        # CADD values are only for snps:
-        cadd_key = int(variant['POS'])
-        if self.thousand_g:
-            try:
-                for tpl in self.thousand_g.fetch(str(variant['CHROM']), cadd_key-1, cadd_key):
-                    #This is for compability between python versions:
-                    try:
-                        if str(tpl[3], encoding='utf-8') == variant['REF']:
-                            for info in str(tpl[7], encoding='utf-8').split(';'):
-                                if info.split('=')[0] == 'AF':
-                                    return info.split('=')[-1]
-                    except TypeError:
-                        if str(unicode(tpl[3], encoding='utf-8')) == variant['REF']:
-                            for info in str(unicode(tpl[7], encoding='utf-8')).split(';'):
-                                if info.split('=')[0] == 'AF':
-                                    return info.split('=')[-1]
-            except (IndexError, KeyError) as e:
-                pass
-        
-        return freq
-        
     
     def get_model_score(self, individuals, variant):
         """Return the model score for this variant."""
@@ -142,15 +87,47 @@ class VariantConsumer(multiprocessing.Process):
             model_score = (str(round(-10*log10(1-reduce(operator.mul, [1-score for score in genotype_scores])))))
         
         return model_score
-        
+    
+    def get_tabix_record(self, tabix_reader, chrom, start, alt=None):
+        """Return the record from a cadd file."""
+        record = ''
+        # CADD values are only for snps:
+        cadd_key = int(start)
+        try:
+            for record in tabix_reader.fetch(chrom, cadd_key-1, cadd_key):
+                # If Vcf we know there can only be one correct record
+                if alt:
+                    if record.split('\t')[3] == alt:
+                        return record
+                else:
+                    return record
+        except (IndexError, KeyError) as e:
+            pass
+    
+        return record
+    
     
     def make_print_version(self, variant_dict):
         """Get the variants ready for printing"""
         for variant_id in variant_dict:
-            if self.cadd_file or self.cadd_1000g:
-                variant_dict[variant_id]['CADD'] = self.get_cadd_score(variant_dict[variant_id])
+            variant = variant_dict[variant_id]
+            cadd_record = ''
+            thousand_g_record = ''
+            if self.cadd_file:
+                cadd_record = self.get_tabix_record(self.cadd_file, variant['CHROM'], 
+                                                variant['POS'], variant['ALT'].split(',')[0])
+                # If variant not found in big CADD file check the 1000G file:
+            if len(cadd_record) == 0 and self.cadd_1000g:
+                cadd_record = self.get_tabix_record(self.cadd_1000g, variant['CHROM'], variant['POS'])
+            if len(cadd_record) > 0:
+                variant['CADD'] = cadd_record.split('\t')[-1]
             if self.thousand_g:
-                variant_dict[variant_id]['1000G'] = self.get_1000g_freq(variant_dict[variant_id])
+                thousand_g_record = self.get_tabix_record(self.thousand_g, variant['CHROM'], variant['POS'])
+            if len(thousand_g_record) > 0:
+                for info in thousand_g_record.split('\t')[7].split(';'):
+                    info = info.split('=')
+                    if info[0] == 'AF':
+                        variant_dict[variant_id]['1000G'] = info[-1]
             model_list = []
             compounds_list = []
             #Remove the 'Genotypes' post since we will not need them for now
@@ -218,7 +195,7 @@ class VariantConsumer(multiprocessing.Process):
                 if self.verbosity:
                     print('%s: Exiting' % proc_name)
                 break
-            genetic_models.check_genetic_models(next_batch, self.family, self.verbosity, self.phased, proc_name)
+            genetic_models.check_genetic_models(next_batch, self.family, self.verbosity, self.phased, self.strict, proc_name)
             # Make shure we only have one copy of each variant:
             fixed_variants = self.fix_variants(next_batch)
             
