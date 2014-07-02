@@ -119,8 +119,6 @@ def check_genetic_models(variant_batch, family, verbose = False, phased = False,
             for pair in compound_pairs.generate_pairs():
                 variant_1 = variant_batch[gene][pair[0]]
                 variant_2 = variant_batch[gene][pair[1]]
-                print(variant_1['variant_id'], 'Comp')
-                print(variant_2['variant_id'], 'Comp')
                 # We know from check_compound_candidates that all variants are present in all affected
                 
                 if check_compounds(variant_1, variant_2, family, intervals, phased):
@@ -551,15 +549,12 @@ def check_parents(model, individual, family, variant, variant_2={}, strict = Fal
             parent_genotypes_2.append(father_genotype_2)
         # One of the variants must come from father and one from mother
         if (len(parent_genotypes) == 2 and len(parent_genotypes_2) == 2):
-            print('Both parents')
             if not (mother_genotype.has_variant or mother_genotype_2.has_variant):
                 variant['Inheritance_model']['AR_comp_dn'] = True
                 variant_2['Inheritance_model']['AR_comp_dn'] = True
                 if mother_genotype.genotyped and mother_genotype_2.genotyped:
-                    print('Both genotyped')
                     variant['Inheritance_model']['AR_comp'] = False
                     variant_2['Inheritance_model']['AR_comp'] = False
-                    print(variant['Inheritance_model'])
             if not (father_genotype.has_variant or father_genotype_2.has_variant):
                 variant['Inheritance_model']['AR_comp_dn'] = True
                 variant_2['Inheritance_model']['AR_comp_dn'] = True

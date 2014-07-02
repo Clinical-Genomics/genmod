@@ -73,14 +73,12 @@ def check_tabix_index(compressed_file, file_type='cadd', verbose=False):
         try:
             tabix_index(compressed_file, seq_col=0, start_col=1, end_col=1, meta_char='#')
         except IOError as e:
-            if verbose:
-                print(e)
+            pass
     elif file_type == 'vcf':
         try:
             tabix_index(compressed_file, preset='vcf')
         except IOError as e:
-            if verbose:
-                print(e)
+            pass
     return
 
 # def print_version(ctx, param, value):
@@ -339,7 +337,7 @@ def annotate(config, family_file, variant_file, family_type, vep, silent, phased
         start_time_variant_sorting = datetime.now()
     
     # Add the new metadata to the headers:
-    add_metadata(head, )
+    add_metadata(head, vep, cadd_file, cadd_1000g, thousand_g)
     print_headers(head, outfile, silent)
     
     for chromosome in chromosome_list:
