@@ -13,8 +13,8 @@ Copyright (c) 2014 __MyCompanyName__. All rights reserved.
 import sys
 import os
 from ped_parser import family, individual
-from genmod.models import genetic_models
-from genmod.variants import genotype
+from genmod import genetic_models
+from vcf_parser import genotype
 
 
 class TestXRecessiveModel(object):
@@ -34,13 +34,21 @@ class TestXRecessiveModel(object):
         self.recessive_family.add_individual(healthy_mother)
         
         self.x_recessive_dn_variant = {'CHROM':'X', 'POS':'5', 'ALT':'A', 'REF':'C', 'ID':'rs2230749', '1':'0/1', '2':'0/0', '3':'0/0'}
+        genotypes = {'1':genotype.Genotype('0/1'), '2':genotype.Genotype('0/0'), '3':genotype.Genotype('0/0')}
+        self.x_recessive_dn_variant['genotypes'] = genotypes
         
         self.x_recessive_missing = {'CHROM':'X', 'POS':'10', 'ALT':'C', 'REF':'T', 'ID':'.', '1':'1/1', '2':'0/0', '3':'./.'}
+        genotypes = {'1':genotype.Genotype('1/1'), '2':genotype.Genotype('0/0'), '3':genotype.Genotype('./.')}
+        self.x_recessive_missing['genotypes'] = genotypes
         
         self.x_recessive_variant = {'CHROM':'X', 'POS':'13', 'ALT':'A', 'REF':'C', 'ID':'rs2230749', '1':'1/1', '2':'0/0', '3':'0/1'}
-
+        genotypes = {'1':genotype.Genotype('1/1'), '2':genotype.Genotype('0/0'), '3':genotype.Genotype('0/1')}
+        self.x_recessive_variant['genotypes'] = genotypes
+        
         self.not_x_recessive = {'CHROM':'X', 'POS':'15', 'ALT':'C', 'REF':'T', 'ID':'.', '1':'0/1', '2':'./.', '3':'1/1'}
-
+        genotypes = {'1':genotype.Genotype('0/1'), '2':genotype.Genotype('./.'), '3':genotype.Genotype('1/1')}
+        self.not_x_recessive['genotypes'] = genotypes
+        
         
         #This batch simulates one genewith all above variants:
         batch = {'ABC':{'X_5_A_C':self.x_recessive_dn_variant, 'X_10_C_T':self.x_recessive_missing,

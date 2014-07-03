@@ -28,8 +28,6 @@ except:
 
 from pprint import pprint as pp
 
-from genmod.variants import genotype
-
 from interval_tree import interval_tree
 
 

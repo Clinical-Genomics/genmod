@@ -43,11 +43,11 @@ or
 
 ###Basic functions###
 
-    run_genmod annotate ped_file variant_file
+    genmod annotate ped_file variant_file
 
 This will print a new vcf to standard out with all variants annotated according to the statements above.
 
-	run_genmod build_annotation [--type] annotation_file
+	genmod build_annotation [--type] annotation_file
 
 Genmod is distributed with a annotation database that are built from the refGene data.
 If the user wants to build a new annotation set use the command described above.
@@ -60,7 +60,7 @@ If the user wants to build a new annotation set use the command described above.
 - If data is phased use `-phased/--phased`
 - If you want to allow compound pairs in intronic regions to use `-gene/--whole_gene`
 - If you want canonical splice site region to be bigger than 2 base pairs on each side of the exons, use `-splice/--splice_padding _integer_`
-
+- The `-strict/--strict` flag tells **genmod** to only annotate genetic models if they are proved by the data. If a variant is not called in a family member it will not be annotated.
 
 ###Distribution###
 
@@ -68,12 +68,12 @@ If the user wants to build a new annotation set use the command described above.
 
 If the user wants to use another annotation:
 
-    run_genmod build_annotation [--type] "annotation type" path/to/annotation_file -o path/to/outdir
+    genmod build_annotation [--type] "annotation type" path/to/annotation_file -o path/to/outdir
 
 In this case the new annotation will be built into the outdir specified (default is the genmods annotation dir).
 When the user want to annotate a vcf with this new annotation set use 
 
-    run_genmod annotate ped_file variant_file [-a/--annotation_dir] /path/to/new/annotation_dir
+    genmod annotate ped_file variant_file [-a/--annotation_dir] /path/to/new/annotation_dir
 
 
 - Compound heterozygote inheritance pattern will be checked if two variants are exonic (or in canonical splice sites) and if they reside in the same gene.

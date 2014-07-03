@@ -2,7 +2,7 @@ try:
     from setuptools import setup
 except ImportError:
     from distutils.core import setup
-# import genmod
+import pkg_resources
 
 # For making things look nice on pypi:
 try:
@@ -16,7 +16,7 @@ except (IOError, ImportError):
 #     long_description = file.read()
 
 setup(name='genmod',
-    version='1.3',
+    version='1.4',
     description='Annotate genetic inheritance models in variant files',
     author = 'Mans Magnusson',
     author_email = 'mans.magnusson@scilifelab.se',
@@ -32,12 +32,12 @@ setup(name='genmod',
     ],
     packages = [
         'genmod', 
-        'genmod.utils', 
-        'genmod.models', 
-        'genmod.variants',
     ],
+    package_data = {
+        'genmod': ['annotations/*.db']
+    },
     scripts = [
-        'scripts/run_genmod'
+        'scripts/genmod'
     ],
     # entry_points= { "console_scripts" : [
     #     "run_genmod = scripts.run_genmod:main",

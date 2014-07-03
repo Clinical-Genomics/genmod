@@ -13,8 +13,8 @@ Copyright (c) 2013 __MyCompanyName__. All rights reserved.
 import sys
 import os
 from ped_parser import family, individual
-from genmod.models import genetic_models
-from genmod.variants import genotype
+from genmod import genetic_models
+from vcf_parser import genotype
 
 
 
@@ -36,10 +36,16 @@ class TestDominantModel(object):
         self.dominant_family.add_individual(healthy_mother)
         
         self.dominant_variant = {'CHROM':'1', 'POS':'5', 'ALT':'A', 'REF':'C', 'ID':'rs2230749', '1':'0/1', '2':'0/1', '3':'0/0'}
+        genotypes = {'1':genotype.Genotype('0/1'), '2':genotype.Genotype('0/1'), '3':genotype.Genotype('0/0')}
+        self.dominant_variant['genotypes'] = genotypes
         
         self.dominant_missing = {'CHROM':'1', 'POS':'10', 'ALT':'C', 'REF':'T', 'ID':'.', '1':'0/1', '2':'./.', '3':'0/0'}
+        genotypes = {'1':genotype.Genotype('0/1'), '2':genotype.Genotype('./.'), '3':genotype.Genotype('0/0')}
+        self.dominant_missing['genotypes'] = genotypes
         
         self.not_dominant = {'CHROM':'1', 'POS':'15', 'ALT':'C', 'REF':'T', 'ID':'.', '1':'0/1', '2':'0/1', '3':'0/1'}
+        genotypes = {'1':genotype.Genotype('0/1'), '2':genotype.Genotype('0/1'), '3':genotype.Genotype('0/1')}
+        self.not_dominant['genotypes'] = genotypes
 
         
         #This batch simulates two genes, one variant is present in both genes
