@@ -11,7 +11,7 @@ Copyright (c) 2013 __MyCompanyName__. All rights reserved.
 
 import sys
 import os
-from genmod.utils.is_number import is_number
+from genmod.is_number import is_number
 
 def test_integer():
 	"""Try if is_number behaves correct when given an integer."""
