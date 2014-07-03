@@ -292,8 +292,8 @@ def annotate(config, family_file, variant_file, family_type, vep, silent, phased
     # Create a directory to keep track of temp files
     temp_dir = mkdtemp()
     #Adapt the number of processes to the machine that run the analysis    
-    # num_model_checkers = (cpu_count()*2-1)
-    num_model_checkers = (1)
+    num_model_checkers = (cpu_count()*2-1)
+    # num_model_checkers = (1)
     
     if verbosity:
         print('Number of CPU:s %s' % cpu_count())

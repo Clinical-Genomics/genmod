@@ -459,7 +459,7 @@ def check_parents(model, individual, family, variant, variant_2={}, strict = Fal
     mother_id = family.individuals[individual].mother
     father_id = family.individuals[individual].father
     
-    if mother_id != 0:
+    if mother_id != '0':
         mother_genotype = variant['genotypes'][mother_id]
         mother_phenotype = family.get_phenotype(mother_id)
         parent_genotypes.append(mother_genotype)
@@ -541,10 +541,10 @@ def check_parents(model, individual, family, variant, variant_2={}, strict = Fal
         father_genotype_2 = None
         parent_genotypes_2 = []
         
-        if mother_id != 0:
+        if mother_id != '0':
             mother_genotype_2 = variant_2['genotypes'][mother_id]
             parent_genotypes_2.append(mother_genotype_2)
-        if father_id != 0:
+        if father_id != '0':
             father_genotype_2 = variant_2['genotypes'][father_id]
             parent_genotypes_2.append(father_genotype_2)
         # One of the variants must come from father and one from mother
@@ -572,14 +572,13 @@ def check_parents(model, individual, family, variant, variant_2={}, strict = Fal
 def main():
     from ped_parser import family, individual
     from interval_tree import interval_tree
+    from vcf_parser import genotype
     
     duo_family = family.Family(family_id = '1')
-    sick_son = individual.Individual(ind='1', family='1',mother='3', father='2', sex=1, phenotype=2)
-    healthy_father = individual.Individual(ind='2', family='1',mother='0', father='0', sex=1, phenotype=1)
+    sick_son = individual.Individual(ind='1', family='1',mother='3', father='0', sex=1, phenotype=2)
     healthy_mother = individual.Individual(ind='3', family='1',mother='0', father='0', sex=2, phenotype=1)
     duo_family.add_individual(sick_son)
     duo_family.add_individual(healthy_mother)
-    duo_family.add_individual(healthy_father)
     
     pp(duo_family.individuals)
     intervals = {ind_id:interval_tree.IntervalTree([[1,100, '1']], 1, 100) for ind_id in duo_family.individuals}
@@ -588,10 +587,14 @@ def main():
     
     #Setup two variants with autosomal recessive compound pattern
     recessive_comp_simple_1 = {'CHROM':'1', 'POS':'5', 'ALT':'A', 'REF':'C', 'ID':'rs2230749',
-                                             '1':'0|1', '2':'1|0', '3':'0|0'}
+                             '1':'0|1', '3':'0|0'}
+    genotypes = {'1':genotype.Genotype('0|1'), '3':genotype.Genotype('0|0')}
+    recessive_comp_simple_1['genotypes'] = genotypes
     
     recessive_comp_simple_2 = {'CHROM':'1', 'POS':'10', 'ALT':'C', 'REF':'T', 'ID':'.', 
-                                            '1':'1|0', '2':'1|0', '3':'0|0'}
+                            '1':'1|0', '3':'0|1'}
+    genotypes = {'1':genotype.Genotype('1|0'), '3':genotype.Genotype('0|1')}
+    recessive_comp_simple_2['genotypes'] = genotypes
     
     
     batch = {'ABC':{'1_5_A_C':recessive_comp_simple_1, '1_10_C_T':recessive_comp_simple_2}}
@@ -599,7 +602,11 @@ def main():
     
     check_genetic_models(batch, duo_family, phased=True)
     for gene in batch:
-        pp(batch[gene])
+        # pp(batch[gene])
+        for variant in batch[gene]:
+            pp(batch[gene][variant])
+            for ind in batch[gene][variant]['genotypes']:
+                print(ind, batch[gene][variant]['genotypes'][ind].__dict__)
     
 
 if __name__ == '__main__':
