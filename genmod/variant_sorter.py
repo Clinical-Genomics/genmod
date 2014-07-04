@@ -18,7 +18,7 @@ import argparse
 from tempfile import NamedTemporaryFile
 from codecs import open
 
-from genmod.utils.is_number import is_number
+from genmod.is_number import is_number
 
 
 class FileSort(object):

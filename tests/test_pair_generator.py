@@ -12,7 +12,7 @@ Copyright (c) 2013 __MyCompanyName__. All rights reserved.
 import sys
 import os
 import pytest
-from genmod.utils import pair_generator
+from genmod import pair_generator
 
 class TestPairGenerator(object):
     """Test class for testing how the Pair_Generator object behave"""

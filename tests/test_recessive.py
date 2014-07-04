@@ -20,8 +20,8 @@ Copyright (c) 2013 __MyCompanyName__. All rights reserved.
 import sys
 import os
 from ped_parser import family, individual
-from genmod.models import genetic_models
-from genmod.variants import genotype
+from genmod import genetic_models
+from vcf_parser import genotype
 
 
 class TestRecessiveModels(object):
@@ -41,11 +41,20 @@ class TestRecessiveModels(object):
         
         #Setup two variants with only autosomal recessive pattern
         self.recessive_variant = {'CHROM':'1', 'POS':'5', 'ALT':'A', 'REF':'C', 'ID':'rs2230749', '1':'1/1', '2':'0/1', '3':'0/1'}
+        genotypes = {'1':genotype.Genotype('1/1'), '2':genotype.Genotype('0/1'), '3':genotype.Genotype('0/1')}
+        self.recessive_variant['genotypes'] = genotypes
+        
         self.recessive_dn =  {'CHROM':'1', 'POS':'7', 'ALT':'G', 'REF':'T', 'ID':'.', '1':'1/1', '2':'0/1', '3':'0/0'}
+        genotypes = {'1':genotype.Genotype('1/1'), '2':genotype.Genotype('0/1'), '3':genotype.Genotype('0/0')}
+        self.recessive_dn['genotypes'] = genotypes
         
         self.recessive_missing = {'CHROM':'1', 'POS':'10', 'ALT':'C', 'REF':'T', 'ID':'.', '1':'1/1', '2':'./.', '3':'0/1'}
-
+        genotypes = {'1':genotype.Genotype('1/1'), '2':genotype.Genotype('./.'), '3':genotype.Genotype('0/1')}
+        self.recessive_missing['genotypes'] = genotypes
+        
         self.not_recessive = {'CHROM':'1', 'POS':'15', 'ALT':'C', 'REF':'T', 'ID':'.', '1':'0/1', '2':'0/1', '3':'./.'}
+        genotypes = {'1':genotype.Genotype('0/1'), '2':genotype.Genotype('0/1'), '3':genotype.Genotype('./.')}
+        self.not_recessive['genotypes'] = genotypes
         
         #This batch simulates two genes, one variant is present in both genes
         batch = {'ABC':{'1_5_A_C':self.recessive_variant, '1_10_C_T':self.recessive_missing, '1_7_G_T':self.recessive_dn},

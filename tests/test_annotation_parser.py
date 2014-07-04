@@ -13,7 +13,7 @@ import sys
 import os
 import tempfile
 
-from genmod.utils.annotation_parser import AnnotationParser
+from genmod.annotation_parser import AnnotationParser
 
 
 class TestAnnotationParser(object):
