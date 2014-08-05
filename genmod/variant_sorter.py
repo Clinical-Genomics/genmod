@@ -14,7 +14,7 @@ Modified by Måns Magnusson on 2014-01-14.
 
 import sys
 import os
-import argparse
+import click
 from tempfile import NamedTemporaryFile
 from codecs import open
 
@@ -22,7 +22,7 @@ from genmod.is_number import is_number
 
 
 class FileSort(object):
-    def __init__(self, inFile, outfile=None, splitSize=20, silent=False):
+    def __init__(self, inFile, mode='pos', outfile=None, splitSize=20, silent=False):
         """ split size (in MB) """
         self._inFile = inFile
         self._silent = silent
@@ -30,8 +30,11 @@ class FileSort(object):
         self._outFile = outfile
                     
         self._splitSize = splitSize * 1000000
-                
+        
         self._getKey = lambda variant_line: (int(variant_line.split('\t')[1]))
+        
+        if mode = 'cadd':
+            lambda variant_line: (float(for info invariant_line.split('\t')[7]).split(';'))
     
     def sort(self):
         
@@ -175,13 +178,22 @@ class FileSort(object):
                 os.remove(fn.name)
     
 
+@click.command()
+@click.argument('infile', 
+                    nargs=1, 
+                    type=click.Path(exists=True),
+                    metavar='<vcf_file> or "-"'
+)
+@click.option('-cadd' ,'--cadd', 
+                    is_flag=True,
+                    help='Sort the variants on their cadd values.'
+)
+@click.option('-o' ,'--out', 
+                    type=click.Path(exists=False),
+                    help='Specify the path to the outfile.'
+)
 
-def main():
-    parser = argparse.ArgumentParser(description="Check files.")
-    parser.add_argument('infile', type=str, nargs=1, help='Specify the path to the file of interest.')
-    parser.add_argument('-out', '--outfile', type=str, nargs=1, default=[None], help='Specify the path to the outfile.')
-    args = parser.parse_args()
-    infile = args.infile[0]
+def cli(infile, out, cadd):
     temp_file = NamedTemporaryFile(delete=False)
     temp_file.close()
     with open(infile, mode='r', encoding = 'utf-8') as f:
@@ -195,4 +207,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    cli()
