@@ -15,7 +15,12 @@ import click
 from multiprocessing import JoinableQueue, Manager, cpu_count
 from codecs import open
 from datetime import datetime
-from tempfile import mkdtemp
+from tempfile import mkdtemp, TemporaryFile
+# from configobj import ConfigObj
+from pprint import pprint as pp
+
+import vcf
+
 import shutil
 import pkg_resources
 import pkgutil
@@ -355,23 +360,100 @@ def annotate(config, family_file, variant_file, family_type, vep, silent, phased
     # Remove all temp files:
     shutil.rmtree(temp_dir)
 
-
 ###           This is for analyzing the variants       ###
 
 
-# @click.command()    
-# def analyze():
+def make_models(list_of_models):
+    """Make a dictionary of the prefered models."""
+    model_dict = {}
+    # If no models are specified we allow all models
+    if len(list_of_models) == 0:
+        list_of_models = ['AR', 'AD', 'X']
+    
+    for model in list_of_models:
+        if 'AR' in model:
+            model_dict['AR_hom'] = ''
+            model_dict['AR_hom_dn'] = ''
+            model_dict['AR_comp'] = ''
+            model_dict['AR_comp_dn'] = ''
+        if 'AD' in model:
+            model_dict['AD'] = ''
+            model_dict['AD_dn'] = ''
+        if 'X' in model:
+            model_dict['XR'] = ''
+            model_dict['XR_dn'] = ''
+            model_dict['XD'] = ''
+            model_dict['XD_dn'] = ''
+    return model_dict
+
+# @click.command()
+# @click.argument('variant_file',
+#                     nargs=1,
+#                     type=click.Path(exists=True),
+#                     metavar='<vcf_file> or "-"'
+# )
+# @click.option('-c', '--config_file',
+#                     type=click.Path(exists=True),
+#                     help="""Specify the path to a config file."""
+# )
+# @click.option('--freq',
+#                     type=float, nargs=1,
+#                     help='Specify the treshold for variants to be considered.'
+# )
+# @click.option('-p', '--patterns',
+#                     type=click.Choice(['AR_comp', 'AR_comp_dn', 'AR_hom', 'AR_hom_dn',
+#                                         'AD', 'AD_dn', 'XD', 'XD_dn', 'XR', 'XR_dn']),
+#                     nargs=1, multiple=True,
+#                     help='Specify the inheritance patterns.'
+# )
+#
+# def analyze(variant_file, freq, patterns, config_file):
 #     """Analyze the annotated variants in a VCF file."""
-#     pass
+#     configs = ConfigObj(config_file)
+#     pp(configs)
+#
+#     freq_treshold = float(configs.get('frequency', {}).get('uncommon', 0.1))
+#     freq_keyword = configs.get('frequency', {}).get('keyword', '1000G_freq')
+#
+#     inheritance_patterns = [pattern for pattern in configs.get('inheritance', {}).get('patterns',[])]
+#     inheritance_keyword = configs.get('inheritance', {}).get('keyword','GM')
+#     prefered_models = make_models(inheritance_patterns)
+#
+#     prediction_keyword = configs.get('prediction', {}).get('keyword','CADD')
+#
+#     variant_parser = vcf_parser.VCFParser(variant_file)
+#     print(freq_keyword, freq_treshold)
+#     print(inheritance_keyword, inheritance_patterns)
+#     print(prediction_keyword)
+#
+#     interesting_variants = TemporaryFile(mode='w+t')
+#
+#     for variant in variant_parser:
+#         if float(variant['info_dict'].get(freq_keyword, '0')) <= freq_treshold:
+#             for model in variant['info_dict'].get(inheritance_keyword, '').split(';'):
+#                 if model in prefered_models:
+#                     print_line = [variant.get(entry, '-') for entry in variant_parser.header]
+#                     interesting_variants.write('\t'.join(print_line)+'\n')
+#     interesting_variants.seek(0)
+#     for line in interesting_variants:
+#         print(line.rstrip())
+#     interesting_variants.close()
+#     # if freq:
+#     #     freq_treshold = freq
+#     # if patterns:
+#     #     inheritance_patterns = {pattern:0 for pattern in patterns}
+#     # print('Frequency tres: %s' % freq_treshold)
+#     # print('Inheritance models: %s' % str(inheritance_patterns))
+#     # vcf_reader = vcf.Reader(fsock=variant_file)
+#     # for record in vcf_reader:
+#     #     print(record.INFO.get('1000GMAF', 0))
 
 
 run_genmod.add_command(build_annotation)
 run_genmod.add_command(annotate)
 # run_genmod.add_command(analyze)
 
-# def main():
-#     run_genmod()
-        
+
 
 if __name__ == '__main__':
     # main()
