@@ -19,7 +19,7 @@ from tempfile import mkdtemp, TemporaryFile
 # from configobj import ConfigObj
 from pprint import pprint as pp
 
-import vcf
+# import vcf
 
 import shutil
 import pkg_resources
