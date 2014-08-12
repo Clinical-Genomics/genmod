@@ -79,7 +79,7 @@ def check_genetic_models(variant_batch, family, verbose = False, phased = False,
                                             'AR_comp_dn' : False
                                             }
             if gene != '-':
-                if check_compound_candidates(variant, family):
+                if check_compound_candidates(variant, family, strict):
                     compound_candidates.append(variant_id)
             # Only check X-linked for the variants in the X-chromosome:
             # For X-linked we do not need to check the other models
@@ -132,7 +132,7 @@ def check_genetic_models(variant_batch, family, verbose = False, phased = False,
                     
     return
 
-def check_compound_candidates(variant, family):
+def check_compound_candidates(variant, family, strict):
     """Sort out the variants that are potential compound candidates. 
         This function is used to reduce the number of potential candidates for the future analysis.
         It will go through all variants in a batch(gene or other feature) and filter out those variants that not fit the model.
@@ -144,7 +144,10 @@ def check_compound_candidates(variant, family):
                 
             Healthy:
                 - Can not be hom. alt for any variant in a potential compound pair.
-                
+        
+        If strict:
+            Affected must be heterozygote
+        
         Args:
             variant: A variant dictionary.
             family: A family object with information about the family members for this analysis
@@ -154,7 +157,7 @@ def check_compound_candidates(variant, family):
             rules stated above
         
     """
-    # This is the case when the variant is located in an uninteresting region:
+    # This is the case when the variant is located in an uninteresting region(non gene region):
     if not variant.get('comp_candidate',True):
         return False
     for individual in family.individuals:
@@ -166,6 +169,9 @@ def check_compound_candidates(variant, family):
             # Affected can not be hom. ref. for compounds
             if individual_genotype.homo_ref:
                 return False
+            if strict:
+                if not individual_genotype.heterozygote:
+                    return False
     
     return True
 
