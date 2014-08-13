@@ -101,7 +101,7 @@ class VariantConsumer(multiprocessing.Process):
                         return record
                 else:
                     return record
-        except (IndexError, KeyError) as e:
+        except (IndexError, KeyError, ValueError) as e:
             pass
     
         return record
