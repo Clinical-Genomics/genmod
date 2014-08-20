@@ -35,7 +35,7 @@ If ```-vep/--vep``` is used **ANN** will not be annotated since all information 
 
 or
 
-    git clone git@github.com:moonso/genmod.git
+    git clone https://github.com/moonso/genmod.git
     cd genmod
     python setup.py install
 
