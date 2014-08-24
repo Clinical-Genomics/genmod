@@ -43,7 +43,7 @@ class VariantPrinter(multiprocessing.Process):
                     warning('Printing queue full')
             if next_result is None:
                 if self.verbosity:
-                    warning('All variants printed!')
+                    print('All variants printed!')
                 for chromosome in self.file_handles:
                     self.file_handles[chromosome].close()
                 break

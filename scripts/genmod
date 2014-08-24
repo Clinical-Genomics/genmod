@@ -274,8 +274,7 @@ def annotate(config, family_file, variant_file, family_type, vep, silent, phased
     # This is for logging the command line string:
     frame = inspect.currentframe()
     args, _, _, values = inspect.getargvalues(frame)
-    argument_list = [i+'='+values[i] for i in values if values[i] and i != 'config' and i != 'frame']
-    
+    argument_list = [i+'='+str(values[i]) for i in values if values[i] and i != 'config' and i != 'frame']
     gene_db = pkg_resources.resource_filename('genmod', 'annotations/genes.db')
     exon_db = pkg_resources.resource_filename('genmod', 'annotations/exons.db')
         
@@ -315,11 +314,11 @@ def annotate(config, family_file, variant_file, family_type, vep, silent, phased
         check_tabix_index(cadd_file, 'cadd', verbosity)
     if cadd_1000g:
         if verbosity:
-            click.echo('Cadd file! %s' % cadd_1000g)
+            click.echo('Cadd 1000G file! %s' % cadd_1000g)
         check_tabix_index(cadd_1000g, 'cadd', verbosity)
     if thousand_g:
         if config.verbose:
-            click.echo('Cadd file! %s' % thousand_g)
+            click.echo('1000G frequency file! %s' % thousand_g)
         check_tabix_index(thousand_g, 'vcf', verbosity)
     
     

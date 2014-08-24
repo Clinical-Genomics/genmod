@@ -34,7 +34,6 @@ from pprint import pprint as pp
 from interval_tree import interval_tree
 
 
-
 class VariantAnnotator(object):
     """Creates parser objects for parsing variant files"""
     def __init__(self, variant_parser, batch_queue, gene_trees={}, exon_trees={}, phased=False, 

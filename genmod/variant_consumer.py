@@ -60,7 +60,7 @@ class VariantConsumer(multiprocessing.Process):
             for variant_id in variant_batch[feature]:
                 if variant_id in fixed_variants:
                     # We need to add compound information from different features
-                    if len(variant_batch[feature][variant_id]['Compounds']) > 0:
+                    if len(variant_batch[feature][variant_id].get('Compounds', [])) > 0:
                         fixed_variants[variant_id]['Compounds'] = (
                          dict(list(variant_batch[feature][variant_id]['Compounds'].items()) +
                                     list(fixed_variants[variant_id]['Compounds'].items())))
@@ -76,15 +76,10 @@ class VariantConsumer(multiprocessing.Process):
         genotype_scores = []
         
         for individual in individuals:
-            gt_call = variant[individual].split(':')
-            gt_info = variant['FORMAT'].split(':')
-            if len(gt_call) == 1:
-                gt_call = {'GT':gt_call[0]}
-            else:
-                gt_call = dict(zip(gt_info, gt_call))
-            if 'GQ' in gt_call:
-                # Add the error probabilities to genotype scores
-                genotype_scores.append(10**-(float(gt_call['GQ'])/10))
+            gt_call = variant['genotypes'].get(individual, None)
+            if gt_call:
+                if gt_call.genotype_quality > 0:
+                    genotype_scores.append(10**-(float(gt_call.genotype_quality)/10))
         if len(genotype_scores) > 0:
             model_score = (str(round(-10*log10(1-reduce(operator.mul, [1-score for score in genotype_scores])))))
         
@@ -96,7 +91,7 @@ class VariantConsumer(multiprocessing.Process):
         # CADD values are only for snps:
         cadd_key = int(start)
         try:
-            for record in tabix_reader.fetch(chrom, cadd_key-1, cadd_key):
+            for record in tabix_reader.fetch(str(chrom), cadd_key-1, cadd_key):
                 # If Vcf we know there can only be one correct record
                 if alt:
                     if record.split('\t')[3] == alt:
@@ -138,26 +133,22 @@ class VariantConsumer(multiprocessing.Process):
             model_list = []
             compounds_list = []
             #Remove the 'Genotypes' post since we will not need them for now
-            variant_dict[variant_id].pop('Genotypes', 0)
             
-            feature_list = variant_dict[variant_id]['Annotation']
+            feature_list = variant_dict[variant_id].get('Annotation', [])
             
-            if len(variant_dict[variant_id]['Compounds']) > 0:
+            if len(variant_dict[variant_id].get('Compounds', [])) > 0:
                 #We do not want reference to itself as a compound:
                 variant_dict[variant_id]['Compounds'].pop(variant_id, 0)
                 compounds_list = list(variant_dict[variant_id]['Compounds'].keys())
             else:
                 compounds_list = None
             
-            for model in variant_dict[variant_id]['Inheritance_model']:
+            for model in variant_dict[variant_id].get('Inheritance_model',[]):
                 if variant_dict[variant_id]['Inheritance_model'][model]:
                     model_list.append(model)
             if len(model_list) == 0:
                 model_list = None
             
-            variant_dict[variant_id].pop('Compounds',0)
-            variant_dict[variant_id].pop('Inheritance_model',0)
-            variant_dict[variant_id].pop('Annotation',0)
             vcf_info = variant_dict[variant_id]['INFO'].split(';')
             
             if self.chr_prefix:
@@ -174,7 +165,7 @@ class VariantConsumer(multiprocessing.Process):
             if model_list:
                 vcf_info.append('GM=' + ':'.join(model_list))
                 model_score = self.get_model_score(self.family.individuals, variant_dict[variant_id])
-                if model_score:
+                if model_score and model_score > 0:
                     vcf_info.append('MS=' +  model_score)
             
             if cadd_record:
@@ -204,7 +195,10 @@ class VariantConsumer(multiprocessing.Process):
                 if self.verbosity:
                     print('%s: Exiting' % proc_name)
                 break
-            genetic_models.check_genetic_models(next_batch, self.family, self.verbosity, self.phased, self.strict, proc_name)
+            
+            if self.family:
+                genetic_models.check_genetic_models(next_batch, self.family, self.verbosity, 
+                                                    self.phased, self.strict, proc_name)
             # Make shure we only have one copy of each variant:
             fixed_variants = self.fix_variants(next_batch)
             
