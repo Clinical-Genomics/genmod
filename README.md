@@ -3,7 +3,10 @@
 
 Tool for annotating patterns of inheritance Variant Call Format (VCF) files.
 
-Each variant in the VCF-file will be annotated with which genetic models that are followed in the family.
+Each variant in the VCF-file will be annotated with which genetic models that are followed in the family if a family file
+(ped file) is provided.
+It is possible to run without a family file, in this case all variants will be annotated with which region(s) they belong to, and if other annotation files are provided(1000G, CADD scores etc.) the variants will get the proper values from these.
+
 The genetic models that are checked are the following:
 
 * Autsomal Recessive, denoted 'AR'
@@ -22,6 +25,8 @@ The genetic models that are checked are the following:
 - **ANN** Colon separated list with features overlapped in the annotation file
 - **Comp** Colon separated list with compound pairs(if any). These are described like 'CHR\_POS\_REF\_ALT'.
 - **MS** Model Score, a phred-score based on the genotype qualities to describe the uncertainty of the genetic model.
+
+Also a line for logging is added in the vcf header with the id **genmod**, here the date of run, version and command line arguments are printed.
 
 All annotations will be present only if they have a value.
 
@@ -43,7 +48,7 @@ or
 
 ###Basic functions###
 
-    genmod annotate ped_file variant_file
+    genmod annotate variant_file --family ped_file
 
 This will print a new vcf to standard out with all variants annotated according to the statements above.
 
@@ -64,7 +69,7 @@ If the user wants to build a new annotation set use the command described above.
 
 ###Distribution###
 
-- GENMOD now includes db like files in the genmod/annotations folder, this is the exon and gene definitions from ftp://hgdownload.cse.ucsc.edu/goldenPath/hg19/database/refGene.txt.gz.
+- GENMOD includes db like files in the genmod/annotations folder, this is the exon and gene definitions from ftp://hgdownload.cse.ucsc.edu/goldenPath/hg19/database/refGene.txt.gz.
 
 If the user wants to use another annotation:
 
@@ -73,7 +78,7 @@ If the user wants to use another annotation:
 In this case the new annotation will be built into the outdir specified (default is the genmods annotation dir).
 When the user want to annotate a vcf with this new annotation set use 
 
-    genmod annotate ped_file variant_file [-a/--annotation_dir] /path/to/new/annotation_dir
+    genmod annotate variant_file -fam ped_file [-a/--annotation_dir] /path/to/new/annotation_dir
 
 
 - Compound heterozygote inheritance pattern will be checked if two variants are exonic (or in canonical splice sites) and if they reside in the same gene.
