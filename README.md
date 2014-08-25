@@ -5,6 +5,8 @@ Tool for annotating patterns of inheritance Variant Call Format (VCF) files.
 
 Each variant in the VCF-file will be annotated with which genetic models that are followed in the family if a family file
 (ped file) is provided.
+It is possible to run without a family file, in this case all variants will be annotated with which region(s) they belong to, and if other annotation files are provided(1000G, CADD scores etc.) the variants will get the proper values from these.
+
 The genetic models that are checked are the following:
 
 * Autsomal Recessive, denoted 'AR'
