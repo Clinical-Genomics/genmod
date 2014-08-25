@@ -48,7 +48,7 @@ or
 
 ###Basic functions###
 
-    genmod annotate variant_file --family ped_file
+    genmod annotate variant_file --family_file ped_file
 
 This will print a new vcf to standard out with all variants annotated according to the statements above.
 
