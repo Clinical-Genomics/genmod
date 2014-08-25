@@ -165,8 +165,9 @@ class VariantConsumer(multiprocessing.Process):
             if model_list:
                 vcf_info.append('GM=' + ':'.join(model_list))
                 model_score = self.get_model_score(self.family.individuals, variant_dict[variant_id])
-                if model_score and model_score > 0:
-                    vcf_info.append('MS=' +  model_score)
+                if model_score:
+                    if float(model_score) > 0:
+                        vcf_info.append('MS=' +  model_score)
             
             if cadd_record:
                 vcf_info.append('CADD=%s' % str(variant_dict[variant_id].pop('CADD', '.')))
