@@ -9,9 +9,14 @@ Created by Måns Magnusson on 2014-01-21.
 Copyright (c) 2013 __MyCompanyName__. All rights reserved.
 """
 
+from __future__ import print_function
+from __future__ import unicode_literals
+
 import sys
 import os
 import click
+import inspect
+
 from multiprocessing import JoinableQueue, Manager, cpu_count
 from codecs import open
 from datetime import datetime
@@ -37,8 +42,11 @@ from pysam import tabix_index, tabix_compress
 from ped_parser import parser as ped_parser
 from vcf_parser import parser as vcf_parser
 
-from genmod import variant_consumer, variant_sorter, annotation_parser, variant_printer, variant_annotator
+from genmod import variant_consumer, variant_sorter, annotation_parser, variant_printer, variant_annotator, warning
 
+
+
+version = pkg_resources.require("genmod")[0].version
 
 def get_family(family_file, family_type):
     """Return the family"""
@@ -47,8 +55,9 @@ def get_family(family_file, family_type):
     # Stupid thing but for now when we only look at one family
     return my_family_parser.families.popitem()[1]
 
-def add_metadata(head, vep=False, cadd_file=None, cadd_1000g=None, thousand_g=None):
+def add_metadata(head, vep=False, cadd_file=None, cadd_1000g=None, thousand_g=None, command_line_string=''):
     """Add metadata for the information added by this script."""
+    # Update INFO headers
     if not vep:
         head.add_info('ANN', '.', 'String', 'Annotates what feature(s) this variant belongs to.')
     head.add_info('Comp', '.', 'String', "':'-separated list of compound pairs for this variant.")
@@ -58,12 +67,16 @@ def add_metadata(head, vep=False, cadd_file=None, cadd_1000g=None, thousand_g=No
         head.add_info('CADD', '1', 'Float', "The CADD relative score for this alternative.")
     if thousand_g:
         head.add_info('1000G_freq', '1', 'Float', "Frequency in the 1000G database.")
+    
+    # Update version logging
+    head.add_version_tracking('genmod', version, str(datetime.now()), command_line_string)
+    
     return
 
 def print_headers(head, outfile, silent=False):
     """Print the headers to a results file."""
     if outfile:
-        with open(outfile, 'w', encoding='utf-8') as f: 
+        with open(outfile, 'w', encoding='utf-8') as f:
             for head_count in head.print_header():
                 f.write(head_count+'\n')
     else:
@@ -86,6 +99,19 @@ def check_tabix_index(compressed_file, file_type='cadd', verbose=False):
             pass
     return
 
+def print_version(ctx, param, value):
+    """Callback function for printing version and exiting
+    Args:
+        ctx (object) : Current context
+        param (object) : Click parameter(s)
+        value (boolean) : Click parameter was supplied or not
+    Returns:
+        None:
+    """
+    if not value or ctx.resilient_parsing:
+        return
+    click.echo('genmode version: ' + version)
+    ctx.exit()
 # def print_version(ctx, param, value):
 #     # if not value or ctx.resilient_parsing:
 #     #     return
@@ -107,12 +133,12 @@ pass_config = click.make_pass_decorator(Config, ensure=True)
                 is_flag=True,
                 help='Increase output verbosity.'
 )
-# @click.option('--version', 
-#                 is_flag=True, 
-#                 callback=print_version,
-#                 expose_value=False, 
-#                 is_eager=True
-# )
+@click.option('--version',
+                is_flag=True,
+                callback=print_version,
+                expose_value=False,
+                is_eager=True
+)
 @pass_config
 def run_genmod(config, verbose):
     """Annotate genetic models in variant files."""
@@ -167,15 +193,15 @@ def build_annotation(config, annotation_file, type, outdir, splice_padding):
 
 
 @click.command()
-@click.argument('family_file', 
-                    nargs=1, 
-                    type=click.Path(exists=True),
-                    metavar='<ped_file>'
-)
 @click.argument('variant_file', 
                     nargs=1, 
                     type=click.Path(exists=True),
                     metavar='<vcf_file>'
+)
+@click.option('--family_file', '-fam',
+                    nargs=1, 
+                    type=click.Path(exists=True),
+                    metavar='<ped_file>'
 )
 @click.option('-f' ,'--family_type', 
                 type=click.Choice(['ped', 'alt', 'cmms', 'mip']), 
@@ -204,12 +230,14 @@ def build_annotation(config, annotation_file, type, outdir, splice_padding):
 )
 @click.option('-g' ,'--whole_gene', 
                     is_flag=True,
-                    help='If compounds should be checked in the whole gene regions. Not only exonic/splice sites.'
+                    help="""If compounds should be checked in the whole gene regions. 
+                    Not only exonic/splice sites."""
 )
 @click.option('-a' ,'--annotation_dir', 
                     type=click.Path(exists=True), 
-                    help="""Specify the path to the directory where the annotation databases are. 
-                            Default is the gene pred files that comes with the distribution."""
+                    help="""Specify the path to the directory where the annotation 
+                    databases are. 
+                    Default is the gene pred files that comes with the distribution."""
 )
 @click.option('-o', '--outfile', 
                     type=click.Path(exists=False),
@@ -222,30 +250,40 @@ def build_annotation(config, annotation_file, type, outdir, splice_padding):
 )
 @click.option('--cadd_1000g',
                     type=click.Path(exists=True), 
-                    help="""Specify the path to a bgzipped cadd file with variant scores for all 1000g variants.
-                            If no index is present it will be created."""
+                    help="""Specify the path to a bgzipped cadd file with variant scores 
+                            for all 1000g variants. If no index is present a new index
+                            will be created."""
 )
 @click.option('--thousand_g',
                     type=click.Path(exists=True), 
-                    help="""Specify the path to a bgzipped vcf file frequency info of all 1000g variants. 
-                            If no index is present it will be created."""
+                    help="""Specify the path to a bgzipped vcf file frequency info of all 
+                            1000g variants. If no index is present a new index
+                            will be created."""
 )
 
 @pass_config
-def annotate(config, family_file, variant_file, family_type, vep, silent, phased, strict, whole_gene, 
-                annotation_dir, cadd_file, cadd_1000g, thousand_g, outfile, chr_prefix):
-    """Annotate genetic inheritance patterns followed for all variants in a VCF file.
-        
+def annotate(config, family_file, variant_file, family_type, vep, silent, phased, strict,
+             whole_gene, annotation_dir, cadd_file, cadd_1000g, thousand_g, outfile, chr_prefix):
+    """Annotate variants in a VCF file.
+        It is possible to annotate from sources shown as options only
+        If a ped file is provided then the genetic inheritance patterns for all individuals are followed.
         Individuals that are not present in ped file will not be considered in the analysis.
     """    
     verbosity = config.verbose
     
+    # This is for logging the command line string:
+    frame = inspect.currentframe()
+    args, _, _, values = inspect.getargvalues(frame)
+    argument_list = [i+'='+str(values[i]) for i in values if values[i] and i != 'config' and i != 'frame']
     gene_db = pkg_resources.resource_filename('genmod', 'annotations/genes.db')
     exon_db = pkg_resources.resource_filename('genmod', 'annotations/exons.db')
         
     if annotation_dir:
         gene_db = os.path.join(annotation_dir, 'genes.db')
         exon_db = os.path.join(annotation_dir, 'exons.db')
+    
+    variant_parser = vcf_parser.VCFParser(variant_file)
+    head = variant_parser.metadata
     
     if verbosity:
         start_time_analysis = datetime.now()
@@ -256,10 +294,19 @@ def annotate(config, family_file, variant_file, family_type, vep, silent, phased
             exon_trees = pickle.load(g)
     except IOError as e:
         if verbosity:
-            print('You need to build annotations! See documentation.')
+            warning('You need to build annotations! See documentation.')
+            # It is possible to continue the analysis without annotation files
         pass
     
-    family = get_family(family_file, family_type)
+    if family_file:
+        family = get_family(family_file, family_type)
+        if set(family.individuals.keys()) != set(variant_parser.individuals):
+            warning('There must be same individuals in ped file and vcf file! Aborting...')
+            warning('Individuals in PED file: %s' % '\t'.join(list(family.individuals.keys())))
+            warning('Individuals in VCF file: %s' % '\t'.join(list(variant_parser.individuals)))
+            sys.exit()
+    else:
+        family = None
     
     if cadd_file:
         if verbosity:
@@ -267,22 +314,13 @@ def annotate(config, family_file, variant_file, family_type, vep, silent, phased
         check_tabix_index(cadd_file, 'cadd', verbosity)
     if cadd_1000g:
         if verbosity:
-            click.echo('Cadd file! %s' % cadd_1000g)
+            click.echo('Cadd 1000G file! %s' % cadd_1000g)
         check_tabix_index(cadd_1000g, 'cadd', verbosity)
     if thousand_g:
         if config.verbose:
-            click.echo('Cadd file! %s' % thousand_g)
+            click.echo('1000G frequency file! %s' % thousand_g)
         check_tabix_index(thousand_g, 'vcf', verbosity)
     
-    variant_parser = vcf_parser.VCFParser(variant_file)
-    head = variant_parser.metadata
-    
-    if set(family.individuals.keys()) != set(variant_parser.individuals):
-        
-        print('There must be same individuals in ped file and vcf file! Aborting...')
-        print('Individuals in PED file: %s' % '\t'.join(list(family.individuals.keys())))
-        print('Individuals in VCF file: %s' % '\t'.join(list(variant_parser.individuals)))
-        sys.exit()
     
     ###################################################################
     ### The task queue is where all jobs(in this case batches that  ###
@@ -341,8 +379,8 @@ def annotate(config, family_file, variant_file, family_type, vep, silent, phased
         print('')
         start_time_variant_sorting = datetime.now()
     
-    # Add the new metadata to the headers:
-    add_metadata(head, vep, cadd_file, cadd_1000g, thousand_g)
+    # Add the new metadata to the headers:    
+    add_metadata(head, vep, cadd_file, cadd_1000g, thousand_g, ' '.join(argument_list))
     print_headers(head, outfile, silent)
     
     for chromosome in chromosome_list:
