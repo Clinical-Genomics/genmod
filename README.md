@@ -1,6 +1,10 @@
 # GENMOD #
 
 
+
+[![DOI](https://zenodo.org/badge/5735/moonso/genmod.png)](http://dx.doi.org/10.5281/zenodo.11424)
+
+
 Tool for annotating patterns of inheritance Variant Call Format (VCF) files.
 
 Each variant in the VCF-file will be annotated with which genetic models that are followed in the family if a family file
