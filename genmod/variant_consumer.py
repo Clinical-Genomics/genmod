@@ -155,7 +155,7 @@ class VariantConsumer(multiprocessing.Process):
                 if variant_dict[variant_id]['Inheritance_model'][model]:
                     model_list.append(model)
             if len(model_list) > 0:
-                vcf_info.append('GeneticModels=' + ':'.join(model_list))
+                vcf_info.append('GeneticModels=' + ','.join(model_list))
                 model_score = self.get_model_score(self.family.individuals, variant_dict[variant_id])
                 if model_score:
                     if float(model_score) > 0:
@@ -165,7 +165,7 @@ class VariantConsumer(multiprocessing.Process):
             
             if not self.vep:
                 if len(feature_list) != 0 and feature_list != ['-']:
-                    vcf_info.append('Annotation=' + ':'.join(feature_list))
+                    vcf_info.append('Annotation=' + ','.join(feature_list))
             
             
             if variant.get('CADD', None):
