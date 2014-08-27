@@ -26,8 +26,8 @@ The genetic models that are checked are the following:
 **GENMOD** will add entrys to the INFO column for the given VCF file. The new entrys are: 
     
 - **GeneticModels** A comma separated list with genetic models followed
-- **Annotation** Colon separated list with features overlapped in the annotation file
-- **Compounds** Colon separated list with compound pairs(if any). These are described like 'CHR\_POS\_REF\_ALT'.
+- **Annotation** Comma separated list with features overlapped in the annotation file
+- **Compounds** Comma separated list with compound pairs(if any). These are described like 'CHR\_POS\_REF\_ALT'.
 - **ModelScore** Model Score, a phred-score based on the genotype qualities to describe the uncertainty of the genetic model.
 
 Also a line for logging is added in the vcf header with the id **genmod**, here the date of run, version and command line arguments are printed.
