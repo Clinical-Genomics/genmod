@@ -59,14 +59,14 @@ def add_metadata(head, vep=False, cadd_file=None, cadd_1000g=None, thousand_g=No
     """Add metadata for the information added by this script."""
     # Update INFO headers
     if not vep:
-        head.add_info('ANN', '.', 'String', 'Annotates what feature(s) this variant belongs to.')
-    head.add_info('Comp', '.', 'String', "':'-separated list of compound pairs for this variant.")
-    head.add_info('GM', '.', 'String', "':'-separated list of genetic models for this variant.")
-    head.add_info('MS', '1', 'Integer', "PHRED score for genotype models.")
+        head.add_info('Annotation', '.', 'String', 'Annotates what feature(s) this variant belongs to.')
+    head.add_info('Compounds', '.', 'String', "':'-separated list of compound pairs for this variant.")
+    head.add_info('GeneModels', '.', 'String', "':'-separated list of genetic models for this variant.")
+    head.add_info('ModelScore', '1', 'Integer', "PHRED score for genotype models.")
     if cadd_file or cadd_1000g:
         head.add_info('CADD', '1', 'Float', "The CADD relative score for this alternative.")
     if thousand_g:
-        head.add_info('1000G_freq', '1', 'Float', "Frequency in the 1000G database.")
+        head.add_info('1000GMAF', '1', 'Float', "Frequency in the 1000G database.")
     
     # Update version logging
     head.add_version_tracking('genmod', version, str(datetime.now()), command_line_string)
