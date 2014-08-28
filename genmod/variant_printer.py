@@ -15,6 +15,8 @@ from __future__ import unicode_literals
 import sys
 import os
 import multiprocessing
+
+from codecs import open
 from tempfile import NamedTemporaryFile
 from pprint import pprint as pp
 from genmod import warning
@@ -55,8 +57,9 @@ class VariantPrinter(multiprocessing.Process):
                     if variant_chrom in self.file_handles:
                         self.file_handles[variant_chrom].write('\t'.join(print_line) + '\n')
                     else:
-                        self.file_handles[variant_chrom] = NamedTemporaryFile(prefix=variant_chrom+'_', 
-                            dir=self.temp_dir, delete=False, mode='w')
+                        temp_file = NamedTemporaryFile(prefix=variant_chrom+'_', dir=self.temp_dir, delete=False)
+                        temp_file.close()
+                        self.file_handles[variant_chrom] = open(temp_file.name, mode='w', encoding='utf-8', errors='replace')
                         self.file_handles[variant_chrom].write('\t'.join(print_line) + '\n')
         return
     
