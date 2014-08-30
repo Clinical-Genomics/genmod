@@ -18,7 +18,7 @@ import click
 import inspect
 
 from multiprocessing import JoinableQueue, Manager, cpu_count
-from codecs import open
+from codecs import open, getwriter
 from datetime import datetime
 from tempfile import mkdtemp, TemporaryFile
 # from configobj import ConfigObj
@@ -44,7 +44,8 @@ from vcf_parser import parser as vcf_parser
 
 from genmod import variant_consumer, variant_sorter, annotation_parser, variant_printer, variant_annotator, warning
 
-
+if sys.version_info < (3,0):
+    sys.stdout = getwriter('UTF-8')(sys.stdout)
 
 version = pkg_resources.require("genmod")[0].version
 
@@ -149,7 +150,7 @@ def run_genmod(config, verbose):
 @click.command()
 @click.argument('annotation_file', 
                 nargs=1, 
-                type=click.Path(exists=True)
+                type=click.Path(exists=True),
 )
 @click.option('-t' ,'--type',
                 type=click.Choice(['bed', 'ccds', 'gtf', 'gene_pred']), 
@@ -195,8 +196,8 @@ def build_annotation(config, annotation_file, type, outdir, splice_padding):
 @click.command()
 @click.argument('variant_file', 
                     nargs=1, 
-                    type=click.Path(exists=True),
-                    metavar='<vcf_file>'
+                    type=click.Path(),
+                    metavar='<vcf_file> or -'
 )
 @click.option('--family_file', '-fam',
                     nargs=1, 
@@ -282,7 +283,11 @@ def annotate(config, family_file, variant_file, family_type, vep, silent, phased
         gene_db = os.path.join(annotation_dir, 'genes.db')
         exon_db = os.path.join(annotation_dir, 'exons.db')
     
-    variant_parser = vcf_parser.VCFParser(variant_file)
+    if variant_file == '-':
+        variant_parser = vcf_parser.VCFParser(fsock = sys.stdin)
+    else:
+        variant_parser = vcf_parser.VCFParser(infile = variant_file)
+    
     head = variant_parser.metadata
     
     if verbosity:
