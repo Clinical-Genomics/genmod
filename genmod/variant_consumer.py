@@ -92,9 +92,9 @@ class VariantConsumer(multiprocessing.Process):
         cadd_key = int(start)
         try:
             for record in tabix_reader.fetch(str(chrom), cadd_key-1, cadd_key):
-                # If Vcf we know there can only be one correct record
-                if record.split('\t')[3] == alt:
-                    return score
+                record = record.split('\t')
+                if record[3] == alt:
+                    return record[-1]
         except (IndexError, KeyError, ValueError) as e:
             pass
         
