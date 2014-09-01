@@ -85,47 +85,67 @@ class VariantConsumer(multiprocessing.Process):
         
         return model_score
     
-    def get_tabix_record(self, tabix_reader, chrom, start, alt=None):
+    def get_cadd_score(self, tabix_reader, chrom, start, alt=None):
         """Return the record from a cadd file."""
-        record = None
+        score = None
         # CADD values are only for snps:
         cadd_key = int(start)
         try:
             for record in tabix_reader.fetch(str(chrom), cadd_key-1, cadd_key):
                 # If Vcf we know there can only be one correct record
-                if alt:
-                    if record.split('\t')[3] == alt:
-                        return record
-                else:
-                    return record
+                if record.split('\t')[3] == alt:
+                    return score
         except (IndexError, KeyError, ValueError) as e:
             pass
         
-        return record
+        return score
     
     def add_cadd_score(self, variant):
         """Add the CADD relative score to this variant."""
-        cadd_record = None
+        cadd_score = None
         #Check CADD file(s):
         if self.cadd_file:
-            cadd_record = self.get_tabix_record(self.cadd_file, variant['CHROM'], 
+            cadd_score = self.get_cadd_score(self.cadd_file, variant['CHROM'], 
                                                 variant['POS'], variant['ALT'].split(',')[0])
         # If variant not found in big CADD file check the 1000G file:
-        if not cadd_record and self.cadd_1000g:
-            cadd_record = self.get_tabix_record(self.cadd_1000g, variant['CHROM'], variant['POS'])
-        if cadd_record:
-            variant['CADD'] = cadd_record.split('\t')[-1]
+        if not cadd_score and self.cadd_1000g:
+            cadd_score = self.get_cadd_score(self.cadd_1000g, variant['CHROM'], variant['POS'])
+        if cadd_score:
+            variant['CADD'] = cadd_score
         return
+
+    def get_thousandg_freq(self, tabix_reader, chrom, start, alt):
+        """Return the record from a cadd file."""
+        freq = None
+        # CADD values are only for snps:
+        cadd_key = int(start)
+        try:
+            for record in tabix_reader.fetch(str(chrom), cadd_key-1, cadd_key):
+                record = record.split('\t')
+                i = 0
+                #We can get multiple rows so need to check each one
+                #We also need to check each one of the alternatives per row
+                for alternative in record[4].split(','):
+                    if alternative == alt:
+                        for info in record[7].split(';'):
+                            info = info.split('=')
+                            if info[0] == 'AF':
+                                frequencies = info[-1].split(',')
+                                return frequencies[i]
+                    i += 1
+                
+        except (IndexError, KeyError, ValueError) as e:
+            pass
+        
+        return freq
     
     def add_frequency(self, variant):
         """Add the thousand genome frequency if present."""
         #Check 1000G frequency:
-        thousand_g_record = self.get_tabix_record(self.thousand_g, variant['CHROM'], variant['POS'])
-        if thousand_g_record:
-            for info in thousand_g_record.split('\t')[7].split(';'):
-                info = info.split('=')
-                if info[0] == 'AF':
-                    variant['1000GMAF'] = info[-1]
+        thousand_g_freq = self.get_thousandg_freq(self.thousand_g, 
+                            variant['CHROM'], variant['POS'], variant['ALT'].split(',')[0])
+        if thousand_g_freq:
+                variant['1000GMAF'] = thousand_g_freq
         return
     
     
