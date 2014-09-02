@@ -429,33 +429,35 @@ def make_models(list_of_models):
             model_dict['XD_dn'] = ''
     return model_dict
 
-# @click.command()
-# @click.argument('variant_file',
-#                     nargs=1,
-#                     type=click.Path(exists=True),
-#                     metavar='<vcf_file> or "-"'
-# )
+@click.command()
+@click.argument('variant_file',
+                    nargs=1,
+                    type=click.Path(exists=True),
+                    metavar='<vcf_file> or "-"'
+)
 # @click.option('-c', '--config_file',
 #                     type=click.Path(exists=True),
 #                     help="""Specify the path to a config file."""
 # )
-# @click.option('--freq',
-#                     type=float, nargs=1,
-#                     help='Specify the treshold for variants to be considered.'
-# )
+@click.option('--frequency', '-freq',
+                    default=0.05, 
+                    nargs=1,
+                    help='Specify the treshold for variants to be considered.'
+)
 # @click.option('-p', '--patterns',
 #                     type=click.Choice(['AR_comp', 'AR_comp_dn', 'AR_hom', 'AR_hom_dn',
 #                                         'AD', 'AD_dn', 'XD', 'XD_dn', 'XR', 'XR_dn']),
 #                     nargs=1, multiple=True,
 #                     help='Specify the inheritance patterns.'
 # )
-#
-# def analyze(variant_file, freq, patterns, config_file):
-#     """Analyze the annotated variants in a VCF file."""
+#, patterns, config_file
+def analyze(variant_file, freq):
+    """Analyze the annotated variants in a VCF file."""
 #     configs = ConfigObj(config_file)
 #     pp(configs)
 #
-#     freq_treshold = float(configs.get('frequency', {}).get('uncommon', 0.1))
+    # freq_treshold = float(configs.get('frequency', {}).get('uncommon', 0.1))
+    freq_treshold = frequency
 #     freq_keyword = configs.get('frequency', {}).get('keyword', '1000G_freq')
 #
 #     inheritance_patterns = [pattern for pattern in configs.get('inheritance', {}).get('patterns',[])]
@@ -464,23 +466,26 @@ def make_models(list_of_models):
 #
 #     prediction_keyword = configs.get('prediction', {}).get('keyword','CADD')
 #
-#     variant_parser = vcf_parser.VCFParser(variant_file)
+    if variant_file == '-':
+        variant_parser = vcf_parser.VCFParser(fsock = sys.stdin)
+    else:
+        variant_parser = vcf_parser.VCFParser(infile = variant_file)
 #     print(freq_keyword, freq_treshold)
 #     print(inheritance_keyword, inheritance_patterns)
 #     print(prediction_keyword)
 #
-#     interesting_variants = TemporaryFile(mode='w+t')
-#
-#     for variant in variant_parser:
-#         if float(variant['info_dict'].get(freq_keyword, '0')) <= freq_treshold:
-#             for model in variant['info_dict'].get(inheritance_keyword, '').split(';'):
-#                 if model in prefered_models:
-#                     print_line = [variant.get(entry, '-') for entry in variant_parser.header]
-#                     interesting_variants.write('\t'.join(print_line)+'\n')
-#     interesting_variants.seek(0)
-#     for line in interesting_variants:
-#         print(line.rstrip())
-#     interesting_variants.close()
+    temp_file = NamedTemporaryFile(delete=False)
+    temp_file.close()
+    interesting_variants = open(temp_file.name, mode='r', encoding = 'utf-8')
+    for variant in variant_parser:
+        if variant['info_dict'].get('GeneticModels', None):
+            if float(variant['info_dict'].get('1000GMAF', 0)) < freq_treshold:
+                print_line = [variant.get(entry, '-') for entry in variant_parser.header]
+                interesting_variants.write('\t'.join(print_line)+'\n')
+    interesting_variants.seek(0)
+    for line in interesting_variants:
+        print(line.rstrip())
+    interesting_variants.close()
 #     # if freq:
 #     #     freq_treshold = freq
 #     # if patterns:
@@ -494,7 +499,7 @@ def make_models(list_of_models):
 
 run_genmod.add_command(build_annotation)
 run_genmod.add_command(annotate)
-# run_genmod.add_command(analyze)
+run_genmod.add_command(analyze)
 
 
 

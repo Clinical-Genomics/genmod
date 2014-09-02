@@ -36,8 +36,8 @@ class FileSort(object):
         
         self._getKey = lambda variant_line: (int(variant_line.split('\t')[1]))
         
-        if mode = 'cadd':
-            lambda variant_line: (float(for info invariant_line.split('\t')[7]).split(';'))
+        # if mode == 'cadd':
+        #     lambda variant_line: (float(for info in invariant_line.split('\t')[7]).split(';'))
     
     def sort(self):
         
