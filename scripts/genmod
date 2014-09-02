@@ -20,7 +20,7 @@ import inspect
 from multiprocessing import JoinableQueue, Manager, cpu_count
 from codecs import open, getwriter
 from datetime import datetime
-from tempfile import mkdtemp, TemporaryFile
+from tempfile import mkdtemp, TemporaryFile, NamedTemporaryFile
 # from configobj import ConfigObj
 from pprint import pprint as pp
 
@@ -451,7 +451,7 @@ def make_models(list_of_models):
 #                     help='Specify the inheritance patterns.'
 # )
 #, patterns, config_file
-def analyze(variant_file, freq):
+def analyze(variant_file, frequency):
     """Analyze the annotated variants in a VCF file."""
 #     configs = ConfigObj(config_file)
 #     pp(configs)
@@ -479,6 +479,7 @@ def analyze(variant_file, freq):
     interesting_variants = open(temp_file.name, mode='r', encoding = 'utf-8')
     for variant in variant_parser:
         if variant['info_dict'].get('GeneticModels', None):
+            print(variant)
             if float(variant['info_dict'].get('1000GMAF', 0)) < freq_treshold:
                 print_line = [variant.get(entry, '-') for entry in variant_parser.header]
                 interesting_variants.write('\t'.join(print_line)+'\n')
