@@ -3,7 +3,7 @@
 """
 variant_annotator.py
 
-Parse a file with variant info in vcf format.
+Annotates variants.
 
 Creates batches and put them into a queue object.
 The batches are dictionary objects with overlapping features where the feature id:s are keys and the values are dictionarys with variants.
@@ -14,6 +14,9 @@ Batch = {feature_1_id:{variant_1_id:variant_1_info, variant_2_id: variant_2_info
 Created by Måns Magnusson on 2014-03-17.
 Copyright (c) 2014 __MyCompanyName__. All rights reserved.
 """
+
+from __future__ import print_function
+from __future__ import unicode_literals
 
 import sys
 import os
@@ -29,7 +32,6 @@ except:
 from pprint import pprint as pp
 
 from interval_tree import interval_tree
-
 
 
 class VariantAnnotator(object):
@@ -71,7 +73,7 @@ class VariantAnnotator(object):
             start_chrom_time = start_parsing_time
             start_twenty_time = start_parsing_time
             if self.batch_queue.full():
-                print('Queue full!!')
+                genmod.warning('Queue full!!')
             
         nr_of_variants = 0
         nr_of_comp_cand = 0
@@ -242,7 +244,7 @@ class VariantAnnotator(object):
                 
             except KeyError:
                 if self.verbosity:
-                    print('Chromosome', variant_chrom, 'is not in annotation file!')
+                    genmod.warning(''.join('Chromosome', variant_chrom, 'is not in annotation file!'))
                 variant['Annotation'] = []
             
             #Check if exonic:
@@ -251,7 +253,7 @@ class VariantAnnotator(object):
                     variant['comp_candidate'] = True
             except KeyError:
                 if self.verbosity:
-                    print('Chromosome', variant_chrom, 'is not in annotation file!')
+                    genmod.warning(''.join('Chromosome', variant_chrom, 'is not in annotation file!'))
         
         if self.whole_genes:
             if len(variant['Annotation']) > 0:

@@ -3,20 +3,23 @@
 """
 variant_printer.py
 
-
 Print the variants of a results queue to a file.
-
 
 Created by Måns Magnusson on 2013-01-17.
 Copyright (c) 2013 __MyCompanyName__. All rights reserved.
 """
 
+from __future__ import print_function
+from __future__ import unicode_literals
+
 import sys
 import os
 import multiprocessing
+
+from codecs import open
 from tempfile import NamedTemporaryFile
 from pprint import pprint as pp
-
+from genmod import warning
 
 class VariantPrinter(multiprocessing.Process):
     """docstring for VariantPrinter"""
@@ -39,7 +42,7 @@ class VariantPrinter(multiprocessing.Process):
             next_result = self.task_queue.get()
             if self.verbosity:
                 if self.task_queue.full():
-                    print('Printing queue full')
+                    warning('Printing queue full')
             if next_result is None:
                 if self.verbosity:
                     print('All variants printed!')
@@ -54,8 +57,9 @@ class VariantPrinter(multiprocessing.Process):
                     if variant_chrom in self.file_handles:
                         self.file_handles[variant_chrom].write('\t'.join(print_line) + '\n')
                     else:
-                        self.file_handles[variant_chrom] = NamedTemporaryFile(prefix=variant_chrom+'_', 
-                            dir=self.temp_dir, delete=False, mode='w')
+                        temp_file = NamedTemporaryFile(prefix=variant_chrom+'_', dir=self.temp_dir, delete=False)
+                        temp_file.close()
+                        self.file_handles[variant_chrom] = open(temp_file.name, mode='w', encoding='utf-8', errors='replace')
                         self.file_handles[variant_chrom].write('\t'.join(print_line) + '\n')
         return
     
