@@ -18,10 +18,23 @@ from __future__ import unicode_literals
 import sys
 import os
 import click
+import re
 from tempfile import NamedTemporaryFile
 from codecs import open
 
 from genmod.is_number import is_number
+
+
+def get_cadd_score(variant_line):
+    """Return the cadd score if any, as a float."""
+    cadd_score = 0.0
+    for info in variant_line.split('\t')[7].split(';'):
+        info = info.split('=')
+        print(info)
+        if info[0] == 'CADD':
+            cadd_score = float(info[-1])
+    print(cadd_score)
+    return cadd_score
 
 
 class FileSort(object):
@@ -29,15 +42,19 @@ class FileSort(object):
         """ split size (in MB) """
         self._inFile = inFile
         self._silent = silent
+        self._mode = mode
                 
         self._outFile = outfile
                     
         self._splitSize = splitSize * 1000000
+                
+        if mode == 'cadd':
+            # this will only work if variants have cadd scores so it needs to be fixed before
+            # self._getKey = lambda variant_line: (float(re.findall(r"CADD=(\d+.\d+)", variant_line)[0]))
+            self._getKey = lambda variant_line: get_cadd_score(variant_line)
+        else:
+            self._getKey = lambda variant_line: (int(variant_line.split('\t')[1]))
         
-        self._getKey = lambda variant_line: (int(variant_line.split('\t')[1]))
-        
-        # if mode == 'cadd':
-        #     lambda variant_line: (float(for info in invariant_line.split('\t')[7]).split(';'))
     
     def sort(self):
         
@@ -62,7 +79,10 @@ class FileSort(object):
             lines = open(fileName.name, mode='r', encoding='utf-8').readlines()
         get_key = self._getKey
         data = [(get_key(line), line) for line in lines if line!='']
-        data.sort()
+        if self._mode == 'cadd':
+            data.sort(reverse=True)
+        else:
+            data.sort()
         lines = [line[1] for line in data]
         if ready_to_print:
             if outFile:
