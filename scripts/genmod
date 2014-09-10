@@ -22,7 +22,7 @@ from pprint import pprint as pp
 import pkg_resources
 import genmod
 
-from genmod.commands import build_annotation, annotate, analyze
+from genmod.commands import build_annotation, annotate, analyze, analyze_variants
 
 if sys.version_info < (3,0):
     sys.stdout = getwriter('UTF-8')(sys.stdout)
@@ -46,6 +46,7 @@ def print_version(ctx, param, value):
 
 
 ###         This is the main script         ###
+
 @click.group()
 @click.option('--version',
                 is_flag=True,
@@ -65,6 +66,7 @@ def run_genmod(verbose):
 run_genmod.add_command(build_annotation.build_annotation)
 run_genmod.add_command(annotate.annotate)
 run_genmod.add_command(analyze.analyze)
+run_genmod.add_command(analyze_variants.analyze_variants)
 
 
 
