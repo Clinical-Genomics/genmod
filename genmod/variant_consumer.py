@@ -222,10 +222,7 @@ class VariantConsumer(multiprocessing.Process):
             
             if variant.get('CADD', None):
                 if 'CADD' not in variant['info_dict']:
-                    print('HEJ')
                     vcf_info.append('CADD=%s' % str(variant.pop('CADD', '.')))
-                else:
-                    print('DU %s' % variant['info_dict']['CADD'])
             
             if self.cadd_raw:
                 if 'CADD_raw' not in variant['info_dict']:
