@@ -5,7 +5,7 @@
 [![DOI](https://zenodo.org/badge/5735/moonso/genmod.png)](http://dx.doi.org/10.5281/zenodo.11424)
 
 
-Tool for annotating patterns of inheritance Variant Call Format (VCF) files.
+Tool for annotating patterns of inheritance in Variant Call Format (VCF) files with arbitrary pedigrees.
 
 Each variant in the VCF-file will be annotated with which genetic models that are followed in the family if a family file
 (ped file) is provided.
@@ -14,7 +14,7 @@ It is possible to run without a family file, in this case all variants will be a
 The genetic models that are checked are the following:
 
 * Autsomal Recessive, denoted 'AR_hom'
-* Autsomal Recessive denovo, denoted 'AR_dn'
+* Autsomal Recessive denovo, denoted 'AR\_hom\_dn'
 * Autsomal Dominant, 'AD'
 * Autsomal Dominant denovo, 'AD_dn'
 * Autosomal Compound Heterozygote, 'AR_comp'
@@ -23,10 +23,13 @@ The genetic models that are checked are the following:
 * X-linked Recessive, 'XR'
 * X-linked Recessive de novo, 'XR_dn'
 
-**GENMOD** will add entrys to the INFO column for the given VCF file. The new entrys are: 
+**GENMOD** will add entrys to the INFO column for the given VCF file depending on what information is given. By default the only field added is: 
     
-- **GeneticModels** A comma separated list with genetic models followed
 - **Annotation** Comma separated list with features overlapped in the annotation file
+
+If a pedigree file is provided:
+
+- **GeneticModels** A comma separated list with genetic models followed
 - **Compounds** Comma separated list with compound pairs(if any). These are described like 'CHR\_POS\_REF\_ALT'.
 - **ModelScore** Model Score, a phred-score based on the genotype qualities to describe the uncertainty of the genetic model.
 
@@ -64,7 +67,12 @@ If the user wants to build a new annotation set use the command described above.
 ###Alternatives###
 
 - **GENMOD** can annotate the variants with 1000 genome frequencies. Use the flag `-kg/--thousand_g path/to/bgzipped/thousand_genomes.vcf.gz`
-- Annotate with [CADD scores](http://cadd.gs.washington.edu/), use `-cadd/--cadd\_file path/to/huge_cadd_file.txt.gz`. There is also a cadd file with all 1000 genomes positions (this one include some indels), if annotation with this one use `-c1kg/--cadd_1000_g path/to/CADD_1000g.txt.gz`
+- Annotate with [CADD scores](http://cadd.gs.washington.edu/), use `-cadd/--cadd\_file path/to/huge_cadd_file.txt.gz`. 
+- There several cadd files with different variant sets to cover as much as possible. 
+	- One with all 1000 genomes positions (this one include some indels), if annotation with this one use `-c1kg/--cadd_1000_g path/to/CADD_1000g.txt.gz`. 
+	- One with all variants from the ESP6500 dataset. If annotation with this one use `--cadd_esp path/to/CADD_ESP.txt.gz`.
+	- One with 12.3M InDels from the CADD resources. If annotation with this one use `--cadd_indels path/to/CADD_InDels.txt.gz`.
+- By default the relative cadd scores is annotated with 'CADD=score', there is also an alternative to annotate with the raw cadd scores using the `--cadd_raw` flag. In this case a info field 'CADD_raw=score'.
 - If your VCF is already annotated with VEP, use `-vep/--vep`
 - If data is phased use `-phased/--phased`
 - If you want to allow compound pairs in intronic regions to use `-gene/--whole_gene`
