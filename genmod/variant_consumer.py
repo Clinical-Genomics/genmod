@@ -98,6 +98,7 @@ class VariantConsumer(multiprocessing.Process):
         score = None
         # CADD values are only for snps:
         cadd_key = int(start)
+        print(chrom, cadd_key, alt)
         try:
             for record in tabix_reader.fetch(str(chrom), cadd_key-1, cadd_key):
                 record = record.split('\t')
@@ -121,16 +122,16 @@ class VariantConsumer(multiprocessing.Process):
                                                 variant['POS'], alt)
             # If variant not found in big CADD file check the 1000G file:
             if not cadd_score and self.cadd_1000g:
-                cadd_score = self.get_cadd_score(self.cadd_1000g, variant['CHROM'], variant['POS'])
+                cadd_score = self.get_cadd_score(self.cadd_1000g, variant['CHROM'], variant['POS'], alt)
             
             if not cadd_score and self.cadd_ESP:
-                cadd_score = self.get_cadd_score(self.cadd_ESP, variant['CHROM'], variant['POS'])
-
+                cadd_score = self.get_cadd_score(self.cadd_ESP, variant['CHROM'], variant['POS'], alt)
+            
             if not cadd_score and self.cadd_ESP:
-                cadd_score = self.get_cadd_score(self.cadd_ESP, variant['CHROM'], variant['POS'])
-
+                cadd_score = self.get_cadd_score(self.cadd_ESP, variant['CHROM'], variant['POS'], alt)
+            
             if not cadd_score and self.cadd_ESP:
-                cadd_score = self.get_cadd_score(self.cadd_ESP, variant['CHROM'], variant['POS'])
+                cadd_score = self.get_cadd_score(self.cadd_ESP, variant['CHROM'], variant['POS'], alt)
             
             if cadd_score:
                 cadd_relative_scores.append(str(cadd_score[0]))
@@ -139,7 +140,7 @@ class VariantConsumer(multiprocessing.Process):
         if len(cadd_relative_scores) > 0:
             variant['CADD'] = ','.join(cadd_relative_scores)
             if self.cadd_raw:
-                variant['CADD_raw'] = ','.join(cadd_relative_scores)
+                variant['CADD_raw'] = ','.join(cadd_absolute_scores)
         return
 
     def get_thousandg_freq(self, tabix_reader, chrom, start, alt):
@@ -222,7 +223,10 @@ class VariantConsumer(multiprocessing.Process):
             
             if variant.get('CADD', None):
                 if 'CADD' not in variant['info_dict']:
+                    print('HEJ')
                     vcf_info.append('CADD=%s' % str(variant.pop('CADD', '.')))
+                else:
+                    print('DU %s' % variant['info_dict']['CADD'])
             
             if self.cadd_raw:
                 if 'CADD_raw' not in variant['info_dict']:
