@@ -345,11 +345,11 @@ def annotate(config, family_file, variant_file, family_type, vep, silent, phased
     if cadd_esp:
         if verbosity:
             click.echo('Cadd ESP6500 file! %s' % cadd_esp)
-        check_tabix_index(cadd_ESP, 'cadd', verbosity)
+        check_tabix_index(cadd_esp, 'cadd', verbosity)
     if cadd_indels:
         if verbosity:
             click.echo('Cadd InDel file! %s' % cadd_indels)
-        check_tabix_index(cadd_InDels, 'cadd', verbosity)
+        check_tabix_index(cadd_indels, 'cadd', verbosity)
     if thousand_g:
         if config.verbose:
             click.echo('1000G frequency file! %s' % thousand_g)

@@ -191,40 +191,47 @@ class VariantConsumer(multiprocessing.Process):
             
             feature_list = variant_dict[variant_id].get('Annotation', [])
             
-            if len(variant_dict[variant_id].get('Compounds', [])) > 0:
-                #We do not want reference to itself as a compound:
-                variant_dict[variant_id]['Compounds'].pop(variant_id, 0)
-                compounds_list = list(variant_dict[variant_id]['Compounds'].keys())
-                vcf_info.append('Compounds=' + ','.join(compounds_list))
+            if 'Compounds' not in variant['info_dict']:
+            
+                if len(variant_dict[variant_id].get('Compounds', [])) > 0:
+                    #We do not want reference to itself as a compound:
+                    variant_dict[variant_id]['Compounds'].pop(variant_id, 0)
+                    compounds_list = list(variant_dict[variant_id]['Compounds'].keys())
+                    vcf_info.append('Compounds=' + ','.join(compounds_list))
             
             # Check if any genetic models are followed
-            model_list = []
-            for model in variant_dict[variant_id].get('Inheritance_model',[]):
-                if variant_dict[variant_id]['Inheritance_model'][model]:
-                    model_list.append(model)
-            if len(model_list) > 0:
-                vcf_info.append('GeneticModels=' + ','.join(model_list))
-                model_score = self.get_model_score(self.family.individuals, variant_dict[variant_id])
-                if model_score:
-                    if float(model_score) > 0:
-                        vcf_info.append('ModelScore=' +  model_score)
+            if 'GeneticModels' not in variant['info_dict']:
+                
+                model_list = []
+                for model in variant_dict[variant_id].get('Inheritance_model',[]):
+                    if variant_dict[variant_id]['Inheritance_model'][model]:
+                        model_list.append(model)
+                if len(model_list) > 0:
+                    vcf_info.append('GeneticModels=' + ','.join(model_list))
+                    model_score = self.get_model_score(self.family.individuals, variant_dict[variant_id])
+                    if model_score:
+                        if float(model_score) > 0:
+                            vcf_info.append('ModelScore=' +  model_score)
             
             # We only want to include annotations where we have a value
             
             if not self.vep:
-                if len(feature_list) != 0 and feature_list != ['-']:
-                    vcf_info.append('Annotation=' + ','.join(feature_list))
-            
+                if 'Annotation' not in variant['info_dict']:
+                    if len(feature_list) != 0 and feature_list != ['-']:
+                        vcf_info.append('Annotation=' + ','.join(feature_list))
             
             if variant.get('CADD', None):
-                vcf_info.append('CADD=%s' % str(variant.pop('CADD', '.')))
+                if 'CADD' not in variant['info_dict']:
+                    vcf_info.append('CADD=%s' % str(variant.pop('CADD', '.')))
             
             if self.cadd_raw:
-                if variant.get('CADD_raw', None):
-                    vcf_info.append('CADD_raw=%s' % str(variant.pop('CADD_raw', '.')))
+                if 'CADD_raw' not in variant['info_dict']:
+                    if variant.get('CADD_raw', None):
+                        vcf_info.append('CADD_raw=%s' % str(variant.pop('CADD_raw', '.')))
             
             if variant.get('1000GMAF', None):
-                vcf_info.append('1000GMAF=%s' % str(variant.pop('1000GMAF', '.')))
+                if '1000GMAF' not in variant['info_dict']:
+                    vcf_info.append('1000GMAF=%s' % str(variant.pop('1000GMAF', '.')))
             
             variant_dict[variant_id]['INFO'] = ';'.join(vcf_info)
             
