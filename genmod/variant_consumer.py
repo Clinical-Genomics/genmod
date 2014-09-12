@@ -98,7 +98,6 @@ class VariantConsumer(multiprocessing.Process):
         score = None
         # CADD values are only for snps:
         cadd_key = int(start)
-        print(chrom, cadd_key, alt)
         try:
             for record in tabix_reader.fetch(str(chrom), cadd_key-1, cadd_key):
                 record = record.split('\t')
