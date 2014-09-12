@@ -31,8 +31,9 @@ from genmod import genetic_models, warning
 class VariantConsumer(multiprocessing.Process):
     """Yeilds all unordered pairs from a list of objects as tuples, like (obj_1, obj_2)"""
     
-    def __init__(self, task_queue, results_queue, family=None, phased=False, vep=False, 
-                    cadd_file=None, cadd_1000g=None, thousand_g=None, chr_prefix=False, strict=False, verbosity=False):
+    def __init__(self, task_queue, results_queue, family=None, phased=False, vep=False, cadd_raw=False,
+                    cadd_file=None, cadd_1000g=None, cadd_ESP=None, cadd_InDels=None, 
+                    thousand_g=None, chr_prefix=False, strict=False, verbosity=False):
         multiprocessing.Process.__init__(self)
         self.task_queue = task_queue
         self.family = family
@@ -40,15 +41,22 @@ class VariantConsumer(multiprocessing.Process):
         self.verbosity = verbosity
         self.phased = phased
         self.vep = vep
+        self.cadd_raw = cadd_raw
         self.cadd_file = cadd_file
         self.cadd_1000g = cadd_1000g
+        self.cadd_ESP = cadd_ESP
+        self.cadd_InDels = cadd_InDels
         self.thousand_g = thousand_g
         self.chr_prefix = chr_prefix
         self.strict = strict
-        if self.cadd_1000g:
-            self.cadd_1000g = Tabixfile(self.cadd_1000g)
         if self.cadd_file:
             self.cadd_file = Tabixfile(self.cadd_file)
+        if self.cadd_1000g:
+            self.cadd_1000g = Tabixfile(self.cadd_1000g)
+        if self.cadd_ESP:
+            self.cadd_ESP = Tabixfile(self.cadd_ESP)
+        if self.cadd_InDels:
+            self.cadd_InDels = Tabixfile(self.cadd_InDels)
         if self.thousand_g:
             self.thousand_g = Tabixfile(self.thousand_g)
         
@@ -94,7 +102,8 @@ class VariantConsumer(multiprocessing.Process):
             for record in tabix_reader.fetch(str(chrom), cadd_key-1, cadd_key):
                 record = record.split('\t')
                 if record[3] == alt:
-                    return record[-1]
+                    #We need to send both cadd values
+                    return (record[-1], record[-2])
         except (IndexError, KeyError, ValueError) as e:
             pass
         
@@ -103,15 +112,34 @@ class VariantConsumer(multiprocessing.Process):
     def add_cadd_score(self, variant):
         """Add the CADD relative score to this variant."""
         cadd_score = None
+        cadd_relative_scores = []
+        cadd_absolute_scores = []
         #Check CADD file(s):
-        if self.cadd_file:
-            cadd_score = self.get_cadd_score(self.cadd_file, variant['CHROM'], 
-                                                variant['POS'], variant['ALT'].split(',')[0])
-        # If variant not found in big CADD file check the 1000G file:
-        if not cadd_score and self.cadd_1000g:
-            cadd_score = self.get_cadd_score(self.cadd_1000g, variant['CHROM'], variant['POS'])
-        if cadd_score:
-            variant['CADD'] = cadd_score
+        for alt in variant['ALT'].split(','):
+            if self.cadd_file:
+                cadd_score = self.get_cadd_score(self.cadd_file, variant['CHROM'], 
+                                                variant['POS'], alt)
+            # If variant not found in big CADD file check the 1000G file:
+            if not cadd_score and self.cadd_1000g:
+                cadd_score = self.get_cadd_score(self.cadd_1000g, variant['CHROM'], variant['POS'])
+            
+            if not cadd_score and self.cadd_ESP:
+                cadd_score = self.get_cadd_score(self.cadd_ESP, variant['CHROM'], variant['POS'])
+
+            if not cadd_score and self.cadd_ESP:
+                cadd_score = self.get_cadd_score(self.cadd_ESP, variant['CHROM'], variant['POS'])
+
+            if not cadd_score and self.cadd_ESP:
+                cadd_score = self.get_cadd_score(self.cadd_ESP, variant['CHROM'], variant['POS'])
+            
+            if cadd_score:
+                cadd_relative_scores.append(str(cadd_score[0]))
+                cadd_absolute_scores.append(str(cadd_score[1]))
+        
+        if len(cadd_relative_scores) > 0:
+            variant['CADD'] = ','.join(cadd_relative_scores)
+            if self.cadd_raw:
+                variant['CADD_raw'] = ','.join(cadd_relative_scores)
         return
 
     def get_thousandg_freq(self, tabix_reader, chrom, start, alt):
@@ -190,6 +218,10 @@ class VariantConsumer(multiprocessing.Process):
             
             if variant.get('CADD', None):
                 vcf_info.append('CADD=%s' % str(variant.pop('CADD', '.')))
+            
+            if self.cadd_raw:
+                if variant.get('CADD_raw', None):
+                    vcf_info.append('CADD_raw=%s' % str(variant.pop('CADD_raw', '.')))
             
             if variant.get('1000GMAF', None):
                 vcf_info.append('1000GMAF=%s' % str(variant.pop('1000GMAF', '.')))
