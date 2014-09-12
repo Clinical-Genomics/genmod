@@ -14,7 +14,7 @@ It is possible to run without a family file, in this case all variants will be a
 The genetic models that are checked are the following:
 
 * Autsomal Recessive, denoted 'AR_hom'
-* Autsomal Recessive denovo, denoted 'AR_dn'
+* Autsomal Recessive denovo, denoted 'AR\_hom\_dn'
 * Autsomal Dominant, 'AD'
 * Autsomal Dominant denovo, 'AD_dn'
 * Autosomal Compound Heterozygote, 'AR_comp'
