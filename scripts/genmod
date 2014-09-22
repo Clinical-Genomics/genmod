@@ -96,7 +96,7 @@ def print_variants(sorted_variants, outfile, silent=False):
     
     with open(sorted_variants, mode='r', encoding='utf-8') as f:
         if outfile:
-            with open(outfile, 'w', encoding='utf-8') as g:
+            with open(outfile, 'a', encoding='utf-8') as g:
                 for variant in f:
                     g.write(variant)
         else:
@@ -433,6 +433,7 @@ def annotate(config, family_file, variant_file, family_type, vep, silent, phased
     
     # Add the new metadata to the headers:    
     add_metadata(head, vep, cadd_file, cadd_1000g, cadd_esp, cadd_indels, cadd_raw, thousand_g, ' '.join(argument_list))
+    
     print_headers(head, outfile, silent)
     
     sorted_temp = NamedTemporaryFile(delete=False)

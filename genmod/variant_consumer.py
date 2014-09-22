@@ -195,7 +195,7 @@ class VariantConsumer(multiprocessing.Process):
             
                 if len(variant_dict[variant_id].get('Compounds', [])) > 0:
                     #We do not want reference to itself as a compound:
-                    variant_dict[variant_id]['Compounds'].pop(variant_id, 0)
+                    variant_dict[variant_id]['Compounds'].pop(variant_id, None)
                     compounds_list = list(variant_dict[variant_id]['Compounds'].keys())
                     vcf_info.append('Compounds=' + ','.join(compounds_list))
             
