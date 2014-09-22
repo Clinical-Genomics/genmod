@@ -63,7 +63,12 @@ class FileSort(object):
         lines = [line[1] for line in data]
         if ready_to_print:
             if outFile:
-                open(outFile, mode = 'a', encoding = 'utf-8').write(''.join(lines))
+                try:
+                    open(outFile, mode='a', encoding='utf-8').write(''.join(lines))
+                except TypeError:
+                #If we deal with temporary files:
+                    open(outFile.name, mode='a', encoding='utf-8').write(''.join(lines))
+                
             else:
                 if not self._silent:
                     for line in lines:
