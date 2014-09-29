@@ -63,8 +63,8 @@ from pprint import pprint as pp
 from genmod import pair_generator
 
 def check_genetic_models(variant_batch, family, verbose = False, phased = False, strict = False, proc_name = None):
-    #A variant batch is a dictionary on the form {gene_id: {variant_id:variant_dict}}
-    # Start by getting the genotypes for each variant:
+    # A variant batch is a dictionary on the form {gene_id: {variant_id:variant_dict}}
+    
     individuals = family.individuals.values()
     intervals = variant_batch.pop('haploblocks', {})
     for gene in variant_batch:
@@ -73,8 +73,8 @@ def check_genetic_models(variant_batch, family, verbose = False, phased = False,
         compound_pairs = []
         for variant_id in variant_batch[gene]:
             variant = variant_batch[gene][variant_id]
-            # pp(variant)
-            variant['Compounds'] = {}
+            # sav the compound pairs for a variant in a set
+            variant['Compounds'] = set()
             # Add information of models followed:
             variant['Inheritance_model'] = {'XR' : False, 'XR_dn' : False, 'XD' : False, 
                                             'XD_dn' : False, 'AD' : False, 'AD_dn' : False, 
@@ -112,8 +112,8 @@ def check_genetic_models(variant_batch, family, verbose = False, phased = False,
                     for individual in family.individuals:
                         if family.individuals[individual].has_parents:
                             check_parents('recessive', individual, family, variant)
-                
-    
+        
+        
         # Now check the compound models:
         if len(compound_candidates) > 1:
             
@@ -123,15 +123,14 @@ def check_genetic_models(variant_batch, family, verbose = False, phased = False,
                 variant_1 = variant_batch[gene][pair[0]]
                 variant_2 = variant_batch[gene][pair[1]]
                 # We know from check_compound_candidates that all variants are present in all affected
-                
                 if check_compounds(variant_1, variant_2, family, intervals, phased):
                     variant_1['Inheritance_model']['AR_comp'] = True
                     variant_2['Inheritance_model']['AR_comp'] = True
                     for individual in family.individuals:
                         if family.individuals[individual].has_parents:
                             check_parents('compound', individual, family, variant_1, variant_2)
-                    variant_1['Compounds'][pair[1]] = 0
-                    variant_2['Compounds'][pair[0]] = 0
+                    variant_1['Compounds'].add(pair[1])
+                    variant_2['Compounds'].add(pair[0])
                     
     return
 
@@ -202,7 +201,7 @@ def check_compounds(variant_1, variant_2, family, intervals, phased):
     # Check in all individuals what genotypes that are in the trio based of the individual picked.
     
     for individual in family.individuals:
-
+        
         genotype_1 = variant_1['genotypes'][individual]
         genotype_2 = variant_2['genotypes'][individual]
         #check if variants are in the same phased interval:
@@ -210,7 +209,8 @@ def check_compounds(variant_1, variant_2, family, intervals, phased):
             variant_1_interval = intervals[individual].find_range([int(variant_1['POS']),int(variant_1['POS'])])
             variant_2_interval = intervals[individual].find_range([int(variant_1['POS']),int(variant_1['POS'])])
         
-        # We know that no incdividuals are homomzygote alternative
+        # If phased a healthy individual can have both variants if they are on the same haploblock
+        # if not phased:
         if family.individuals[individual].healthy:
             if genotype_1.heterozygote and genotype_2.heterozygote:
                 return False

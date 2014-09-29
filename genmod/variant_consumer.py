@@ -49,29 +49,33 @@ class VariantConsumer(multiprocessing.Process):
         self.thousand_g = thousand_g
         self.chr_prefix = chr_prefix
         self.strict = strict
+        self.any_cadd_info = False
         if self.cadd_file:
             self.cadd_file = Tabixfile(self.cadd_file)
+            self.any_cadd_info = True
         if self.cadd_1000g:
             self.cadd_1000g = Tabixfile(self.cadd_1000g)
+            self.any_cadd_info = True
         if self.cadd_ESP:
             self.cadd_ESP = Tabixfile(self.cadd_ESP)
+            self.any_cadd_info = True
         if self.cadd_InDels:
             self.cadd_InDels = Tabixfile(self.cadd_InDels)
+            self.any_cadd_info = True
         if self.thousand_g:
             self.thousand_g = Tabixfile(self.thousand_g)
         
         
     def fix_variants(self, variant_batch):
-        """Merge the variants into one dictionary, make shure that the compounds are treated right."""
+        """Merge the variants from a batch into one dictionary.
+            Make shure that the compounds are treated right."""
         fixed_variants = {} # dict like {variant_id:variant, ....}
         for feature in variant_batch:
             for variant_id in variant_batch[feature]:
                 if variant_id in fixed_variants:
                     # We need to add compound information from different features
-                    if len(variant_batch[feature][variant_id].get('Compounds', [])) > 0:
-                        fixed_variants[variant_id]['Compounds'] = (
-                         dict(list(variant_batch[feature][variant_id]['Compounds'].items()) +
-                                    list(fixed_variants[variant_id]['Compounds'].items())))
+                    if len(variant_batch[feature][variant_id].get('Compounds', set())) > 0:
+                        fixed_variants[variant_id]['Compounds'] = fixed_variants[variant_id].get('Compounds', set()).union(variant_batch[feature][variant_id].get('Compounds', set()))
                 else:
                     fixed_variants[variant_id] = variant_batch[feature][variant_id]
         
@@ -187,17 +191,16 @@ class VariantConsumer(multiprocessing.Process):
             
             vcf_info = variant_dict[variant_id]['INFO'].split(';')
             
-            #Remove the 'Genotypes' post since we will not need them for now
-            
-            feature_list = variant_dict[variant_id].get('Annotation', [])
+            feature_list = variant_dict[variant_id].get('Annotation', set())
             
             if 'Compounds' not in variant['info_dict']:
-            
-                if len(variant_dict[variant_id].get('Compounds', [])) > 0:
+                
+                compounds = variant_dict[variant_id].get('Compounds', set())
+                
+                if len(compounds) > 0:
                     #We do not want reference to itself as a compound:
-                    variant_dict[variant_id]['Compounds'].pop(variant_id, None)
-                    compounds_list = list(variant_dict[variant_id]['Compounds'].keys())
-                    vcf_info.append('Compounds=' + ','.join(compounds_list))
+                    compounds.discard(variant_id)
+                    vcf_info.append('Compounds=' + ','.join(compounds))
             
             # Check if any genetic models are followed
             if 'GeneticModels' not in variant['info_dict']:
@@ -245,26 +248,21 @@ class VariantConsumer(multiprocessing.Process):
         while True:
             # A batch is a dictionary on the form {gene:{variant_id:variant_dict}}
             next_batch = self.task_queue.get()
-            # if self.verbosity:
-                # if self.results_queue.full():
-                #     print('Batch results queue Full! %s' % proc_name)
-                # if self.task_queue.full():
-                #     print('Variant queue full! %s' % proc_name)
+            
             if next_batch is None:
                 self.task_queue.task_done()
                 if self.verbosity:
                     print('%s: Exiting' % proc_name)
                 break
             
-            
             if self.family:
                 genetic_models.check_genetic_models(next_batch, self.family, self.verbosity, 
                                                     self.phased, self.strict, proc_name)
-            # Make shure we only have one copy of each variant:
+            # Go from having a batch of genes with their variants to a single dictionary with all variants:
             fixed_variants = self.fix_variants(next_batch)
             
             for variant_id in fixed_variants:
-                if self.cadd_file or self.cadd_1000g:
+                if self.any_cadd_info:
                     self.add_cadd_score(fixed_variants[variant_id])
                 if self.thousand_g:
                     self.add_frequency(fixed_variants[variant_id])
