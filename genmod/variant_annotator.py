@@ -49,11 +49,24 @@ class VariantAnnotator(object):
         self.gene_trees  = gene_trees
         self.exon_trees = exon_trees
         self.chromosomes = []
-        self.interesting_so_terms = {'transcript_ablation':0, 'splice_donor_variant':0, 
-                    'splice_acceptor_variant':0,'stop_gained':0, 'frameshift_variant':0, 'stop_lost':0,
-                    'initiator_codon_variant':0, 'inframe_insertion':0, 'inframe_deletion':0, 'missense_variant':0,
-                    'transcript_amplification':0, 'splice_region_variant':0,'incomplete_terminal_codon_variant':0,
-                    'synonymous_variant':0, 'stop_retained_variant':0, 'coding_sequence_variant':0}
+        self.interesting_so_terms = set(
+            ['transcript_ablation',
+            'splice_donor_variant',
+            'splice_acceptor_variant',
+            'stop_gained',
+            'frameshift_variant',
+            'stop_lost',
+            'initiator_codon_variant',
+            'inframe_insertion',
+            'inframe_deletion',
+            'missense_variant',
+            'transcript_amplification',
+            'splice_region_variant',
+            'incomplete_terminal_codon_variant',
+            'synonymous_variant',
+            'stop_retained_variant',
+            'coding_sequence_variant']
+        )
         
     
     def annotate(self):
@@ -78,13 +91,15 @@ class VariantAnnotator(object):
         nr_of_variants = 0
         nr_of_comp_cand = 0
         for variant in self.variant_parser:
-            # Only metadata lines start with '#'
+            
             self.annotate_variant(variant)
             new_chrom = variant['CHROM']
             nr_of_variants += 1
             if variant['comp_candidate']:
                 nr_of_comp_cand += 1
+            
             new_features = variant['Annotation']
+            
             if self.verbosity:
                 if nr_of_variants % 20000 == 0:
                     print('%s variants parsed!' % nr_of_variants)
@@ -121,7 +136,7 @@ class VariantAnnotator(object):
                     if len(current_features) == 0:
                         send = False
             #If not check if we are in a region with overlapping genes
-                elif len(set.intersection(set(new_features),set(current_features))) > 0:
+                elif len(new_features.intersection(current_features)) > 0:
                     send = False
                 
                 if new_chrom != current_chrom:
@@ -155,7 +170,7 @@ class VariantAnnotator(object):
                     batch = self.add_variant({}, variant, new_features)
                     batch['haploblocks'] = {}
                 else:
-                    current_features = list(set(current_features) | set(new_features))
+                    current_features = current_features.union(new_features)
                     batch = self.add_variant(batch, variant, new_features) # Add variant batch
                 
         
@@ -180,55 +195,49 @@ class VariantAnnotator(object):
                                                 haploblocks[ind_id][0][0]-1, haploblocks[ind_id][-1][1]+1)
                 except IndexError:
                     pass
-        # for gene in batch:
-        #     print(gene)
-        #     pp(batch[gene])
+        
         self.batch_queue.put(batch)
         nr_of_batches += 1
         return nr_of_batches
     
     def add_variant(self, batch, variant, features):
         """Adds the variant to the proper gene(s) in the batch."""
-        variant_id = '_'.join([variant['CHROM'], variant['POS'], variant['REF'], variant['ALT']])
+        # We need to make this construction since there can be multiple alternatives:
+        variant_id = '_'.join([variant['CHROM'], variant['POS'], variant['REF'], variant['ALT'].split(',')[0]])
         # If we are in a region between features:
         if len(features) == 0:
             if len(batch) == 0:
                 batch['-'] = {variant_id:variant}
             else:
                 batch['-'][variant_id] = variant
+        # Create one post for each feature in the batch
         for feature in features:
             if feature in batch:
                 batch[feature][variant_id] = variant
             else:
                 batch[feature] = {variant_id:variant}
+        
         return batch
     
-    def check_vep_annotatiion(self, vep_entry):
-        """docstring for check_vep_annotatiion"""
-        ### VEP: Allele|Gene|Feature|Feature_type|Consequence|cDNA_position|CDS_position|Protein_position|Amino_acids|Codons|Existing_variation|EXON|INTRON|DISTANCE|STRAND|SYMBOL|SYMBOL_SOURCE|SIFT|PolyPhen|HGVSc|HGVSp
-        ###
-            # Different genes are separated by ','
-        annotation = {}#Dict with genes that variant is included in
-        comp_candidate = False
-        for gene in vep_entry:
-            annotation[gene] = 0
-            if not comp_candidate:
-                for so_term in vep_entry[gene]['Consequence'].split('&'):
-                    if so_term in self.interesting_so_terms:
-                        comp_candidate = True
+    def check_vep_annotation(self, variant):
+        """Return a list with the genes that vep has annotated this variant with"""
         
-        return list(annotation.keys()), comp_candidate
+        annotation = [gene for gene in variant.get('vep_info',{})]
+        
+        return set(annotation)
         
     
     def annotate_variant(self, variant):
-        """Returns a annotated variant dictionary in the cmms format."""
+        """Returns a annotated variant dictionary in the cmms format.
+            Adds 'Annotation' = set(set, of, genes)
+            and 'compound_candidate' = Boolean
+            to variant dictionary"""
         
         variant['comp_candidate'] = False
         
         #If annotated with vep we do not need to check interval trees
         if self.vep:
-            variant['Annotation'], variant['comp_candidate'] = self.check_vep_annotatiion(variant.get('vep_info',{}))
-            variant.pop('vep_info')
+            variant['Annotation'] = self.check_vep_annotation(variant)
         
         else:
             alternatives = variant['ALT'].split(',')
@@ -236,17 +245,22 @@ class VariantAnnotator(object):
             longest_alt = max([len(alternative) for alternative in alternatives])
             # Internally we never use 'chr' in the chromosome names:
             variant_chrom = variant['CHROM'].lstrip('chr')
+            variant_position = int(variant['POS'])
             
-            variant_interval = [int(variant['POS']), (int(variant['POS']) + longest_alt-1)]
+            variant_interval = [variant_position, (variant_position + longest_alt-1)]
             
             try:
-                variant['Annotation'] = self.gene_trees[variant_chrom].find_range(variant_interval)
+                variant['Annotation'] = set(self.gene_trees[variant_chrom].find_range(variant_interval))
                 
             except KeyError:
                 if self.verbosity:
                     genmod.warning(''.join('Chromosome', variant_chrom, 'is not in annotation file!'))
-                variant['Annotation'] = []
-            
+                variant['Annotation'] = set()
+        
+        if self.whole_genes:
+            if len(variant['Annotation']) > 0:
+                variant['comp_candidate'] = True
+        else:
             #Check if exonic:
             try:
                 if len(self.exon_trees[variant_chrom].find_range(variant_interval)):
@@ -254,12 +268,8 @@ class VariantAnnotator(object):
             except KeyError:
                 if self.verbosity:
                     genmod.warning(''.join('Chromosome', variant_chrom, 'is not in annotation file!'))
-        
-        if self.whole_genes:
-            if len(variant['Annotation']) > 0:
-                variant['comp_candidate'] = True
-        
-        return variant
+                    
+        return
 
 def main():
     from multiprocessing import JoinableQueue
