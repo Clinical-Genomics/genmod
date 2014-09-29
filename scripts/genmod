@@ -74,8 +74,7 @@ def add_metadata(head, vep=False, cadd_file=None, cadd_1000g=None, cadd_ESP=None
         head.add_info('1000GMAF', 'A', 'Float', "Frequency in the 1000G database.")
     
     # Update version logging
-    head.add_version_tracking('genmod', version, str(datetime.now()), command_line_string)
-    
+    head.add_version_tracking('genmod', version, datetime.now().strftime("%Y-%m-%d %H:%M:%S"), command_line_string)
     return
 
 def print_headers(head, outfile, silent=False):
