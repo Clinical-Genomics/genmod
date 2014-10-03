@@ -16,7 +16,6 @@ import sys
 import os
 import click
 
-from codecs import getwriter
 from pprint import pprint as pp
 
 import pkg_resources
@@ -54,14 +53,10 @@ def print_version(ctx, param, value):
                 expose_value=False,
                 is_eager=True
 )
-@click.option('-v', '--verbose', 
-                is_flag=True,
-                help='Increase output verbosity.'
-)
-def run_genmod(verbose):
+@pass_config
+def run_genmod(config, verbose):
     """Annotate genetic models in variant files."""
-    pass
-
+    config.verbose = verbose
 
 run_genmod.add_command(build_annotation.build_annotation)
 run_genmod.add_command(annotate.annotate)

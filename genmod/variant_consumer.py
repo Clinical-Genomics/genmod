@@ -31,8 +31,9 @@ from genmod import genetic_models, warning
 class VariantConsumer(multiprocessing.Process):
     """Yeilds all unordered pairs from a list of objects as tuples, like (obj_1, obj_2)"""
     
-    def __init__(self, task_queue, results_queue, family=None, phased=False, vep=False, 
-                    cadd_file=None, cadd_1000g=None, thousand_g=None, chr_prefix=False, strict=False, verbosity=False):
+    def __init__(self, task_queue, results_queue, family=None, phased=False, vep=False, cadd_raw=False,
+                    cadd_file=None, cadd_1000g=None, cadd_ESP=None, cadd_InDels=None, 
+                    thousand_g=None, chr_prefix=False, strict=False, verbosity=False):
         multiprocessing.Process.__init__(self)
         self.task_queue = task_queue
         self.family = family
@@ -40,30 +41,41 @@ class VariantConsumer(multiprocessing.Process):
         self.verbosity = verbosity
         self.phased = phased
         self.vep = vep
+        self.cadd_raw = cadd_raw
         self.cadd_file = cadd_file
         self.cadd_1000g = cadd_1000g
+        self.cadd_ESP = cadd_ESP
+        self.cadd_InDels = cadd_InDels
         self.thousand_g = thousand_g
         self.chr_prefix = chr_prefix
         self.strict = strict
-        if self.cadd_1000g:
-            self.cadd_1000g = Tabixfile(self.cadd_1000g)
+        self.any_cadd_info = False
         if self.cadd_file:
             self.cadd_file = Tabixfile(self.cadd_file)
+            self.any_cadd_info = True
+        if self.cadd_1000g:
+            self.cadd_1000g = Tabixfile(self.cadd_1000g)
+            self.any_cadd_info = True
+        if self.cadd_ESP:
+            self.cadd_ESP = Tabixfile(self.cadd_ESP)
+            self.any_cadd_info = True
+        if self.cadd_InDels:
+            self.cadd_InDels = Tabixfile(self.cadd_InDels)
+            self.any_cadd_info = True
         if self.thousand_g:
             self.thousand_g = Tabixfile(self.thousand_g)
         
         
     def fix_variants(self, variant_batch):
-        """Merge the variants into one dictionary, make shure that the compounds are treated right."""
+        """Merge the variants from a batch into one dictionary.
+            Make shure that the compounds are treated right."""
         fixed_variants = {} # dict like {variant_id:variant, ....}
         for feature in variant_batch:
             for variant_id in variant_batch[feature]:
                 if variant_id in fixed_variants:
                     # We need to add compound information from different features
-                    if len(variant_batch[feature][variant_id].get('Compounds', [])) > 0:
-                        fixed_variants[variant_id]['Compounds'] = (
-                         dict(list(variant_batch[feature][variant_id]['Compounds'].items()) +
-                                    list(fixed_variants[variant_id]['Compounds'].items())))
+                    if len(variant_batch[feature][variant_id].get('Compounds', set())) > 0:
+                        fixed_variants[variant_id]['Compounds'] = fixed_variants[variant_id].get('Compounds', set()).union(variant_batch[feature][variant_id].get('Compounds', set()))
                 else:
                     fixed_variants[variant_id] = variant_batch[feature][variant_id]
         
@@ -94,7 +106,8 @@ class VariantConsumer(multiprocessing.Process):
             for record in tabix_reader.fetch(str(chrom), cadd_key-1, cadd_key):
                 record = record.split('\t')
                 if record[3] == alt:
-                    return record[-1]
+                    #We need to send both cadd values
+                    return (record[-1], record[-2])
         except (IndexError, KeyError, ValueError) as e:
             pass
         
@@ -103,15 +116,34 @@ class VariantConsumer(multiprocessing.Process):
     def add_cadd_score(self, variant):
         """Add the CADD relative score to this variant."""
         cadd_score = None
+        cadd_relative_scores = []
+        cadd_absolute_scores = []
         #Check CADD file(s):
-        if self.cadd_file:
-            cadd_score = self.get_cadd_score(self.cadd_file, variant['CHROM'], 
-                                                variant['POS'], variant['ALT'].split(',')[0])
-        # If variant not found in big CADD file check the 1000G file:
-        if not cadd_score and self.cadd_1000g:
-            cadd_score = self.get_cadd_score(self.cadd_1000g, variant['CHROM'], variant['POS'])
-        if cadd_score:
-            variant['CADD'] = cadd_score
+        for alt in variant['ALT'].split(','):
+            if self.cadd_file:
+                cadd_score = self.get_cadd_score(self.cadd_file, variant['CHROM'], 
+                                                variant['POS'], alt)
+            # If variant not found in big CADD file check the 1000G file:
+            if not cadd_score and self.cadd_1000g:
+                cadd_score = self.get_cadd_score(self.cadd_1000g, variant['CHROM'], variant['POS'], alt)
+            
+            if not cadd_score and self.cadd_ESP:
+                cadd_score = self.get_cadd_score(self.cadd_ESP, variant['CHROM'], variant['POS'], alt)
+            
+            if not cadd_score and self.cadd_ESP:
+                cadd_score = self.get_cadd_score(self.cadd_ESP, variant['CHROM'], variant['POS'], alt)
+            
+            if not cadd_score and self.cadd_ESP:
+                cadd_score = self.get_cadd_score(self.cadd_ESP, variant['CHROM'], variant['POS'], alt)
+            
+            if cadd_score:
+                cadd_relative_scores.append(str(cadd_score[0]))
+                cadd_absolute_scores.append(str(cadd_score[1]))
+        
+        if len(cadd_relative_scores) > 0:
+            variant['CADD'] = ','.join(cadd_relative_scores)
+            if self.cadd_raw:
+                variant['CADD_raw'] = ','.join(cadd_absolute_scores)
         return
 
     def get_thousandg_freq(self, tabix_reader, chrom, start, alt):
@@ -159,40 +191,50 @@ class VariantConsumer(multiprocessing.Process):
             
             vcf_info = variant_dict[variant_id]['INFO'].split(';')
             
-            #Remove the 'Genotypes' post since we will not need them for now
+            feature_list = variant_dict[variant_id].get('Annotation', set())
             
-            feature_list = variant_dict[variant_id].get('Annotation', [])
-            
-            if len(variant_dict[variant_id].get('Compounds', [])) > 0:
-                #We do not want reference to itself as a compound:
-                variant_dict[variant_id]['Compounds'].pop(variant_id, 0)
-                compounds_list = list(variant_dict[variant_id]['Compounds'].keys())
-                vcf_info.append('Compounds=' + ','.join(compounds_list))
+            if 'Compounds' not in variant['info_dict']:
+                
+                compounds = variant_dict[variant_id].get('Compounds', set())
+                
+                if len(compounds) > 0:
+                    #We do not want reference to itself as a compound:
+                    compounds.discard(variant_id)
+                    vcf_info.append('Compounds=' + ','.join(compounds))
             
             # Check if any genetic models are followed
-            model_list = []
-            for model in variant_dict[variant_id].get('Inheritance_model',[]):
-                if variant_dict[variant_id]['Inheritance_model'][model]:
-                    model_list.append(model)
-            if len(model_list) > 0:
-                vcf_info.append('GeneticModels=' + ','.join(model_list))
-                model_score = self.get_model_score(self.family.individuals, variant_dict[variant_id])
-                if model_score:
-                    if float(model_score) > 0:
-                        vcf_info.append('ModelScore=' +  model_score)
+            if 'GeneticModels' not in variant['info_dict']:
+                
+                model_list = []
+                for model in variant_dict[variant_id].get('Inheritance_model',[]):
+                    if variant_dict[variant_id]['Inheritance_model'][model]:
+                        model_list.append(model)
+                if len(model_list) > 0:
+                    vcf_info.append('GeneticModels=' + ','.join(model_list))
+                    model_score = self.get_model_score(self.family.individuals, variant_dict[variant_id])
+                    if model_score:
+                        if float(model_score) > 0:
+                            vcf_info.append('ModelScore=' +  model_score)
             
             # We only want to include annotations where we have a value
             
             if not self.vep:
-                if len(feature_list) != 0 and feature_list != ['-']:
-                    vcf_info.append('Annotation=' + ','.join(feature_list))
-            
+                if 'Annotation' not in variant['info_dict']:
+                    if len(feature_list) != 0 and feature_list != ['-']:
+                        vcf_info.append('Annotation=' + ','.join(feature_list))
             
             if variant.get('CADD', None):
-                vcf_info.append('CADD=%s' % str(variant.pop('CADD', '.')))
+                if 'CADD' not in variant['info_dict']:
+                    vcf_info.append('CADD=%s' % str(variant.pop('CADD', '.')))
+            
+            if self.cadd_raw:
+                if 'CADD_raw' not in variant['info_dict']:
+                    if variant.get('CADD_raw', None):
+                        vcf_info.append('CADD_raw=%s' % str(variant.pop('CADD_raw', '.')))
             
             if variant.get('1000GMAF', None):
-                vcf_info.append('1000GMAF=%s' % str(variant.pop('1000GMAF', '.')))
+                if '1000GMAF' not in variant['info_dict']:
+                    vcf_info.append('1000GMAF=%s' % str(variant.pop('1000GMAF', '.')))
             
             variant_dict[variant_id]['INFO'] = ';'.join(vcf_info)
             
@@ -206,26 +248,21 @@ class VariantConsumer(multiprocessing.Process):
         while True:
             # A batch is a dictionary on the form {gene:{variant_id:variant_dict}}
             next_batch = self.task_queue.get()
-            # if self.verbosity:
-                # if self.results_queue.full():
-                #     print('Batch results queue Full! %s' % proc_name)
-                # if self.task_queue.full():
-                #     print('Variant queue full! %s' % proc_name)
+            
             if next_batch is None:
                 self.task_queue.task_done()
                 if self.verbosity:
                     print('%s: Exiting' % proc_name)
                 break
             
-            
             if self.family:
                 genetic_models.check_genetic_models(next_batch, self.family, self.verbosity, 
                                                     self.phased, self.strict, proc_name)
-            # Make shure we only have one copy of each variant:
+            # Go from having a batch of genes with their variants to a single dictionary with all variants:
             fixed_variants = self.fix_variants(next_batch)
             
             for variant_id in fixed_variants:
-                if self.cadd_file or self.cadd_1000g:
+                if self.any_cadd_info:
                     self.add_cadd_score(fixed_variants[variant_id])
                 if self.thousand_g:
                     self.add_frequency(fixed_variants[variant_id])
