@@ -335,16 +335,16 @@ def annotate(config, family_file, variant_file, family_type, vep, silent, phased
             exon_trees = pickle.load(g)
     except IOError as e:
         if verbosity:
-            warning('You need to build annotations! See documentation.')
+            warning.warning('You need to build annotations! See documentation.')
             # It is possible to continue the analysis without annotation files
         pass
     
     if family_file:
         family = get_family(family_file, family_type)
         if set(family.individuals.keys()) != set(variant_parser.individuals):
-            warning('There must be same individuals in ped file and vcf file! Aborting...')
-            warning('Individuals in PED file: %s' % '\t'.join(list(family.individuals.keys())))
-            warning('Individuals in VCF file: %s' % '\t'.join(list(variant_parser.individuals)))
+            warning.warning('There must be same individuals in ped file and vcf file! Aborting...')
+            warning.warning('Individuals in PED file: %s' % '\t'.join(list(family.individuals.keys())))
+            warning.warning('Individuals in VCF file: %s' % '\t'.join(list(variant_parser.individuals)))
             sys.exit()
     else:
         family = None
