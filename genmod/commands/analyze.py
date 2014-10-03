@@ -49,6 +49,22 @@ def print_headers(head, outfile=None, silent=False):
     return
 
 
+def print_variants(sorted_variants, outfile, silent=False):
+    """Print the variants to a results file or stdout."""
+    
+    with open(sorted_variants, mode='r', encoding='utf-8') as f:
+        if outfile:
+            with open(outfile, 'a', encoding='utf-8') as g:
+                for variant in f:
+                    g.write(variant)
+        else:
+            if not silent:
+                for line in f:
+                    print(line.rstrip())
+    return
+
+
+
 ###           This is for analyzing the variants       ###
 
 
@@ -100,11 +116,15 @@ def make_models(list_of_models):
                     type=click.Path(exists=False),
                     help='Specify the path to a file where results should be stored.'
 )
+@click.option('-s', '--silent', 
+                is_flag=True,
+                help='Do not output variants.'
+)
 @click.option('-v', '--verbose', 
                 is_flag=True,
                 help='Increase output verbosity.'
 )
-def analyze(variant_file, frequency, patterns, config_file, outfile, verbose):
+def analyze(variant_file, frequency, patterns, config_file, outfile, silent,verbose):
     """Analyze the annotated variants in a VCF file."""
     configs = ConfigObj(config_file)
     
@@ -130,25 +150,41 @@ def analyze(variant_file, frequency, patterns, config_file, outfile, verbose):
     else:
         variant_parser = vcf_parser.VCFParser(infile = variant_file)
     
-    temp_file = NamedTemporaryFile(delete=False)
-    temp_file.close()
-    with open(temp_file.name, mode='w', encoding = 'utf-8') as f:
+    dominant_file = NamedTemporaryFile(delete=False)
+    dominant_file.close()
+    de_novo_file = NamedTemporaryFile(delete=False)
+    de_novo_file.close()
+    
+    with open(dominant_file.name, mode='w', encoding = 'utf-8') as f:
+        
         for variant in variant_parser:
             models_found = set(variant['info_dict'].get(inheritance_keyword, '').split(','))
-            maf = float(variant['info_dict'].get(freq_keyword, 0))
+            # print(models_found)
+            
+            maf = min([float(frequency) for frequency in variant['info_dict'].get(freq_keyword, '0').split(',')])
+            cadd_score = max([float(cscore) for cscore in variant['info_dict'].get('CADD', '0').split(',')])
+            
             # Check if variant models overlap with prefered:
-            if models_found.intersection(prefered_models):
+            if models_found.intersection(set(['AD'])):
                 # Check if cadd score is available:
-                if variant['info_dict'].get('CADD', None):
+                # print('hej')
+                # pp(variant)
+                if cadd_score > 0:
                     # Check if MAF is below treshold:
                     if maf < freq_treshold:
                         print_line = [variant.get(entry, '-') for entry in variant_parser.header]
                         f.write('\t'.join(print_line)+'\n')
     
-    print_headers(variant_parser.metadata, outfile=outfile)
+    # print_headers(variant_parser.metadata, outfile=outfile)
     
-    var_sorter = variant_sorter.FileSort(temp_file.name, mode='cadd', outfile=outfile)
+    dominant_results = NamedTemporaryFile(delete=False)
+    dominant_results.close()
+    
+    var_sorter = variant_sorter.FileSort(dominant_file.name, mode='cadd', outfile=dominant_results.name)
     var_sorter.sort()
+    
+    print_variants(dominant_results.name, outfile, silent)
+    
     
 
 if __name__ == '__main__':

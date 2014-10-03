@@ -30,10 +30,10 @@ def get_cadd_score(variant_line):
     cadd_score = 0.0
     for info in variant_line.split('\t')[7].split(';'):
         info = info.split('=')
-        print(info)
+        # print(info)
         if info[0] == 'CADD':
-            cadd_score = float(info[-1])
-    print(cadd_score)
+            cadd_score = max([float(cscore) for cscore in info[-1].split(',')])
+    # print(cadd_score)
     return cadd_score
 
 
@@ -45,7 +45,6 @@ class FileSort(object):
         self._mode = mode
                 
         self._outFile = outfile
-                    
         self._splitSize = splitSize * 1000000
                 
         if mode == 'cadd':

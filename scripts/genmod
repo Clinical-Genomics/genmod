@@ -21,7 +21,7 @@ from pprint import pprint as pp
 import pkg_resources
 import genmod
 
-from genmod.commands import build_annotation, annotate, analyze, analyze_variants
+from genmod.commands import build_annotation, annotate, analyze, summarize_variants
 
 if sys.version_info < (3,0):
     sys.stdout = getwriter('UTF-8')(sys.stdout)
@@ -40,7 +40,7 @@ def print_version(ctx, param, value):
     """
     if not value or ctx.resilient_parsing:
         return
-    click.echo('genmode version: ' + version)
+    click.echo('genmod version: ' + version)
     ctx.exit()
 
 
@@ -53,15 +53,14 @@ def print_version(ctx, param, value):
                 expose_value=False,
                 is_eager=True
 )
-@pass_config
-def run_genmod(config, verbose):
+def run_genmod():
     """Annotate genetic models in variant files."""
-    config.verbose = verbose
+    pass
 
 run_genmod.add_command(build_annotation.build_annotation)
 run_genmod.add_command(annotate.annotate)
 run_genmod.add_command(analyze.analyze)
-run_genmod.add_command(analyze_variants.analyze_variants)
+run_genmod.add_command(summarize_variants.summarize_variants)
 
 
 
