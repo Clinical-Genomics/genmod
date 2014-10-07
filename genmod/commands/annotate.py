@@ -255,9 +255,9 @@ def annotate(family_file, variant_file, family_type, vep, silent, phased, strict
         family = get_family(family_file, family_type)
         # There has to be same individuals in ped file and variant file:
         if set(family.individuals.keys()) != set(variant_parser.individuals):
-            warning('There must be same individuals in ped file and vcf file! Aborting...')
-            warning('Individuals in PED file: %s' % '\t'.join(list(family.individuals.keys())))
-            warning('Individuals in VCF file: %s' % '\t'.join(list(variant_parser.individuals)))
+            warning.warning('There must be same individuals in ped file and vcf file! Aborting...')
+            warning.warning('Individuals in PED file: %s' % '\t'.join(list(family.individuals.keys())))
+            warning.warning('Individuals in VCF file: %s' % '\t'.join(list(variant_parser.individuals)))
             sys.exit()
     else:
         family = None

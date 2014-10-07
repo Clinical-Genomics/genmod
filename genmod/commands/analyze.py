@@ -48,19 +48,85 @@ def print_headers(head, outfile=None, silent=False):
                 print(line)
     return
 
+def print_variants(variant_dict, variant_file, header):
+    """print the variants to a file"""
+    with open(variant_file, mode='w', encoding='utf-8') as f:
+        for variant_id in variant_dict:
+            print_line = [variant_dict[variant_id].get(entry, '-') for entry in header]
+            f.write('\t'.join(print_line)+'\n')
+    return
 
-def print_variants(sorted_variants, outfile, silent=False):
+def print_results(variant_dict, mode = 'homozygote', outfile=None, silent=False):
     """Print the variants to a results file or stdout."""
     
-    with open(sorted_variants, mode='r', encoding='utf-8') as f:
-        if outfile:
-            with open(outfile, 'a', encoding='utf-8') as g:
-                for variant in f:
-                    g.write(variant)
+    score_key = 'CADD'
+    score_dict = {} # A dictionary with {variant_id: score}. Score is usually cadd score or rank score
+    # for variant_id, variant in sorted(variant_dict.items(), key = lambda sort_key: float(sort_key[1]['info_dict'].get('CADD', '0')), reverse=True):
+    for variant_id in variant_dict:
+        score = float(variant_dict[variant_id]['info_dict'].get(score_key, '0'))
+        if mode == 'compound':
+            for variant_2_id in variant_dict[variant_id]['info_dict'].get('Compounds', '').split(','):
+                if variant_2_id in variant_dict:
+                    score_2 = float(variant_dict[variant_2_id]['info_dict'].get(score_key, '0'))
+                    if score_2 > 10:
+                        print(variant_2_id, score_2)
+                        # print(variant_dict[variant_2_id])
+                        variant_pair = (variant_id, variant_2_id)
+                        score = (score + score_2)/2
+                        already_scored = [set(var_pair) for var_pair in list(score_dict.keys())]
+                        if set(variant_pair) not in already_scored:
+                            score_dict[variant_pair] = score
         else:
-            if not silent:
-                for line in f:
-                    print(line.rstrip())
+            score_dict[variant_id] = score
+    
+    for variant_id in sorted(score_dict, key=score_dict.get, reverse=True):
+        if mode == 'compound':
+            print_line = [variant_dict[variant_id[0]]['info_dict'].get('Annotation', ''),
+                            variant_dict[variant_id[0]]['POS'],
+                            variant_dict[variant_id[0]]['info_dict'].get('CADD', '-'),
+                            variant_dict[variant_id[0]]['info_dict'].get('1000GMAF', '0'),
+                            variant_dict[variant_id[1]]['POS'],
+                            variant_dict[variant_id[1]]['info_dict'].get('CADD', '-'),
+                            variant_dict[variant_id[1]]['info_dict'].get('1000GMAF', '0'),
+                            variant_dict[variant_id[1]]['REF']
+                        ]
+            print('\t'.join(print_line))
+            
+        else:
+            print_line = [variant_dict[variant_id]['info_dict'].get('Annotation', ''),
+                            variant_dict[variant_id]['POS'],
+                            variant_dict[variant_id]['REF'],
+                            variant_dict[variant_id]['ALT'],
+                            variant_dict[variant_id]['info_dict'].get('CADD', '-'),
+                            variant_dict[variant_id]['info_dict'].get('1000GMAF', '0')
+                        ]
+            print('\t'.join(print_line))
+            
+                                    
+        # print(variant_id, variant['info_dict'].get('Annotation', ''), variant['CHROM'], variant['POS'], variant['info_dict'].get('CADD', '0'))
+    # variant_parser = vcf_parser.VCFParser(infile = sorted_variants)
+    # header = ['Annotation', 'Position', 'Reference', 'Alternative', 'Cadd score', '1000GMAF']
+    # print('\t'.join(header))
+    # for variant in variant_parser:
+    #     # pp(variant)
+    #     print_line = [variant['info_dict'].get('Annotation', ''),
+    #                     variant['POS'],
+    #                     variant['REF'],
+    #                     variant['ALT'],
+    #                     variant['info_dict'].get('CADD', '-'),
+    #                     variant['info_dict'].get('1000GMAF', '0')
+    #                 ]
+    #     print('\t'.join(print_line))
+    
+    # with open(sorted_variants, mode='r', encoding='utf-8') as f:
+    #     if outfile:
+    #         with open(outfile, 'a', encoding='utf-8') as g:
+    #             for variant in f:
+    #                 g.write(variant)
+    #     else:
+    #         if not silent:
+    #             for line in f:
+    #                 print(line.rstrip())
     return
 
 
@@ -91,6 +157,78 @@ def make_models(list_of_models):
             model_set.add('XD')
             model_set.add('XD_dn')
     return model_set
+
+
+
+def remove_inacurate_compounds(compound_dict):
+    """If the second variant in a compound pair does not meet the requirements they should not be considered."""
+    
+    for variant_id in list(compound_dict.keys()):
+        # Get the compounds for the variant
+        compounds = compound_dict[variant_id]['info_dict'].get('Compounds', '').split(',')
+        compound_set = set(compounds) 
+        high_maf_compounds = 0
+        for compound in compounds:
+            # If requrements are not met it has never been placed in compound dict
+            if compound not in compound_dict:
+                compound_set.discard(compound)
+        # If no compounds in the pair upfills the requirements we remove the pair
+        if len(compound_set) == 0:
+            compound_dict.pop(variant_id)
+    return
+
+
+def get_interesting_variants(variant_parser, dominant_dict, homozygote_dict, compound_dict,
+                                x_linked_dict, dominant_dn_dict):
+    """Collect the interesting variants in their dictionarys. add RankScore."""
+    
+    freq_treshold = 0.05
+    freq_keyword = '1000GMAF'
+    
+    inheritance_keyword = 'GeneticModels'
+    
+    cadd_treshold = 10.0
+    cadd_keyword = 'CADD'
+    
+    gq_treshold = 100
+    
+    
+    de_novo_set = set(['AD_dn', 'AR_hom_dn', 'AR_comp_dn', 'XD_dn', 'XR_dn'])
+    dominant_set = set(['AD'])
+    homozygote_set = set(['AR_hom'])
+    compound_set = set(['AR_comp'])
+    x_linked_set = set(['XD', 'XR'])
+    dominant_dn_set = set(['XD_dn'])
+    
+    for variant in variant_parser:
+        models_found = set(variant['info_dict'].get(inheritance_keyword, '').split(','))
+        
+        maf = min([float(frequency) for frequency in variant['info_dict'].get(freq_keyword, '0').split(',')])
+        cadd_score = max([float(cscore) for cscore in variant['info_dict'].get(cadd_keyword, '0').split(',')])
+        
+        variant_id = variant['variant_id']
+        
+        if variant['FILTER'] == 'PASS' and float(variant['QUAL']) > gq_treshold:
+            # pp(variant)
+            # Check if cadd score is available:
+            if cadd_score > cadd_treshold:
+                # Check if MAF is below treshold:
+                if maf < freq_treshold:
+                    # First we look at the variants that are not dn:
+                    if not models_found.intersection(de_novo_set):
+                        if models_found.intersection(dominant_set):
+                            dominant_dict[variant_id] = variant
+                        if models_found.intersection(homozygote_set):
+                            homozygote_dict[variant_id] = variant
+                        if models_found.intersection(compound_set):
+                            compound_dict[variant_id] = variant
+                        if models_found.intersection(x_linked_set):
+                            x_linked_dict[variant_id] = variant
+                    elif models_found.intersection(dominant_dn_set):
+                            pp(variant)
+                            dominant_dn_dict[variant_id] = variant
+    
+
 
 @click.command()
 @click.argument('variant_file',
@@ -126,12 +264,22 @@ def make_models(list_of_models):
 )
 def analyze(variant_file, frequency, patterns, config_file, outfile, silent,verbose):
     """Analyze the annotated variants in a VCF file."""
+    
+    start_time_analysis = datetime.now()
+    
     configs = ConfigObj(config_file)
     
     freq_treshold = 0.05
     freq_keyword = '1000GMAF'
+    
     prefered_models = make_models([])
     inheritance_keyword = 'GeneticModels'
+    
+    cadd_treshold = 10.0
+    cadd_keyword = 'CADD'
+    
+    gq_treshold = 100
+    
     if config_file:
         freq_treshold = float(configs.get('frequency', {}).get('rare', freq_treshold))
         freq_keyword = configs.get('frequency', {}).get('keyword', freq_keyword)    
@@ -150,40 +298,77 @@ def analyze(variant_file, frequency, patterns, config_file, outfile, silent,verb
     else:
         variant_parser = vcf_parser.VCFParser(infile = variant_file)
     
-    dominant_file = NamedTemporaryFile(delete=False)
-    dominant_file.close()
-    de_novo_file = NamedTemporaryFile(delete=False)
-    de_novo_file.close()
+    head = variant_parser.metadata
     
-    with open(dominant_file.name, mode='w', encoding = 'utf-8') as f:
+    
+    dominant_dict = {}
+    homozygote_dict = {}
+    compound_dict = {}
+    x_linked_dict = {}
+    dominant_dn_dict = {}
+    
+    get_interesting_variants(variant_parser, dominant_dict, homozygote_dict, compound_dict, x_linked_dict, dominant_dn_dict)
+    
+    if len(dominant_dict) > 0:
+        print_results(dominant_dict)
+                
+    if len(homozygote_dict) > 0:        
+        print_results(homozygote_dict)
         
-        for variant in variant_parser:
-            models_found = set(variant['info_dict'].get(inheritance_keyword, '').split(','))
-            # print(models_found)
-            
-            maf = min([float(frequency) for frequency in variant['info_dict'].get(freq_keyword, '0').split(',')])
-            cadd_score = max([float(cscore) for cscore in variant['info_dict'].get('CADD', '0').split(',')])
-            
-            # Check if variant models overlap with prefered:
-            if models_found.intersection(set(['AD'])):
-                # Check if cadd score is available:
-                # print('hej')
-                # pp(variant)
-                if cadd_score > 0:
-                    # Check if MAF is below treshold:
-                    if maf < freq_treshold:
-                        print_line = [variant.get(entry, '-') for entry in variant_parser.header]
-                        f.write('\t'.join(print_line)+'\n')
+    if len(compound_dict) > 0:
+        print_results(compound_dict, mode='compound')
+    #     compound_file = NamedTemporaryFile(delete=False)
+    #     print_variants(compound_dict, compound_file.name)
+    #     compound_file.close()
+    #     homozygote_sorted = NamedTemporaryFile(delete=False, suffix='.vcf')
+    #     homozygote_sorted.close()
+    #     print_headers(head, homozygote_sorted.name)
+    #     var_sorter = variant_sorter.FileSort(homozygote_file.name, mode='cadd', outfile=homozygote_sorted.name)
+    #     var_sorter.sort()
+    #
+    # if len(dominant_dn_dict) > 0:
+    #     de_novo_file = NamedTemporaryFile(delete=False)
+    #     print_variants(dominant_dn_dict, de_novo_file.name)
+    #     de_novo_file.close()
+    #     homozygote_sorted = NamedTemporaryFile(delete=False, suffix='.vcf')
+    #     homozygote_sorted.close()
+    #     print_headers(head, homozygote_sorted.name)
+    #     var_sorter = variant_sorter.FileSort(homozygote_file.name, mode='cadd', outfile=homozygote_sorted.name)
+    #     var_sorter.sort()
+        
     
+    
+        
+    
+    # with open(homozygote_sorted.name, mode='r', encoding='utf-8') as f:
+    #     for line in f:
+    #         print(line.rstrip())
+    
+    # print_variants(homozygote_sorted.name)
+    
+    remove_inacurate_compounds(compound_dict)
+    
+    print('')
+    
+    print('Dominant variants: %s' % len(dominant_dict))
+    print('Homozygote variants: %s' %len(homozygote_dict))
+    print('Compound variants: %s' %len(compound_dict))
+    print('X-linked variants: %s' %len(x_linked_dict))
+    
+    # pp(compound_dict)
+    
+    print('Time for analysis: %s' % str(datetime.now() - start_time_analysis))
     # print_headers(variant_parser.metadata, outfile=outfile)
     
-    dominant_results = NamedTemporaryFile(delete=False)
-    dominant_results.close()
-    
-    var_sorter = variant_sorter.FileSort(dominant_file.name, mode='cadd', outfile=dominant_results.name)
-    var_sorter.sort()
-    
-    print_variants(dominant_results.name, outfile, silent)
+    # dominant_results = NamedTemporaryFile(delete=False)
+    # dominant_results.close()
+    #
+    # var_sorter = variant_sorter.FileSort(dominant_file.name, mode='cadd', outfile=dominant_results.name)
+    # var_sorter.sort()
+    #
+    # print(dominant_results)
+    # print(outfile)
+    # print_variants(dominant_results.name, outfile, silent)
     
     
 

@@ -203,7 +203,7 @@ class VariantAnnotator(object):
     def add_variant(self, batch, variant, features):
         """Adds the variant to the proper gene(s) in the batch."""
         # We need to make this construction since there can be multiple alternatives:
-        variant_id = '_'.join([variant['CHROM'], variant['POS'], variant['REF'], variant['ALT'].split(',')[0]])
+        variant_id = variant['variant_id']
         # If we are in a region between features:
         if len(features) == 0:
             if len(batch) == 0:
