@@ -234,20 +234,20 @@ class VariantAnnotator(object):
             to variant dictionary"""
         
         variant['comp_candidate'] = False
+        variant_chrom = variant['CHROM'].lstrip('chr')
+        alternatives = variant['ALT'].split(',')
+        # When checking what features that are overlapped we use the longest alternative
+        longest_alt = max([len(alternative) for alternative in alternatives])
+        # Internally we never use 'chr' in the chromosome names:
+        variant_position = int(variant['POS'])
+        
+        variant_interval = [variant_position, (variant_position + longest_alt-1)]
         
         #If annotated with vep we do not need to check interval trees
         if self.vep:
             variant['Annotation'] = self.check_vep_annotation(variant)
         
         else:
-            alternatives = variant['ALT'].split(',')
-            # When checking what features that are overlapped we use the longest alternative
-            longest_alt = max([len(alternative) for alternative in alternatives])
-            # Internally we never use 'chr' in the chromosome names:
-            variant_chrom = variant['CHROM'].lstrip('chr')
-            variant_position = int(variant['POS'])
-            
-            variant_interval = [variant_position, (variant_position + longest_alt-1)]
             
             try:
                 variant['Annotation'] = set(self.gene_trees[variant_chrom].find_range(variant_interval))
