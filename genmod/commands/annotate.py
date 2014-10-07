@@ -49,7 +49,13 @@ def get_family(family_file, family_type):
     
     my_family_parser = ped_parser.FamilyParser(family_file, family_type)
     # Stupid thing but for now when we only look at one family
-    return my_family_parser.families.popitem()[1]
+    
+    try:
+        return my_family_parser.families.popitem()[1]
+    except KeyError as e:
+        raise SyntaxError("Something wrong with the pedigree file? No families found")
+    
+    return
 
 def add_metadata(head, vep=False, cadd_file=None, cadd_1000g=None, cadd_ESP=None, cadd_InDels=None, 
                     cadd_raw=False, thousand_g=None, command_line_string=''):

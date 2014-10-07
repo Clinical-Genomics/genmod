@@ -62,6 +62,8 @@ def print_results(variant_dict, mode = 'homozygote', outfile=None, silent=False)
     score_key = 'CADD'
     score_dict = {} # A dictionary with {variant_id: score}. Score is usually cadd score or rank score
     # for variant_id, variant in sorted(variant_dict.items(), key = lambda sort_key: float(sort_key[1]['info_dict'].get('CADD', '0')), reverse=True):
+    column_width = 12
+    length_of_output = 20
     for variant_id in variant_dict:
         score = float(variant_dict[variant_id]['info_dict'].get(score_key, '0'))
         if mode == 'compound':
@@ -69,7 +71,6 @@ def print_results(variant_dict, mode = 'homozygote', outfile=None, silent=False)
                 if variant_2_id in variant_dict:
                     score_2 = float(variant_dict[variant_2_id]['info_dict'].get(score_key, '0'))
                     if score_2 > 10:
-                        print(variant_2_id, score_2)
                         # print(variant_dict[variant_2_id])
                         variant_pair = (variant_id, variant_2_id)
                         score = (score + score_2)/2
@@ -79,54 +80,66 @@ def print_results(variant_dict, mode = 'homozygote', outfile=None, silent=False)
         else:
             score_dict[variant_id] = score
     
+    if mode == 'compound':
+        print('\nCompound analysis:\n')
+        variant_header = ['Variant 1 in pair', 'Variant 2 in pair']
+        header = ['Chrom', 
+                    'Position', 
+                    'Reference', 
+                    'Alternative', 
+                    'Cadd score', 
+                    '1000GMAF', 
+                    'Position', 
+                    'Reference', 
+                    'Alternative', 
+                    'Cadd score', 
+                    '1000GMAF', 
+                    'Annotation']
+        print(''.join(word.ljust(column_width*6) for word in variant_header))
+        print(''.join(word.ljust(column_width) for word in header))
+        
+    else:
+        if mode == 'dominant':
+            print('\nDominant analysis:\n')            
+        if mode == 'homozygote':
+            print('\nHomozygote analysis:\n')
+        if mode == 'denovo':
+            print('\nDe novo analysis:\n')
+        header = ['Chrom', 'Position', 'Reference', 'Alternative', 'Cadd score', '1000GMAF', 'Annotation']
+    
+        print(''.join(word.ljust(column_width) for word in header))
+    
+    i = 0
     for variant_id in sorted(score_dict, key=score_dict.get, reverse=True):
         if mode == 'compound':
-            print_line = [variant_dict[variant_id[0]]['info_dict'].get('Annotation', ''),
+            print_line = [variant_dict[variant_id[0]]['CHROM'],
                             variant_dict[variant_id[0]]['POS'],
+                            variant_dict[variant_id[0]]['REF'],
+                            variant_dict[variant_id[0]]['ALT'],
                             variant_dict[variant_id[0]]['info_dict'].get('CADD', '-'),
-                            variant_dict[variant_id[0]]['info_dict'].get('1000GMAF', '0'),
+                            variant_dict[variant_id[0]]['info_dict'].get('1000GMAF', '-'),
                             variant_dict[variant_id[1]]['POS'],
+                            variant_dict[variant_id[1]]['REF'],
+                            variant_dict[variant_id[1]]['ALT'],
                             variant_dict[variant_id[1]]['info_dict'].get('CADD', '-'),
-                            variant_dict[variant_id[1]]['info_dict'].get('1000GMAF', '0'),
-                            variant_dict[variant_id[1]]['REF']
-                        ]
-            print('\t'.join(print_line))
+                            variant_dict[variant_id[1]]['info_dict'].get('1000GMAF', '-'),
+                            variant_dict[variant_id[0]]['info_dict'].get('Annotation', '-')
+                            ]
             
         else:
-            print_line = [variant_dict[variant_id]['info_dict'].get('Annotation', ''),
+            print_line = [variant_dict[variant_id]['CHROM'],
                             variant_dict[variant_id]['POS'],
                             variant_dict[variant_id]['REF'],
                             variant_dict[variant_id]['ALT'],
                             variant_dict[variant_id]['info_dict'].get('CADD', '-'),
-                            variant_dict[variant_id]['info_dict'].get('1000GMAF', '0')
-                        ]
-            print('\t'.join(print_line))
+                            variant_dict[variant_id]['info_dict'].get('1000GMAF', '-'),
+                            variant_dict[variant_id]['info_dict'].get('Annotation', '-')
+                            ]
+        if i < length_of_output:
+            print(''.join(word.ljust(column_width) for word in print_line))
+        i += 1
             
-                                    
-        # print(variant_id, variant['info_dict'].get('Annotation', ''), variant['CHROM'], variant['POS'], variant['info_dict'].get('CADD', '0'))
-    # variant_parser = vcf_parser.VCFParser(infile = sorted_variants)
-    # header = ['Annotation', 'Position', 'Reference', 'Alternative', 'Cadd score', '1000GMAF']
-    # print('\t'.join(header))
-    # for variant in variant_parser:
-    #     # pp(variant)
-    #     print_line = [variant['info_dict'].get('Annotation', ''),
-    #                     variant['POS'],
-    #                     variant['REF'],
-    #                     variant['ALT'],
-    #                     variant['info_dict'].get('CADD', '-'),
-    #                     variant['info_dict'].get('1000GMAF', '0')
-    #                 ]
-    #     print('\t'.join(print_line))
     
-    # with open(sorted_variants, mode='r', encoding='utf-8') as f:
-    #     if outfile:
-    #         with open(outfile, 'a', encoding='utf-8') as g:
-    #             for variant in f:
-    #                 g.write(variant)
-    #     else:
-    #         if not silent:
-    #             for line in f:
-    #                 print(line.rstrip())
     return
 
 
@@ -310,10 +323,10 @@ def analyze(variant_file, frequency, patterns, config_file, outfile, silent,verb
     get_interesting_variants(variant_parser, dominant_dict, homozygote_dict, compound_dict, x_linked_dict, dominant_dn_dict)
     
     if len(dominant_dict) > 0:
-        print_results(dominant_dict)
+        print_results(dominant_dict, mode='dominant')
                 
-    if len(homozygote_dict) > 0:        
-        print_results(homozygote_dict)
+    if len(homozygote_dict) > 0:
+        print_results(homozygote_dict, mode='homozygote')
         
     if len(compound_dict) > 0:
         print_results(compound_dict, mode='compound')
@@ -326,7 +339,8 @@ def analyze(variant_file, frequency, patterns, config_file, outfile, silent,verb
     #     var_sorter = variant_sorter.FileSort(homozygote_file.name, mode='cadd', outfile=homozygote_sorted.name)
     #     var_sorter.sort()
     #
-    # if len(dominant_dn_dict) > 0:
+    if len(dominant_dn_dict) > 0:
+        print_results(dominant_dn_dict, mode='denovo')
     #     de_novo_file = NamedTemporaryFile(delete=False)
     #     print_variants(dominant_dn_dict, de_novo_file.name)
     #     de_novo_file.close()
