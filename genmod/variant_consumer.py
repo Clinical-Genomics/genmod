@@ -64,23 +64,6 @@ class VariantConsumer(multiprocessing.Process):
             self.any_cadd_info = True
         if self.thousand_g:
             self.thousand_g = Tabixfile(self.thousand_g)
-        
-        
-    def fix_variants(self, variant_batch):
-        """Merge the variants from a batch into one dictionary.
-            Make shure that the compounds are treated right."""
-        fixed_variants = {} # dict like {variant_id:variant, ....}
-        for feature in variant_batch:
-            for variant_id in variant_batch[feature]:
-                if variant_id in fixed_variants:
-                    # We need to add compound information from different features
-                    if len(variant_batch[feature][variant_id].get('Compounds', set())) > 0:
-                        fixed_variants[variant_id]['Compounds'] = fixed_variants[variant_id].get('Compounds', set()).union(variant_batch[feature][variant_id].get('Compounds', set()))
-                else:
-                    fixed_variants[variant_id] = variant_batch[feature][variant_id]
-        
-        return fixed_variants
-    
     
     def get_model_score(self, individuals, variant):
         """Return the model score for this variant."""
@@ -246,30 +229,29 @@ class VariantConsumer(multiprocessing.Process):
         if self.verbosity:
             print('%s: Starting!' % proc_name)
         while True:
-            # A batch is a dictionary on the form {gene:{variant_id:variant_dict}}
-            next_batch = self.task_queue.get()
+            # A batch is a dictionary on the form {variant_id:variant_dict}
+            variant_batch = self.task_queue.get()
             
-            if next_batch is None:
+            if variant_batch is None:
                 self.task_queue.task_done()
                 if self.verbosity:
                     print('%s: Exiting' % proc_name)
                 break
             
             if self.family:
-                genetic_models.check_genetic_models(next_batch, self.family, self.verbosity, 
+                genetic_models.check_genetic_models(variant_batch, self.family, self.verbosity, 
                                                     self.phased, self.strict, proc_name)
-            # Go from having a batch of genes with their variants to a single dictionary with all variants:
-            fixed_variants = self.fix_variants(next_batch)
+            variant_batch.pop('haploblocks', None)
             
-            for variant_id in fixed_variants:
+            for variant_id in variant_batch:
                 if self.any_cadd_info:
-                    self.add_cadd_score(fixed_variants[variant_id])
+                    self.add_cadd_score(variant_batch[variant_id])
                 if self.thousand_g:
-                    self.add_frequency(fixed_variants[variant_id])
+                    self.add_frequency(variant_batch[variant_id])
             
             # Now we want to make versions of the variants that are ready for printing.
-            self.make_print_version(fixed_variants)
-            self.results_queue.put(fixed_variants)
+            self.make_print_version(variant_batch)
+            self.results_queue.put(variant_batch)
             self.task_queue.task_done()
         return
         

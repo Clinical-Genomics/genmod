@@ -70,7 +70,7 @@ class VariantAnnotator(object):
         
     
     def annotate(self):
-        """Start the parsing"""        
+        """Start the parsing"""
         beginning = True
         batch = {}
         new_chrom = None
@@ -87,9 +87,10 @@ class VariantAnnotator(object):
             start_twenty_time = start_parsing_time
             if self.batch_queue.full():
                 genmod.warning('Queue full!!')
-            
+        
         nr_of_variants = 0
         nr_of_comp_cand = 0
+        
         for variant in self.variant_parser:
             
             self.annotate_variant(variant)
@@ -111,7 +112,7 @@ class VariantAnnotator(object):
                 current_features = new_features
                 beginning = False
                 # Add the variant to each of its features in a batch
-                batch = self.add_variant(batch, variant, new_features)
+                batch = self.add_variant(batch, variant)
                 current_chrom = new_chrom
                 batch['haploblocks'] = {}
                 if self.phased:
@@ -149,7 +150,11 @@ class VariantAnnotator(object):
                         print('Chromosome %s parsed!' % current_chrom)
                         print('Time to parse chromosome %s' % str(datetime.now()-start_chrom_time))
                         start_chrom_time = datetime.now()
-                    
+                
+                # If we are in a large intergenic region we limit the batch size to 10000
+                if len(new_features) == 0 and len(batch) > 10000:
+                    send = True
+                
                 if send:
                     if self.phased:
                     # Create an interval tree for each individual with the phaing intervals 
@@ -167,12 +172,11 @@ class VariantAnnotator(object):
                     nr_of_batches += 1
                     #Reset the variables
                     current_features = new_features
-                    batch = self.add_variant({}, variant, new_features)
+                    batch = self.add_variant({}, variant)
                     batch['haploblocks'] = {}
                 else:
                     current_features = current_features.union(new_features)
-                    batch = self.add_variant(batch, variant, new_features) # Add variant batch
-                
+                    batch = self.add_variant(batch, variant) # Add variant batch
         
         self.chromosomes.append(current_chrom)
         
@@ -198,42 +202,50 @@ class VariantAnnotator(object):
         
         self.batch_queue.put(batch)
         nr_of_batches += 1
+        
         return nr_of_batches
     
-    def add_variant(self, batch, variant, features):
+    def add_variant(self, batch, variant):
         """Adds the variant to the proper gene(s) in the batch."""
         # We need to make this construction since there can be multiple alternatives:
-        variant_id = '_'.join([variant['CHROM'], variant['POS'], variant['REF'], variant['ALT'].split(',')[0]])
+        variant_id = variant['variant_id']
         # If we are in a region between features:
-        if len(features) == 0:
-            if len(batch) == 0:
-                batch['-'] = {variant_id:variant}
-            else:
-                batch['-'][variant_id] = variant
-        # Create one post for each feature in the batch
-        for feature in features:
-            if feature in batch:
-                batch[feature][variant_id] = variant
-            else:
-                batch[feature] = {variant_id:variant}
+        batch[variant_id] = variant
         
         return batch
     
     def check_vep_annotation(self, variant):
-        """Return a list with the genes that vep has annotated this variant with"""
+        """Return a set with the genes that vep has annotated this variant with.
+            
+            Input: A variant
+            
+            Returns: A set with genes"""
         
-        annotation = [gene for gene in variant.get('vep_info',{})]
+        annotation = set()
+        # vep_info is a dictionary with genes as key and annotation as values
+        for gene in variant.get('vep_info',{}):
+            for consequence in variant['vep_info'][gene].get('Consequence', '').split('&'):
+                if consequence in self.interesting_so_terms:
+                    annotation.add(gene)
         
-        return set(annotation)
+        return annotation
         
     
     def annotate_variant(self, variant):
-        """Returns a annotated variant dictionary in the cmms format.
+        """Annotate variants with what regions the belong.
             Adds 'Annotation' = set(set, of, genes)
             and 'compound_candidate' = Boolean
-            to variant dictionary"""
+            to variant dictionary
+            
+            Input: variant_dictionary
+            
+            Returns: variant_dictionary with annotation added
+            
+        """
         
         variant['comp_candidate'] = False
+        variant['Annotation'] = set()
+        
         variant_chrom = variant['CHROM'].lstrip('chr')
         alternatives = variant['ALT'].split(',')
         # When checking what features that are overlapped we use the longest alternative
@@ -245,6 +257,7 @@ class VariantAnnotator(object):
         
         #If annotated with vep we do not need to check interval trees
         if self.vep:
+            
             variant['Annotation'] = self.check_vep_annotation(variant)
         
         else:
@@ -255,9 +268,9 @@ class VariantAnnotator(object):
             except KeyError:
                 if self.verbosity:
                     genmod.warning(''.join('Chromosome', variant_chrom, 'is not in annotation file!'))
-                variant['Annotation'] = set()
         
         if self.whole_genes:
+            # If compounds are to be checked in whole genes (including introns):
             if len(variant['Annotation']) > 0:
                 variant['comp_candidate'] = True
         else:

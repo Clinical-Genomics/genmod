@@ -228,7 +228,7 @@ def build_annotation(config, annotation_file, type, outdir, splice_padding):
                 default='ped',
                 help='If the analysis use one of the known setups, please specify which one.'
 )
-@click.option('--vep', 
+@click.option('-vep','--vep', 
                     is_flag=True,
                     help='If variants are annotated with the Variant Effect Predictor.'
 )
