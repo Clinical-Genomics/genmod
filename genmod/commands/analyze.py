@@ -63,7 +63,7 @@ def print_results(variant_dict, mode = 'homozygote', outfile=None, silent=False)
     score_dict = {} # A dictionary with {variant_id: score}. Score is usually cadd score or rank score
     # for variant_id, variant in sorted(variant_dict.items(), key = lambda sort_key: float(sort_key[1]['info_dict'].get('CADD', '0')), reverse=True):
     column_width = 12
-    length_of_output = 20
+    length_of_output = 40
     for variant_id in variant_dict:
         score = float(variant_dict[variant_id]['info_dict'].get(score_key, '0'))
         if mode == 'compound':
@@ -221,12 +221,23 @@ def get_interesting_variants(variant_parser, dominant_dict, homozygote_dict, com
         
         variant_id = variant['variant_id']
         
+        interesting = False
+        if int(variant['POS']) == 140389311:
+            print('HEJ!')
+            interesting = True
+        
         if variant['FILTER'] == 'PASS' and float(variant['QUAL']) > gq_treshold:
             # pp(variant)
             # Check if cadd score is available:
+            if interesting:
+                print('PASSED FILTER')
             if cadd_score > cadd_treshold:
                 # Check if MAF is below treshold:
+                if interesting:
+                    print('PASSED CADD SCORE')
                 if maf < freq_treshold:
+                    if interesting:
+                        print('PASSED MAF')
                     # First we look at the variants that are not dn:
                     if not models_found.intersection(de_novo_set):
                         if models_found.intersection(dominant_set):
