@@ -56,8 +56,7 @@ def get_family(family_file, family_type):
     # Stupid thing but for now when we only look at one family
     return my_family_parser.families.popitem()[1]
 
-def add_metadata(head, vep=False, cadd_file=None, cadd_1000g=None, cadd_ESP=None, cadd_InDels=None, 
-                    cadd_raw=False, thousand_g=None, command_line_string=''):
+def add_metadata(head, vep=False, annotate_cadd=False, cadd_raw=False, thousand_g=None, command_line_string=''):
     """Add metadata for the information added by this script."""
     # Update INFO headers
     if not vep:
@@ -65,7 +64,7 @@ def add_metadata(head, vep=False, cadd_file=None, cadd_1000g=None, cadd_ESP=None
     head.add_info('Compounds', '.', 'String', "','-separated list of compound pairs for this variant.")
     head.add_info('GeneticModels', '.', 'String', "','-separated list of genetic models for this variant.")
     head.add_info('ModelScore', '1', 'Integer', "PHRED score for genotype models.")
-    if cadd_file or cadd_1000g or cadd_ESP or cadd_InDels:
+    if annotate_cadd:
         head.add_info('CADD', 'A', 'Float', "The CADD relative score(s) for this alternative(s).")
         if cadd_raw:
             head.add_info('CADD_raw', 'A', 'Float', "The CADD raw score(s) for this alternative(s).")
@@ -314,7 +313,9 @@ def annotate(config, family_file, variant_file, family_type, vep, silent, phased
     argument_list = [i+'='+str(values[i]) for i in values if values[i] and i != 'config' and i != 'frame']
     gene_db = pkg_resources.resource_filename('genmod', 'annotations/genes.db')
     exon_db = pkg_resources.resource_filename('genmod', 'annotations/exons.db')
-        
+    
+    annotate_cadd = False
+    
     if annotation_dir:
         gene_db = os.path.join(annotation_dir, 'genes.db')
         exon_db = os.path.join(annotation_dir, 'exons.db')
@@ -354,22 +355,27 @@ def annotate(config, family_file, variant_file, family_type, vep, silent, phased
         if verbosity:
             click.echo('Cadd file! %s' % cadd_file)
         check_tabix_index(cadd_file, 'cadd', verbosity)
+        annotate_cadd = True
     if cadd_1000g:
         if verbosity:
             click.echo('Cadd 1000G file! %s' % cadd_1000g)
         check_tabix_index(cadd_1000g, 'cadd', verbosity)
+        annotate_cadd = True
     if cadd_esp:
         if verbosity:
             click.echo('Cadd ESP6500 file! %s' % cadd_esp)
         check_tabix_index(cadd_esp, 'cadd', verbosity)
+        annotate_cadd = True
     if cadd_indels:
         if verbosity:
             click.echo('Cadd InDel file! %s' % cadd_indels)
         check_tabix_index(cadd_indels, 'cadd', verbosity)
+        annotate_cadd = True
     if thousand_g:
         if config.verbose:
             click.echo('1000G frequency file! %s' % thousand_g)
         check_tabix_index(thousand_g, 'vcf', verbosity)
+        annotate_cadd = True
     
     
     ###################################################################
@@ -385,8 +391,10 @@ def annotate(config, family_file, variant_file, family_type, vep, silent, phased
     # Create a directory to keep track of temp files
     temp_dir = mkdtemp()
     #Adapt the number of processes to the machine that run the analysis    
-    num_model_checkers = (cpu_count()*2-1)
-    # num_model_checkers = (1)
+    if annotate_cadd:
+        num_model_checkers = (cpu_count())
+    else:
+        num_model_checkers = min(4, cpu_count())
     
     if verbosity:
         print('Number of CPU:s %s' % cpu_count())
@@ -431,7 +439,7 @@ def annotate(config, family_file, variant_file, family_type, vep, silent, phased
         start_time_variant_sorting = datetime.now()
     
     # Add the new metadata to the headers:    
-    add_metadata(head, vep, cadd_file, cadd_1000g, cadd_esp, cadd_indels, cadd_raw, thousand_g, ' '.join(argument_list))
+    add_metadata(head, vep, annotate_cadd, cadd_raw, thousand_g, ' '.join(argument_list))
     
     print_headers(head, outfile, silent)
     
