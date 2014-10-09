@@ -177,6 +177,8 @@ def remove_inacurate_compounds(compound_dict):
     """If the second variant in a compound pair does not meet the requirements they should not be considered."""
     
     for variant_id in list(compound_dict.keys()):
+        if variant_id == '5_140389311_C_A':
+            print('VARIANT FOUND!')
         # Get the compounds for the variant
         compounds = compound_dict[variant_id]['info_dict'].get('Compounds', '').split(',')
         compound_set = set(compounds) 
@@ -190,6 +192,14 @@ def remove_inacurate_compounds(compound_dict):
             compound_dict.pop(variant_id)
     return
 
+
+def covered_in_all(variant, coverage_treshold = 7):
+    """Check if the variant is covered in all individuals."""
+    for individual in variant['genotypes']:
+        if variant['genotypes'][individual].quality_depth < coverage_treshold:
+            return False
+    return True
+        
 
 def get_interesting_variants(variant_parser, dominant_dict, homozygote_dict, compound_dict,
                                 x_linked_dict, dominant_dn_dict):
@@ -221,25 +231,14 @@ def get_interesting_variants(variant_parser, dominant_dict, homozygote_dict, com
         
         variant_id = variant['variant_id']
         
-        interesting = False
-        if int(variant['POS']) == 140389311:
-            print('HEJ!')
-            interesting = True
+        if covered_in_all(variant):
         
-        if variant['FILTER'] == 'PASS' and float(variant['QUAL']) > gq_treshold:
-            # pp(variant)
-            # Check if cadd score is available:
-            if interesting:
-                print('PASSED FILTER')
-            if cadd_score > cadd_treshold:
-                # Check if MAF is below treshold:
-                if interesting:
-                    print('PASSED CADD SCORE')
-                if maf < freq_treshold:
-                    if interesting:
-                        print('PASSED MAF')
-                    # First we look at the variants that are not dn:
-                    if not models_found.intersection(de_novo_set):
+            if variant['FILTER'] == 'PASS' and float(variant['QUAL']) > gq_treshold:
+                # Check if cadd score is available:
+                if cadd_score > cadd_treshold:
+                    # Check if MAF is below treshold:
+                    if maf < freq_treshold:
+                        # First we look at the variants that are not dn:
                         if models_found.intersection(dominant_set):
                             dominant_dict[variant_id] = variant
                         if models_found.intersection(homozygote_set):
@@ -248,10 +247,9 @@ def get_interesting_variants(variant_parser, dominant_dict, homozygote_dict, com
                             compound_dict[variant_id] = variant
                         if models_found.intersection(x_linked_set):
                             x_linked_dict[variant_id] = variant
-                    elif models_found.intersection(dominant_dn_set):
-                            pp(variant)
-                            dominant_dn_dict[variant_id] = variant
-    
+                        elif models_found.intersection(dominant_dn_set):
+                                dominant_dn_dict[variant_id] = variant
+    return
 
 
 @click.command()
@@ -331,15 +329,23 @@ def analyze(variant_file, frequency, patterns, config_file, outfile, silent,verb
     x_linked_dict = {}
     dominant_dn_dict = {}
     
+    
     get_interesting_variants(variant_parser, dominant_dict, homozygote_dict, compound_dict, x_linked_dict, dominant_dn_dict)
+
+    print(compound_dict['5_140389311_C_A'])
+    print(compound_dict['5_140256870_G_T'])
     
     if len(dominant_dict) > 0:
         print_results(dominant_dict, mode='dominant')
                 
     if len(homozygote_dict) > 0:
+        
         print_results(homozygote_dict, mode='homozygote')
         
     if len(compound_dict) > 0:
+        print('AGAIN:')
+        print(compound_dict['5_140389311_C_A'])
+        print(compound_dict['5_140256870_G_T'])
         print_results(compound_dict, mode='compound')
     #     compound_file = NamedTemporaryFile(delete=False)
     #     print_variants(compound_dict, compound_file.name)
