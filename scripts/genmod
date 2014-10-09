@@ -15,40 +15,20 @@ from __future__ import unicode_literals
 import sys
 import os
 import click
-import inspect
 
-from multiprocessing import JoinableQueue, Manager, cpu_count
-from codecs import open, getwriter
-from datetime import datetime
-from tempfile import mkdtemp, TemporaryFile, NamedTemporaryFile
-# from configobj import ConfigObj
 from pprint import pprint as pp
 
-# import vcf
-
-import shutil
 import pkg_resources
-import pkgutil
 import genmod
 
-try:
-    import cPickle as pickle
-except:
-    import pickle
-
-
-from pysam import tabix_index, tabix_compress
-
-from ped_parser import parser as ped_parser
-from vcf_parser import parser as vcf_parser
-
-from genmod import variant_consumer, variant_sorter, annotation_parser, variant_printer, variant_annotator, warning
+from genmod.commands import build_annotation, annotate, analyze, summarize_variants
 
 if sys.version_info < (3,0):
     sys.stdout = getwriter('UTF-8')(sys.stdout)
 
 version = pkg_resources.require("genmod")[0].version
 
+<<<<<<< HEAD
 def get_family(family_file, family_type):
     """Return the family"""
     
@@ -117,6 +97,8 @@ def check_tabix_index(compressed_file, file_type='cadd', verbose=False):
         except IOError as e:
             pass
     return
+=======
+>>>>>>> feature/genmod_analyze
 
 def print_version(ctx, param, value):
     """Callback function for printing version and exiting
@@ -129,38 +111,22 @@ def print_version(ctx, param, value):
     """
     if not value or ctx.resilient_parsing:
         return
-    click.echo('genmode version: ' + version)
+    click.echo('genmod version: ' + version)
     ctx.exit()
-# def print_version(ctx, param, value):
-#     # if not value or ctx.resilient_parsing:
-#     #     return
-#     click.echo(pkg_resources.require("genmod")[0].version)
-#     ctx.exit()
-
-class Config(object):
-    """Store variables that are used of all subprograms"""
-    def __init__(self):
-        super(Config, self).__init__()
-        self.verbose = False
-    
-pass_config = click.make_pass_decorator(Config, ensure=True)
 
 
 ###         This is the main script         ###
+
 @click.group()
-@click.option('-v', '--verbose', 
-                is_flag=True,
-                help='Increase output verbosity.'
-)
 @click.option('--version',
                 is_flag=True,
                 callback=print_version,
                 expose_value=False,
                 is_eager=True
 )
-@pass_config
-def run_genmod(config, verbose):
+def run_genmod():
     """Annotate genetic models in variant files."""
+<<<<<<< HEAD
     config.verbose = verbose
 
 ###        This is for building new annotations     ###
@@ -552,13 +518,16 @@ def make_models(list_of_models):
 #     # for record in vcf_reader:
 #     #     print(record.INFO.get('1000GMAF', 0))
 
+=======
+    pass
+>>>>>>> feature/genmod_analyze
 
-run_genmod.add_command(build_annotation)
-run_genmod.add_command(annotate)
-# run_genmod.add_command(analyze)
+run_genmod.add_command(build_annotation.build_annotation)
+run_genmod.add_command(annotate.annotate)
+run_genmod.add_command(analyze.analyze)
+run_genmod.add_command(summarize_variants.summarize_variants)
 
 
 
 if __name__ == '__main__':
-    # main()
     run_genmod()

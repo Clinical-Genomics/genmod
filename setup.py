@@ -28,10 +28,12 @@ setup(name='genmod',
         'pysam', 
         'pytest', 
         'interval_tree', 
-        'click'
+        'click',
+        'configobj'
     ],
     packages = [
-        'genmod', 
+        'genmod',
+        'genmod/commands',
     ],
     package_data = {
         'genmod': ['annotations/*.db']
