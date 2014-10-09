@@ -65,7 +65,7 @@ def add_metadata(head, vep=False, cadd_annotation=False, cadd_raw=False, thousan
     head.add_info('Compounds', '.', 'String', "':'-separated list of compound pairs for this variant.")
     head.add_info('GeneticModels', '.', 'String', "':'-separated list of genetic models for this variant.")
     head.add_info('ModelScore', '1', 'Integer', "PHRED score for genotype models.")
-    if cadd_file or cadd_1000g or cadd_ESP or cadd_InDels:
+    if cadd_annotation:
         head.add_info('CADD', 'A', 'Float', "The CADD relative score for this alternative.")
         if cadd_raw:
             head.add_info('CADD_raw', 'A', 'Float', "The CADD raw score(s) for this alternative(s).")
