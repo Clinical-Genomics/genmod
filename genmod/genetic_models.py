@@ -110,9 +110,9 @@ def check_genetic_models(variant_batch, family, verbose = False, phased = False,
                 for individual in family.individuals:
                     if family.individuals[individual].has_parents:
                         check_parents('recessive', individual, family, variant)
-        
-        
+    
     # Now check the compound models:
+    
     if len(compound_candidates) > 1:
         compound_pairs = pair_generator.Pair_Generator(compound_candidates)
         for pair in compound_pairs.generate_pairs():
@@ -121,7 +121,7 @@ def check_genetic_models(variant_batch, family, verbose = False, phased = False,
             variant_2 = variant_batch[pair[1]]
             if variant_1['Annotation'].intersection(variant_2['Annotation']):
                 # We know from check_compound_candidates that all variants are present in all affected
-                if check_compounds(variant_1, variant_2, family, intervals, phased):
+                if check_compounds(variant_1, variant_2, family, intervals, phased, interesting):
                     variant_1['Inheritance_model']['AR_comp'] = True
                     variant_2['Inheritance_model']['AR_comp'] = True
                     for individual in family.individuals:
@@ -175,7 +175,7 @@ def check_compound_candidates(variant, family, strict):
     
     return True
 
-def check_compounds(variant_1, variant_2, family, intervals, phased):
+def check_compounds(variant_1, variant_2, family, intervals, phased, interesting):
     """Check if two variants of a pair follow the compound heterozygous model. 
         At this stage we know: 
             - None of the individuals are homozygote alternative for the variants
@@ -198,17 +198,32 @@ def check_compounds(variant_1, variant_2, family, intervals, phased):
     """
     # Check in all individuals what genotypes that are in the trio based of the individual picked.
     
+    
     for individual in family.individuals:
         
         genotype_1 = variant_1['genotypes'][individual]
         genotype_2 = variant_2['genotypes'][individual]
         #check if variants are in the same phased interval:
+        
+        if family.individuals[individual].has_parents:
+            mother_id = family.individuals[individual].mother
+            father_id = family.individuals[individual].father
+        
+            if mother_id != '0':
+                if variant_1['genotypes'][mother_id].has_variant and variant_2['genotypes'][mother_id].has_variant:
+                    return False
+            
+            if father_id != '0':
+                if variant_1['genotypes'][father_id].has_variant and variant_2['genotypes'][father_id].has_variant:
+                    return False
+        
         if phased:
             variant_1_interval = intervals[individual].find_range([int(variant_1['POS']),int(variant_1['POS'])])
             variant_2_interval = intervals[individual].find_range([int(variant_2['POS']),int(variant_2['POS'])])
         
         # If phased a healthy individual can have both variants if they are on the same haploblock
         # if not phased:
+        
         if family.individuals[individual].healthy:
             if genotype_1.heterozygote and genotype_2.heterozygote:
                 return False
