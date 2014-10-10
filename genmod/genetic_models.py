@@ -121,7 +121,7 @@ def check_genetic_models(variant_batch, family, verbose = False, phased = False,
             variant_2 = variant_batch[pair[1]]
             if variant_1['Annotation'].intersection(variant_2['Annotation']):
                 # We know from check_compound_candidates that all variants are present in all affected
-                if check_compounds(variant_1, variant_2, family, intervals, phased, interesting):
+                if check_compounds(variant_1, variant_2, family, intervals, phased):
                     variant_1['Inheritance_model']['AR_comp'] = True
                     variant_2['Inheritance_model']['AR_comp'] = True
                     for individual in family.individuals:
@@ -175,7 +175,7 @@ def check_compound_candidates(variant, family, strict):
     
     return True
 
-def check_compounds(variant_1, variant_2, family, intervals, phased, interesting):
+def check_compounds(variant_1, variant_2, family, intervals, phased):
     """Check if two variants of a pair follow the compound heterozygous model. 
         At this stage we know: 
             - None of the individuals are homozygote alternative for the variants
