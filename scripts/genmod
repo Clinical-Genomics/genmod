@@ -18,6 +18,8 @@ import click
 
 from pprint import pprint as pp
 
+from codecs import getwriter
+
 import pkg_resources
 import genmod
 
