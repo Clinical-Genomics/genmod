@@ -121,12 +121,7 @@ def check_genetic_models(variant_batch, family, verbose = False, phased = False,
             variant_2 = variant_batch[pair[1]]
             if variant_1['Annotation'].intersection(variant_2['Annotation']):
                 # We know from check_compound_candidates that all variants are present in all affected
-                interesting = False
-                if variant_1['variant_id'] == '5_140389311_C_A' or variant_2['variant_id'] == '5_140389311_C_A':
-                    interesting = True
                 if check_compounds(variant_1, variant_2, family, intervals, phased, interesting):
-                    if interesting:
-                        print('pair : %s, %s ' % (variant_1['variant_id'], variant_2['variant_id']))
                     variant_1['Inheritance_model']['AR_comp'] = True
                     variant_2['Inheritance_model']['AR_comp'] = True
                     for individual in family.individuals:
@@ -216,16 +211,10 @@ def check_compounds(variant_1, variant_2, family, intervals, phased, interesting
         
             if mother_id != '0':
                 if variant_1['genotypes'][mother_id].has_variant and variant_2['genotypes'][mother_id].has_variant:
-                    if interesting:
-                        print('Mother')
-                        print(variant_1['variant_id'], variant_2['variant_id'])
                     return False
             
             if father_id != '0':
                 if variant_1['genotypes'][father_id].has_variant and variant_2['genotypes'][father_id].has_variant:
-                    if interesting:
-                        print('Father')
-                        print(variant_1['variant_id'], variant_2['variant_id'])
                     return False
         
         if phased:
