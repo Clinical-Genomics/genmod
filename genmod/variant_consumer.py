@@ -31,7 +31,7 @@ from genmod import genetic_models, warning
 class VariantConsumer(multiprocessing.Process):
     """Yeilds all unordered pairs from a list of objects as tuples, like (obj_1, obj_2)"""
     
-    def __init__(self, task_queue, results_queue, family=None, phased=False, vep=False, cadd_raw=False,
+    def __init__(self, task_queue, results_queue, family=False, phased=False, vep=False, cadd_raw=False,
                     cadd_file=None, cadd_1000g=None, cadd_ESP=None, cadd_InDels=None, 
                     thousand_g=None, chr_prefix=False, strict=False, verbosity=False):
         multiprocessing.Process.__init__(self)
@@ -186,7 +186,7 @@ class VariantConsumer(multiprocessing.Process):
                     vcf_info.append('Compounds=' + ','.join(compounds))
             
             # Check if any genetic models are followed
-            if 'GeneticModels' not in variant['info_dict']:
+            if 'GeneticModels' not in variant['info_dict'] and self.family:
                 
                 model_list = []
                 for model in variant_dict[variant_id].get('Inheritance_model',[]):

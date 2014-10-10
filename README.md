@@ -5,6 +5,32 @@
 [![DOI](https://zenodo.org/badge/5735/moonso/genmod.png)](http://dx.doi.org/10.5281/zenodo.11424)
 
 
+##USAGE:##
+
+###Basic functions###
+
+    genmod annotate variant_file.vcf --family_file ped_file
+
+This will print a new vcf to standard out with all variants annotated according to the statements below.
+
+Genmod is distributed with a annotation database that are built from the refGene data.
+If the user wants to build a new annotation set use the command below:
+
+	genmod build_annotation [--type] annotation_file
+
+
+From version 1.6 there is also a tool for analyzing the variants annotated by genmod. This tool will look at all variants in a vcf and do one separate analysis based on which inheritance patterns they follow. The variants are then ranked based on the cadd scores, the highest ranked variants for each category is printed to screen and the full list for each category is printed to new vcf files.
+Run with:
+
+	genmod analyze path/to/file.vcf
+
+For more information do 
+
+	genmod analyze --help
+
+
+##General##
+
 Tool for annotating patterns of inheritance in Variant Call Format (VCF) files with arbitrary pedigrees.
 
 Each variant in the VCF-file will be annotated with which genetic models that are followed in the family if a family file
@@ -23,8 +49,9 @@ The genetic models that are checked are the following:
 * X-linked Recessive, 'XR'
 * X-linked Recessive de novo, 'XR_dn'
 
-**GENMOD** will add entrys to the INFO column for the given VCF file depending on what information is given. By default the only field added is: 
-    
+**GENMOD** will add entrys to the INFO column for the given VCF file depending on what information is given.
+
+If ```-vep/--vep``` is NOT provided:
 - **Annotation** Comma separated list with features overlapped in the annotation file
 
 If a pedigree file is provided:
@@ -37,7 +64,7 @@ Also a line for logging is added in the vcf header with the id **genmod**, here 
 
 All annotations will be present only if they have a value.
 
-If ```-vep/--vep``` is used **ANN** will not be annotated since all information is in the vep entry.
+If ```-vep/--vep``` is used **Annotation** will not be annotated since all information is in the vep entry.
 
 ##Installation:##
 
@@ -50,19 +77,6 @@ or
     git clone https://github.com/moonso/genmod.git
     cd genmod
     python setup.py install
-
-##USAGE:##
-
-###Basic functions###
-
-    genmod annotate variant_file --family_file ped_file
-
-This will print a new vcf to standard out with all variants annotated according to the statements above.
-
-	genmod build_annotation [--type] annotation_file
-
-Genmod is distributed with a annotation database that are built from the refGene data.
-If the user wants to build a new annotation set use the command described above.
 
 ###Alternatives###
 
