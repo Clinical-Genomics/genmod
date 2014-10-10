@@ -19,6 +19,16 @@ If the user wants to build a new annotation set use the command below:
 	genmod build_annotation [--type] annotation_file
 
 
+From version 1.6 there is also a tool for analyzing the variants annotated by genmod. This tool will look at all variants in a vcf and do one separate analysis based on which inheritance patterns they follow. The variants are then ranked based on the cadd scores, the highest ranked variants for each category is printed to screen and the full list for each category is printed to new vcf files.
+Run with:
+
+	genmod analyze path/to/file.vcf
+
+For more information do 
+
+	genmod analyze --help
+
+
 ##General##
 
 Tool for annotating patterns of inheritance in Variant Call Format (VCF) files with arbitrary pedigrees.
