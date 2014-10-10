@@ -57,14 +57,15 @@ def get_family(family_file, family_type):
     
     return
 
-def add_metadata(head, vep=False, cadd_annotation=False, cadd_raw=False, thousand_g=None, command_line_string=''):
+def add_metadata(head, annotate_models=False, vep=False, cadd_annotation=False, cadd_raw=False, thousand_g=None, command_line_string=''):
     """Add metadata for the information added by this script."""
     # Update INFO headers
     if not vep:
         head.add_info('Annotation', '.', 'String', 'Annotates what feature(s) this variant belongs to.')
-    head.add_info('Compounds', '.', 'String', "':'-separated list of compound pairs for this variant.")
-    head.add_info('GeneticModels', '.', 'String', "':'-separated list of genetic models for this variant.")
-    head.add_info('ModelScore', '1', 'Integer', "PHRED score for genotype models.")
+    if annotate_models:
+        head.add_info('Compounds', '.', 'String', "':'-separated list of compound pairs for this variant.")
+        head.add_info('GeneticModels', '.', 'String', "':'-separated list of genetic models for this variant.")
+        head.add_info('ModelScore', '1', 'Integer', "PHRED score for genotype models.")
     if cadd_annotation:
         head.add_info('CADD', 'A', 'Float', "The CADD relative score for this alternative.")
         if cadd_raw:
@@ -267,7 +268,7 @@ def annotate(family_file, variant_file, family_type, vep, silent, phased, strict
             warning.warning('Individuals in VCF file: %s' % '\t'.join(list(variant_parser.individuals)))
             sys.exit()
     else:
-        family = None
+        family = False
     
     
     if cadd_file:
@@ -357,7 +358,7 @@ def annotate(family_file, variant_file, family_type, vep, silent, phased, strict
         start_time_variant_sorting = datetime.now()
     
     # Add the new metadata to the headers:
-    add_metadata(head, vep, cadd_annotation, cadd_raw, thousand_g, ' '.join(argument_list))
+    add_metadata(head, family, vep, cadd_annotation, cadd_raw, thousand_g, ' '.join(argument_list))
     
     print_headers(head, outfile, silent)
     

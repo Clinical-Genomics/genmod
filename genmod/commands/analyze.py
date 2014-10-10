@@ -79,7 +79,8 @@ def print_results(variant_dict, mode = 'homozygote', outfile=None, silent=False)
                             score_dict[variant_pair] = score
         else:
             score_dict[variant_id] = score
-    
+            print('score_dict:' % score_dict)
+            print('variant_dict:' % variant_dict)
     if mode == 'compound':
         print('\nCompound analysis:\n')
         variant_header = ['Variant 1 in pair', 'Variant 2 in pair']
@@ -105,6 +106,8 @@ def print_results(variant_dict, mode = 'homozygote', outfile=None, silent=False)
             print('\nHomozygote analysis:\n')
         if mode == 'denovo':
             print('\nDe novo analysis:\n')
+        if mode == 'xlinked':
+            print('\nX-linked analysis:\n')
         header = ['Chrom', 'Position', 'Reference', 'Alternative', 'Cadd score', '1000GMAF', 'Annotation']
     
         print(''.join(word.ljust(column_width) for word in header))
@@ -177,8 +180,6 @@ def remove_inacurate_compounds(compound_dict):
     """If the second variant in a compound pair does not meet the requirements they should not be considered."""
     
     for variant_id in list(compound_dict.keys()):
-        if variant_id == '5_140389311_C_A':
-            print('VARIANT FOUND!')
         # Get the compounds for the variant
         compounds = compound_dict[variant_id]['info_dict'].get('Compounds', '').split(',')
         compound_set = set(compounds) 
@@ -201,20 +202,13 @@ def covered_in_all(variant, coverage_treshold = 7):
     return True
         
 
-def get_interesting_variants(variant_parser, dominant_dict, homozygote_dict, compound_dict,
-                                x_linked_dict, dominant_dn_dict):
+def get_interesting_variants(variant_parser, dominant_dict, homozygote_dict, compound_dict, x_linked_dict, 
+    dominant_dn_dict, freq_treshold, freq_keyword, cadd_treshold, cadd_keyword):
     """Collect the interesting variants in their dictionarys. add RankScore."""
-    
-    freq_treshold = 0.05
-    freq_keyword = '1000GMAF'
     
     inheritance_keyword = 'GeneticModels'
     
-    cadd_treshold = 10.0
-    cadd_keyword = 'CADD'
-    
     gq_treshold = 100
-    
     
     de_novo_set = set(['AD_dn', 'AR_hom_dn', 'AR_comp_dn', 'XD_dn', 'XR_dn'])
     dominant_set = set(['AD'])
@@ -258,24 +252,39 @@ def get_interesting_variants(variant_parser, dominant_dict, homozygote_dict, com
                     type=click.Path(exists=True),
                     metavar='<vcf_file> or "-"'
 )
-@click.option('-c', '--config_file',
-                    type=click.Path(exists=True),
-                    help="""Specify the path to a config file."""
-)
-@click.option('--frequency', '-freq',
-                    type=float, 
+# @click.option('-c', '--config_file',
+#                     type=click.Path(exists=True),
+#                     help="""Specify the path to a config file."""
+# )
+@click.option('--frequency_treshold', '-freq',
+                    default=0.03, 
                     nargs=1,
-                    help='Specify the treshold for variants to be considered. Default 0.05'
+                    help='Specify maf treshold for variants to be considered. Default 0.03'
 )
-@click.option('-p', '--patterns',
-                    type=click.Choice(['AR', 'AD', 'X']),
-                    multiple=True,
-                    help='Specify the inheritance patterns. Default is all patterns'
+@click.option('--frequency_keyword', '-freqkey',
+                    default='1000GMAF', 
+                    nargs=1,
+                    help='Specify keyword for frequency in vcf. Default 1000GMAF'
 )
-@click.option('-o', '--outfile', 
-                    type=click.Path(exists=False),
-                    help='Specify the path to a file where results should be stored.'
+@click.option('--cadd_treshold', '-cadd',
+                    default=10.0, 
+                    nargs=1,
+                    help='Specify the cadd treshold for variants to be considered. Default 10.0'
 )
+@click.option('--cadd_keyword', '-caddkey',
+                    default='CADD', 
+                    nargs=1,
+                    help='Specify keyword for CADD scores in vcf. Default CADD'
+)
+# @click.option('-p', '--patterns',
+#                     type=click.Choice(['AR', 'AD', 'X']),
+#                     multiple=True,
+#                     help='Specify the inheritance patterns. Default is all patterns'
+# )
+# @click.option('-o', '--outfile',
+#                     type=click.Path(exists=False),
+#                     help='Specify the path to a file where results should be stored.'
+# )
 @click.option('-s', '--silent', 
                 is_flag=True,
                 help='Do not output variants.'
@@ -284,36 +293,25 @@ def get_interesting_variants(variant_parser, dominant_dict, homozygote_dict, com
                 is_flag=True,
                 help='Increase output verbosity.'
 )
-def analyze(variant_file, frequency, patterns, config_file, outfile, silent,verbose):
+def analyze(variant_file, frequency_treshold, frequency_keyword, cadd_treshold, cadd_keyword, silent, verbose):
     """Analyze the annotated variants in a VCF file."""
     
     start_time_analysis = datetime.now()
     
-    configs = ConfigObj(config_file)
+    # configs = ConfigObj(config_file)        
+    # prefered_models = make_models([])
     
-    freq_treshold = 0.05
-    freq_keyword = '1000GMAF'
-    
-    prefered_models = make_models([])
     inheritance_keyword = 'GeneticModels'
-    
-    cadd_treshold = 10.0
-    cadd_keyword = 'CADD'
     
     gq_treshold = 100
     
-    if config_file:
-        freq_treshold = float(configs.get('frequency', {}).get('rare', freq_treshold))
-        freq_keyword = configs.get('frequency', {}).get('keyword', freq_keyword)    
-        inheritance_patterns = [pattern for pattern in configs.get('inheritance', {}).get('patterns',[])]
-        inheritance_keyword = configs.get('inheritance', {}).get('keyword',inheritance_keyword)
-        prefered_models = make_models(inheritance_patterns)
+    # if config_file:
+    #     frequency_treshold = float(configs.get('frequency', {}).get('rare', frequency_treshold))
+    #     freq_keyword = configs.get('frequency', {}).get('keyword', freq_keyword)
+    #     inheritance_patterns = [pattern for pattern in configs.get('inheritance', {}).get('patterns',[])]
+    #     inheritance_keyword = configs.get('inheritance', {}).get('keyword',inheritance_keyword)
+    #     prefered_models = make_models(inheritance_patterns)
     
-    # Command line overrides config file
-    if frequency:
-        freq_treshold = frequency
-    if patterns:
-        prefered_models = make_models(patterns)
     
     if variant_file == '-':
         variant_parser = vcf_parser.VCFParser(fsock = sys.stdin)
@@ -330,10 +328,8 @@ def analyze(variant_file, frequency, patterns, config_file, outfile, silent,verb
     dominant_dn_dict = {}
     
     
-    get_interesting_variants(variant_parser, dominant_dict, homozygote_dict, compound_dict, x_linked_dict, dominant_dn_dict)
-
-    print(compound_dict['5_140389311_C_A'])
-    print(compound_dict['5_140256870_G_T'])
+    get_interesting_variants(variant_parser, dominant_dict, homozygote_dict, compound_dict, x_linked_dict, dominant_dn_dict,
+                                frequency_treshold, frequency_keyword, cadd_treshold, cadd_keyword)
     
     if len(dominant_dict) > 0:
         print_results(dominant_dict, mode='dominant')
@@ -343,9 +339,6 @@ def analyze(variant_file, frequency, patterns, config_file, outfile, silent,verb
         print_results(homozygote_dict, mode='homozygote')
         
     if len(compound_dict) > 0:
-        print('AGAIN:')
-        print(compound_dict['5_140389311_C_A'])
-        print(compound_dict['5_140256870_G_T'])
         print_results(compound_dict, mode='compound')
     #     compound_file = NamedTemporaryFile(delete=False)
     #     print_variants(compound_dict, compound_file.name)
@@ -355,7 +348,9 @@ def analyze(variant_file, frequency, patterns, config_file, outfile, silent,verb
     #     print_headers(head, homozygote_sorted.name)
     #     var_sorter = variant_sorter.FileSort(homozygote_file.name, mode='cadd', outfile=homozygote_sorted.name)
     #     var_sorter.sort()
-    #
+    if len(x_linked_dict) > 0:
+        print_results(x_linked_dict, mode='xlinked')
+
     if len(dominant_dn_dict) > 0:
         print_results(dominant_dn_dict, mode='denovo')
     #     de_novo_file = NamedTemporaryFile(delete=False)
