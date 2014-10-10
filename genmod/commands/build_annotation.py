@@ -56,7 +56,7 @@ def build_annotation(annotation_file, type, outdir, splice_padding, verbose):
         click.echo('Building new annotation databases from %s into %s.' % (annotation_file, outdir))
     
     anno_parser = genmod.annotation_parser.AnnotationParser(annotation_file, type, 
-                            splice_padding = splice_padding, verbosity=config.verbose)
+                            splice_padding = splice_padding, verbosity=verbosity)
     
     gene_db = pkg_resources.resource_filename('genmod', 'annotations/genes.db')
     exon_db = pkg_resources.resource_filename('genmod', 'annotations/exons.db')

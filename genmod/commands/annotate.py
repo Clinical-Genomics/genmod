@@ -292,7 +292,7 @@ def annotate(family_file, variant_file, family_type, vep, silent, phased, strict
         check_tabix_index(cadd_indels, 'cadd', verbosity)
         cadd_annotation = True
     if thousand_g:
-        if config.verbose:
+        if verbosity:
             click.echo('1000G frequency file! %s' % thousand_g)
         check_tabix_index(thousand_g, 'vcf', verbosity)
     
