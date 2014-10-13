@@ -351,14 +351,14 @@ def check_X_recessive(variant, family, strict):
                 get called as heterozygotes but this should not be possible since 
                 they only have one copy of the X chromosome.
             if strict:
-                - Have to be homozygote reference or heterozygote.
+                - Have to be homozygote reference(if male) or heterozygote(if female).
                 - No call will return False
         
         Affected:
-            - Have to be homozygote alternative.
+            - Have to be homozygote alternative(or heterozygote if male).
             - If no call we can not exclude AR
             if strict:
-                - Have to be homozygote alternative
+                - Have to be homozygote alternative(or heterozygote if male)
                 - No call will return false
         
         No affection status:
@@ -372,13 +372,14 @@ def check_X_recessive(variant, family, strict):
         Return:
             bool: depending on if the model is followed in these indivduals
         
-            """
+        """
+    
     for individual in family.individuals:
         # Get the genotype for this variant for this individual
         individual_genotype = variant['genotypes'][individual]
         
         if strict:
-            if individual_genotype.genotyped:
+            if not individual_genotype.genotyped:
                 return False
         # The case where the individual is healthy
         if family.individuals[individual].healthy:
@@ -386,6 +387,7 @@ def check_X_recessive(variant, family, strict):
             if individual_genotype.genotyped:
                 if individual_genotype.homo_alt:
                     return False
+                # If individual is male it can not have the variant at all
                 if family.individuals[individual].sex == 1:
                     if individual_genotype.has_variant:
                         return False
@@ -409,7 +411,7 @@ def check_X_dominant(variant, family, strict):
         Healthy:
             - Can not be homozygote alternative
             - Healthy females can be heterozygotes. This is possible since there are several
-             documented diseases where only one allele is expressed at a time during development.
+             documented diseases where only one allele at a time is expressed during development.
             - If no call we can not exclude XR
             if strict:
                 - Have to be homozygote reference (or heterozygote womens).
@@ -419,7 +421,7 @@ def check_X_dominant(variant, family, strict):
             - Have to be heterozygote.
             - If no call we can not exclude AR
             if strict:
-                - Have to be heterozygote
+                - Have to be heterozygote or homozygote(for males)
                 - No call will return false
         
         No affection status:
@@ -439,7 +441,7 @@ def check_X_dominant(variant, family, strict):
         individual_genotype = variant['genotypes'][individual]
         
         if strict:
-            if individual_genotype.genotyped:
+            if not individual_genotype.genotyped:
                 return False
         # The case where the individual is healthy
         if family.individuals[individual].healthy:
