@@ -36,6 +36,37 @@ import genmod
 from genmod import variant_sorter, variant_printer, warning
 
 
+PROBLEMATIC_GENES = set(['MIR6077-1',
+                            'MIR6077-2',
+                            'MIR4315-1',
+                            'MIR4315-2',
+                            'LINC00623',
+                            'LINC00869',
+                            'NBPF8',
+                            'NBPF9',
+                            'NBPF20',
+                            'PPIAL4A',
+                            'PPIAL4B',
+                            'PPIAL4C',
+                            'PDE4DIP',
+                            'LOC100132057',
+                            'LOC100288162',
+                            'SRGAP2D',
+                            'FAM272C',
+                            'SNAR-A3',
+                            'SNAR-A4',
+                            'SNAR-A5',
+                            'SNAR-A6',
+                            'SNAR-A7',
+                            'SNAR-A8',
+                            'SNAR-A9',
+                            'SNAR-A10',
+                            'SNAR-A11',
+                            'SNAR-A14',
+                            'GLUD1P7',
+                        ])
+
+
 def print_headers(head, outfile=None, silent=False):
     """Print the headers to a results file."""
     if outfile:
@@ -58,12 +89,12 @@ def print_results(variant_dict, outfile, vcf_header, mode = 'homozygote', silent
     length_of_output = 20
     for variant_id in variant_dict:
         # Get the score for each variant:
-        score = float(variant_dict[variant_id]['info_dict'].get(score_key, '0'))
+        score = max([float(cadd_score) for cadd_score in variant_dict[variant_id]['info_dict'].get(score_key, '0').split(',')])
         if mode == 'compound':
             # If we look at compounds we want to consider the combined score
             for variant_2_id in variant_dict[variant_id]['info_dict'].get('Compounds', '').split(','):
                 if variant_2_id in variant_dict:
-                    score_2 = float(variant_dict[variant_2_id]['info_dict'].get(score_key, '0'))
+                    score_2 = max([float(cadd_score) for cadd_score in variant_dict[variant_2_id]['info_dict'].get(score_key, '0').split(',')])
                     if score_2 > 10:
                         # print(variant_dict[variant_2_id])
                         variant_pair = (variant_id, variant_2_id)
@@ -192,7 +223,7 @@ def covered_in_all(variant, coverage_treshold = 7):
         
 
 def get_interesting_variants(variant_parser, dominant_dict, homozygote_dict, compound_dict, x_linked_dict, 
-    dominant_dn_dict, freq_treshold, freq_keyword, cadd_treshold, cadd_keyword):
+    dominant_dn_dict, freq_treshold, freq_keyword, cadd_treshold, cadd_keyword, coverage, exclude_problematic):
     """Collect the interesting variants in their dictionarys. add RankScore."""
     
     inheritance_keyword = 'GeneticModels'
@@ -208,30 +239,50 @@ def get_interesting_variants(variant_parser, dominant_dict, homozygote_dict, com
     
     for variant in variant_parser:
         models_found = set(variant['info_dict'].get(inheritance_keyword, '').split(','))
+        annotation = set(variant['info_dict'].get('Annotation', '').split(','))
+
         
         maf = min([float(frequency) for frequency in variant['info_dict'].get(freq_keyword, '0').split(',')])
         cadd_score = max([float(cscore) for cscore in variant['info_dict'].get(cadd_keyword, '0').split(',')])
         
         variant_id = variant['variant_id']
         
-        if covered_in_all(variant):
+        # There is a list of huge genes that becomes problematic when analysing single individuals
         
-            if variant['FILTER'] == 'PASS' and float(variant['QUAL']) > gq_treshold:
-                # Check if cadd score is available:
-                if cadd_score > cadd_treshold:
-                    # Check if MAF is below treshold:
-                    if maf < freq_treshold:
-                        # First we look at the variants that are not dn:
-                        if models_found.intersection(dominant_set):
-                            dominant_dict[variant_id] = variant
-                        if models_found.intersection(homozygote_set):
-                            homozygote_dict[variant_id] = variant
-                        if models_found.intersection(compound_set):
-                            compound_dict[variant_id] = variant
-                        if models_found.intersection(x_linked_set):
-                            x_linked_dict[variant_id] = variant
-                        elif models_found.intersection(dominant_dn_set):
-                                dominant_dn_dict[variant_id] = variant
+        interesting = True
+        
+        if not models_found:
+            interesting = False
+        
+        if exclude_problematic:
+            if annotation.intersection(PROBLEMATIC_GENES):
+                interesting = False
+            
+        if not covered_in_all(variant, coverage):
+                interesting = False
+            
+        if not variant['FILTER'] == 'PASS':
+            interesting = False
+        
+        if not float(variant['QUAL']) > gq_treshold:
+            interesting = False
+        
+        if interesting:
+            # Check if cadd score is available:
+            if cadd_score > cadd_treshold:
+            # Check if MAF is below treshold:
+                if maf < freq_treshold:
+                    # First we look at the variants that are not dn:
+                    if models_found.intersection(dominant_set):
+                        dominant_dict[variant_id] = variant
+                    if models_found.intersection(homozygote_set):
+                        homozygote_dict[variant_id] = variant
+                    if models_found.intersection(compound_set):
+                        compound_dict[variant_id] = variant
+                    if models_found.intersection(x_linked_set):
+                        x_linked_dict[variant_id] = variant
+                    elif models_found.intersection(dominant_dn_set):
+                            dominant_dn_dict[variant_id] = variant
     return
 
 
@@ -284,12 +335,16 @@ def get_interesting_variants(variant_parser, dominant_dict, homozygote_dict, com
                 is_flag=True,
                 help='Do not output variants.'
 )
+@click.option('-exclude', '--exclude_problematic', 
+                is_flag=True,
+                help='Exclude problematic genes. This flag is preferable if analysis of only one individual.'
+)
 @click.option('-v', '--verbose', 
                 is_flag=True,
                 help='Increase output verbosity.'
 )
 def analyze(variant_file, frequency_treshold, frequency_keyword, cadd_treshold, cadd_keyword, coverage,
-                outdir, silent, verbose):
+                outdir, silent, exclude_problematic, verbose):
     """Analyze the annotated variants in a VCF file.
         The variants are analyzed in five different categories based on what inheritance patterns that are followed.
         The differen analysies are: 
@@ -344,8 +399,9 @@ def analyze(variant_file, frequency_treshold, frequency_keyword, cadd_treshold, 
     dominant_dn_dict = {}
     
     
-    get_interesting_variants(variant_parser, dominant_dict, homozygote_dict, compound_dict, x_linked_dict, dominant_dn_dict,
-                                frequency_treshold, frequency_keyword, cadd_treshold, cadd_keyword)
+    get_interesting_variants(variant_parser, dominant_dict, homozygote_dict, compound_dict, x_linked_dict, 
+                                dominant_dn_dict, frequency_treshold, frequency_keyword, cadd_treshold, 
+                                cadd_keyword, coverage, exclude_problematic)
     
     remove_inacurate_compounds(compound_dict)
     
