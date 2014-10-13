@@ -86,6 +86,12 @@ class VariantConsumer(multiprocessing.Process):
         # CADD values are only for snps:
         cadd_key = int(start)
         try:
+            for record in tabix_reader.fetch(chrom, cadd_key-1, cadd_key):
+                record = record.split('\t')
+                if record[3] == alt:
+                    #We need to send both cadd values
+                    return (record[-1], record[-2])
+        except TypeError:
             for record in tabix_reader.fetch(str(chrom), cadd_key-1, cadd_key):
                 record = record.split('\t')
                 if record[3] == alt:

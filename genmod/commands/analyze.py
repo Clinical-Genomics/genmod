@@ -235,7 +235,8 @@ def get_interesting_variants(variant_parser, dominant_dict, homozygote_dict, com
     homozygote_set = set(['AR_hom'])
     compound_set = set(['AR_comp'])
     x_linked_set = set(['XD', 'XR'])
-    dominant_dn_set = set(['XD_dn'])
+    dominant_dn_set = set(['AD_dn'])
+    
     
     for variant in variant_parser:
         models_found = set(variant['info_dict'].get(inheritance_keyword, '').split(','))
@@ -249,6 +250,7 @@ def get_interesting_variants(variant_parser, dominant_dict, homozygote_dict, com
         
         # There is a list of huge genes that becomes problematic when analysing single individuals
         
+        
         interesting = True
         
         if not models_found:
@@ -258,14 +260,15 @@ def get_interesting_variants(variant_parser, dominant_dict, homozygote_dict, com
             if annotation.intersection(PROBLEMATIC_GENES):
                 interesting = False
             
-        if not covered_in_all(variant, coverage):
-                interesting = False
+        # if not covered_in_all(variant, coverage):
+        #         interesting = False
             
         if not variant['FILTER'] == 'PASS':
             interesting = False
         
         if not float(variant['QUAL']) > gq_treshold:
             interesting = False
+        
         
         if interesting:
             # Check if cadd score is available:
@@ -281,8 +284,9 @@ def get_interesting_variants(variant_parser, dominant_dict, homozygote_dict, com
                         compound_dict[variant_id] = variant
                     if models_found.intersection(x_linked_set):
                         x_linked_dict[variant_id] = variant
-                    elif models_found.intersection(dominant_dn_set):
-                            dominant_dn_dict[variant_id] = variant
+                    if models_found.intersection(dominant_dn_set):
+                        dominant_dn_dict[variant_id] = variant
+                            
     return
 
 
@@ -441,6 +445,7 @@ def analyze(variant_file, frequency_treshold, frequency_keyword, cadd_treshold, 
     print('Number of interesting Homozygote variants: %s' %len(homozygote_dict))
     print('Number of interesting Compound variants: %s' %len(compound_dict))
     print('Number of interesting X-linked variants: %s' %len(x_linked_dict))
+    print('Number of interesting Autosomal Dominant de novo variants: %s' %len(dominant_dn_dict))
     
     # pp(compound_dict)
     
