@@ -62,7 +62,7 @@ def run_genmod():
 run_genmod.add_command(build_annotation.build_annotation)
 run_genmod.add_command(annotate.annotate)
 run_genmod.add_command(analyze.analyze)
-# run_genmod.add_command(summarize_variants.summarize_variants)
+run_genmod.add_command(summarize_variants.summarize_variants)
 
 
 

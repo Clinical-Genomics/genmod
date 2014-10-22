@@ -241,7 +241,7 @@ def get_interesting_variants(variant_parser, dominant_dict, homozygote_dict, com
     for variant in variant_parser:
         models_found = set(variant['info_dict'].get(inheritance_keyword, '').split(','))
         annotation = set(variant['info_dict'].get('Annotation', '').split(','))
-
+        
         
         maf = min([float(frequency) for frequency in variant['info_dict'].get(freq_keyword, '0').split(',')])
         cadd_score = max([float(cscore) for cscore in variant['info_dict'].get(cadd_keyword, '0').split(',')])
@@ -249,7 +249,6 @@ def get_interesting_variants(variant_parser, dominant_dict, homozygote_dict, com
         variant_id = variant['variant_id']
         
         # There is a list of huge genes that becomes problematic when analysing single individuals
-        
         
         interesting = True
         
