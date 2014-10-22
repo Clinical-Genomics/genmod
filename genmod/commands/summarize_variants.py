@@ -22,7 +22,7 @@ Analyze the the variants in a vcf, the following will be printed:
         - XR_dn
     - How many variants in genetic regions
     - How many rare variants (Default maf < 0.02)
-    - How many high scored cadd. (Default cadd > 10)
+    - How many high scored cadd. (Default cadd = 0)
     - How many rare + high score cadd
     - How many follow a genetic model + rare + high cadd
 
@@ -30,8 +30,7 @@ Created by Måns Magnusson on 2014-09-08.
 Copyright (c) 2014 __MoonsoInc__. All rights reserved.
 """
 
-from __future__ import print_function
-from __future__ import unicode_literals
+from __future__ import print_function, unicode_literals, division
 
 import sys
 import os
@@ -63,22 +62,22 @@ from genmod import warning
 @click.option('--frequency_treshold', '-freq',
                     default=0.05,
                     nargs=1,
-                    help='Specify the ferquency treshold for variants to be considered. Default 0.05'
+                    help='Specify the ferquency treshold for variants to be considered. Default=0.05'
 )
 @click.option('--cadd_treshold', '-cadd',
-                    default=10.0,
+                    default=0.0,
                     nargs=1,
-                    help='Specify the cadd score treshold for variants to be considered. Default 10'
+                    help='Specify the cadd score treshold for variants to be considered. Default=0'
 )
 @click.option('--gq_treshold', '-gq',
-                    default=10.0,
+                    default=70.0,
                     nargs=1,
-                    help='Specify the genotype quality treshold for variants to be considered. Default 10'
+                    help='Specify the genotype quality treshold for variants to be considered. Default=70'
 )
 @click.option('--read_depth_treshold', '-depth',
                     default=10.0,
                     nargs=1,
-                    help='Specify the genotype quality treshold for variants to be considered. Default 10'
+                    help='Specify the genotype quality treshold for variants to be considered. Default=10'
 )
 # @click.option('-p', '--patterns',
 #                     type=click.Choice(['AR', 'AD', 'X']),
@@ -99,8 +98,13 @@ def summarize_variants(variant_file, frequency_treshold, cadd_treshold, gq_tresh
     freq_keyword = '1000GMAF'
     inheritance_keyword = 'GeneticModels'
     
-    inheritance_dict = {'AR_hom':0, 'AR_hom_dn': 0, 'AR_comp':0, 'AR_comp_dn': 0 , 'AD':0, 'AD_dn':0, 
-                            'XD':0, 'XD_dn':0, 'XR':0, 'XR_dn':0}
+    inheritance_models = ['AR_hom', 'AR_hom_dn', 'AR_comp', 'AR_comp_dn', 'AD', 'AD_dn', 
+                            'XD', 'XD_dn', 'XR', 'XR_dn']
+    
+    inheritance_dict = {}
+    for inheritance_model in inheritance_models:
+        inheritance_dict[inheritance_model] = 0
+    
     number_of_variants = 0
     rare_variants = 0
     high_cadd_scores = 0
@@ -146,7 +150,7 @@ def summarize_variants(variant_file, frequency_treshold, cadd_treshold, gq_tresh
                 if '_dn' in model:
                     if correct_genotype:
                         true_de_novos += 1
-                        pp(variant)
+                        # pp(variant)
                 inheritance_dict[model] += 1
         
         # Check the frequency of the variants:
@@ -158,10 +162,10 @@ def summarize_variants(variant_file, frequency_treshold, cadd_treshold, gq_tresh
         
         # Check the cadd score:
         
-        if cadd_score > cadd_treshold:
+        if cadd_score >= cadd_treshold:
             high_cadd_scores += 1
         
-        elif cadd_score == 0:
+        if cadd_score == 0:
             no_cadd_score += 1
         
         # Check if indel:
@@ -170,15 +174,22 @@ def summarize_variants(variant_file, frequency_treshold, cadd_treshold, gq_tresh
             indels += 1
             if cadd_score == 0:
                 indel_no_cadd += 1
-
-    pp(inheritance_dict)    
+    
+    for model in inheritance_models:
+      print("%s = %s" % (model, inheritance_dict[model]))
+    
+    # pp(inheritance_dict)
     print('Number of variants: %s' % number_of_variants)
-    print('Number of rare: %s. Frequency of all: %.2f' % (rare_variants, rare_variants/number_of_variants))
-    print('Number of high cadd scores: %s. Frequency of all: %.2f' % (high_cadd_scores, high_cadd_scores/number_of_variants))
+    print('Number of rare (maf<%s): %s. Frequency of all: %.2f' 
+            % (frequency_treshold, rare_variants, rare_variants/number_of_variants))
+    print('Number of high cadd scores (cadd >= %s): %s. Frequency of all: %.2f' 
+            % (cadd_treshold, high_cadd_scores, high_cadd_scores/number_of_variants))
     print('Number of high cadd scores and rare: %s. Frequency of all: %.2f' 
-                % (high_cadd_and_rare, high_cadd_and_rare/number_of_variants))
-    print('Number of no cadd scores: %s. Frequency of all: %.2f \n' % (no_cadd_score, no_cadd_score/number_of_variants))
-    print('Number of indels: %s. Frequency of all: %.2f' % (indels, indels/number_of_variants))
+            % (high_cadd_and_rare, high_cadd_and_rare/number_of_variants))
+    print('Number of no cadd scores: %s. Frequency of all: %.2f \n' 
+            % (no_cadd_score, no_cadd_score/number_of_variants))
+    print('Number of indels: %s. Frequency of all: %.2f' 
+            % (indels, indels/number_of_variants))
     print('Number of indels and no cadd score: %s. Frequency of all: %.2f \n' 
                 % (indel_no_cadd, indel_no_cadd/number_of_variants))
     print('"True" de novos: %s \n' % true_de_novos)
