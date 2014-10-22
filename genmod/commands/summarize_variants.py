@@ -70,9 +70,9 @@ from genmod import warning
                     help='Specify the cadd score treshold for variants to be considered. Default=0'
 )
 @click.option('--gq_treshold', '-gq',
-                    default=70.0,
+                    default=50.0,
                     nargs=1,
-                    help='Specify the genotype quality treshold for variants to be considered. Default=70'
+                    help='Specify the genotype quality treshold for variants to be considered. Default=50'
 )
 @click.option('--read_depth_treshold', '-depth',
                     default=10.0,
@@ -115,6 +115,8 @@ def summarize_variants(variant_file, frequency_treshold, cadd_treshold, gq_tresh
     indels = 0
     indel_no_cadd = 0
     true_de_novos = 0
+    low_genotype = 0
+    low_coverage = 0
     
     analysis_start = datetime.now()
     
@@ -138,48 +140,58 @@ def summarize_variants(variant_file, frequency_treshold, cadd_treshold, gq_tresh
                 
         for individual in genotypes:
             if genotypes[individual].genotype_quality < gq_treshold:
-                    correct_genotype = False
+                correct_genotype = False
             
             #If any individual has depth below "depth" we do not consider the variant
             if genotypes[individual].quality_depth < read_depth_treshold:
                 adequate_depth = False
         
-        # Check what variant models that are followed:
-        if models_found:
-            for model in models_found.split(','):
-                if '_dn' in model:
-                    if correct_genotype:
-                        true_de_novos += 1
-                        # pp(variant)
-                inheritance_dict[model] += 1
-        
-        # Check the frequency of the variants:
-        
-        if maf < frequency_treshold:
-            rare_variants += 1
-            if cadd_score > cadd_treshold:
-                high_cadd_and_rare += 1
-        
-        # Check the cadd score:
-        
-        if cadd_score >= cadd_treshold:
-            high_cadd_scores += 1
-        
-        if cadd_score == 0:
-            no_cadd_score += 1
-        
-        # Check if indel:
-        
-        if len(reference) > 1 or len(alternative) > 1:
-            indels += 1
+        if not correct_genotype:
+            low_genotype += 1
+        if not adequate_depth:    
+            low_coverage += 1
+        # Check what variant models that are followed for the variants that have proper quality:
+        if correct_genotype and adequate_depth:
+            if models_found:
+                for model in models_found.split(','):
+                    inheritance_dict[model] += 1
+            
+            # Check the frequency of the variants:
+            
+            if maf < frequency_treshold:
+                rare_variants += 1
+                if cadd_score >= cadd_treshold:
+                    high_cadd_and_rare += 1
+            
+            # Check the cadd score:
+            
+            if cadd_score >= cadd_treshold:
+                high_cadd_scores += 1
+            
             if cadd_score == 0:
-                indel_no_cadd += 1
+                no_cadd_score += 1
+            
+            # Check if indel:
+            
+            if len(reference) > 1 or len(alternative) > 1:
+                indels += 1
+                if cadd_score == 0:
+                    indel_no_cadd += 1
+    
+    # pp(inheritance_dict)
+    print('Number of variants: %s' % number_of_variants)
+    print('Number of variants with low genotype quality (gq<%s): %s' % (gq_treshold, low_genotype))
+    print('Number of variants with low coverage (cov<%s): %s \n\n' % (read_depth_treshold, low_coverage))
+    
+    print("The following statistics are for the variants that meet the criterias for genotype quality and read depth.\n"
+            "This means that the variants are covered in all individuals.\n"
+            "-----------------------------------------------------------------------------------------\n\n")
     
     for model in inheritance_models:
       print("%s = %s" % (model, inheritance_dict[model]))
     
-    # pp(inheritance_dict)
-    print('Number of variants: %s' % number_of_variants)
+    print('')
+    
     print('Number of rare (maf<%s): %s. Frequency of all: %.2f' 
             % (frequency_treshold, rare_variants, rare_variants/number_of_variants))
     print('Number of high cadd scores (cadd >= %s): %s. Frequency of all: %.2f' 
@@ -192,7 +204,6 @@ def summarize_variants(variant_file, frequency_treshold, cadd_treshold, gq_tresh
             % (indels, indels/number_of_variants))
     print('Number of indels and no cadd score: %s. Frequency of all: %.2f \n' 
                 % (indel_no_cadd, indel_no_cadd/number_of_variants))
-    print('"True" de novos: %s \n' % true_de_novos)
     print('Time for analysis: %s' % str(datetime.now()-analysis_start))
 
 if __name__ == '__main__':
