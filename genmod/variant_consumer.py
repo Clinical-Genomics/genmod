@@ -31,7 +31,7 @@ class VariantConsumer(multiprocessing.Process):
     
     def __init__(self, task_queue, results_queue, family=False, phased=False, vep=False, cadd_raw=False,
                     cadd_file=None, cadd_1000g=None, cadd_ESP=None, cadd_InDels=None, 
-                    thousand_g=None, chr_prefix=False, strict=False, verbosity=False):
+                    thousand_g=None, exac=None, chr_prefix=False, strict=False, verbosity=False):
         multiprocessing.Process.__init__(self)
         self.task_queue = task_queue
         self.family = family
@@ -45,6 +45,7 @@ class VariantConsumer(multiprocessing.Process):
         self.cadd_ESP = cadd_ESP
         self.cadd_InDels = cadd_InDels
         self.thousand_g = thousand_g
+        self.exac = exac
         self.chr_prefix = chr_prefix
         self.strict = strict
         self.any_cadd_info = False
@@ -62,6 +63,8 @@ class VariantConsumer(multiprocessing.Process):
             self.any_cadd_info = True
         if self.thousand_g:
             self.thousand_g = tabix.open(self.thousand_g)
+        if self.exac:
+            self.exac = tabix.open(self.exac)
     
     def get_model_score(self, individuals, variant):
         """Return the model score for this variant."""
@@ -136,7 +139,7 @@ class VariantConsumer(multiprocessing.Process):
                 variant['CADD_raw'] = ','.join(cadd_absolute_scores)
         return
 
-    def get_thousandg_freq(self, tabix_reader, chrom, start, alt):
+    def get_freq(self, tabix_reader, chrom, start, alt):
         """Return the record from a cadd file."""
         freq = None
         # CADD values are only for snps:
@@ -175,10 +178,18 @@ class VariantConsumer(multiprocessing.Process):
     def add_frequency(self, variant):
         """Add the thousand genome frequency if present."""
         #Check 1000G frequency:
-        thousand_g_freq = self.get_thousandg_freq(self.thousand_g, 
-                            variant['CHROM'], variant['POS'], variant['ALT'].split(',')[0])
-        if thousand_g_freq:
-                variant['1000GMAF'] = thousand_g_freq
+        thousand_g_freq = None
+        exac_freq = None
+        if self.thousand_g:
+            thousand_g_freq = self.get_freq(self.thousand_g, variant['CHROM'], variant['POS'],
+                                                              variant['ALT'].split(',')[0])
+            if thousand_g_freq:
+                variant['1000G_freq'] = thousand_g_freq
+        if self.exac:
+            exac_freq = self.get_freq(self.exac, variant['CHROM'], variant['POS'],
+                                                              variant['ALT'].split(',')[0])
+            if exac_freq:
+                variant['ExAC_freq'] = exac_freq
         return
     
     
@@ -233,9 +244,13 @@ class VariantConsumer(multiprocessing.Process):
                     if variant.get('CADD_raw', None):
                         vcf_info.append('CADD_raw=%s' % str(variant.pop('CADD_raw', '.')))
             
-            if variant.get('1000GMAF', None):
-                if '1000GMAF' not in variant['info_dict']:
-                    vcf_info.append('1000GMAF=%s' % str(variant.pop('1000GMAF', '.')))
+            if variant.get('1000G_freq', None):
+                if '1000G_freq' not in variant['info_dict']:
+                    vcf_info.append('1000G_freq=%s' % str(variant.pop('1000G_freq', '.')))
+
+            if variant.get('ExAC_freq', None):
+                if 'ExAC_freq' not in variant['info_dict']:
+                    vcf_info.append('ExAC_freq=%s' % str(variant.pop('ExAC_freq', '.')))
             
             variant_dict[variant_id]['INFO'] = ';'.join(vcf_info)
             
@@ -264,7 +279,7 @@ class VariantConsumer(multiprocessing.Process):
             for variant_id in variant_batch:
                 if self.any_cadd_info:
                     self.add_cadd_score(variant_batch[variant_id])
-                if self.thousand_g:
+                if self.thousand_g or self.exac:
                     self.add_frequency(variant_batch[variant_id])
             
             # Now we want to make versions of the variants that are ready for printing.

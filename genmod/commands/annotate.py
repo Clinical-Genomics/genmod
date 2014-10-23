@@ -28,8 +28,6 @@ from datetime import datetime
 from tempfile import mkdtemp, TemporaryFile, NamedTemporaryFile
 from pprint import pprint as pp
 
-# import vcf
-
 import shutil
 import pkg_resources
 
@@ -55,7 +53,8 @@ def get_family(family_file, family_type):
     
     return
 
-def add_metadata(head, annotate_models=False, vep=False, cadd_annotation=False, cadd_raw=False, thousand_g=None, command_line_string=''):
+def add_metadata(head, annotate_models=False, vep=False, cadd_annotation=False, cadd_raw=False, thousand_g=None,
+                 exac=None, command_line_string=''):
     """Add metadata for the information added by this script."""
     # Update INFO headers
     if not vep:
@@ -70,7 +69,9 @@ def add_metadata(head, annotate_models=False, vep=False, cadd_annotation=False, 
             head.add_info('CADD_raw', 'A', 'Float', "The CADD raw score(s) for this alternative(s).")
     
     if thousand_g:
-        head.add_info('1000GMAF', 'A', 'Float', "Frequency in the 1000G database.")
+        head.add_info('1000G_freq', 'A', 'Float', "Frequency in the 1000G database.")
+    if exac:
+        head.add_info('ExAC_freq', 'A', 'Float', "Frequency in the ExAC database.")
     
     # Update version logging
     head.add_version_tracking('genmod', version, str(datetime.now()), command_line_string)
@@ -180,39 +181,37 @@ def check_tabix_index(compressed_file, file_type='cadd', verbose=False):
 )
 @click.option('--cadd_file', 
                     type=click.Path(exists=True), 
-                    help="""Specify the path to a bgzipped cadd file with variant scores.
-                            If no index is present it will be created."""
+                    help="""Specify the path to a bgzipped cadd file (with index) with variant scores."""
 )
 @click.option('--cadd_1000g',
                     type=click.Path(exists=True), 
-                    help="""Specify the path to a bgzipped cadd file with variant scores 
-                            for all 1000g variants. If no index is present a new index
-                            will be created."""
+                    help="""Specify the path to a bgzipped cadd file (with index) with variant scores 
+                            for all 1000g variants."""
 )
 @click.option('--cadd_esp',
                     type=click.Path(exists=True), 
-                    help="""Specify the path to a bgzipped cadd file with variant scores 
-                            for all ESP6500 variants. If no index is present a new index
-                            will be created."""
+                    help="""Specify the path to a bgzipped cadd file (with index) with variant scores 
+                            for all ESP6500 variants."""
 )
 @click.option('--cadd_indels',
                     type=click.Path(exists=True), 
-                    help="""Specify the path to a bgzipped cadd file with variant scores 
-                            for all CADD InDel variants. If no index is present a new index
-                            will be created."""
+                    help="""Specify the path to a bgzipped cadd file (with index) with variant scores 
+                            for all CADD InDel variants."""
 )
 @click.option('--thousand_g',
                     type=click.Path(exists=True), 
-                    help="""Specify the path to a bgzipped vcf file frequency info of all 
-                            1000g variants. If no index is present a new index
-                            will be created."""
+                    help="""Specify the path to a bgzipped vcf file (with index) with 1000g variants"""
+)
+@click.option('--exac',
+                    type=click.Path(exists=True), 
+                    help="""Specify the path to a bgzipped vcf file (with index) with exac variants."""
 )
 @click.option('-v', '--verbose', 
                 is_flag=True,
                 help='Increase output verbosity.'
 )
 def annotate(family_file, variant_file, family_type, vep, silent, phased, strict, cadd_raw, whole_gene, 
-                annotation_dir, cadd_file, cadd_1000g, cadd_esp, cadd_indels, thousand_g, outfile,
+                annotation_dir, cadd_file, cadd_1000g, cadd_esp, cadd_indels, thousand_g, exac, outfile,
                 chr_prefix, verbose):
     """Annotate variants in a VCF file.
         It is possible to annotate from sources shown as options only
@@ -292,7 +291,9 @@ def annotate(family_file, variant_file, family_type, vep, silent, phased, strict
     if thousand_g:
         if verbosity:
             click.echo('1000G frequency file! %s' % thousand_g)
-        # check_tabix_index(thousand_g, 'vcf', verbosity)
+    if exac:
+        if verbosity:
+            click.echo('ExAC frequency file! %s' % exac)
     
     
     ###################################################################
@@ -319,7 +320,7 @@ def annotate(family_file, variant_file, family_type, vep, silent, phased, strict
     # These are the workers that do the analysis
     model_checkers = [variant_consumer.VariantConsumer(variant_queue, results, family,
                         phased, vep, cadd_raw, cadd_file, cadd_1000g, cadd_esp, cadd_indels,
-                        thousand_g, chr_prefix, strict, verbosity) for i in range(num_model_checkers)]
+                        thousand_g, exac, chr_prefix, strict, verbosity) for i in range(num_model_checkers)]
     
     for w in model_checkers:
         w.start()
@@ -356,7 +357,7 @@ def annotate(family_file, variant_file, family_type, vep, silent, phased, strict
         start_time_variant_sorting = datetime.now()
     
     # Add the new metadata to the headers:
-    add_metadata(head, family, vep, cadd_annotation, cadd_raw, thousand_g, ' '.join(argument_list))
+    add_metadata(head, family, vep, cadd_annotation, cadd_raw, thousand_g, exac, ' '.join(argument_list))
     
     print_headers(head, outfile, silent)
     
