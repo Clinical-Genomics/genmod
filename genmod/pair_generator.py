@@ -11,8 +11,7 @@ Created by Måns Magnusson on 2013-03-01.
 Copyright (c) 2013 __MyCompanyName__. All rights reserved.
 """
 
-from __future__ import print_function
-from __future__ import unicode_literals
+from __future__ import print_function, unicode_literals
 
 import sys
 import os

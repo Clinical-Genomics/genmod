@@ -81,7 +81,8 @@ or
 ###Alternatives###
 
 - **GENMOD** can annotate the variants with 1000 genome frequencies. Use the flag `-kg/--thousand_g path/to/bgzipped/thousand_genomes.vcf.gz`
-- Annotate with [CADD scores](http://cadd.gs.washington.edu/), use `-cadd/--cadd\_file path/to/huge_cadd_file.txt.gz`. 
+- **GENMOD** also supports annotation of frequencies from the [ExAC](http://exac.broadinstitute.org/). Use the flag `--exac path/to/bgzipped/ExAC_file.vcf.gz`
+- Annotate with [CADD scores](http://cadd.gs.washington.edu/), use `-cadd/--cadd_file path/to/huge_cadd_file.txt.gz`. 
 - There several cadd files with different variant sets to cover as much as possible. 
 	- One with all 1000 genomes positions (this one include some indels), if annotation with this one use `-c1kg/--cadd_1000_g path/to/CADD_1000g.txt.gz`. 
 	- One with all variants from the ESP6500 dataset. If annotation with this one use `--cadd_esp path/to/CADD_ESP.txt.gz`.
@@ -90,7 +91,7 @@ or
 - If your VCF is already annotated with VEP, use `-vep/--vep`
 - If data is phased use `-phased/--phased`
 - If you want to allow compound pairs in intronic regions to use `-gene/--whole_gene`
-- If you want canonical splice site region to be bigger than 2 base pairs on each side of the exons, use `-splice/--splice_padding _integer_`
+- If you want canonical splice site region to be bigger than 2 base pairs on each side of the exons, use `-splice/--splice_padding <integer>`
 - The `-strict/--strict` flag tells **genmod** to only annotate genetic models if they are proved by the data. If a variant is not called in a family member it will not be annotated.
 
 ###Distribution###
