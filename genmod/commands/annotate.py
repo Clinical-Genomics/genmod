@@ -33,8 +33,6 @@ from pprint import pprint as pp
 import shutil
 import pkg_resources
 
-from pysam import tabix_index, tabix_compress
-
 from ped_parser import parser as ped_parser
 from vcf_parser import parser as vcf_parser
 
@@ -274,27 +272,27 @@ def annotate(family_file, variant_file, family_type, vep, silent, phased, strict
     if cadd_file:
         if verbosity:
             click.echo('Cadd file! %s' % cadd_file)
-        check_tabix_index(cadd_file, 'cadd', verbosity)
+        # check_tabix_index(cadd_file, 'cadd', verbosity)
         cadd_annotation = True
     if cadd_1000g:
         if verbosity:
             click.echo('Cadd 1000G file! %s' % cadd_1000g)
-        check_tabix_index(cadd_1000g, 'cadd', verbosity)
+        # check_tabix_index(cadd_1000g, 'cadd', verbosity)
         cadd_annotation = True
     if cadd_esp:
         if verbosity:
             click.echo('Cadd ESP6500 file! %s' % cadd_esp)
-        check_tabix_index(cadd_esp, 'cadd', verbosity)
+        # check_tabix_index(cadd_esp, 'cadd', verbosity)
         cadd_annotation = True
     if cadd_indels:
         if verbosity:
             click.echo('Cadd InDel file! %s' % cadd_indels)
-        check_tabix_index(cadd_indels, 'cadd', verbosity)
+        # check_tabix_index(cadd_indels, 'cadd', verbosity)
         cadd_annotation = True
     if thousand_g:
         if verbosity:
             click.echo('1000G frequency file! %s' % thousand_g)
-        check_tabix_index(thousand_g, 'vcf', verbosity)
+        # check_tabix_index(thousand_g, 'vcf', verbosity)
     
     
     ###################################################################

@@ -25,7 +25,7 @@ setup(name='genmod',
     install_requires=[
         'ped_parser >= 0.7.4', 
         'vcf_parser >= 0.8', 
-        'pysam', 
+        'pytabix', 
         'pytest', 
         'interval_tree', 
         'click',

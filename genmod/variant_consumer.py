@@ -11,9 +11,7 @@ Created by Måns Magnusson on 2013-03-01.
 Copyright (c) 2013 __MyCompanyName__. All rights reserved.
 """
 
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
+from __future__ import division, print_function, unicode_literals
 
 import sys
 import os
@@ -22,7 +20,7 @@ import sqlite3
 import operator
 from functools import reduce
 from math import log10
-from pysam import Tabixfile, asTuple
+import tabix
 
 from pprint import pprint as pp
 
@@ -51,19 +49,19 @@ class VariantConsumer(multiprocessing.Process):
         self.strict = strict
         self.any_cadd_info = False
         if self.cadd_file:
-            self.cadd_file = Tabixfile(self.cadd_file)
+            self.cadd_file = tabix.open(self.cadd_file)
             self.any_cadd_info = True
         if self.cadd_1000g:
-            self.cadd_1000g = Tabixfile(self.cadd_1000g)
+            self.cadd_1000g = tabix.open(self.cadd_1000g)
             self.any_cadd_info = True
         if self.cadd_ESP:
-            self.cadd_ESP = Tabixfile(self.cadd_ESP)
+            self.cadd_ESP = tabix.open(self.cadd_ESP)
             self.any_cadd_info = True
         if self.cadd_InDels:
-            self.cadd_InDels = Tabixfile(self.cadd_InDels)
+            self.cadd_InDels = tabix.open(self.cadd_InDels)
             self.any_cadd_info = True
         if self.thousand_g:
-            self.thousand_g = Tabixfile(self.thousand_g)
+            self.thousand_g = tabix.open(self.thousand_g)
     
     def get_model_score(self, individuals, variant):
         """Return the model score for this variant."""
@@ -86,18 +84,21 @@ class VariantConsumer(multiprocessing.Process):
         # CADD values are only for snps:
         cadd_key = int(start)
         try:
-            for record in tabix_reader.fetch(chrom, cadd_key-1, cadd_key):
-                record = record.split('\t')
+            for record in tabix_reader.query(chrom, cadd_key-1, cadd_key):
                 if record[3] == alt:
                     #We need to send both cadd values
-                    return (record[-1], record[-2])
+                    cadd_raw = record[-2]
+                    cadd_phred = record[-1]
+                    return (cadd_raw, cadd_phred)
         except TypeError:
-            for record in tabix_reader.fetch(str(chrom), cadd_key-1, cadd_key):
+            for record in tabix_reader.query(str(chrom), cadd_key-1, cadd_key):
                 record = record.split('\t')
                 if record[3] == alt:
                     #We need to send both cadd values
-                    return (record[-1], record[-2])
-        except (IndexError, KeyError, ValueError) as e:
+                    cadd_raw = record[-2]
+                    cadd_phred = record[-1]
+                    return (cadd_raw, cadd_phred)
+        except (IndexError, KeyError, ValueError, TypeError) as e:
             pass
         
         return score
@@ -126,8 +127,8 @@ class VariantConsumer(multiprocessing.Process):
                 cadd_score = self.get_cadd_score(self.cadd_ESP, variant['CHROM'], variant['POS'], alt)
             
             if cadd_score:
-                cadd_relative_scores.append(str(cadd_score[0]))
-                cadd_absolute_scores.append(str(cadd_score[1]))
+                cadd_relative_scores.append(str(cadd_score[1]))
+                cadd_absolute_scores.append(str(cadd_score[0]))
         
         if len(cadd_relative_scores) > 0:
             variant['CADD'] = ','.join(cadd_relative_scores)
@@ -141,8 +142,7 @@ class VariantConsumer(multiprocessing.Process):
         # CADD values are only for snps:
         cadd_key = int(start)
         try:
-            for record in tabix_reader.fetch(str(chrom), cadd_key-1, cadd_key):
-                record = record.split('\t')
+            for record in tabix_reader.query(chrom, cadd_key-1, cadd_key):
                 i = 0
                 #We can get multiple rows so need to check each one
                 #We also need to check each one of the alternatives per row
@@ -154,8 +154,20 @@ class VariantConsumer(multiprocessing.Process):
                                 frequencies = info[-1].split(',')
                                 return frequencies[i]
                     i += 1
-                
-        except (IndexError, KeyError, ValueError) as e:
+        except TypeError:            
+            for record in tabix_reader.query(str(chrom), cadd_key-1, cadd_key):
+                i = 0
+                #We can get multiple rows so need to check each one
+                #We also need to check each one of the alternatives per row
+                for alternative in record[4].split(','):
+                    if alternative == alt:
+                        for info in record[7].split(';'):
+                            info = info.split('=')
+                            if info[0] == 'AF':
+                                frequencies = info[-1].split(',')
+                                return frequencies[i]
+                    i += 1
+        except (IndexError, KeyError, ValueError, TypeError) as e:
             pass
         
         return freq

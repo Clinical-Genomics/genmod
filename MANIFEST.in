@@ -1,2 +1,2 @@
-recursive-include examples *.ped *.vcf
+recursive-include examples *.ped *.vcf *.gz *.tbi
 recursive-include genmod/annotations *.db
