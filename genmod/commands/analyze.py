@@ -35,7 +35,7 @@ from vcf_parser import parser as vcf_parser
 import genmod
 from genmod import variant_sorter, variant_printer, warning
 
-
+# This is an ad hoc solution to remove huge mostly uninteresting genes.
 PROBLEMATIC_GENES = set(['MIR6077-1',
                             'MIR6077-2',
                             'MIR4315-1',
