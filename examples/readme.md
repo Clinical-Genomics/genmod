@@ -116,4 +116,4 @@ Output:
 	
 
 
-Please post issues on https://github.com/moonso/genmod if any problems.
+Please post issues on http://github.com/moonso/genmod if any problems.
