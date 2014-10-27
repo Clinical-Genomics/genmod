@@ -307,7 +307,7 @@ def get_interesting_variants(variant_parser, dominant_dict, homozygote_dict, com
 @click.option('--frequency_keyword', '-freqkey',
                     default='1000G_freq', 
                     nargs=1,
-                    help='Specify keyword for frequency in vcf. Default 1000GMAF'
+                    help='Specify keyword for frequency in vcf. Default 1000G_freq'
 )
 @click.option('--cadd_treshold', '-cadd',
                     default=12.0, 
