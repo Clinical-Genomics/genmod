@@ -79,8 +79,8 @@ def print_headers(head, outfile=None, silent=False):
                 print(header_line)
     return
 
-def print_results(variant_dict, outfile, vcf_header, mode = 'homozygote', score_key='CADD',
-                   freq_key='1000G_freq', silent=False):
+def print_results(variant_dict, outfile, vcf_header, score_key='CADD', freq_key='1000G_freq', 
+                  mode = 'homozygote', silent=False):
     """Print the variants to a results file or stdout."""
     
     score_dict = {} # A dictionary with {variant_id: score}. Score is usually cadd score or rank score
