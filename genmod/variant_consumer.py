@@ -93,7 +93,7 @@ class VariantConsumer(multiprocessing.Process):
                     cadd_raw = record[-2]
                     cadd_phred = record[-1]
                     return (cadd_raw, cadd_phred)
-        except TypeError:
+        except (TypeError, TabixError, tabix.TabixError):
             for record in tabix_reader.query(str(chrom), cadd_key-1, cadd_key):
                 record = record.split('\t')
                 if record[3] == alt:
@@ -101,7 +101,7 @@ class VariantConsumer(multiprocessing.Process):
                     cadd_raw = record[-2]
                     cadd_phred = record[-1]
                     return (cadd_raw, cadd_phred)
-        except (IndexError, KeyError, ValueError, TypeError) as e:
+        except (IndexError, KeyError, ValueError, TypeError, TabixError, tabix.TabixError) as e:
             pass
         
         return score
@@ -157,7 +157,7 @@ class VariantConsumer(multiprocessing.Process):
                                 frequencies = info[-1].split(',')
                                 return frequencies[i]
                     i += 1
-        except TypeError:            
+        except (TypeError, TabixError, tabix.TabixError):            
             for record in tabix_reader.query(str(chrom), cadd_key-1, cadd_key):
                 i = 0
                 #We can get multiple rows so need to check each one
@@ -170,7 +170,7 @@ class VariantConsumer(multiprocessing.Process):
                                 frequencies = info[-1].split(',')
                                 return frequencies[i]
                     i += 1
-        except (IndexError, KeyError, ValueError, TypeError) as e:
+        except (IndexError, KeyError, ValueError, TypeError, TabixError, tabix.TabixError) as e:
             pass
         
         return freq
