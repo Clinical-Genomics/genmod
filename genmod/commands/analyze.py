@@ -79,10 +79,10 @@ def print_headers(head, outfile=None, silent=False):
                 print(header_line)
     return
 
-def print_results(variant_dict, outfile, vcf_header, mode = 'homozygote', silent=False):
+def print_results(variant_dict, outfile, vcf_header, mode = 'homozygote', score_key='CADD',
+                   freq_key='1000G_freq', silent=False):
     """Print the variants to a results file or stdout."""
     
-    score_key = 'CADD'
     score_dict = {} # A dictionary with {variant_id: score}. Score is usually cadd score or rank score
     # for variant_id, variant in sorted(variant_dict.items(), key = lambda sort_key: float(sort_key[1]['info_dict'].get('CADD', '0')), reverse=True):
     column_width = 12
@@ -138,8 +138,8 @@ def print_results(variant_dict, outfile, vcf_header, mode = 'homozygote', silent
                                     variant_dict[compound_id]['POS'],
                                     variant_dict[compound_id]['REF'],
                                     variant_dict[compound_id]['ALT'],
-                                    variant_dict[compound_id]['info_dict'].get('CADD', '-'),
-                                    variant_dict[compound_id]['info_dict'].get('1000GMAF', '-'),
+                                    variant_dict[compound_id]['info_dict'].get(score_key, '-'),
+                                    variant_dict[compound_id]['info_dict'].get(freq_key, '-'),
                                     variant_dict[compound_id]['info_dict'].get('Annotation', '-')
                                 ]
                     if i < length_of_output:
@@ -152,8 +152,8 @@ def print_results(variant_dict, outfile, vcf_header, mode = 'homozygote', silent
                                 variant_dict[variant_id]['POS'],
                                 variant_dict[variant_id]['REF'],
                                 variant_dict[variant_id]['ALT'],
-                                variant_dict[variant_id]['info_dict'].get('CADD', '-'),
-                                variant_dict[variant_id]['info_dict'].get('1000GMAF', '-'),
+                                variant_dict[variant_id]['info_dict'].get(score_key, '-'),
+                                variant_dict[variant_id]['info_dict'].get(freq_key, '-'),
                                 variant_dict[variant_id]['info_dict'].get('Annotation', '-')
                             ]
                 # Print the highest ranked variants to screen:
@@ -305,7 +305,7 @@ def get_interesting_variants(variant_parser, dominant_dict, homozygote_dict, com
                     help='Specify maf treshold for variants to be considered. Default 0.02'
 )
 @click.option('--frequency_keyword', '-freqkey',
-                    default='1000GMAF', 
+                    default='1000G_freq', 
                     nargs=1,
                     help='Specify keyword for frequency in vcf. Default 1000GMAF'
 )
@@ -412,31 +412,31 @@ def analyze(variant_file, frequency_treshold, frequency_keyword, cadd_treshold, 
         dominant_file = os.path.join(outdir, file_name+'_dominant_analysis.vcf')
         print_headers(head, dominant_file)
         
-        print_results(dominant_dict, dominant_file, variant_parser.header, mode='dominant')
+        print_results(dominant_dict, dominant_file, variant_parser.header, cadd_keyword, frequency_keyword, mode='dominant')
                 
     if len(homozygote_dict) > 0:
         homozygote_file = os.path.join(outdir, file_name+'_homozygote_analysis.vcf')
         print_headers(head, homozygote_file)
         
-        print_results(homozygote_dict, homozygote_file, variant_parser.header, mode='homozygote')
+        print_results(homozygote_dict, homozygote_file, variant_parser.header, cadd_keyword, frequency_keyword, mode='homozygote')
         
     if len(compound_dict) > 0:
         compound_file = os.path.join(outdir, file_name+'_compound_analysis.vcf')
         print_headers(head, compound_file)
         
-        print_results(compound_dict, compound_file, variant_parser.header, mode='compound')
+        print_results(compound_dict, compound_file, variant_parser.header, cadd_keyword, frequency_keyword, mode='compound')
     
     if len(x_linked_dict) > 0:
         xlinked_file = os.path.join(outdir, file_name+'_x_linked_analysis.vcf')
         print_headers(head, xlinked_file)
         
-        print_results(x_linked_dict, xlinked_file, variant_parser.header, mode='xlinked')
+        print_results(x_linked_dict, xlinked_file, variant_parser.header, cadd_keyword, frequency_keyword, mode='xlinked')
 
     if len(dominant_dn_dict) > 0:
         dominant_dn_file = os.path.join(outdir, file_name+'_ad_denovo_analysis.vcf')
         print_headers(head, dominant_dn_file)
 
-        print_results(dominant_dn_dict, dominant_dn_file, variant_parser.header, mode='denovo')
+        print_results(dominant_dn_dict, dominant_dn_file, variant_parser.header, cadd_keyword, frequency_keyword, mode='denovo')
     
     print('')
     
