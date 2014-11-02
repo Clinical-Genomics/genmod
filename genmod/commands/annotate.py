@@ -74,7 +74,7 @@ def add_metadata(head, annotate_models=False, vep=False, cadd_annotation=False, 
         head.add_info('ExAC_freq', 'A', 'Float', "Frequency in the ExAC database.")
     
     # Update version logging
-    head.add_version_tracking('genmod', version, str(datetime.now()), command_line_string)
+    head.add_version_tracking('genmod', version, datetime.now().strftime("%Y-%m-%d %H:%M"), command_line_string)
     return
 
 def print_headers(head, outfile, silent=False):
