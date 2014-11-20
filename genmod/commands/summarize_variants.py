@@ -59,15 +59,20 @@ from genmod import warning
 #                     type=click.Path(exists=True),
 #                     help="""Specify the path to a config file."""
 # )
+@click.option('--frequency_keyword', '-freqkey',
+                    default='1000G_freq', 
+                    nargs=1,
+                    help='Specify keyword for frequency in vcf. Default 1000G_freq'
+)
 @click.option('--frequency_treshold', '-freq',
                     default=0.05,
                     nargs=1,
                     help='Specify the ferquency treshold for variants to be considered. Default=0.05'
 )
-@click.option('--cadd_treshold', '-cadd',
-                    default=0.0,
+@click.option('--cadd_keyword', '-caddkey',
+                    default='CADD', 
                     nargs=1,
-                    help='Specify the cadd score treshold for variants to be considered. Default=0'
+                    help='Specify keyword for CADD scores in vcf. Default CADD'
 )
 @click.option('--gq_treshold', '-gq',
                     default=50.0,
@@ -77,8 +82,15 @@ from genmod import warning
 @click.option('--read_depth_treshold', '-depth',
                     default=10.0,
                     nargs=1,
-                    help='Specify the genotype quality treshold for variants to be considered. Default=10'
+                    help="""Specify the genotype quality treshold for variants to be considered. Default=10.
+                            The read deth is taken from AD, so it is the sum of the quality reads from reference and alternative alleles."""
 )
+@click.option('--cadd_treshold', '-cadd',
+                    default=12.0, 
+                    nargs=1,
+                    help='Specify the cadd treshold for variants to be considered. Default 12.0'
+)
+
 # @click.option('-p', '--patterns',
 #                     type=click.Choice(['AR', 'AD', 'X']),
 #                     multiple=True,
@@ -92,10 +104,9 @@ from genmod import warning
 #                 is_flag=True,
 #                 help='Increase output verbosity.'
 # )
-def summarize_variants(variant_file, frequency_treshold, cadd_treshold, gq_treshold, read_depth_treshold):
-    """Analyze the annotated variants in a VCF file."""    
+def summarize_variants(variant_file, frequency_treshold, frequency_keyword, cadd_treshold, cadd_keyword, gq_treshold, read_depth_treshold):
+    """Analyze the annotated variants in a VCF file."""
         
-    freq_keyword = '1000GMAF'
     inheritance_keyword = 'GeneticModels'
     
     inheritance_models = ['AR_hom', 'AR_hom_dn', 'AR_comp', 'AR_comp_dn', 'AD', 'AD_dn', 
@@ -127,17 +138,17 @@ def summarize_variants(variant_file, frequency_treshold, cadd_treshold, gq_tresh
     
     for variant in variant_parser:
         models_found = variant['info_dict'].get(inheritance_keyword, None)
-        maf = min([float(frequency) for frequency in variant['info_dict'].get(freq_keyword, '0').split(',')])
-        cadd_score = max([float(cscore) for cscore in variant['info_dict'].get('CADD', '0').split(',')])
+        maf = min([float(frequency) for frequency in variant['info_dict'].get(frequency_keyword, '0').split(',')])
+        cadd_score = max([float(cscore) for cscore in variant['info_dict'].get(cadd_keyword, '0').split(',')])
         reference = variant['REF']
         alternative = variant['ALT']
-
+        
         number_of_variants += 1
         genotypes = variant.get('genotypes', {})
         
         correct_genotype = True
         adequate_depth = True
-                
+        
         for individual in genotypes:
             if genotypes[individual].genotype_quality < gq_treshold:
                 correct_genotype = False
@@ -186,6 +197,9 @@ def summarize_variants(variant_file, frequency_treshold, cadd_treshold, gq_tresh
     print("The following statistics are for the variants that meet the criterias for genotype quality and read depth.\n"
             "This means that the variants are covered in all individuals.\n"
             "-----------------------------------------------------------------------------------------\n\n")
+    
+    print("Number of variants to be considered in the analysis(according to the statement above): %s" %
+             (sum(list(inheritance_dict.values()))))
     
     for model in inheritance_models:
       print("%s = %s" % (model, inheritance_dict[model]))
