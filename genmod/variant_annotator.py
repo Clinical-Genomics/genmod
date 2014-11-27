@@ -22,7 +22,6 @@ import os
 import argparse
 from datetime import datetime
 from codecs import open
-import genmod
 try:
     import cPickle as pickle
 except:
@@ -32,17 +31,20 @@ from pprint import pprint as pp
 
 from interval_tree import interval_tree
 
+from genmod import warning
+
 
 class VariantAnnotator(object):
     """Creates parser objects for parsing variant files"""
     def __init__(self, variant_parser, batch_queue, gene_trees={}, exon_trees={}, phased=False, 
-                    vep=False, whole_genes=False, verbosity=False):
+                    vep=False, whole_genes=False, chr_prefix=False, verbosity=False):
         super(VariantAnnotator, self).__init__()
         self.variant_parser = variant_parser
         self.batch_queue = batch_queue
         self.individuals = self.variant_parser.individuals
         self.verbosity = verbosity
         self.phased = phased
+        self.chr_prefix = chr_prefix
         self.vep = vep
         self.whole_genes = whole_genes
         self.gene_trees  = gene_trees
@@ -94,6 +96,11 @@ class VariantAnnotator(object):
             
             self.annotate_variant(variant)
             new_chrom = variant['CHROM']
+            
+            if self.chr_prefix or new_chrom.startswith('chr'):
+                new_chrom = new_chrom[3:]
+                self.chr_prefix = True
+            
             nr_of_variants += 1
             if variant['comp_candidate']:
                 nr_of_comp_cand += 1
@@ -143,13 +150,14 @@ class VariantAnnotator(object):
                     self.chromosomes.append(current_chrom)
                     # New chromosome means new batch
                     send = True
-                    current_chrom = new_chrom
                     
                     if self.verbosity:
                         print('Chromosome %s parsed!' % current_chrom)
                         print('Time to parse chromosome %s' % str(datetime.now()-start_chrom_time))
                         start_chrom_time = datetime.now()
                 
+                    current_chrom = new_chrom
+
                 # If we are in a large intergenic region we limit the batch size to 10000
                 if len(new_features) == 0 and len(batch) > 10000:
                     send = True
@@ -176,7 +184,6 @@ class VariantAnnotator(object):
                 else:
                     current_features = current_features.union(new_features)
                     batch = self.add_variant(batch, variant) # Add variant batch
-        
         self.chromosomes.append(current_chrom)
         
         if self.verbosity:
@@ -244,12 +251,15 @@ class VariantAnnotator(object):
         
         variant['comp_candidate'] = False
         variant['Annotation'] = set()
-        
-        variant_chrom = variant['CHROM'].lstrip('chr')
+
+        # Internally we never use 'chr' in the chromosome names:        
+        chrom = variant['CHROM']
+        if self.chr_prefix or chrom.startswith('chr'):
+            chrom = chrom[3:]
+            self.chr_prefix = True
         alternatives = variant['ALT'].split(',')
         # When checking what features that are overlapped we use the longest alternative
         longest_alt = max([len(alternative) for alternative in alternatives])
-        # Internally we never use 'chr' in the chromosome names:
         variant_position = int(variant['POS'])
         
         variant_interval = [variant_position, (variant_position + longest_alt-1)]
@@ -262,11 +272,11 @@ class VariantAnnotator(object):
         else:
             
             try:
-                variant['Annotation'] = set(self.gene_trees[variant_chrom].find_range(variant_interval))
+                variant['Annotation'] = set(self.gene_trees[chrom].find_range(variant_interval))
                 
             except KeyError:
                 if self.verbosity:
-                    genmod.warning(''.join('Chromosome', variant_chrom, 'is not in annotation file!'))
+                    warning.warning(''.join(['Chromosome ', chrom, 'is not in annotation file!']))
         
         if self.whole_genes:
             # If compounds are to be checked in whole genes (including introns):
@@ -275,17 +285,18 @@ class VariantAnnotator(object):
         else:
             #Check if exonic:
             try:
-                if len(self.exon_trees[variant_chrom].find_range(variant_interval)):
+                if len(self.exon_trees[chrom].find_range(variant_interval)):
                     variant['comp_candidate'] = True
             except KeyError:
                 if self.verbosity:
-                    genmod.warning(''.join('Chromosome', variant_chrom, 'is not in annotation file!'))
+                    warning.warning(''.join(['Chromosome ', chrom, 'is not in annotation file!']))
                     
         return
 
 def main():
     from multiprocessing import JoinableQueue
     from vcf_parser import vcf_parser
+    import genmod
     parser = argparse.ArgumentParser(description="Parse different kind of pedigree files.")
     parser.add_argument('variant_file', 
                             type=str, nargs=1, 

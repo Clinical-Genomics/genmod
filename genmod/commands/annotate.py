@@ -326,7 +326,7 @@ def annotate(family_file, variant_file, family_type, vep, silent, phased, strict
         w.start()
     
     # This process prints the variants to temporary files
-    var_printer = variant_printer.VariantPrinter(results, temp_dir, head, verbosity)
+    var_printer = variant_printer.VariantPrinter(results, temp_dir, head, chr_prefix, verbosity)
     var_printer.start()
     
     if verbosity:
@@ -336,7 +336,7 @@ def annotate(family_file, variant_file, family_type, vep, silent, phased, strict
     
     # For parsing the vcf:
     var_annotator = variant_annotator.VariantAnnotator(variant_parser, variant_queue,
-                        gene_trees, exon_trees, phased, vep, whole_gene, verbosity)
+                        gene_trees, exon_trees, phased, vep, whole_gene, chr_prefix, verbosity)
     
     var_annotator.annotate()
     

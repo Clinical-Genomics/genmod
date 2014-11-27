@@ -22,13 +22,14 @@ from genmod import warning
 
 class VariantPrinter(multiprocessing.Process):
     """docstring for VariantPrinter"""
-    def __init__(self, task_queue, temp_dir, head, verbosity):
+    def __init__(self, task_queue, temp_dir, head, chr_prefix, verbosity):
         multiprocessing.Process.__init__(self)
         self.task_queue = task_queue
         self.verbosity = verbosity
         self.file_handles = {}
         self.temp_dir = temp_dir
         self.header = head.header
+        self.chr_prefix = chr_prefix
     
     def run(self):
         """Starts the printing"""
@@ -51,15 +52,18 @@ class VariantPrinter(multiprocessing.Process):
                 
             else:
                 for variant_id in next_result:
-                    variant_chrom = next_result[variant_id]['CHROM']
+                    chrom = next_result[variant_id]['CHROM']
+                    if self.chr_prefix or chrom.startswith('chr'):
+                        chrom = chrom[3:]
+                        self.chr_prefix = True
                     print_line = [next_result[variant_id].get(entry, '-') for entry in self.header]
-                    if variant_chrom in self.file_handles:
-                        self.file_handles[variant_chrom].write('\t'.join(print_line) + '\n')
+                    if chrom in self.file_handles:
+                        self.file_handles[chrom].write('\t'.join(print_line) + '\n')
                     else:
-                        temp_file = NamedTemporaryFile(prefix=variant_chrom+'_', dir=self.temp_dir, delete=False)
+                        temp_file = NamedTemporaryFile(prefix=chrom+'_', dir=self.temp_dir, delete=False)
                         temp_file.close()
-                        self.file_handles[variant_chrom] = open(temp_file.name, mode='w', encoding='utf-8', errors='replace')
-                        self.file_handles[variant_chrom].write('\t'.join(print_line) + '\n')
+                        self.file_handles[chrom] = open(temp_file.name, mode='w', encoding='utf-8', errors='replace')
+                        self.file_handles[chrom].write('\t'.join(print_line) + '\n')
         return
     
 def main():
