@@ -61,7 +61,7 @@ from pprint import pprint as pp
 
 from genmod import pair_generator
 
-def check_genetic_models(variant_batch, family, verbose = False, phased = False, strict = False, proc_name = None):
+def check_genetic_models(variant_batch, family, verbose = False, phased = False, strict = False, chr_prefix=False, proc_name = None):
     # A variant batch is a dictionary on the form {variant_id:variant_dict}
     individuals = family.individuals.values()
     intervals = variant_batch.pop('haploblocks', {})
@@ -71,6 +71,9 @@ def check_genetic_models(variant_batch, family, verbose = False, phased = False,
     for variant_id in variant_batch:
         variant = variant_batch[variant_id]
         # save the compound pairs for a variant in a set
+        chrom = variant['CHROM']
+        if chr_prefix or chrom.startswith('chr'):
+            chrom = chrom[3:]
         variant['Compounds'] = set()
         # Add information of models followed:
         variant['Inheritance_model'] = {'XR' : False, 'XR_dn' : False, 'XD' : False, 
@@ -83,7 +86,7 @@ def check_genetic_models(variant_batch, family, verbose = False, phased = False,
                 compound_candidates.append(variant_id)
         # Only check X-linked for the variants in the X-chromosome:
         # For X-linked we do not need to check the other models
-        if variant['CHROM'] == 'X':
+        if chrom == 'X':
             if check_X_recessive(variant, family, strict):
                 variant['Inheritance_model']['XR'] = True
                 for individual in family.individuals:

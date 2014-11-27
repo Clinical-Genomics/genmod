@@ -197,10 +197,7 @@ class VariantConsumer(multiprocessing.Process):
         """Get the variants ready for printing"""
         for variant_id in variant_dict:
             variant = variant_dict[variant_id]
-            
-            if self.chr_prefix:
-                variant['CHROM'] = 'chr'+variant_dict[variant_id]['CHROM']
-            
+                        
             vcf_info = variant_dict[variant_id]['INFO'].split(';')
             
             feature_list = variant_dict[variant_id].get('Annotation', set())
@@ -273,7 +270,7 @@ class VariantConsumer(multiprocessing.Process):
             
             if self.family:
                 genetic_models.check_genetic_models(variant_batch, self.family, self.verbosity, 
-                                                    self.phased, self.strict, proc_name)
+                                                    self.phased, self.strict, self.chr_prefix, proc_name)
             variant_batch.pop('haploblocks', None)
             
             for variant_id in variant_batch:
