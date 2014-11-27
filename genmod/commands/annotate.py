@@ -46,15 +46,6 @@ def get_family(family_file, family_type):
     my_family_parser = ped_parser.FamilyParser(family_file, family_type)
     # Stupid thing but for now when we only look at one family
     
-    print('Families:')
-    pp(my_family_parser.families)
-    print('')
-    print('Individuals:')
-    pp(my_family_parser.individuals)
-    print('')
-    
-    return my_family_parser
-    
     try:
         return my_family_parser.families.popitem()[1]
     except KeyError as e:
@@ -260,24 +251,22 @@ def annotate(family_file, variant_file, family_type, vep, silent, phased, strict
             exon_trees = pickle.load(g)
     except IOError as e:
         if verbosity:
-            warning('You need to build annotations! See documentation.')
+            warning.warning('You need to build annotations! See documentation.')
             # It is possible to continue the analysis without annotation files
         pass
-        
-        
+    
+    # If there are any families in the analysis
+    families = {}
     if family_file:
-        family_parser = get_family(family_file, family_type)
-        # There has to be same individuals in ped file and variant file:
+        families = get_families(family_file, family_type)
+        # The individuals in the ped file must be present in the variant file:
         families = family_parser.families
         for individual in family_parser.individuals:
-            print(individual, variant_parser.individuals)
             if individual not in variant_parser.individuals:
                 warning.warning('All individuals in ped file must be in vcf file! Aborting...')
                 warning.warning('Individuals in PED file: %s' % ' '.join(list(family_parser.individuals.keys())))
                 warning.warning('Individuals in VCF file: %s' % ' '.join(list(variant_parser.individuals)))
                 sys.exit()
-    else:
-        families = None
     
     if cadd_file:
         if verbosity:
@@ -329,7 +318,7 @@ def annotate(family_file, variant_file, family_type, vep, silent, phased, strict
         print('Number of CPU:s %s' % cpu_count())
     
     # These are the workers that do the analysis
-    model_checkers = [variant_consumer.VariantConsumer(variant_queue, results, families,
+    model_checkers = [variant_consumer.VariantConsumer(variant_queue, results, family,
                         phased, vep, cadd_raw, cadd_file, cadd_1000g, cadd_esp, cadd_indels,
                         thousand_g, exac, chr_prefix, strict, verbosity) for i in range(num_model_checkers)]
     
@@ -368,7 +357,7 @@ def annotate(family_file, variant_file, family_type, vep, silent, phased, strict
         start_time_variant_sorting = datetime.now()
     
     # Add the new metadata to the headers:
-    add_metadata(head, families, vep, cadd_annotation, cadd_raw, thousand_g, exac, ' '.join(argument_list))
+    add_metadata(head, family, vep, cadd_annotation, cadd_raw, thousand_g, exac, ' '.join(argument_list))
     
     print_headers(head, outfile, silent)
     
