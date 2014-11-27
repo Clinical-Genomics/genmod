@@ -29,12 +29,12 @@ from genmod import genetic_models, warning
 class VariantConsumer(multiprocessing.Process):
     """Yeilds all unordered pairs from a list of objects as tuples, like (obj_1, obj_2)"""
     
-    def __init__(self, task_queue, results_queue, family=False, phased=False, vep=False, cadd_raw=False,
+    def __init__(self, task_queue, results_queue, families={}, phased=False, vep=False, cadd_raw=False,
                     cadd_file=None, cadd_1000g=None, cadd_ESP=None, cadd_InDels=None, 
                     thousand_g=None, exac=None, chr_prefix=False, strict=False, verbosity=False):
         multiprocessing.Process.__init__(self)
         self.task_queue = task_queue
-        self.family = family
+        self.families = families
         self.results_queue = results_queue
         self.verbosity = verbosity
         self.phased = phased
@@ -212,7 +212,7 @@ class VariantConsumer(multiprocessing.Process):
                     vcf_info.append('Compounds=' + ','.join(compounds))
             
             # Check if any genetic models are followed
-            if 'GeneticModels' not in variant['info_dict'] and self.family:
+            if 'GeneticModels' not in variant['info_dict'] and self.families:
                 
                 model_list = []
                 for model in variant_dict[variant_id].get('Inheritance_model',[]):
@@ -268,9 +268,9 @@ class VariantConsumer(multiprocessing.Process):
                     print('%s: Exiting' % proc_name)
                 break
             
-            if self.family:
-                genetic_models.check_genetic_models(variant_batch, self.family, self.verbosity, 
-                                                    self.phased, self.strict, self.chr_prefix, proc_name)
+            if self.families:
+                genetic_models.check_genetic_models(variant_batch, self.families, self.verbosity, 
+                                                    self.phased, self.strict, proc_name)
             variant_batch.pop('haploblocks', None)
             
             for variant_id in variant_batch:

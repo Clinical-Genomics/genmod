@@ -22,6 +22,10 @@ import os
 import argparse
 from datetime import datetime
 from codecs import open
+<<<<<<< HEAD
+=======
+
+>>>>>>> Changing to multi family
 try:
     import cPickle as pickle
 except:
@@ -30,6 +34,7 @@ except:
 from pprint import pprint as pp
 
 from interval_tree import interval_tree
+from genmod import warning
 
 from genmod import warning
 
@@ -87,7 +92,7 @@ class VariantAnnotator(object):
             start_chrom_time = start_parsing_time
             start_twenty_time = start_parsing_time
             if self.batch_queue.full():
-                genmod.warning('Queue full!!')
+                warning.warning('Queue full!!')
         
         nr_of_variants = 0
         nr_of_comp_cand = 0
