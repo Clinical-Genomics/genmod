@@ -56,7 +56,8 @@ class FileSort(object):
     
     def sort(self):
         
-        files = self._splitFile()
+        # files = self._splitFile()
+        files = None
 
         if files is None:
             """ file size <= self._splitSize """            
