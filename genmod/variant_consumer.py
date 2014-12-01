@@ -195,6 +195,7 @@ class VariantConsumer(multiprocessing.Process):
     
     def make_print_version(self, variant_dict):
         """Get the variants ready for printing"""
+        
         for variant_id in variant_dict:
             variant = variant_dict[variant_id]
                         
@@ -202,28 +203,52 @@ class VariantConsumer(multiprocessing.Process):
             
             feature_list = variant_dict[variant_id].get('Annotation', set())
             
+            # variant[compounds] is a dictionary with family id as keys and a set of compounds as values
+            compounds = variant.get('compounds', dict())
+            # Here we store the compound strings that should be added to the variant:
+            family_compound_strings = []
+            
+            for family_id in compounds:
+                compound_string = ''
+                compound_set = compounds[family_id]
+                #We do not want reference to itself as a compound:
+                compound_set.discard(variant_id)
+                # If there are any compounds for the family:
+                if compounds[family_id]:
+                    compound_string = '|'.join(compound_set)
+                    family_compound_strings.append(':'.join([family_id, compound_string]))
+
+            # We need to check if compounds have already been annotated.
             if 'Compounds' not in variant['info_dict']:
-                
-                compounds = variant_dict[variant_id].get('Compounds', set())
-                
-                if len(compounds) > 0:
-                    #We do not want reference to itself as a compound:
-                    compounds.discard(variant_id)
-                    vcf_info.append('Compounds=' + ','.join(compounds))
+                if len(family_compound_strings) > 0:
+                    vcf_info.append('Compounds=' + ','.join(family_compound_strings))
             
             # Check if any genetic models are followed
             if 'GeneticModels' not in variant['info_dict'] and self.families:
+                # Here we store the compound strings that should be added to the variant:
+                family_model_strings = []
+                model_scores = {}
+                genetic_models = variant.get('inheritance_models', {})
+                for family_id in genetic_models:
+                    model_string = ''
+                    model_list = []
+                    for model in genetic_models[family_id]:
+                        if genetic_models[family_id][model]:
+                            model_list.append(model)
+                        model_string = '|'.join(model_list)
+                    if len(model_list) > 0:
+                        family_model_strings.append(':'.join([family_id, model_string]))
+                        model_scores[family_id] = self.get_model_score(self.families[family_id].individuals, variant)
                 
-                model_list = []
-                for model in variant_dict[variant_id].get('Inheritance_model',[]):
-                    if variant_dict[variant_id]['Inheritance_model'][model]:
-                        model_list.append(model)
-                if len(model_list) > 0:
-                    vcf_info.append('GeneticModels=' + ','.join(model_list))
-                    model_score = self.get_model_score(self.family.individuals, variant_dict[variant_id])
-                    if model_score:
-                        if float(model_score) > 0:
-                            vcf_info.append('ModelScore=' +  model_score)
+                if len(family_model_strings) > 0:
+                    vcf_info.append('GeneticModels=' + ','.join(family_model_strings))
+                    model_score_list = []
+                    for family_id in model_scores:
+                        if model_scores[family_id]:
+                            if float(model_scores[family_id]) > 0:
+                                model_score_list.append(':'.join([family_id, model_scores[family_id]]))
+                    if len(model_score_list) > 0:
+                        vcf_info.append('ModelScore=' +  ','.join(model_score_list))
             
             # We only want to include annotations where we have a value
             
@@ -267,12 +292,16 @@ class VariantConsumer(multiprocessing.Process):
                 if self.verbosity:
                     print('%s: Exiting' % proc_name)
                 break
+
             
             if self.families:
-                genetic_models.check_genetic_models(variant_batch, self.families, self.verbosity, 
+                genetic_models.check_genetic_models(variant_batch, self.families, self.verbosity,
                                                     self.phased, self.strict, proc_name)
+            
+            # We can now free som space by removing the haploblocks
             variant_batch.pop('haploblocks', None)
             
+            # These are family independent annotations which will be done annyway:
             for variant_id in variant_batch:
                 if self.any_cadd_info:
                     self.add_cadd_score(variant_batch[variant_id])
