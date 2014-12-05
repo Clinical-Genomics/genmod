@@ -164,7 +164,9 @@ def summarize(variant_file, frequency_treshold, frequency_keyword, cadd_treshold
     
     vcf_file_name = os.path.splitext(os.path.split(variant_file)[-1])[0]
     
+    print("Searching for family members in file...")
     families = check_families(variant_file)
+    print('Found families: %s' % ','.join(families))
     inheritance_keyword = 'GeneticModels'
     
     inheritance_models = ['AR_hom', 'AR_hom_dn', 'AR_comp', 'AR_comp_dn', 'AD', 'AD_dn', 
@@ -278,18 +280,18 @@ def summarize(variant_file, frequency_treshold, frequency_keyword, cadd_treshold
     
     for family_id in families:
         print('Models followed for family %s \n' % family_id)
-        for model in family_dict[family_id]:
+        for model in inheritance_models:
             print("%s = %s" % (model, family_dict[family_id][model]))
     
     
     print('\nNumber of rare (maf<%s): %s. Frequency of all: %.2f' 
-            % (frequency_treshold, rare_variants, rare_variants/number_of_variants))
+            % (frequency_treshold, rare_variants, rare_variants/interesting_variants))
     print('Number of high cadd scores (cadd >= %s): %s. Frequency of all: %.2f' 
-            % (cadd_treshold, high_cadd_scores, high_cadd_scores/number_of_variants))
+            % (cadd_treshold, high_cadd_scores, high_cadd_scores/interesting_variants))
     print('Number of high cadd scores and rare: %s. Frequency of all: %.2f' 
-            % (high_cadd_and_rare, high_cadd_and_rare/number_of_variants))
+            % (high_cadd_and_rare, high_cadd_and_rare/interesting_variants))
     print('Number of no cadd scores: %s. Frequency of all: %.2f \n' 
-            % (no_cadd_score, no_cadd_score/number_of_variants))
+            % (no_cadd_score, no_cadd_score/interesting_variants))
     print('Number of indels: %s. Frequency of all: %.2f' 
             % (indels, indels/number_of_variants))
     print('Number of indels and no cadd score: %s. Frequency of all: %.2f \n' 
