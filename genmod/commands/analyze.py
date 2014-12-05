@@ -67,6 +67,21 @@ PROBLEMATIC_GENES = set(['MIR6077-1',
                             'GLUD1P7',
                         ])
 
+def check_families(variant_file):
+    """Loop through the vcf file and check which families that are found."""
+    families = set([])
+    if variant_file == '-':
+        variant_parser = vcf_parser.VCFParser(fsock = sys.stdin)
+    else:
+        variant_parser = vcf_parser.VCFParser(infile = variant_file)
+    for variant in variant_parser:
+        genetic_models = variant['info_dict'].get('GeneticModels', None)
+        if genetic_models:
+            for family_models in genetic_models.split(','):
+                family = family_models.split(':')[0]
+                families.add(family)
+    return families
+
 
 def print_headers(head, outfile=None, silent=False):
     """Print the headers to a results file."""
@@ -331,11 +346,6 @@ def get_interesting_variants(variant_parser,
                     type=click.Path(exists=True),
                     metavar='<vcf_file> or "-"'
 )
-@click.argument('ped_file',
-                    nargs=1,
-                    type=click.Path(exists=True),
-                    metavar='<ped_file>'
-)
 @click.option('-t' ,'--family_type', 
                 type=click.Choice(['ped', 'alt', 'cmms', 'mip']), 
                 default='ped',
@@ -397,7 +407,7 @@ def get_interesting_variants(variant_parser,
                 is_flag=True,
                 help='Increase output verbosity.'
 )
-def analyze(variant_file, ped_file, family_type, frequency_treshold, frequency_keyword, cadd_treshold, 
+def analyze(variant_file, family_type, frequency_treshold, frequency_keyword, cadd_treshold, 
             cadd_keyword, coverage, gq_treshold, outdir, silent, exclude_problematic, verbose):
     """Analyze the annotated variants in a VCF file for the family/families in the ped file. 
         If there are multiple families in the ped one analysis per family will be done.
@@ -429,8 +439,9 @@ def analyze(variant_file, ped_file, family_type, frequency_treshold, frequency_k
     # prefered_models = make_models([])
     
     inheritance_keyword = 'GeneticModels'
+    families = check_families(variant_file)
     vcf_file_name = os.path.splitext(os.path.split(variant_file)[-1])[0]
-    vcf_file_name = os.path.splitext(os.path.split(ped_file)[-1])[0]
+    
     
     # if config_file:
     #     frequency_treshold = float(configs.get('frequency', {}).get('rare', frequency_treshold))
@@ -439,15 +450,12 @@ def analyze(variant_file, ped_file, family_type, frequency_treshold, frequency_k
     #     inheritance_keyword = configs.get('inheritance', {}).get('keyword',inheritance_keyword)
     #     prefered_models = make_models(inheritance_patterns)
     
-    
-    family_parser = ped_parser.FamilyParser(ped_file, family_type)
-    
     if variant_file == '-':
         variant_parser = vcf_parser.VCFParser(fsock = sys.stdin)
     else:
         variant_parser = vcf_parser.VCFParser(infile = variant_file)
     
-    for family_id in family_parser.families:
+    for family_id in families:
         print('Analysis for family: %s' % family_id)
     
         head = variant_parser.metadata
