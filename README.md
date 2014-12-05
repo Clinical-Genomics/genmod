@@ -5,37 +5,50 @@
 [![DOI](https://zenodo.org/badge/5735/moonso/genmod.png)](http://dx.doi.org/10.5281/zenodo.11424)
 
 
+**GENMOD** is a simple to use command line tool for annotating and analyzing genomic variations in the [VCF](http://samtools.github.io/hts-specs/VCFv4.1.pdf) file format.
+It can annotate genetic patterns of inheritance in vcf:s with single or multiple families of arbitrary size.
+
+The tools in the genmod suite are:
+
+- **genmod annotate**, for annotating inheritance patterns, frequencies, cadd scores etc.
+- **genmod build_annotation**, for building new annotation sets from different sources
+- **genmod analyze**, do a basic analysis of the annotated variants in a vcf file
+- **genmod summarize**, to get some basic statistics of the annotated variants in a vcf file
+
+##Installation:##
+
+**GENMOD** works with Python 2.7 and Python v3.2 and above
+
+    pip install genmod
+
+or
+
+	git clone https://github.com/moonso/genmod.git
+	cd genmod
+	python setup.py install
+
+
+
 ##USAGE:##
 
-###Basic functions###
+###genmod annotate###
+
 
     genmod annotate variant_file.vcf --family_file ped_file
 
 This will print a new vcf to standard out with all variants annotated according to the statements below.
+All individuals described in the [ped](http://pngu.mgh.harvard.edu/~purcell/plink/data.shtml#ped) file must be present in the vcf file
 
-Genmod is distributed with a annotation database that are built from the refGene data.
+See examples in the folder ```genmod/examples```.
+
+Genmod is distributed with a annotation database that is built from the refGene data.
 If the user wants to build a new annotation set use the command below:
 
 	genmod build_annotation [--type] annotation_file
 
 
-From version 1.6 there is also a tool for analyzing the variants annotated by genmod. This tool will look at all variants in a vcf and do one separate analysis based on which inheritance patterns they follow. The variants are then ranked based on the cadd scores, the highest ranked variants for each category is printed to screen and the full list for each category is printed to new vcf files.
-Run with:
-
-	genmod analyze path/to/file.vcf
-
-For more information do 
-
-	genmod analyze --help
-
-
-##General##
-
-Tool for annotating patterns of inheritance in Variant Call Format (VCF) files with arbitrary pedigrees.
-
 Each variant in the VCF-file will be annotated with which genetic models that are followed in the family if a family file
 (ped file) is provided.
-It is possible to run without a family file, in this case all variants will be annotated with which region(s) they belong to, and if other annotation files are provided(1000G, CADD scores etc.) the variants will get the proper values from these.
 
 The genetic models that are checked are the following:
 
@@ -49,36 +62,34 @@ The genetic models that are checked are the following:
 * X-linked Recessive, 'XR'
 * X-linked Recessive de novo, 'XR_dn'
 
+Se description of how genetic models are annotated in the section **Conditions for genetic models** below.
+
+It is possible to run without a family file, in this case all variants will be annotated with which region(s) they belong to, and if other annotation files are provided(1000G, CADD scores etc.) the variants will get the proper values from these.
+
+[Variant Effect Predictor](http://www.ensembl.org/info/docs/tools/vep/index.html)(vep) annotations are supported, use the ```--vep```-flag if variants are already annotated with vep.
+
 **GENMOD** will add entrys to the INFO column for the given VCF file depending on what information is given.
 
-If ```-vep/--vep``` is NOT provided:
+If ```--vep``` is NOT provided:
+
 - **Annotation** Comma separated list with features overlapped in the annotation file
 
-If a pedigree file is provided:
+If ```--vep``` is used **Annotation** will not be annotated since all information is in the vep entry.
 
-- **GeneticModels** A comma separated list with genetic models followed
-- **Compounds** Comma separated list with compound pairs(if any). These are described like 'CHR\_POS\_REF\_ALT'.
-- **ModelScore** Model Score, a phred-score based on the genotype qualities to describe the uncertainty of the genetic model.
+If a pedigree file is provided the following will be added:
+
+- **GeneticModels** A comma separated list with which genetic models that are followed in each family described in the ped file. Annotation are separated with pipes on the form ```GeneticModels=fam_id_1:AR_hom, fam_id_2:AR_comp|AD_dn``` etc..
+- **Compounds** Comma separated list with compound pairs(if any) for each family. These are described like 'CHR\_POS\_REF\_ALT'
+- **ModelScore** Model Score, a phred-score based on the genotype qualities to describe the uncertainty of the genetic model in each family
 
 Also a line for logging is added in the vcf header with the id **genmod**, here the date of run, version and command line arguments are printed.
 
+- Compound heterozygote inheritance pattern will be checked if two variants are exonic (or in canonical splice sites) and if they reside in the same gene.
+
+- If compounds should be checked in the whole gene (including introns) use ```--whole_gene```
+- GENMOD supports phased data, use the ```-phased``` flag. Data should follow the [GATK way](http://gatkforums.broadinstitute.org/discussion/45/read-backed-phasing) of phasing.
+
 All annotations will be present only if they have a value.
-
-If ```-vep/--vep``` is used **Annotation** will not be annotated since all information is in the vep entry.
-
-##Installation:##
-
-**GENMOD** works with Python 2.7 and Python v3.2 and above
-
-    pip install genmod
-
-or
-
-    git clone https://github.com/moonso/genmod.git
-    cd genmod
-    python setup.py install
-
-###Alternatives###
 
 - **GENMOD** can annotate the variants with 1000 genome frequencies. Use the flag `-kg/--thousand_g path/to/bgzipped/thousand_genomes.vcf.gz`
 - **GENMOD** also supports annotation of frequencies from the [ExAC](http://exac.broadinstitute.org/). Use the flag `--exac path/to/bgzipped/ExAC_file.vcf.gz`
@@ -94,28 +105,42 @@ or
 - If you want canonical splice site region to be bigger than 2 base pairs on each side of the exons, use `-splice/--splice_padding <integer>`
 - The `-strict/--strict` flag tells **genmod** to only annotate genetic models if they are proved by the data. If a variant is not called in a family member it will not be annotated.
 
-###Distribution###
 
-- GENMOD includes db like files in the genmod/annotations folder, this is the exon and gene definitions from ftp://hgdownload.cse.ucsc.edu/goldenPath/hg19/database/refGene.txt.gz.
+###genmod build_annotation###
 
-If the user wants to use another annotation:
+	genmod build_annotation [--type] [-o/--outdir] annotation_file
 
-    genmod build_annotation [--type] "annotation type" path/to/annotation_file -o path/to/outdir
+The following file formats are supported for building new annotations:
 
-In this case the new annotation will be built into the outdir specified (default is the genmods annotation dir).
-When the user want to annotate a vcf with this new annotation set use 
+- bed
+- ccds
+- gtf
+- gene_pred
 
-    genmod annotate variant_file -fam ped_file [-a/--annotation_dir] /path/to/new/annotation_dir
+The user can also specify the amount of positions around exon boundaries that should be considered as splice sites. Use
+
+```--splice_padding INTEGER```
+
+###genmod analyze###
+
+From version 1.6 there is also a tool for analyzing the variants annotated by **genmod**. This tool will look at all variants in a vcf and do an analysis based on which inheritance patterns they follow. The variants are then ranked based on the cadd scores, the highest ranked variants for each category is printed to screen and the full list for each category is printed to new vcf files.
+Run with:
+
+	genmod analyze path/to/file.vcf
+
+For more information do 
+
+	genmod analyze --help
 
 
-- Compound heterozygote inheritance pattern will be checked if two variants are exonic (or in canonical splice sites) and if they reside in the same gene.
+###genmod summarize###
 
-- GENMOD supports phased data use the -phased flag. Data should follow the [GATK way](http://gatkforums.broadinstitute.org/discussion/45/read-backed-phasing) of phasing.
+Tool to get basic statistics of the annotated in a vcf file.
+Run
 
-- GENMOD support VCF files annotated with [VEP](http://www.ensembl.org/info/docs/tools/vep/index.html), use -vep flag. This means that GENMOD will use the **VEP** annotation for checking if variants are in the same gene. 
+	genmod summarize --help
 
-- GENMOD can annotate variants with their [CADD](http://cadd.gs.washington.edu/) score. This is done by adding the flag -cadd "path/to/cadd_file".
-
+for more information.
 
 ## Conditions for Genetic Models ##
 
@@ -186,127 +211,4 @@ These traits are inherited on the x-chromosome, of which men have one allele and
 * Healthy males cannot carry the variant
 * If sex is male the variant is considered _de novo_ if mother is genotyped and does not carry the variant
 * If sex is female variant is considered _de novo_ if not both parents carry the variant
-
-
-
-
-##Details##
-
-###Exonic variants###
-
-Variants are defined as exonic if they are within an interval that is defined as an exon in the annotation file, and if they are in the canonical splice sites. The size of the canonical splice sites can be altered with -splice 'integer', in this case the annotation needs to be rebuilded. Example:
-
-    run_genmod ped_file variant_file -an refGene.txt -at gene_pred -splice 6
-
-In this case the exons will be padded by 6 bases on each side.
-
-If VEP annotation is used the following SO-terms is counted as compound candidate sites:
-
-**transcript ablation, splice donor variant, splice acceptor variant, stop gained, frameshift variant, stop lost,
-initiator codon variant, inframe insertion, inframe deletion, missense variant, transcript amplification, splice region variant,incomplete terminal codon variant, synonymous variant, stop retained variant, coding sequence variant**.
-
-
-
-###Annotation Formats###
-
-The following formats are supported:
-
-- [gene pred](http://genome.ucsc.edu/FAQ/FAQformat.html#format9). This is the format of the refSeq genes
-- [gtf](http://www.ensembl.org/info/website/upload/gff.html). This is the format use by ensembl
-- CCDS format
-- [BED](http://genome.ucsc.edu/FAQ/FAQformat.html#format1)format.
-
-When BED format is used all entrys will both count as exons and genes(for compounds).
-
-
-<!-- ## Detailed Structure ##
-
-Here all attributes and methods of the classes will be showed:
-
-### Genotype ###
-
-Store the genotype information of a variant that is specific for an individual
-
-**Attributes:**
-
-* genotype STRING
-* allele_1 STRING
-* allele_2 STRING
-* nocall BOOL
-* heterozygote BOOL
-* homo_alt BOOL
-* homo_ref BOOL
-* has_variant BOOL
-* filter STRING
-* ref_depth INT
-* alt_depth INT
-* phred_likelihoods TUPLE with INT
-* depth_of_coverage INT
-* genotype_quality FLOAT
-
-
-### Variant ###
-
-Holds the info of a variant and it's specific behaviour in a family.
-
-**Attributes**
-
-* chr STRING Have to be string since X, Y
-* start INT
-* stop INT 
-* ref STRING Reference nucleotide(s)
-* alt STRING Alternative sequence
-* identity STRING dbSNP-id
-* var_info DICT A dictionary with all the info from the variant file
-* qual STRING A value for the score of the base call
-* filter STRING The filter status
-* genotypes LIST A list with the genotypes found for this variants
-* gene STRING Semicolon separated string with ensemble gene names
-* ad BOOL If following Autosomal Dominant pattern
-* ad_dn BOOL If following Autosomal Dominant De novo pattern
-* ar BOOL If following Autosomal Recessive pattern
-* ar_dn BOOL If following Autosomal Recessive De nove pattern
-* ar_comp BOOL If following Autosomal Recessive compound pattern
-* ar_comp_dn BOOL If following Autosomal Recessive Compound De Novo pattern
-
-**Methods**
-
-* get_variant(self):
-    Returns a dictionary with basic info to stdout
-* print_model_info(self):
-    Print for each variant which patterns of inheritance they follow.    
-* print_vcf_variant(self):
-    Print the variant in vcf-format to stdout
-* print_original_version(self, header_columns):
-    Prints the variant in its original format.
-* check_noncomplete_call(self):
-    Check if GATK have missed to report some info.
-* get_genotype(self):
-    Returns the list with genotypes for this variant.
-
-
-### Individual ###
-
-Holds the information about an individual and the individual specific genotypes.
-
-**Attributes**
-
-* ind STRING Can be any id unique within the family
-* family STRING Can be any unique id within the cohort
-* mother STRING The ind_id of the mother or [0,-9] if info is missing
-* father STRING ---------||------ father --------------||---------------
-* sex INT 1=male 2=female 0=unknown
-* phenotype INT 1=unaffected, 2=affected, missing = [0,-9]
-* genotypes DICT Container with genotype information on the form {<variant_id>: <Genotype>}
-* phasing BOOL If the genotype information includes phasing for this individual
-
-### Family ###
-
-**Attributes**
-
-* individuals DICT dictionary with family members on the form {<ind_id>:<Individual>}
-* variants DICT dictionary with all the variants that exists in the family on the form {<var_id>:<Variant>} -->
-
-
-<!-- [![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/moonso/genmod/trend.png)](https://bitdeli.com/free "Bitdeli Badge") -->
 
