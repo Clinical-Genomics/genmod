@@ -64,7 +64,6 @@ from genmod import pair_generator
 def check_genetic_models(variant_batch, families, verbose = False, phased = False, strict = False, proc_name = None):
     # A variant batch is a dictionary on the form {variant_id:variant_dict, variant_2_id:variant_dict_2, ...}
     intervals = variant_batch.pop('haploblocks', {})
-    
     for family_id in families:
         family = families[family_id]
         individuals = family.individuals
