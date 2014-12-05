@@ -138,7 +138,7 @@ For more information do
 Tool to get basic statistics of the annotated in a vcf file.
 Run
 
-	genmod analyze --help
+	genmod summarixe_variants --help
 
 for more information.
 

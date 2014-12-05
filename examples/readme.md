@@ -31,68 +31,23 @@ The following variants are to show how the ``-strict`` flag affects the analysis
 
 ##Annotate variants for Dominant Family##
 
-	genmod annotate test_data/test_vcf.vcf -fam test_data/dominant_trio.ped
-
-Output:
-
-	##fileformat=VCFv4.1
-	##INFO=<ID=ANN,Number=.,Type=String,Description="Annotates what feature(s) this variant belongs to.">
-	##INFO=<ID=Comp,Number=.,Type=String,Description="':'-separated list of compound pairs for this variant.">
-	##INFO=<ID=GM,Number=.,Type=String,Description="':'-separated list of genetic models for this variant.">
-	##INFO=<ID=MS,Number=1,Type=Integer,Description="PHRED score for genotype models.">
-	##contig=<ID=1,length=249250621,assembly=b37>
-	##reference=file:///humgen/gsa-hpprojects/GATK/bundle/current/b37/human_g1k_v37.fasta
-	#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	father	mother	proband
-	1	11900	.	C	A	100	PASS	MQ=1;ANN=DDX11L1	GT:GQ	0/1:60	0/1:60	1/1:60
-	1	11901	.	T	C	100	PASS	MQ=1;ANN=DDX11L1	GT:GQ	./.	0/1:60	1/1:60
-	1	11902	.	T	G	100	PASS	MQ=1;ANN=DDX11L1	GT:GQ	0/1:60	0/0:60	1/1:60
-	1	11903	.	C	G	100	PASS	MQ=1;ANN=DDX11L1;GM=AR_hom;MS=55	GT:GQ	0/1:60	1/1:60	1/1:60
-	1	879585	.	A	T	100	PASS	MQ=1;ANN=SAMD11:NOC2L	GT:GQ	0/1:60	0/0:60	0/1:60
-	1	879586	.	A	T	100	PASS	MQ=1;ANN=SAMD11:NOC2L;GM=AD;MS=55	GT:GQ	0/0:60	0/1:60	0/1:60
-	1	947378	.	T	G	100	PASS	MQ=1	GT:GQ	0/0:60	0/0:60	0/1:60
-	1	973348	.	G	A	100	PASS	MQ=1;ANN=AGRN	GT:GQ	0/0:60	0/0:60	0/1:60
-	1	973349	.	T	G	100	PASS	MQ=1;ANN=AGRN	GT:GQ	0/0:60	0/0:60	0/1:60
-	3	879586	.	G	T	100	PASS	MQ=1;ANN=LOC101927215;GM=AD;MS=55	GT:GQ	0/0:60	0/1:60	0/1:60
-	3	947378	.	A	T	100	PASS	MQ=1	GT:GQ	0/0:60	0/0:60	0/1:60
-	3	973348	.	G	A	100	PASS	MQ=1;GM=AD;MS=57	GT:GQ	./.	0/1:60	0/1:60
-	3	973349	.	A	T	100	PASS	MQ=1	GT:GQ	./.	0/0:60	0/1:60
-
+	genmod annotate test_data/test_vcf.vcf -f test_data/dominant_trio.ped -o examples/test_vcf_dominant_annotated.vcf
 
 We can now see how the conditions change when one of the parents are affected. For example the recessive pattern for the first variant is not followed since all affected needs to be homozygote alternative if the variant should follow the Autosomal Recessive pattern.
+
+
+##Annotate variants for Multiple Families##
+
+	genmod annotate test_data/test_vcf.vcf -f test_data/multi_family.ped -o examples/test_vcf_multi_annotated.vcf
+
+We can now see how the conditions change when one of the parents are affected. For example the recessive pattern for the first variant is not followed since all affected needs to be homozygote alternative if the variant should follow the Autosomal Recessive pattern.
+
 
 ##Annotate variants with CADD scores and population frequencies##
 
 This is another example of how one can annotate with genmod:
 
 	genmod annotate examples/test_vcf.vcf --cadd_file examples/small_CADD.tsv.gz --thousand_g examples/small_1000G.vcf.gz
-
-Output:
-
-	##fileformat=VCFv4.1
-	##INFO=<ID=Annotation,Number=.,Type=String,Description="Annotates what feature(s) this variant belongs to.">
-	##INFO=<ID=Compounds,Number=.,Type=String,Description="':'-separated list of compound pairs for this variant.">
-	##INFO=<ID=GeneModels,Number=.,Type=String,Description="':'-separated list of genetic models for this variant.">
-	##INFO=<ID=ModelScore,Number=1,Type=Integer,Description="PHRED score for genotype models.">
-	##INFO=<ID=CADD,Number=1,Type=Float,Description="The CADD relative score for this alternative.">
-	##INFO=<ID=1000GMAF,Number=1,Type=Float,Description="Frequency in the 1000G database.">
-	##contig=<ID=1,length=249250621,assembly=b37>
-	##reference=file:///humgen/gsa-hpprojects/GATK/bundle/current/b37/human_g1k_v37.fasta
-	##Software=<ID=genmod,Version=1.5.3,Date=2014-08-27 16:46:33.556358, CommandLineOptions="variant_file=examples/test_vcf.vcf thousand_g=examples/small_1000G.vcf.gz cadd_file=examples/small_CADD.tsv.gz outfile=res.tmp family_type=ped">
-	#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	father	mother	proband
-	1	11900	.	C	A	100	PASS	MQ=1;Annotation=DDX11L1;CADD=0.106	GT:GQ	0/1:60	0/1:60	1/1:60
-	1	11901	.	T	C	100	PASS	MQ=1;Annotation=DDX11L1;CADD=3.199	GT:GQ	./.	0/1:60	1/1:60
-	1	11902	.	T	G	100	PASS	MQ=1;Annotation=DDX11L1;CADD=2.539	GT:GQ	0/1:60	0/0:60	1/1:60
-	1	11903	.	C	G	100	PASS	MQ=1;Annotation=DDX11L1;CADD=1.459	GT:GQ	0/1:60	1/1:60	1/1:60
-	1	879585	.	A	T	100	PASS	MQ=1;Annotation=SAMD11,NOC2L;CADD=5.268	GT:GQ	0/1:60	0/0:60	0/1:60
-	1	879586	.	A	T	100	PASS	MQ=1;Annotation=SAMD11,NOC2L;CADD=4.221	GT:GQ	0/0:60	0/1:60	0/1:60
-	1	947378	.	T	G	100	PASS	MQ=1;CADD=4.432;1000GMAF=0.01	GT:GQ	0/0:60	0/0:60	0/1:60
-	1	973348	.	G	A	100	PASS	MQ=1;Annotation=AGRN;CADD=5.587;1000GMAF=0.0018	GT:GQ	0/0:60	0/0:60	0/1:60
-	1	973349	.	T	G	100	PASS	MQ=1;Annotation=AGRN;CADD=3.073	GT:GQ	0/0:60	0/0:60	0/1:60
-	3	879586	.	G	T	100	PASS	MQ=1;Annotation=LOC101927215;CADD=1.744;1000GMAF=0.0005	GT:GQ	0/0:60	0/1:60	0/1:60
-	3	947378	.	A	T	100	PASS	MQ=1;CADD=2.345	GT:GQ	0/0:60	0/0:60	0/1:60
-	3	973348	.	G	A	100	PASS	MQ=1;CADD=3.706	GT:GQ	./.	0/1:60	0/1:60
-	3	973349	.	A	T	100	PASS	MQ=1;CADD=7.008	GT:GQ	./.	0/0:60	0/1:60
-	
 
 
 Please post issues on http://github.com/moonso/genmod if any problems.

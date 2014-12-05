@@ -31,11 +31,12 @@ from configobj import ConfigObj
 import pkg_resources
 
 from vcf_parser import parser as vcf_parser
+from ped_parser import parser as ped_parser
 
 import genmod
 from genmod import variant_sorter, variant_printer, warning
 
-# This is an ad hoc solution to remove huge mostly uninteresting genes.
+# This is an ad hoc solution to remove huge mostly uninteresting genes. Please modify this set for your own needs
 PROBLEMATIC_GENES = set(['MIR6077-1',
                             'MIR6077-2',
                             'MIR4315-1',
@@ -79,8 +80,14 @@ def print_headers(head, outfile=None, silent=False):
                 print(header_line)
     return
 
-def print_results(variant_dict, outfile, vcf_header, score_key='CADD', freq_key='1000G_freq', 
-                  mode = 'homozygote', silent=False):
+def print_results(variant_dict, 
+                    outfile, 
+                    vcf_header,
+                    family_id, 
+                    score_key='CADD', 
+                    freq_key='1000G_freq', 
+                    mode = 'homozygote', 
+                    silent=False):
     """Print the variants to a results file or stdout."""
     
     score_dict = {} # A dictionary with {variant_id: score}. Score is usually cadd score or rank score
@@ -89,21 +96,28 @@ def print_results(variant_dict, outfile, vcf_header, score_key='CADD', freq_key=
     length_of_output = 20
     for variant_id in variant_dict:
         # Get the score for each variant:
-        score = max([float(cadd_score) for cadd_score in variant_dict[variant_id]['info_dict'].get(score_key, '0').split(',')])
+        max_score = max([float(score) for score in variant_dict[variant_id]['info_dict'].get(score_key, '0').split(',')])
         if mode == 'compound':
             # If we look at compounds we want to consider the combined score
-            for variant_2_id in variant_dict[variant_id]['info_dict'].get('Compounds', '').split(','):
-                if variant_2_id in variant_dict:
-                    score_2 = max([float(cadd_score) for cadd_score in variant_dict[variant_2_id]['info_dict'].get(score_key, '0').split(',')])
-                    if score_2 > 10:
+            family_compounds = compound_dict[variant_id]['info_dict'].get('Compounds', None)
+            if compounds:
+                for family in family_compounds.split(','):
+                    splitted_compounds = family.split(':')
+                    if splitted_compounds[0] == family_id:
+                        compounds = splitted_compounds[1].split('|')
+            
+                for variant_2_id in compounds:
+                    if variant_2_id in variant_dict:
+                        max_score_2 = max([float(score) for score in variant_dict[variant_2_id]['info_dict'].get(score_key, '0').split(',')])
+                    if max_score_2 > 10:
                         # print(variant_dict[variant_2_id])
                         variant_pair = (variant_id, variant_2_id)
-                        score = (score + score_2)/2
+                        max_score = (max_score + max_score_2)/2
                         already_scored = [set(var_pair) for var_pair in list(score_dict.keys())]
                         if set(variant_pair) not in already_scored:
-                            score_dict[variant_pair] = score
+                            score_dict[variant_pair] = max_score
         else:
-            score_dict[variant_id] = score
+            score_dict[variant_id] = max_score
     
     if mode == 'compound':
         print('\nCompound analysis:\n')
@@ -196,21 +210,25 @@ def make_models(list_of_models):
 
 
 
-def remove_inacurate_compounds(compound_dict):
+def remove_inacurate_compounds(compound_dict, family_id):
     """If the second variant in a compound pair does not meet the requirements they should not be considered."""
     
     for variant_id in list(compound_dict.keys()):
         # Get the compounds for the variant
-        compounds = compound_dict[variant_id]['info_dict'].get('Compounds', '').split(',')
-        compound_set = set(compounds) 
-        high_maf_compounds = 0
-        for compound in compounds:
-            # If requrements are not met it has never been placed in compound dict
-            if compound not in compound_dict:
-                compound_set.discard(compound)
-        # If no compounds in the pair upfills the requirements we remove the pair
-        if len(compound_set) == 0:
-            compound_dict.pop(variant_id)
+        family_compounds = compound_dict[variant_id]['info_dict'].get('Compounds', None)
+        if compounds:
+            for family in family_compounds.split(','):
+                splitted_compounds = family.split(':')
+                if splitted_compounds[0] == family_id:
+                    compounds = splitted_compounds[1].split('|')
+                    compound_set = set(compounds) 
+            for compound in compounds:
+                # If requrements are not met it has never been placed in compound dict
+                if compound not in compound_dict:
+                    compound_set.discard(compound)
+                # If no compounds in the pair upfills the requirements we remove the pair
+            if len(compound_set) == 0:
+                compound_dict.pop(variant_id)
     return
 
 
@@ -222,13 +240,24 @@ def covered_in_all(variant, coverage_treshold = 7):
     return True
         
 
-def get_interesting_variants(variant_parser, dominant_dict, homozygote_dict, compound_dict, x_linked_dict, 
-    dominant_dn_dict, freq_treshold, freq_keyword, cadd_treshold, cadd_keyword, coverage, exclude_problematic):
+def get_interesting_variants(variant_parser, 
+                                family_id, 
+                                dominant_dict, 
+                                homozygote_dict, 
+                                compound_dict, 
+                                x_linked_dict,
+                                dominant_dn_dict, 
+                                freq_treshold, 
+                                freq_keyword, 
+                                cadd_treshold, 
+                                cadd_keyword,
+                                gq_treshold, 
+                                coverage, 
+                                exclude_problematic):
     """Collect the interesting variants in their dictionarys. add RankScore."""
     
     inheritance_keyword = 'GeneticModels'
     
-    gq_treshold = 100
     
     de_novo_set = set(['AD_dn', 'AR_hom_dn', 'AR_comp_dn', 'XD_dn', 'XR_dn'])
     dominant_set = set(['AD'])
@@ -239,9 +268,16 @@ def get_interesting_variants(variant_parser, dominant_dict, homozygote_dict, com
     
     
     for variant in variant_parser:
-        models_found = set(variant['info_dict'].get(inheritance_keyword, '').split(','))
         annotation = set(variant['info_dict'].get('Annotation', '').split(','))
+        models_found = set([])
         
+        family_models = variant['info_dict'].get(inheritance_keyword, None)
+        if family_models:
+            #This is a string on the form 'fam_1:AR_hom,fam_2:AR_hom|AR_hom_dn
+            for family_info in family_models.split(','):
+                splitted_family = family_info.split(':')
+                if splitted_family[0] == family_id:
+                    models_found = set(splitted_family[1].split('|'))
         
         maf = min([float(frequency) for frequency in variant['info_dict'].get(freq_keyword, '0').split(',')])
         cadd_score = max([float(cscore) for cscore in variant['info_dict'].get(cadd_keyword, '0').split(',')])
@@ -295,6 +331,16 @@ def get_interesting_variants(variant_parser, dominant_dict, homozygote_dict, com
                     type=click.Path(exists=True),
                     metavar='<vcf_file> or "-"'
 )
+@click.argument('ped_file',
+                    nargs=1,
+                    type=click.Path(exists=True),
+                    metavar='<ped_file>'
+)
+@click.option('-t' ,'--family_type', 
+                type=click.Choice(['ped', 'alt', 'cmms', 'mip']), 
+                default='ped',
+                help='If the analysis use one of the known setups, please specify which one.'
+)
 # @click.option('-c', '--config_file',
 #                     type=click.Path(exists=True),
 #                     help="""Specify the path to a config file."""
@@ -324,6 +370,11 @@ def get_interesting_variants(variant_parser, dominant_dict, homozygote_dict, com
                     nargs=1,
                     help='Specify minimum read depth in all individuals for variant to be considered. Default 7'
 )
+@click.option('--gq_treshold', '-gq',
+                    default=20, 
+                    nargs=1,
+                    help='Specify genotype quality treshold for variants to be considered. Default 20'
+)
 # @click.option('-p', '--patterns',
 #                     type=click.Choice(['AR', 'AD', 'X']),
 #                     multiple=True,
@@ -346,9 +397,10 @@ def get_interesting_variants(variant_parser, dominant_dict, homozygote_dict, com
                 is_flag=True,
                 help='Increase output verbosity.'
 )
-def analyze(variant_file, frequency_treshold, frequency_keyword, cadd_treshold, cadd_keyword, coverage,
-                outdir, silent, exclude_problematic, verbose):
-    """Analyze the annotated variants in a VCF file.
+def analyze(variant_file, ped_file, family_type, frequency_treshold, frequency_keyword, cadd_treshold, 
+            cadd_keyword, coverage, gq_treshold, outdir, silent, exclude_problematic, verbose):
+    """Analyze the annotated variants in a VCF file for the family/families in the ped file. 
+        If there are multiple families in the ped one analysis per family will be done.
         The variants are analyzed in five different categories based on what inheritance patterns that are followed.
         The differen analysies are: 
         
@@ -363,7 +415,7 @@ def analyze(variant_file, frequency_treshold, frequency_keyword, cadd_treshold, 
             MAF < 0.02\n
             CADD score > 12\n
             Coverage in all individuals > 7\n
-            Call quality > 100\n
+            Call quality > 20\n
         
         The highest scoring variants of each category is printed to screen.
         The full list of each category is printed to new vcf files in a directory specified by the user. Default current dir. 
@@ -377,8 +429,8 @@ def analyze(variant_file, frequency_treshold, frequency_keyword, cadd_treshold, 
     # prefered_models = make_models([])
     
     inheritance_keyword = 'GeneticModels'
-    file_name = os.path.splitext(os.path.split(variant_file)[-1])[0]
-    gq_treshold = 100
+    vcf_file_name = os.path.splitext(os.path.split(variant_file)[-1])[0]
+    vcf_file_name = os.path.splitext(os.path.split(ped_file)[-1])[0]
     
     # if config_file:
     #     frequency_treshold = float(configs.get('frequency', {}).get('rare', frequency_treshold))
@@ -388,78 +440,94 @@ def analyze(variant_file, frequency_treshold, frequency_keyword, cadd_treshold, 
     #     prefered_models = make_models(inheritance_patterns)
     
     
+    family_parser = ped_parser.FamilyParser(ped_file, family_type)
+    
     if variant_file == '-':
         variant_parser = vcf_parser.VCFParser(fsock = sys.stdin)
     else:
         variant_parser = vcf_parser.VCFParser(infile = variant_file)
     
-    head = variant_parser.metadata
+    for family_id in family_parser.families:
+        print('Analysis for family: %s' % family_id)
+    
+        head = variant_parser.metadata
+            
+        dominant_dict = {}
+        homozygote_dict = {}
+        compound_dict = {}
+        x_linked_dict = {}
+        dominant_dn_dict = {}
         
-    dominant_dict = {}
-    homozygote_dict = {}
-    compound_dict = {}
-    x_linked_dict = {}
-    dominant_dn_dict = {}
-    
-    
-    get_interesting_variants(variant_parser, dominant_dict, homozygote_dict, compound_dict, x_linked_dict, 
-                                dominant_dn_dict, frequency_treshold, frequency_keyword, cadd_treshold, 
-                                cadd_keyword, coverage, exclude_problematic)
-    
-    remove_inacurate_compounds(compound_dict)
-    
-    if len(dominant_dict) > 0:
-        dominant_file = os.path.join(outdir, file_name+'_dominant_analysis.vcf')
-        print_headers(head, dominant_file)
         
-        print_results(dominant_dict, dominant_file, variant_parser.header, cadd_keyword, frequency_keyword, mode='dominant')
-                
-    if len(homozygote_dict) > 0:
-        homozygote_file = os.path.join(outdir, file_name+'_homozygote_analysis.vcf')
-        print_headers(head, homozygote_file)
+        get_interesting_variants(variant_parser,
+                                    family_id,
+                                    dominant_dict, 
+                                    homozygote_dict, 
+                                    compound_dict, 
+                                    x_linked_dict, 
+                                    dominant_dn_dict, 
+                                    frequency_treshold, 
+                                    frequency_keyword, 
+                                    cadd_treshold, 
+                                    cadd_keyword,
+                                    gq_treshold,
+                                    coverage, 
+                                    exclude_problematic)
         
-        print_results(homozygote_dict, homozygote_file, variant_parser.header, cadd_keyword, frequency_keyword, mode='homozygote')
+        remove_inacurate_compounds(compound_dict, family_id)
         
-    if len(compound_dict) > 0:
-        compound_file = os.path.join(outdir, file_name+'_compound_analysis.vcf')
-        print_headers(head, compound_file)
+        if len(dominant_dict) > 0:
+            dominant_file = os.path.join(outdir, file_name+'_dominant_analysis.vcf')
+            print_headers(head, dominant_file)
+            
+            print_results(dominant_dict, dominant_file, family_id, variant_parser.header, cadd_keyword, frequency_keyword, mode='dominant')
+                    
+        if len(homozygote_dict) > 0:
+            homozygote_file = os.path.join(outdir, file_name+'_homozygote_analysis.vcf')
+            print_headers(head, homozygote_file)
+            
+            print_results(homozygote_dict, homozygote_file, family_id, variant_parser.header, cadd_keyword, frequency_keyword, mode='homozygote')
+            
+        if len(compound_dict) > 0:
+            compound_file = os.path.join(outdir, file_name+'_compound_analysis.vcf')
+            print_headers(head, compound_file)
+            
+            print_results(compound_dict, compound_file, family_id, variant_parser.header, cadd_keyword, frequency_keyword, mode='compound')
         
-        print_results(compound_dict, compound_file, variant_parser.header, cadd_keyword, frequency_keyword, mode='compound')
-    
-    if len(x_linked_dict) > 0:
-        xlinked_file = os.path.join(outdir, file_name+'_x_linked_analysis.vcf')
-        print_headers(head, xlinked_file)
+        if len(x_linked_dict) > 0:
+            xlinked_file = os.path.join(outdir, file_name+'_x_linked_analysis.vcf')
+            print_headers(head, xlinked_file)
+            
+            print_results(x_linked_dict, xlinked_file, family_id, variant_parser.header, cadd_keyword, frequency_keyword, mode='xlinked')
         
-        print_results(x_linked_dict, xlinked_file, variant_parser.header, cadd_keyword, frequency_keyword, mode='xlinked')
-
-    if len(dominant_dn_dict) > 0:
-        dominant_dn_file = os.path.join(outdir, file_name+'_ad_denovo_analysis.vcf')
-        print_headers(head, dominant_dn_file)
-
-        print_results(dominant_dn_dict, dominant_dn_file, variant_parser.header, cadd_keyword, frequency_keyword, mode='denovo')
-    
-    print('')
-    
-    print('Number of interesting Dominant variants: %s' % len(dominant_dict))
-    print('Number of interesting Homozygote variants: %s' %len(homozygote_dict))
-    print('Number of interesting Compound variants: %s' %len(compound_dict))
-    print('Number of interesting X-linked variants: %s' %len(x_linked_dict))
-    print('Number of interesting Autosomal Dominant de novo variants: %s' %len(dominant_dn_dict))
-    
-    # pp(compound_dict)
-    
-    print('Time for analysis: %s' % str(datetime.now() - start_time_analysis))
-    # print_headers(variant_parser.metadata, outfile=outfile)
-    
-    # dominant_results = NamedTemporaryFile(delete=False)
-    # dominant_results.close()
-    #
-    # var_sorter = variant_sorter.FileSort(dominant_file.name, mode='cadd', outfile=dominant_results.name)
-    # var_sorter.sort()
-    #
-    # print(dominant_results)
-    # print(outfile)
-    # print_variants(dominant_results.name, outfile, silent)
+        if len(dominant_dn_dict) > 0:
+            dominant_dn_file = os.path.join(outdir, file_name+'_ad_denovo_analysis.vcf')
+            print_headers(head, dominant_dn_file)
+        
+            print_results(dominant_dn_dict, dominant_dn_file, family_id, variant_parser.header, cadd_keyword, frequency_keyword, mode='denovo')
+        
+        print('')
+        
+        print('Number of interesting Dominant variants: %s' % len(dominant_dict))
+        print('Number of interesting Homozygote variants: %s' %len(homozygote_dict))
+        print('Number of interesting Compound variants: %s' %len(compound_dict))
+        print('Number of interesting X-linked variants: %s' %len(x_linked_dict))
+        print('Number of interesting Autosomal Dominant de novo variants: %s' %len(dominant_dn_dict))
+        
+        # pp(compound_dict)
+        
+        print('Time for analysis: %s' % str(datetime.now() - start_time_analysis))
+        # print_headers(variant_parser.metadata, outfile=outfile)
+        
+        # dominant_results = NamedTemporaryFile(delete=False)
+        # dominant_results.close()
+        #
+        # var_sorter = variant_sorter.FileSort(dominant_file.name, mode='cadd', outfile=dominant_results.name)
+        # var_sorter.sort()
+        #
+        # print(dominant_results)
+        # print(outfile)
+        # print_variants(dominant_results.name, outfile, silent)
     
     
 
