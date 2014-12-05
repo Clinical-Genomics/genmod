@@ -135,30 +135,30 @@ def get_inheritance_models(variant, family_id, inheritance_keyword):
 #                 is_flag=True,
 #                 help='Increase output verbosity.'
 # )
-def summarize_variants(variant_file, frequency_treshold, frequency_keyword, cadd_treshold, cadd_keyword, gq_treshold, read_depth_treshold):
+def summarize(variant_file, frequency_treshold, frequency_keyword, cadd_treshold, cadd_keyword, gq_treshold, read_depth_treshold):
     """
     Analyze the the variants in a vcf, the following will be printed:
     
-        - How many variants found
-        - How many mendelian violations
-        - How many variants where not covered in all individuals. (Default depth 7)
-        - How many variants did not satisfy the base call quality treshold. (Default 20)
-        - How many variants followed each model:
-            - AR_hom
-            - AR_comp
-            - AR_hom_dn
-            - AR_comp_dn
-            - AD
-            - AD_dn
-            - XD
-            - XD_dn
-            - XR
-            - XR_dn
-        - How many variants in genetic regions
-        - How many rare variants (Default maf < 0.02)
-        - How many high scored cadd. (Default cadd = 0)
-        - How many rare + high score cadd
-        - How many follow a genetic model + rare + high cadd
+        - How many variants found\n
+        - How many variants did not satisfy the base call quality treshold. (Default 20)\n
+        - How many variants where not covered in all individuals. (Default depth 10)\n
+        - How many variants followed each model in each family:\n
+            - AR_hom\n
+            - AR_comp\n
+            - AR_hom_dn\n
+            - AR_comp_dn\n
+            - AD\n
+            - AD_dn\n
+            - XD\n
+            - XD_dn\n
+            - XR\n
+            - XR_dn\n
+        - How many rare variants (Default maf < 0.02)\n
+        - How many high scored cadd. (Default cadd = 0)\n
+        - How many rare + high score cadd\n
+        - How many no cadd score\n
+        - How many indels\n
+        - How many indels without cadd score\n
     
     """
     
@@ -297,4 +297,4 @@ def summarize_variants(variant_file, frequency_treshold, frequency_keyword, cadd
     print('Time for analysis: %s' % str(datetime.now()-analysis_start))
 
 if __name__ == '__main__':
-    summarize_variants()
+    summarize()

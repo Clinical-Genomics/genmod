@@ -13,7 +13,7 @@ The tools in the genmod suite are:
 - **genmod annotate**, for annotating inheritance patterns, frequencies, cadd scores etc.
 - **genmod build_annotation**, for building new annotation sets from different sources
 - **genmod analyze**, do a basic analysis of the annotated variants in a vcf file
-- **genmod summarize_variants**, to get some basic statistics of the annotated variants in a vcf file
+- **genmod summarize**, to get some basic statistics of the annotated variants in a vcf file
 
 ##Installation:##
 
@@ -133,12 +133,12 @@ For more information do
 	genmod analyze --help
 
 
-###genmod summarize_variants###
+###genmod summarize###
 
 Tool to get basic statistics of the annotated in a vcf file.
 Run
 
-	genmod summarixe_variants --help
+	genmod summarize --help
 
 for more information.
 
