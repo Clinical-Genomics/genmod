@@ -1,10 +1,11 @@
 # Examples for GENMOD #
 
 These are some example files for getting to know **genmod** and the possible alternatives.
-There are two small test families
+There are three test families
 
 - A "recessive" family in recessive_trio.ped, with two healthy parents and one affected child. In this case we would be interested in variants that follow the **autosomal recessive** or **autosomal recessive compound** inheritance pattern.
 - A "dominant" family in dominant_trio.ped, with one affected parent, one healthy parent and one affected child.
+- A multi family file with two families.
 
 There are annotation files included in the distribution of **genmod** that are made from the [latest](ftp://hgdownload.cse.ucsc.edu/goldenPath/hg19/database/refGene.txt.gz) ref gene dataset. These will be used as default if no other annotation is given.
 If the user want to build own annotations please use **genmod build_annotation**.
@@ -12,33 +13,11 @@ If the user want to build own annotations please use **genmod build_annotation**
 ##Annotate variants for Recessive Family##
 
 
-	genmod annotate test_data/test_vcf.vcf -fam test_data/recessive_trio.ped
+	genmod annotate examples/test_vcf.vcf -f examples/recessive_trio.ped -o examples/test_vcf_recessive_annotated.vcf
 
 The vcf file have a couple of variants made up so it will be easy to understand how the genetic inheritance patterns are annotated.
 
-With the basic command listed above the output should look like
-
-	##fileformat=VCFv4.1
-	##INFO=<ID=ANN,Number=.,Type=String,Description="Annotates what feature(s) this variant belongs to.">
-	##INFO=<ID=Comp,Number=.,Type=String,Description="':'-separated list of compound pairs for this variant.">
-	##INFO=<ID=GM,Number=.,Type=String,Description="':'-separated list of genetic models for this variant.">
-	##INFO=<ID=MS,Number=1,Type=Integer,Description="PHRED score for genotype models.">
-	##contig=<ID=1,length=249250621,assembly=b37>
-	##reference=file:///humgen/gsa-hpprojects/GATK/bundle/current/b37/human_g1k_v37.fasta
-	#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	father	mother	proband
-	1	11900	.	C	A	100	PASS	MQ=1;ANN=DDX11L1;GM=AR_hom;MS=55	GT:GQ	0/1:60	0/1:60	1/1:60
-	1	11901	.	T	C	100	PASS	MQ=1;ANN=DDX11L1;GM=AR_hom:AR_hom_dn;MS=57	GT:GQ	./.	0/1:60	1/1:60
-	1	11902	.	T	G	100	PASS	MQ=1;ANN=DDX11L1;GM=AR_hom_dn;MS=55	GT:GQ	0/1:60	0/0:60	1/1:60
-	1	11903	.	C	G	100	PASS	MQ=1;ANN=DDX11L1	GT:GQ	0/1:60	1/1:60	1/1:60
-	1	879585	.	A	T	100	PASS	MQ=1;ANN=NOC2L:SAMD11;Comp=1_879586_A_T;GM=AR_comp;MS=55	GT:GQ	0/1:60	0/0:60	0/1:60
-	1	879586	.	A	T	100	PASS	MQ=1;ANN=NOC2L:SAMD11;Comp=1_879585_A_T;GM=AR_comp;MS=55	GT:GQ	0/0:60	0/1:60	0/1:60
-	1	947378	.	T	G	100	PASS	MQ=1;GM=AD_dn;MS=55	GT:GQ	0/0:60	0/0:60	0/1:60
-	1	973348	.	G	A	100	PASS	MQ=1;ANN=AGRN;GM=AD_dn;MS=55	GT:GQ	0/0:60	0/0:60	0/1:60
-	1	973349	.	T	G	100	PASS	MQ=1;ANN=AGRN;GM=AD_dn;MS=55	GT:GQ	0/0:60	0/0:60	0/1:60
-	3	879586	.	G	T	100	PASS	MQ=1;ANN=LOC101927215	GT:GQ	0/0:60	0/1:60	0/1:60
-	3	947378	.	A	T	100	PASS	MQ=1;GM=AD_dn;MS=55	GT:GQ	0/0:60	0/0:60	0/1:60
-	3	973348	.	G	A	100	PASS	MQ=1	GT:GQ	./.	0/1:60	0/1:60
-	3	973349	.	A	T	100	PASS	MQ=1;GM=AD_dn:AD;MS=57	GT:GQ	./.	0/0:60	0/1:60
+With the basic command listed above the output should look like the variants in ```examples/test_vcf_recessive_annotated.vcf```
 
 1. First variant is a classic Autosomal Recessive case, each parent are carriers and the affected child is homozygous alternative.
 2. This variant is annotated as ``AR_hom:AR_hom_dn`` since we miss information from one parent.

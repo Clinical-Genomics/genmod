@@ -23,9 +23,9 @@ The tools in the genmod suite are:
 
 or
 
-    git clone https://github.com/moonso/genmod.git
-    cd genmod
-    python setup.py install
+	git clone https://github.com/moonso/genmod.git
+	cd genmod
+	python setup.py install
 
 
 
@@ -78,8 +78,8 @@ If ```--vep``` is used **Annotation** will not be annotated since all informatio
 
 If a pedigree file is provided the following will be added:
 
-- **GeneticModels** A pipe separated list with which genetic models that are followed in each family described in the ped file. Annotation is on the form ```GeneticModels=fam_id_1:AR_hom|fam_id_2:AR_comp,AD_dn``` etc..
-- **Compounds** Pipe separated list with compound pairs(if any) for each family. These are described like 'CHR\_POS\_REF\_ALT'
+- **GeneticModels** A comma separated list with which genetic models that are followed in each family described in the ped file. Annotation are separated with pipes on the form ```GeneticModels=fam_id_1:AR_hom, fam_id_2:AR_comp|AD_dn``` etc..
+- **Compounds** Comma separated list with compound pairs(if any) for each family. These are described like 'CHR\_POS\_REF\_ALT'
 - **ModelScore** Model Score, a phred-score based on the genotype qualities to describe the uncertainty of the genetic model in each family
 
 Also a line for logging is added in the vcf header with the id **genmod**, here the date of run, version and command line arguments are printed.

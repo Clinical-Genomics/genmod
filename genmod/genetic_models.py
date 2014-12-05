@@ -64,26 +64,26 @@ from genmod import pair_generator
 def check_genetic_models(variant_batch, families, verbose = False, phased = False, strict = False, proc_name = None):
     # A variant batch is a dictionary on the form {variant_id:variant_dict, variant_2_id:variant_dict_2, ...}
     intervals = variant_batch.pop('haploblocks', {})
-    inheritance_models = {'XR' : False,
-                            'XR_dn' : False,
-                            'XD' : False,
-                            'XD_dn' : False,
-                            'AD' : False,
-                            'AD_dn' : False,
-                            'AR_hom' : False,
-                            'AR_hom_dn' : False,
-                            'AR_comp' : False,
-                            'AR_comp_dn' : False
-                            }
-    
     
     for family_id in families:
         family = families[family_id]
-        individuals = family.individuals    
-    
+        individuals = family.individuals
+        
         compound_candidates = []
         compound_pairs = []
         for variant_id in variant_batch:
+            inheritance_models = {'XR' : False,
+                                    'XR_dn' : False,
+                                    'XD' : False,
+                                    'XD_dn' : False,
+                                    'AD' : False,
+                                    'AD_dn' : False,
+                                    'AR_hom' : False,
+                                    'AR_hom_dn' : False,
+                                    'AR_comp' : False,
+                                    'AR_comp_dn' : False
+                                    }
+            
             variant = variant_batch[variant_id]
             # save the compound pairs for a variant in a set
             if 'compounds' in variant:
