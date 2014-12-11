@@ -341,8 +341,7 @@ def annotate(family_file, variant_file, family_type, vep, silent, phased, strict
         # We need more power when annotating cadd scores:
         num_model_checkers = min(8, cpu_count())
     else:
-        # num_model_checkers = min(4, cpu_count())
-        num_model_checkers = 1
+        num_model_checkers = min(4, cpu_count())
     
     if verbosity:
         print('Number of CPU:s %s' % cpu_count())
