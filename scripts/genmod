@@ -56,7 +56,10 @@ def print_version(ctx, param, value):
                 is_eager=True
 )
 def run_genmod():
-    """Annotate genetic models in variant files."""
+    """Tool for annotating and analyzing genetic variants in the vcf format.\n
+        For more information, please run:
+        genmod COMMAND --help \n
+        """
     pass
 
 run_genmod.add_command(build_annotation.build_annotation)
