@@ -41,6 +41,14 @@ All individuals described in the [ped](http://pngu.mgh.harvard.edu/~purcell/plin
 
 See examples in the folder ```genmod/examples```.
 
+**From version 1.9 genmod can split multiallelic calls in vcf:s, use flag -split/--split_variants.**
+
+To get an example of how splitting variants work, run genmod on the file ```examples/multi_allele_example.vcf``` with the dominant trio.
+That is:
+    ```genmod annotate examples/multi_allele_example.vcf -f examples/dominant_trio.ped -split```
+
+Compare the result when not using the ```-split``` flag.
+
 Genmod is distributed with a annotation database that is built from the refGene data.
 If the user wants to build a new annotation set use the command below:
 
