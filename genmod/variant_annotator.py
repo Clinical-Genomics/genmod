@@ -233,11 +233,12 @@ class VariantAnnotator(object):
         
         annotation = set()
         # vep_info is a dictionary with genes as key and annotation as values
-        for gene in variant.get('vep_info',{}):
-            for consequence in variant['vep_info'][gene].get('Consequence', '').split('&'):
-                if consequence in self.INTERESTING_SO_TERMS:
-                    annotation.add(gene)
-        
+        for allele in variant.get('vep_info',{}):
+            if allele != 'gene_ids':
+                for vep_annotation in variant['vep_info'][allele]:
+                    for consequence in vep_annotation.get('Consequence', '').split('&'):
+                        if consequence in self.INTERESTING_SO_TERMS:
+                            annotation.add(vep_annotation.get('SYMBOL', ''))
         return annotation
         
     

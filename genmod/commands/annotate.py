@@ -146,6 +146,10 @@ def check_tabix_index(compressed_file, file_type='cadd', verbose=False):
                     is_flag=True,
                     help='Do not print the variants.'
 )
+@click.option('-split' ,'--split_variants', 
+                    is_flag=True,
+                    help='If the variants should be splitted.'
+)
 @click.option('-g' ,'--whole_gene', 
                     is_flag=True,
                     help="""If compounds should be checked in the whole gene regions. 
@@ -203,7 +207,7 @@ def check_tabix_index(compressed_file, file_type='cadd', verbose=False):
 )
 def annotate(family_file, variant_file, family_type, vep, silent, phased, strict, cadd_raw, whole_gene, 
                 annotation_dir, cadd_file, cadd_1000g, cadd_esp, cadd_indels, thousand_g, exac, outfile,
-                chr_prefix, processes, verbose):
+                chr_prefix, split_variants, processes, verbose):
     """Annotate variants in a VCF file.\n
         The main function with genmod is to annotate genetic inheritance patterns for variants in families. 
         Use flag --family together with a .ped file to describe which individuals in the vcf you wish to check inheritance for in the analysis.
@@ -226,16 +230,14 @@ def annotate(family_file, variant_file, family_type, vep, silent, phased, strict
     ######### Setup a variant parser #########
     
     if variant_file == '-':
-        variant_parser = vcf_parser.VCFParser(fsock = sys.stdin)
+        variant_parser = vcf_parser.VCFParser(fsock = sys.stdin, split_variants=split_variants)
     else:
-        variant_parser = vcf_parser.VCFParser(infile = variant_file)
+        variant_parser = vcf_parser.VCFParser(infile = variant_file, split_variants=split_variants)
     
     # These are the individuals in from the vcf file
     individuals = variant_parser.individuals
     
     head = variant_parser.metadata
-    
-    
     
     ######### Start to parse the ped file (if there is one) #########
     
@@ -347,7 +349,7 @@ def annotate(family_file, variant_file, family_type, vep, silent, phased, strict
     
     if verbosity:
         print('Number of CPU:s %s' % cpu_count())
-        print('Number of model checkers %s' % num_model_checkers)
+        print('Number of model checkers: %s' % num_model_checkers)
     
     # These are the workers that do the heavy part of the analysis
     model_checkers = [variant_consumer.VariantConsumer(variant_queue, 
