@@ -204,10 +204,12 @@ def check_tabix_index(compressed_file, file_type='cadd', verbose=False):
 def annotate(family_file, variant_file, family_type, vep, silent, phased, strict, cadd_raw, whole_gene, 
                 annotation_dir, cadd_file, cadd_1000g, cadd_esp, cadd_indels, thousand_g, exac, outfile,
                 chr_prefix, processes, verbose):
-    """Annotate variants in a VCF file.
-        It is possible to annotate from sources shown as options only
-        If a ped file is provided then the genetic inheritance patterns for all individuals are followed.
-        Individuals that are not present in ped file will not be considered in the analysis.
+    """Annotate variants in a VCF file.\n
+        The main function with genmod is to annotate genetic inheritance patterns for variants in families. 
+        Use flag --family together with a .ped file to describe which individuals in the vcf you wish to check inheritance for in the analysis.
+        Individuals that are not present in the ped file will not be considered in the analysis.\n
+        It is also possible to use genmod without a family file. In this case the variants will be annotated with a variety of options seen below.
+        Please see docuentation on github.com/moonso/genmod or genmod/examples/readme.md for more information.
     """    
     verbosity = verbose
     
@@ -248,19 +250,22 @@ def annotate(family_file, variant_file, family_type, vep, silent, phased, strict
             if individual not in individuals:
                 warning.warning('All individuals in ped file must be in vcf file! Aborting...')
                 warning.warning('Individuals in PED file: %s' % ' '.join(list(family_parser.individuals.keys())))
-                warning.warning('Individuals in VCF file: %s' % ' '.join(list(variant_parser.individuals)))
+                warning.warning('Individuals in VCF file: %s' % ' '.join(individuals))
                 sys.exit()
     
     if verbosity:
         if family_file:
             print('Starting analysis of families: %s' % ','.join(list(families.keys())))
-            print('Individuals included in analysis: %s\n' % ','.join(list(individuals.keys())))
+            print('Individuals included in analysis: %s\n' % ','.join(list(family_parser.individuals.keys())))
     ######### Connect to the annotations #########
     
     gene_trees = {}
     exon_trees = {}
 
     if not vep:
+        
+        if verbosity:
+            print('Reading annotations...\n')
         
         gene_db = pkg_resources.resource_filename('genmod', 'annotations/genes.db')
         exon_db = pkg_resources.resource_filename('genmod', 'annotations/exons.db')
