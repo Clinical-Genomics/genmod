@@ -39,19 +39,6 @@ from genmod import variant_consumer, variant_sorter, annotation_parser, variant_
 version = pkg_resources.require("genmod")[0].version
 
 
-def get_families(family_file, family_type):
-    """Return the family"""
-    
-    my_family_parser = ped_parser.FamilyParser(family_file, family_type)
-    # Stupid thing but for now when we only look at one family
-    
-    try:
-        return my_family_parser.families.popitem()[1]
-    except KeyError as e:
-        raise SyntaxError("Something wrong with the pedigree file? No families found")
-    
-    return
-
 def add_metadata(head, annotate_models=False, vep=False, cadd_annotation=False, cadd_raw=False, thousand_g=None,
                  exac=None, command_line_string=''):
     """Add metadata for the information added by this script."""
@@ -205,13 +192,18 @@ def check_tabix_index(compressed_file, file_type='cadd', verbose=False):
                     type=click.Path(exists=True), 
                     help="""Specify the path to a bgzipped vcf file (with index) with exac variants."""
 )
+@click.option('-p', '--processes', 
+                default=min(4, cpu_count()),
+                help='Define how many processes that should be use for annotation.'
+)
+
 @click.option('-v', '--verbose', 
                 is_flag=True,
                 help='Increase output verbosity.'
 )
 def annotate(family_file, variant_file, family_type, vep, silent, phased, strict, cadd_raw, whole_gene, 
                 annotation_dir, cadd_file, cadd_1000g, cadd_esp, cadd_indels, thousand_g, exac, outfile,
-                chr_prefix, verbose):
+                chr_prefix, processes, verbose):
     """Annotate variants in a VCF file.
         It is possible to annotate from sources shown as options only
         If a ped file is provided then the genetic inheritance patterns for all individuals are followed.
@@ -236,6 +228,9 @@ def annotate(family_file, variant_file, family_type, vep, silent, phased, strict
     else:
         variant_parser = vcf_parser.VCFParser(infile = variant_file)
     
+    # These are the individuals in from the vcf file
+    individuals = variant_parser.individuals
+    
     head = variant_parser.metadata
     
     
@@ -243,13 +238,14 @@ def annotate(family_file, variant_file, family_type, vep, silent, phased, strict
     ######### Start to parse the ped file (if there is one) #########
     
     families = {}
+    
     if family_file:
         family_parser = ped_parser.FamilyParser(family_file, family_type)
         # The individuals in the ped file must be present in the variant file:
         families = family_parser.families
-        individuals = family_parser.individuals
-        for individual in individuals:
-            if individual not in variant_parser.individuals:
+        
+        for individual in family_parser.individuals:
+            if individual not in individuals:
                 warning.warning('All individuals in ped file must be in vcf file! Aborting...')
                 warning.warning('Individuals in PED file: %s' % ' '.join(list(family_parser.individuals.keys())))
                 warning.warning('Individuals in VCF file: %s' % ' '.join(list(variant_parser.individuals)))
@@ -336,12 +332,13 @@ def annotate(family_file, variant_file, family_type, vep, silent, phased, strict
     # They are then sorted and printed to a proper vcf
     temp_dir = mkdtemp()
     
+    num_model_checkers = processes
     #Adapt the number of processes to the machine that run the analysis
     if cadd_annotation:
         # We need more power when annotating cadd scores:
-        num_model_checkers = min(8, cpu_count())
-    else:
-        num_model_checkers = min(4, cpu_count())
+        # But if flag is used that overrides
+        if num_model_checkers == min(4, cpu_count()):
+            num_model_checkers = min(8, cpu_count())
     
     if verbosity:
         print('Number of CPU:s %s' % cpu_count())
