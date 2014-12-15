@@ -112,8 +112,8 @@ class VariantAnnotator(object):
             
             if self.verbosity:
                 if nr_of_variants % 20000 == 0:
-                    print('%s variants parsed!' % nr_of_variants)
-                    print('Last 20.000 took %s to parse.\n' % str(datetime.now() - start_twenty_time))
+                    print('%s variants parsed!' % nr_of_variants, file=sys.stderr)
+                    print('Last 20.000 took %s to parse.\n' % str(datetime.now() - start_twenty_time), file=sys.stderr)
                     start_twenty_time = datetime.now()
             
             # If we look at the first variant, setup boundary conditions:
@@ -155,8 +155,8 @@ class VariantAnnotator(object):
                     send = True
                     
                     if self.verbosity:
-                        print('Chromosome %s parsed!' % current_chrom)
-                        print('Time to parse chromosome %s' % str(datetime.now()-start_chrom_time))
+                        print('Chromosome %s parsed!' % current_chrom, file=sys.stderr)
+                        print('Time to parse chromosome %s' % str(datetime.now()-start_chrom_time), file=sys.stderr)
                         start_chrom_time = datetime.now()
                 
                     current_chrom = new_chrom
@@ -191,11 +191,11 @@ class VariantAnnotator(object):
         self.chromosomes.append(current_chrom)
         
         if self.verbosity:
-            print('Chromosome %s parsed!' % current_chrom)
-            print('Time to parse chromosome %s \n' % str(datetime.now()-start_chrom_time))
-            print('Variants parsed!')
-            print('Time to parse variants:%s' % str(datetime.now() - start_parsing_time))
-            print('Number of variants in variant file:%s\n' % nr_of_variants)
+            print('Chromosome %s parsed!' % current_chrom, file=sys.stderr)
+            print('Time to parse chromosome %s \n' % str(datetime.now()-start_chrom_time), file=sys.stderr)
+            print('Variants parsed!', file=sys.stderr)
+            print('Time to parse variants:%s' % str(datetime.now() - start_parsing_time), file=sys.stderr)
+            print('Number of variants in variant file:%s\n' % nr_of_variants, file=sys.stderr)
         
         if self.phased:
         # Create an interval tree for each individual with the phasing intervals
@@ -344,7 +344,7 @@ def main():
         if args.annotation_file:
             anno_file = args.annotation_file[0]
             if args.verbose:
-                print('Parsing annotationfile...')
+                print('Parsing annotationfile...', file=sys.stderr)
                 start_time_annotation = datetime.now()
             file_name, file_extension = os.path.splitext(anno_file)
             zipped = False
