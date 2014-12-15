@@ -30,7 +30,7 @@ class VariantConsumer(multiprocessing.Process):
     """Yeilds all unordered pairs from a list of objects as tuples, like (obj_1, obj_2)"""
     
     def __init__(self, task_queue, results_queue, families={}, phased=False, vep=False, cadd_raw=False,
-                    cadd_file=None, cadd_1000g=None, cadd_ESP=None, cadd_InDels=None, 
+                    cadd_file=None, cadd_1000g=None, cadd_exac=None, cadd_ESP=None, cadd_InDels=None, 
                     thousand_g=None, exac=None, chr_prefix=False, strict=False, verbosity=False):
         multiprocessing.Process.__init__(self)
         self.task_queue = task_queue
@@ -42,6 +42,7 @@ class VariantConsumer(multiprocessing.Process):
         self.cadd_raw = cadd_raw
         self.cadd_file = cadd_file
         self.cadd_1000g = cadd_1000g
+        self.cadd_exac = cadd_exac
         self.cadd_ESP = cadd_ESP
         self.cadd_InDels = cadd_InDels
         self.thousand_g = thousand_g
@@ -54,6 +55,9 @@ class VariantConsumer(multiprocessing.Process):
             self.any_cadd_info = True
         if self.cadd_1000g:
             self.cadd_1000g = tabix.open(self.cadd_1000g)
+            self.any_cadd_info = True
+        if self.cadd_exac:
+            self.cadd_exac = tabix.open(self.cadd_exac)
             self.any_cadd_info = True
         if self.cadd_ESP:
             self.cadd_ESP = tabix.open(self.cadd_ESP)
@@ -119,6 +123,9 @@ class VariantConsumer(multiprocessing.Process):
             # If variant not found in big CADD file check the 1000G file:
             if not cadd_score and self.cadd_1000g:
                 cadd_score = self.get_cadd_score(self.cadd_1000g, variant['CHROM'], variant['POS'], alt)
+            
+            if not cadd_score and self.cadd_exac:
+                cadd_score = self.get_cadd_score(self.cadd_exac, variant['CHROM'], variant['POS'], alt)
             
             if not cadd_score and self.cadd_ESP:
                 cadd_score = self.get_cadd_score(self.cadd_ESP, variant['CHROM'], variant['POS'], alt)

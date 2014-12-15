@@ -178,6 +178,11 @@ def check_tabix_index(compressed_file, file_type='cadd', verbose=False):
                     help="""Specify the path to a bgzipped cadd file (with index) with variant scores 
                             for all 1000g variants."""
 )
+@click.option('--cadd_exac',
+                    type=click.Path(exists=True), 
+                    help="""Specify the path to a bgzipped cadd file (with index) with variant scores 
+                            for all ExAC variants."""
+)
 @click.option('--cadd_esp',
                     type=click.Path(exists=True), 
                     help="""Specify the path to a bgzipped cadd file (with index) with variant scores 
@@ -206,7 +211,7 @@ def check_tabix_index(compressed_file, file_type='cadd', verbose=False):
                 help='Increase output verbosity.'
 )
 def annotate(family_file, variant_file, family_type, vep, silent, phased, strict, cadd_raw, whole_gene, 
-                annotation_dir, cadd_file, cadd_1000g, cadd_esp, cadd_indels, thousand_g, exac, outfile,
+                annotation_dir, cadd_file, cadd_1000g, cadd_exac, cadd_esp, cadd_indels, thousand_g, exac, outfile,
                 chr_prefix, split_variants, processes, verbose):
     """Annotate variants in a VCF file.\n
         The main function with genmod is to annotate genetic inheritance patterns for variants in families. 
@@ -317,12 +322,16 @@ def annotate(family_file, variant_file, family_type, vep, silent, phased, strict
         if verbosity:
             print('Cadd InDel file! %s' % cadd_indels, file=sys.stderr)
         cadd_annotation = True
+    if cadd_exac:
+        if verbosity:
+            print('Cadd ExAC file! %s' % cadd_exac, file=sys.stderr)
+        cadd_annotation = True
     if thousand_g:
         if verbosity:
             print('1000G frequency file! %s' % thousand_g, file=sys.stderr)
     if exac:
         if verbosity:
-            print('ExAC frequency file! %s' % exac, file=sys.stderr, file=sys.stderr)
+            print('ExAC frequency file! %s' % exac, file=sys.stderr)
     
     
     ###################################################################
@@ -360,6 +369,7 @@ def annotate(family_file, variant_file, family_type, vep, silent, phased, strict
                                                         cadd_raw, 
                                                         cadd_file, 
                                                         cadd_1000g, 
+                                                        cadd_exac, 
                                                         cadd_esp, 
                                                         cadd_indels,
                                                         thousand_g, 
