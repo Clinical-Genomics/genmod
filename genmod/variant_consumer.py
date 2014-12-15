@@ -282,7 +282,7 @@ class VariantConsumer(multiprocessing.Process):
         """Run the consuming"""
         proc_name = self.name
         if self.verbosity:
-            print('%s: Starting!' % proc_name)
+            print('%s: Starting!' % proc_name, file=sys.stderr)
         while True:
             # A batch is a dictionary on the form {variant_id:variant_dict}
             variant_batch = self.task_queue.get()
@@ -290,7 +290,7 @@ class VariantConsumer(multiprocessing.Process):
             if variant_batch is None:
                 self.task_queue.task_done()
                 if self.verbosity:
-                    print('%s: Exiting' % proc_name)
+                    print('%s: Exiting' % proc_name, file=sys.stderr)
                 break
 
             

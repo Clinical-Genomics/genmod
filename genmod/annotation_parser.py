@@ -135,7 +135,7 @@ class AnnotationParser(object):
                 self.exon_trees[chrom] = interval_tree.IntervalTree([[0,0,None]], 0, 0)
         
         if self.verbosity:
-            print('Number of genes in annotation file: %s' % nr_of_genes)
+            print('Number of genes in annotation file: %s' % nr_of_genes, file=sys.stderr)
                 
         return
     
