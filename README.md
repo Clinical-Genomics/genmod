@@ -101,10 +101,11 @@ All annotations will be present only if they have a value.
 
 - **GENMOD** can annotate the variants with 1000 genome frequencies. Use the flag `-kg/--thousand_g path/to/bgzipped/thousand_genomes.vcf.gz`
 - **GENMOD** also supports annotation of frequencies from the [ExAC](http://exac.broadinstitute.org/). Use the flag `--exac path/to/bgzipped/ExAC_file.vcf.gz`
-- Annotate with [CADD scores](http://cadd.gs.washington.edu/), use `-cadd/--cadd_file path/to/huge_cadd_file.txt.gz`. 
+- Annotate with [CADD scores](http://cadd.gs.washington.edu/), use `-cadd/--cadd_file path/to/huge_cadd_file.tsv.gz`. 
 - There several cadd files with different variant sets to cover as much as possible. 
 	- One with all 1000 genomes positions (this one include some indels), if annotation with this one use `-c1kg/--cadd_1000_g path/to/CADD_1000g.txt.gz`. 
-	- One with all variants from the ESP6500 dataset. If annotation with this one use `--cadd_esp path/to/CADD_ESP.txt.gz`.
+	- One with all variants from the ESP6500 dataset. If annotation with this one use `--cadd_esp path/to/CADD_ESP.tsv.gz`.
+	- One with all variants from the ExAC dataset. If annotation with this one use `--cadd_exac path/to/CADD_ExAC.tsv.gz`.
 	- One with 12.3M InDels from the CADD resources. If annotation with this one use `--cadd_indels path/to/CADD_InDels.txt.gz`.
 - By default the relative cadd scores is annotated with 'CADD=score', there is also an alternative to annotate with the raw cadd scores using the `--cadd_raw` flag. In this case a info field 'CADD_raw=score'.
 - If your VCF is already annotated with VEP, use `-vep/--vep`

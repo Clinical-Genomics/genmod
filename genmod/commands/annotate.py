@@ -178,6 +178,11 @@ def check_tabix_index(compressed_file, file_type='cadd', verbose=False):
                     help="""Specify the path to a bgzipped cadd file (with index) with variant scores 
                             for all 1000g variants."""
 )
+@click.option('--cadd_exac',
+                    type=click.Path(exists=True), 
+                    help="""Specify the path to a bgzipped cadd file (with index) with variant scores 
+                            for all ExAC variants."""
+)
 @click.option('--cadd_esp',
                     type=click.Path(exists=True), 
                     help="""Specify the path to a bgzipped cadd file (with index) with variant scores 
@@ -196,6 +201,10 @@ def check_tabix_index(compressed_file, file_type='cadd', verbose=False):
                     type=click.Path(exists=True), 
                     help="""Specify the path to a bgzipped vcf file (with index) with exac variants."""
 )
+@click.option('--dbnfsp',
+                    type=click.Path(exists=True), 
+                    help="""Specify the path to a bgzipped dbNSFP file (with index). THIS IS CURRENTLY NOT DOING ANYTHING!"""
+)
 @click.option('-p', '--processes', 
                 default=min(4, cpu_count()),
                 help='Define how many processes that should be use for annotation.'
@@ -206,8 +215,8 @@ def check_tabix_index(compressed_file, file_type='cadd', verbose=False):
                 help='Increase output verbosity.'
 )
 def annotate(family_file, variant_file, family_type, vep, silent, phased, strict, cadd_raw, whole_gene, 
-                annotation_dir, cadd_file, cadd_1000g, cadd_esp, cadd_indels, thousand_g, exac, outfile,
-                chr_prefix, split_variants, processes, verbose):
+                annotation_dir, cadd_file, cadd_1000g, cadd_exac, cadd_esp, cadd_indels, thousand_g, exac, outfile,
+                chr_prefix, split_variants, processes, dbnfsp, verbose):
     """Annotate variants in a VCF file.\n
         The main function with genmod is to annotate genetic inheritance patterns for variants in families. 
         Use flag --family together with a .ped file to describe which individuals in the vcf you wish to check inheritance for in the analysis.
@@ -257,8 +266,8 @@ def annotate(family_file, variant_file, family_type, vep, silent, phased, strict
     
     if verbosity:
         if family_file:
-            print('Starting analysis of families: %s' % ','.join(list(families.keys())))
-            print('Individuals included in analysis: %s\n' % ','.join(list(family_parser.individuals.keys())))
+            print('Starting analysis of families: %s' % ','.join(list(families.keys())), file=sys.stderr)
+            print('Individuals included in analysis: %s\n' % ','.join(list(family_parser.individuals.keys())), file=sys.stderr)
     ######### Connect to the annotations #########
     
     gene_trees = {}
@@ -267,7 +276,7 @@ def annotate(family_file, variant_file, family_type, vep, silent, phased, strict
     if not vep:
         
         if verbosity:
-            print('Reading annotations...\n')
+            print('Reading annotations...\n', file=sys.stderr)
         
         gene_db = pkg_resources.resource_filename('genmod', 'annotations/genes.db')
         exon_db = pkg_resources.resource_filename('genmod', 'annotations/exons.db')
@@ -289,10 +298,10 @@ def annotate(family_file, variant_file, family_type, vep, silent, phased, strict
             pass
     
         if verbosity:
-            print('Annotations used found in: %s, %s\n' % (gene_db, exon_db))
+            print('Annotations used found in: %s, %s\n' % (gene_db, exon_db), file=sys.stderr)
     else:
         if verbosity:
-            print('Using VEP annotation')
+            print('Using VEP annotation', file=sys.stderr)
         
     # sys.exit()
     
@@ -303,26 +312,33 @@ def annotate(family_file, variant_file, family_type, vep, silent, phased, strict
     
     if cadd_file:
         if verbosity:
-            click.echo('Cadd file! %s' % cadd_file)
+            print('Cadd file! %s' % cadd_file, file=sys.stderr)
         cadd_annotation = True
     if cadd_1000g:
         if verbosity:
-            click.echo('Cadd 1000G file! %s' % cadd_1000g)
+            print('Cadd 1000G file! %s' % cadd_1000g, file=sys.stderr)
         cadd_annotation = True
     if cadd_esp:
         if verbosity:
-            click.echo('Cadd ESP6500 file! %s' % cadd_esp)
+            print('Cadd ESP6500 file! %s' % cadd_esp, file=sys.stderr)
         cadd_annotation = True
     if cadd_indels:
         if verbosity:
-            click.echo('Cadd InDel file! %s' % cadd_indels)
+            print('Cadd InDel file! %s' % cadd_indels, file=sys.stderr)
+        cadd_annotation = True
+    if cadd_exac:
+        if verbosity:
+            print('Cadd ExAC file! %s' % cadd_exac, file=sys.stderr)
         cadd_annotation = True
     if thousand_g:
         if verbosity:
-            click.echo('1000G frequency file! %s' % thousand_g)
+            print('1000G frequency file! %s' % thousand_g, file=sys.stderr)
     if exac:
         if verbosity:
-            click.echo('ExAC frequency file! %s' % exac)
+            print('ExAC frequency file! %s' % exac, file=sys.stderr)
+    if dbnfsp:
+        if verbosity:
+            print('dbNFSP file! %s' % dbnfsp, file=sys.stderr)
     
     
     ###################################################################
@@ -348,8 +364,8 @@ def annotate(family_file, variant_file, family_type, vep, silent, phased, strict
             num_model_checkers = min(8, cpu_count())
     
     if verbosity:
-        print('Number of CPU:s %s' % cpu_count())
-        print('Number of model checkers: %s' % num_model_checkers)
+        print('Number of CPU:s %s' % cpu_count(), file=sys.stderr)
+        print('Number of model checkers: %s' % num_model_checkers, file=sys.stderr)
     
     # These are the workers that do the heavy part of the analysis
     model_checkers = [variant_consumer.VariantConsumer(variant_queue, 
@@ -360,10 +376,12 @@ def annotate(family_file, variant_file, family_type, vep, silent, phased, strict
                                                         cadd_raw, 
                                                         cadd_file, 
                                                         cadd_1000g, 
+                                                        cadd_exac, 
                                                         cadd_esp, 
                                                         cadd_indels,
                                                         thousand_g, 
                                                         exac, 
+                                                        dbnfsp, 
                                                         chr_prefix, 
                                                         strict, 
                                                         verbosity) 
@@ -399,7 +417,7 @@ def annotate(family_file, variant_file, family_type, vep, silent, phased, strict
     
     start_time_variant_parsing = datetime.now()
     if verbosity:
-        print('Start parsing the variants ... \n')
+        print('Start parsing the variants ... \n', file=sys.stderr)
     
     var_annotator.annotate()
     
@@ -415,9 +433,9 @@ def annotate(family_file, variant_file, family_type, vep, silent, phased, strict
     chromosome_list = var_annotator.chromosomes
     
     if verbosity:
-        print('Cromosomes found in variant file: %s \n' % ','.join(chromosome_list))
-        print('Models checked!\n')
-        print('Start sorting the variants:\n')
+        print('Cromosomes found in variant file: %s \n' % ','.join(chromosome_list), file=sys.stderr)
+        print('Models checked!\n', file=sys.stderr)
+        print('Start sorting the variants:\n', file=sys.stderr)
         start_time_variant_sorting = datetime.now()
     
     # Add the new metadata to the headers:
@@ -447,9 +465,9 @@ def annotate(family_file, variant_file, family_type, vep, silent, phased, strict
                 var_sorter.sort()
     
     if verbosity:
-        print('Sorting done!')
-        print('Time for sorting: %s \n' % str(datetime.now()-start_time_variant_sorting))
-        print('Time for whole analyis: %s' % str(datetime.now() - start_time_analysis))
+        print('Sorting done!', file=sys.stderr)
+        print('Time for sorting: %s \n' % str(datetime.now()-start_time_variant_sorting), file=sys.stderr)
+        print('Time for whole analyis: %s' % str(datetime.now() - start_time_analysis), file=sys.stderr)
     
     print_variants(sorted_file, outfile, silent)
     

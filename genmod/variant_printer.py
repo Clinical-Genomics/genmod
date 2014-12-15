@@ -37,7 +37,7 @@ class VariantPrinter(multiprocessing.Process):
         number_of_finished = 0
         proc_name = self.name
         if self.verbosity:
-            print(('%s: starting!' % proc_name))
+            print(('%s: starting!' % proc_name), file=sys.stderr)
         while True:
             next_result = self.task_queue.get()
             if self.verbosity:
@@ -45,7 +45,7 @@ class VariantPrinter(multiprocessing.Process):
                     warning('Printing queue full')
             if next_result is None:
                 if self.verbosity:
-                    print('All variants printed!')
+                    print('All variants printed!', file=sys.stderr)
                 for chromosome in self.file_handles:
                     self.file_handles[chromosome].close()
                 break
