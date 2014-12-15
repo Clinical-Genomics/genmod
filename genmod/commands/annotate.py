@@ -201,6 +201,10 @@ def check_tabix_index(compressed_file, file_type='cadd', verbose=False):
                     type=click.Path(exists=True), 
                     help="""Specify the path to a bgzipped vcf file (with index) with exac variants."""
 )
+@click.option('--dbnfsp',
+                    type=click.Path(exists=True), 
+                    help="""Specify the path to a bgzipped dbNSFP file (with index)."""
+)
 @click.option('-p', '--processes', 
                 default=min(4, cpu_count()),
                 help='Define how many processes that should be use for annotation.'
@@ -212,7 +216,7 @@ def check_tabix_index(compressed_file, file_type='cadd', verbose=False):
 )
 def annotate(family_file, variant_file, family_type, vep, silent, phased, strict, cadd_raw, whole_gene, 
                 annotation_dir, cadd_file, cadd_1000g, cadd_exac, cadd_esp, cadd_indels, thousand_g, exac, outfile,
-                chr_prefix, split_variants, processes, verbose):
+                chr_prefix, split_variants, processes, dbnfsp, verbose):
     """Annotate variants in a VCF file.\n
         The main function with genmod is to annotate genetic inheritance patterns for variants in families. 
         Use flag --family together with a .ped file to describe which individuals in the vcf you wish to check inheritance for in the analysis.
@@ -332,6 +336,9 @@ def annotate(family_file, variant_file, family_type, vep, silent, phased, strict
     if exac:
         if verbosity:
             print('ExAC frequency file! %s' % exac, file=sys.stderr)
+    if dbnfsp:
+        if verbosity:
+            print('dbNFSP file! %s' % dbnfsp, file=sys.stderr)
     
     
     ###################################################################
@@ -374,6 +381,7 @@ def annotate(family_file, variant_file, family_type, vep, silent, phased, strict
                                                         cadd_indels,
                                                         thousand_g, 
                                                         exac, 
+                                                        dbnfsp, 
                                                         chr_prefix, 
                                                         strict, 
                                                         verbosity) 

@@ -31,7 +31,7 @@ class VariantConsumer(multiprocessing.Process):
     
     def __init__(self, task_queue, results_queue, families={}, phased=False, vep=False, cadd_raw=False,
                     cadd_file=None, cadd_1000g=None, cadd_exac=None, cadd_ESP=None, cadd_InDels=None, 
-                    thousand_g=None, exac=None, chr_prefix=False, strict=False, verbosity=False):
+                    thousand_g=None, exac=None, dbNSFP=None, chr_prefix=False, strict=False, verbosity=False):
         multiprocessing.Process.__init__(self)
         self.task_queue = task_queue
         self.families = families
@@ -47,6 +47,7 @@ class VariantConsumer(multiprocessing.Process):
         self.cadd_InDels = cadd_InDels
         self.thousand_g = thousand_g
         self.exac = exac
+        self.dbNSFP = dbNSFP
         self.chr_prefix = chr_prefix
         self.strict = strict
         self.any_cadd_info = False
@@ -68,6 +69,8 @@ class VariantConsumer(multiprocessing.Process):
         if self.thousand_g:
             self.thousand_g = tabix.open(self.thousand_g)
         if self.exac:
+            self.exac = tabix.open(self.exac)
+        if self.dbNSFP:
             self.exac = tabix.open(self.exac)
     
     def get_model_score(self, individuals, variant):
