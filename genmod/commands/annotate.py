@@ -203,7 +203,7 @@ def check_tabix_index(compressed_file, file_type='cadd', verbose=False):
 )
 @click.option('--dbnfsp',
                     type=click.Path(exists=True), 
-                    help="""Specify the path to a bgzipped dbNSFP file (with index)."""
+                    help="""Specify the path to a bgzipped dbNSFP file (with index). THIS IS CURRENTLY NOT DOING ANYTHING!"""
 )
 @click.option('-p', '--processes', 
                 default=min(4, cpu_count()),
