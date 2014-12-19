@@ -233,6 +233,7 @@ class VariantAnnotator(object):
         
         annotation = set()
         # vep_info is a dictionary with genes as key and annotation as values
+        
         for allele in variant.get('vep_info',{}):
             if allele != 'gene_ids':
                 for vep_annotation in variant['vep_info'][allele]:
@@ -273,6 +274,9 @@ class VariantAnnotator(object):
         if self.vep:
             
             variant['Annotation'] = self.check_vep_annotation(variant)
+            if len(variant['Annotation']) > 0:
+                variant['comp_candidate'] = True
+                
         
         else:
             
