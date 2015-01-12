@@ -9,18 +9,13 @@ Created by Måns Magnusson on 2014-09-03.
 Copyright (c) 2014 __MoonsoInc__. All rights reserved.
 """
 
-from __future__ import print_function
-from __future__ import unicode_literals
+from __future__ import print_function, unicode_literals
 
 import sys
 import os
 import click
 import inspect
 
-try:
-    import cPickle as pickle
-except:
-    import pickle
 
 from multiprocessing import JoinableQueue, Manager, cpu_count
 from codecs import open
@@ -34,9 +29,11 @@ import pkg_resources
 from ped_parser import parser as ped_parser
 from vcf_parser import parser as vcf_parser
 
-from genmod import variant_consumer, variant_sorter, annotation_parser, variant_printer, variant_annotator, warning
+from genmod import (VariantConsumer, FileSort, annotation_parser, VariantPrinter, get_batches)
+from genmod.utils import load_annotations
+from genmod.errors import warning
 
-version = pkg_resources.require("genmod")[0].version
+VERSION = pkg_resources.require("genmod")[0].version
 
 
 def add_metadata(head, annotate_models=False, vep=False, cadd_annotation=False, cadd_raw=False, thousand_g=None,
@@ -60,7 +57,7 @@ def add_metadata(head, annotate_models=False, vep=False, cadd_annotation=False, 
         head.add_info('ExAC_freq', 'A', 'Float', "Frequency in the ExAC database.")
     
     # Update version logging
-    head.add_version_tracking('genmod', version, datetime.now().strftime("%Y-%m-%d %H:%M"), command_line_string)
+    head.add_version_tracking('genmod', VERSION, datetime.now().strftime("%Y-%m-%d %H:%M"), command_line_string)
     return
 
 def print_headers(head, outfile, silent=False):
@@ -130,10 +127,6 @@ def check_tabix_index(compressed_file, file_type='cadd', verbose=False):
                     is_flag=True,
                     help='If variants are annotated with the Variant Effect Predictor.'
 )
-@click.option('--chr_prefix', 
-                    is_flag=True,
-                    help='If chr prefix is used in vcf file.'
-)
 @click.option('-p' ,'--phased', 
                     is_flag=True,
                     help='If data is phased use this flag.'
@@ -160,7 +153,8 @@ def check_tabix_index(compressed_file, file_type='cadd', verbose=False):
                     help="""If the raw cadd scores should be annotated."""
 )
 @click.option('-a' ,'--annotation_dir', 
-                    type=click.Path(exists=True), 
+                    type=click.Path(exists=True),
+                    default=pkg_resources.resource_filename('genmod', 'annotations'),
                     help="""Specify the path to the directory where the annotation 
                     databases are. 
                     Default is the gene pred files that comes with the distribution."""
@@ -216,7 +210,7 @@ def check_tabix_index(compressed_file, file_type='cadd', verbose=False):
 )
 def annotate(family_file, variant_file, family_type, vep, silent, phased, strict, cadd_raw, whole_gene, 
                 annotation_dir, cadd_file, cadd_1000g, cadd_exac, cadd_esp, cadd_indels, thousand_g, exac, outfile,
-                chr_prefix, split_variants, processes, dbnfsp, verbose):
+                split_variants, processes, dbnfsp, verbose):
     """Annotate variants in a VCF file.\n
         The main function with genmod is to annotate genetic inheritance patterns for variants in families. 
         Use flag --family together with a .ped file to describe which individuals in the vcf you wish to check inheritance for in the analysis.
@@ -224,17 +218,16 @@ def annotate(family_file, variant_file, family_type, vep, silent, phased, strict
         It is also possible to use genmod without a family file. In this case the variants will be annotated with a variety of options seen below.
         Please see docuentation on github.com/moonso/genmod or genmod/examples/readme.md for more information.
     """    
-    verbosity = verbose
     
     ######### This is for logging the command line string #########
     frame = inspect.currentframe()
     args, _, _, values = inspect.getargvalues(frame)
     argument_list = [i+'='+str(values[i]) for i in values if values[i] and i != 'config' and i != 'frame']
     
+    if verbose:
+        print('\nRunning GENMOD annotate version %s \n' % VERSION ,file=sys.stderr)
     
-    if verbosity:
-        start_time_analysis = datetime.now()
-    
+    start_time_analysis = datetime.now()
     
     ######### Setup a variant parser #########
     
@@ -248,7 +241,7 @@ def annotate(family_file, variant_file, family_type, vep, silent, phased, strict
     
     head = variant_parser.metadata
     
-    ######### Start to parse the ped file (if there is one) #########
+    ######### Parse the ped file (if there is one) #########
     
     families = {}
     
@@ -259,51 +252,30 @@ def annotate(family_file, variant_file, family_type, vep, silent, phased, strict
         
         for individual in family_parser.individuals:
             if individual not in individuals:
-                warning.warning('All individuals in ped file must be in vcf file! Aborting...')
-                warning.warning('Individuals in PED file: %s' % ' '.join(list(family_parser.individuals.keys())))
-                warning.warning('Individuals in VCF file: %s' % ' '.join(individuals))
+                warning('All individuals in ped file must be in vcf file! Aborting...')
+                warning('Individuals in PED file: %s' % ' '.join(list(family_parser.individuals.keys())))
+                warning('Individuals in VCF file: %s' % ' '.join(individuals))
+                print('Exiting...', file=sys.stderr)
                 sys.exit()
     
-    if verbosity:
+    if verbose:
         if family_file:
             print('Starting analysis of families: %s' % ','.join(list(families.keys())), file=sys.stderr)
             print('Individuals included in analysis: %s\n' % ','.join(list(family_parser.individuals.keys())), file=sys.stderr)
-    ######### Connect to the annotations #########
+    
+    ######### Read to the annotation data structures #########
     
     gene_trees = {}
     exon_trees = {}
-
+    
+    # If the variants are already annotated we do not need to redo the annotation
     if not vep:
         
-        if verbosity:
-            print('Reading annotations...\n', file=sys.stderr)
-        
-        gene_db = pkg_resources.resource_filename('genmod', 'annotations/genes.db')
-        exon_db = pkg_resources.resource_filename('genmod', 'annotations/exons.db')
-        
-        # If the user have provided an annotation use this
-        if annotation_dir:
-            gene_db = os.path.join(annotation_dir, 'genes.db')
-            exon_db = os.path.join(annotation_dir, 'exons.db')
-        
-        try:
-            with open(gene_db, 'rb') as f:
-                gene_trees = pickle.load(f)
-            with open(exon_db, 'rb') as g:
-                exon_trees = pickle.load(g)
-        except IOError as e:
-            if verbosity:
-                warning.warning('You need to build annotations! See documentation.')
-                # It is possible to continue the analysis without annotation files
-            pass
+        gene_trees, exon_trees = load_annotations(annotation_dir, verbose)
     
-        if verbosity:
-            print('Annotations used found in: %s, %s\n' % (gene_db, exon_db), file=sys.stderr)
     else:
-        if verbosity:
+        if verbose:
             print('Using VEP annotation', file=sys.stderr)
-        
-    # sys.exit()
     
     
     ######### Check which other annotations files that should be used in the analysis #########
@@ -311,40 +283,40 @@ def annotate(family_file, variant_file, family_type, vep, silent, phased, strict
     cadd_annotation = False
     
     if cadd_file:
-        if verbosity:
+        if verbose:
             print('Cadd file! %s' % cadd_file, file=sys.stderr)
         cadd_annotation = True
     if cadd_1000g:
-        if verbosity:
+        if verbose:
             print('Cadd 1000G file! %s' % cadd_1000g, file=sys.stderr)
         cadd_annotation = True
     if cadd_esp:
-        if verbosity:
+        if verbose:
             print('Cadd ESP6500 file! %s' % cadd_esp, file=sys.stderr)
         cadd_annotation = True
     if cadd_indels:
-        if verbosity:
+        if verbose:
             print('Cadd InDel file! %s' % cadd_indels, file=sys.stderr)
         cadd_annotation = True
     if cadd_exac:
-        if verbosity:
+        if verbose:
             print('Cadd ExAC file! %s' % cadd_exac, file=sys.stderr)
         cadd_annotation = True
     if thousand_g:
-        if verbosity:
+        if verbose:
             print('1000G frequency file! %s' % thousand_g, file=sys.stderr)
     if exac:
-        if verbosity:
+        if verbose:
             print('ExAC frequency file! %s' % exac, file=sys.stderr)
     if dbnfsp:
-        if verbosity:
+        if verbose:
             print('dbNFSP file! %s' % dbnfsp, file=sys.stderr)
     
     
     ###################################################################
-    ### The task queue is where all jobs(in this case batches that ###
+    ### The task queue is where all jobs(in this case batches that  ###
     ### represents variants in a region) is put. The consumers will ###
-    ### then pick their jobs from this queue. ###
+    ### then pick their jobs from this queue.                       ###
     ###################################################################
     
     variant_queue = JoinableQueue(maxsize=1000)
@@ -363,63 +335,60 @@ def annotate(family_file, variant_file, family_type, vep, silent, phased, strict
         if num_model_checkers == min(4, cpu_count()):
             num_model_checkers = min(8, cpu_count())
     
-    if verbosity:
+    if verbose:
         print('Number of CPU:s %s' % cpu_count(), file=sys.stderr)
         print('Number of model checkers: %s' % num_model_checkers, file=sys.stderr)
     
     # These are the workers that do the heavy part of the analysis
-    model_checkers = [variant_consumer.VariantConsumer(variant_queue, 
-                                                        results, 
-                                                        families,
-                                                        phased, 
-                                                        vep, 
-                                                        cadd_raw, 
-                                                        cadd_file, 
-                                                        cadd_1000g, 
-                                                        cadd_exac, 
-                                                        cadd_esp, 
-                                                        cadd_indels,
-                                                        thousand_g, 
-                                                        exac, 
-                                                        dbnfsp, 
-                                                        chr_prefix, 
-                                                        strict, 
-                                                        verbosity) 
-                                                        for i in range(num_model_checkers)
+    model_checkers = [VariantConsumer(
+                                variant_queue, 
+                                results,
+                                families,
+                                phased,
+                                vep,
+                                cadd_raw,
+                                cadd_file,
+                                cadd_1000g,
+                                cadd_exac,
+                                cadd_esp,
+                                cadd_indels,
+                                thousand_g,
+                                exac,
+                                dbnfsp,
+                                strict,
+                                verbose)
+                                for i in range(num_model_checkers)
                         ]
     
     for w in model_checkers:
         w.start()
     
     # This process prints the variants to temporary files
-    var_printer = variant_printer.VariantPrinter(results, 
-                                                    temp_dir, 
-                                                    head, 
-                                                    chr_prefix, 
-                                                    verbosity
-                                                )
+    var_printer = VariantPrinter(
+                            results, 
+                            temp_dir, 
+                            head, 
+                            verbose
+                        )
     var_printer.start()
     
-    
-    # This process parses the original vcf and annotate the variants with regions:
-    var_annotator = variant_annotator.VariantAnnotator(variant_parser, 
-                                                        variant_queue,
-                                                        individuals,
-                                                        gene_trees, 
-                                                        exon_trees, 
-                                                        phased, 
-                                                        vep, 
-                                                        whole_gene, 
-                                                        chr_prefix, 
-                                                        verbosity
-                                                    )
-    
-    
     start_time_variant_parsing = datetime.now()
-    if verbosity:
+    
+    if verbose:
         print('Start parsing the variants ... \n', file=sys.stderr)
     
-    var_annotator.annotate()
+    # This process parses the original vcf and create batches to put in the variant queue:
+    chromosome_list = get_batches(
+                                variant_parser, 
+                                variant_queue,
+                                individuals,
+                                gene_trees, 
+                                exon_trees, 
+                                phased, 
+                                vep, 
+                                whole_gene, 
+                                verbose
+                            )
     
     # Put stop signs in the variant queue
     for i in range(num_model_checkers):
@@ -430,23 +399,22 @@ def annotate(family_file, variant_file, family_type, vep, silent, phased, strict
     var_printer.join()
     
     
-    chromosome_list = var_annotator.chromosomes
-    
-    if verbosity:
+    if verbose:
         print('Cromosomes found in variant file: %s \n' % ','.join(chromosome_list), file=sys.stderr)
         print('Models checked!\n', file=sys.stderr)
         print('Start sorting the variants:\n', file=sys.stderr)
         start_time_variant_sorting = datetime.now()
     
     # Add the new metadata to the headers:
-    add_metadata(head, 
-                 families, 
-                 vep, 
-                 cadd_annotation, 
-                 cadd_raw, 
-                 thousand_g, 
-                 exac, 
-                 ' '.join(argument_list)
+    add_metadata(
+                    head, 
+                    families, 
+                    vep, 
+                    cadd_annotation, 
+                    cadd_raw, 
+                    thousand_g, 
+                    exac, 
+                    ' '.join(argument_list)
                  )
     
     print_headers(head, outfile, silent)
@@ -458,13 +426,13 @@ def annotate(family_file, variant_file, family_type, vep, silent, phased, strict
     for chromosome in chromosome_list:
         for temp_file in os.listdir(temp_dir):
             if temp_file.split('_')[0] == chromosome:
-                var_sorter = variant_sorter.FileSort(os.path.join(temp_dir, temp_file), 
+                var_sorter = FileSort(os.path.join(temp_dir, temp_file), 
                                                         outfile=sorted_file, 
                                                         silent=silent
                                                     )
                 var_sorter.sort()
     
-    if verbosity:
+    if verbose:
         print('Sorting done!', file=sys.stderr)
         print('Time for sorting: %s \n' % str(datetime.now()-start_time_variant_sorting), file=sys.stderr)
         print('Time for whole analyis: %s' % str(datetime.now() - start_time_analysis), file=sys.stderr)

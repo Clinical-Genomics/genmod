@@ -9,7 +9,6 @@ Created by Måns Magnusson on 2014-08-22.
 Copyright (c) 2014 __MoonsoInc__. All rights reserved.
 """
 
-
 from __future__ import print_function, unicode_literals
 
 import sys

@@ -29,7 +29,8 @@ setup(name='genmod',
         'pytest', 
         'interval_tree', 
         'click',
-        'configobj'
+        'configparser',
+        'logbook'
     ],
     packages = [
         'genmod',

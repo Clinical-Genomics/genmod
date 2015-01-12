@@ -15,24 +15,24 @@ from __future__ import division, print_function, unicode_literals
 
 import sys
 import os
-import multiprocessing
-import sqlite3
 import operator
-from functools import reduce
-from math import log10
 import tabix
 
 from pprint import pprint as pp
+from functools import reduce
+from multiprocessing import Process
+from math import log10
 
-from genmod import genetic_models, warning
+from genmod.models import check_genetic_models
+from genmod.errors import warning
 
-class VariantConsumer(multiprocessing.Process):
+class VariantConsumer(Process):
     """Yeilds all unordered pairs from a list of objects as tuples, like (obj_1, obj_2)"""
     
     def __init__(self, task_queue, results_queue, families={}, phased=False, vep=False, cadd_raw=False,
                     cadd_file=None, cadd_1000g=None, cadd_exac=None, cadd_ESP=None, cadd_InDels=None, 
-                    thousand_g=None, exac=None, dbNSFP=None, chr_prefix=False, strict=False, verbosity=False):
-        multiprocessing.Process.__init__(self)
+                    thousand_g=None, exac=None, dbNSFP=None, strict=False, verbosity=False):
+        Process.__init__(self)
         self.task_queue = task_queue
         self.families = families
         self.results_queue = results_queue
@@ -48,7 +48,6 @@ class VariantConsumer(multiprocessing.Process):
         self.thousand_g = thousand_g
         self.exac = exac
         self.dbNSFP = dbNSFP
-        self.chr_prefix = chr_prefix
         self.strict = strict
         self.any_cadd_info = False
         if self.cadd_file:
@@ -211,7 +210,7 @@ class VariantConsumer(multiprocessing.Process):
                         
             vcf_info = variant_dict[variant_id]['INFO'].split(';')
             
-            feature_list = variant_dict[variant_id].get('Annotation', set())
+            feature_list = variant_dict[variant_id].get('annotation', set())
             
             # variant[compounds] is a dictionary with family id as keys and a set of compounds as values
             compounds = variant.get('compounds', dict())
@@ -305,8 +304,14 @@ class VariantConsumer(multiprocessing.Process):
 
             
             if self.families:
-                genetic_models.check_genetic_models(variant_batch, self.families, self.verbosity,
-                                                    self.phased, self.strict, proc_name)
+                check_genetic_models(
+                                variant_batch, 
+                                self.families, 
+                                self.verbosity,
+                                self.phased, 
+                                self.strict, 
+                                proc_name
+                            )
             
             # We can now free som space by removing the haploblocks
             variant_batch.pop('haploblocks', None)
@@ -322,6 +327,7 @@ class VariantConsumer(multiprocessing.Process):
             self.make_print_version(variant_batch)
             self.results_queue.put(variant_batch)
             self.task_queue.task_done()
+        
         return
         
     

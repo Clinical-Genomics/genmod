@@ -58,7 +58,7 @@ from codecs import open, getreader
 
 from pprint import pprint as pp
 
-from genmod import is_number
+from genmod.utils import is_number
 
 from interval_tree import interval_tree
 
@@ -196,7 +196,7 @@ class AnnotationParser(object):
                 chrom = line[0].lstrip('chr')
                 transcript_id = line[1]
                 gene_id = line[2]
-                if is_number.is_number(line[7]) and is_number.is_number(line[8]):
+                if is_number(line[7]) and is_number(line[8]):
                     feature_start = int(line[7])
                     feature_stop = int(line[8])
                     #TODO raise exception?
@@ -225,7 +225,7 @@ class AnnotationParser(object):
                 if len(line) < 5:
                     line = line.split()
                 chrom = line[0].lstrip('chr')
-                if is_number.is_number(line[3]) and is_number.is_number(line[4]):
+                if is_number(line[3]) and is_number(line[4]):
                     feature_start = int(line[3])
                     feature_stop = int(line[4])
                 #TODO Raise exception?

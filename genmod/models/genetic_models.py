@@ -59,7 +59,9 @@ import sys
 from datetime import datetime
 from pprint import pprint as pp
 
-from genmod import pair_generator
+from genmod.utils import pair_generator
+from genmod.models import (check_dominant, check_recessive, check_compounds,
+                             check_X_recessive, check_X_dominant)
 
 def check_genetic_models(variant_batch, families, verbose = False, phased = False, strict = False, proc_name = None):
     # A variant batch is a dictionary on the form {variant_id:variant_dict, variant_2_id:variant_dict_2, ...}
@@ -96,7 +98,7 @@ def check_genetic_models(variant_batch, families, verbose = False, phased = Fals
                 variant['inheritance_models'] = {}
                 variant['inheritance_models'][family_id] = inheritance_models
                 
-            if len(variant['Annotation']) > 0:
+            if len(variant['annotation']) > 0:
                 if check_compound_candidate(variant, family, strict):
                     compound_candidates.append(variant_id)
             # Only check X-linked for the variants in the X-chromosome:
@@ -142,15 +144,19 @@ def check_genetic_models(variant_batch, families, verbose = False, phased = Fals
                 variant_1 = variant_batch[pair[0]]
                 variant_2 = variant_batch[pair[1]]
                 # Check that the pair is in the same feature:
-                if variant_1['Annotation'].intersection(variant_2['Annotation']):
+                if variant_1['annotation'].intersection(variant_2['annotation']):
                 # We know from check_compound_candidates that all variants are present in all affected
                     if check_compounds(variant_1, variant_2, family, intervals, phased):
-                        variant_1['inheritance_models'][family_id]['AR_comp'] = True
-                        variant_2['inheritance_models'][family_id]['AR_comp'] = True
+                        parents_found = False
                         for individual_id in individuals:
                             individual = individuals[individual_id]
                             if individual.has_parents:
                                 check_parents('compound', individual_id, family, variant_1, variant_2)
+                                parents_found = True
+                        if not parents_found:
+                            variant_1['inheritance_models'][family_id]['AR_comp'] = True
+                            variant_2['inheritance_models'][family_id]['AR_comp'] = True
+                                
                         variant_1['compounds'][family_id].add(pair[1])
                         variant_2['compounds'][family_id].add(pair[0])
     
@@ -218,306 +224,6 @@ def check_compound_candidate(variant, family, strict):
     
     return True
 
-def check_compounds(variant_1, variant_2, family, intervals, phased):
-    """Check if two variants of a pair follow the compound heterozygous model. 
-        At this stage we know: 
-            - None of the individuals are homozygote alternative for the variants
-            - All affected individuals are heterozygote for both variants.
-            
-        We do not allow healthy individuals to be heterozygote for both variants in the pair(ref. 
-        http://www.plosone.org/article/info%3Adoi%2F10.1371%2Fjournal.pone.0070151).
-        
-        If the individuals are phased we will only consider pairs that are on different alleles in affected individuals.
-        
-        Args:
-            variant_1, variant_2: Variants in a potential compound pair
-            family: A family object with the individuals
-            intervals: A interval tree that describes the phased intervals
-            phased: A bool that tells if the individuals are phased
-        
-        Returns:
-            bool: depending on if the pair follow the rules stated above
-            
-    """
-    # Check in all individuals what genotypes that are in the trio based of the individual picked.
-    
-    
-    for individual_id in family.individuals:
-        individual = family.individuals[individual_id]
-        
-        genotype_1 = variant_1['genotypes'][individual_id]
-        genotype_2 = variant_2['genotypes'][individual_id]
-        
-        if individual.has_parents:
-            mother_id = individual.mother
-            father_id = individual.father
-            
-            if mother_id != '0':
-                # mother_genotype_1 = variant_1['genotypes'][mother_id]
-                # mother_genotype_2 = variant_2['genotypes'][mother_id]
-                mother = family.individuals[mother_id]
-    
-            if father_id != '0':
-                # father_genotype_1 = variant_1['genotypes'][father_id]
-                # father_genotype_2 = variant_2['genotypes'][father_id]
-                father = family.individuals[father_id]
-            
-            if mother_id != '0' and mother.healthy:
-                if variant_1['genotypes'][mother_id].has_variant and variant_2['genotypes'][mother_id].has_variant:
-                    return False
-            
-            if father_id != '0' and father.healthy:
-                if variant_1['genotypes'][father_id].has_variant and variant_2['genotypes'][father_id].has_variant:
-                    return False
-        
-        #check if variants are in the same phased interval:
-        
-        if phased:
-            variant_1_interval = intervals[individual_id].find_range([int(variant_1['POS']),int(variant_1['POS'])])
-            variant_2_interval = intervals[individual_id].find_range([int(variant_2['POS']),int(variant_2['POS'])])
-        
-        # If phased a healthy individual can have both variants if they are on the same haploblock
-        # if not phased:
-        
-        if individual.healthy:
-            if genotype_1.heterozygote and genotype_2.heterozygote:
-                return False
-        # The case where the individual is affected
-        # We know since ealier that all affected are heterozygotes for these variants
-        # So we only need to know if the variants are on the same phase
-        elif individual.affected:
-            #If the individual is sick and phased it has to have one variant on each allele
-            if phased:
-                # Variants need to be in the same phased interval, othervise we do not have any extra info
-                if variant_1_interval == variant_2_interval:
-                # If they are in the same interval they can not be on same allele
-                    if (genotype_1.allele_1 == genotype_2.allele_1) or (genotype_1.allele_2 == genotype_2.allele_2):
-                        return False
-    
-    return True
-
-
-def check_dominant(variant, family, strict):
-    """Check if the variant follows the autosomal dominant (AD) pattern in this family.
-        A variant is following the dominant patttern if:
-        Healthy:
-            - Can not have the variant in any form.
-            - If no call we can not exclude dominant.
-            if strict:
-                - Have to be homozygote reference
-                - No call will return false
-        
-        Affected:
-            - Has to be heterozygote for this position.
-            - If no call we can not exclude dominant.
-            if strict:
-                - Have to be heterozygote
-                - No call will return false
-        
-        No affection status:
-            We can not tell if variant follows the model or not.
-        
-        Args:
-            variant: variant dictionary.
-            family: A family object with the individuals
-            strict: A boolean that tells if strict analyzis should be performed.
-        
-        Return:
-            bool: depending on if the model is followed in these indivduals
-        
-            """
-    
-    for individual in family.individuals: 
-        # Check in all individuals what genotypes that are in the trio based of the individual picked.
-        individual_genotype = variant['genotypes'][individual]
-        if strict:
-            if not individual_genotype.genotyped:
-                return False
-        if family.individuals[individual].healthy:# The case where the individual is healthy
-            if individual_genotype.has_variant:
-                return False
-        
-        elif family.individuals[individual].affected:
-            # The case when the individual is sick
-            if individual_genotype.genotyped:
-                if not individual_genotype.heterozygote:
-                    return False
-    
-    return True
-
-def check_recessive(variant, family, strict):
-    """Check if the variant follows the autosomal recessive homozygote (AR_hom) pattern in this family.
-        A variant is following the AR_hom pattern if:
-        Healthy:
-            - Can not be homozygote alternative.
-            - If no call we can not exclude AR
-            if strict:
-                - Have to be homozygote reference or heterozygote.
-                - No call will return False
-        
-        Affected:
-            - Have to be homozygote alternative.
-            - If no call we can not exclude AR
-            if strict:
-                - Have to be homozygote alternative
-                - No call will return false
-        
-        No affection status:
-            We can not tell if variant follows the model or not.
-        
-        Args:
-            variant: variant dictionary.
-            family: A family object with the individuals
-            strict: A boolean that tells if strict analyzis should be performed.
-        
-        Return:
-            bool: depending on if the model is followed in these indivduals
-        
-            """
-    for individual in family.individuals:
-        individual_genotype = variant['genotypes'][individual]
-        if strict:
-            if not individual_genotype.genotyped:
-                return False
-        # The case where the individual is healthy:
-        if family.individuals[individual].healthy:
-        # If the individual is healthy and homozygote alt the model is broken.
-            if individual_genotype.genotyped:
-                if individual_genotype.homo_alt:
-                    return False
-                
-        # The case when the individual is sick:
-        elif family.individuals[individual].affected:
-        # In the case of a sick individual it must be homozygote alternative for Autosomal recessive to be true.
-        # Also, we can not exclude the model if no call.
-            if individual_genotype.genotyped:
-                if not individual_genotype.homo_alt:
-                    return False
-    
-    return True
-
-def check_X_recessive(variant, family, strict):
-    """Check if the variant follows the x linked heterozygous (XR) pattern of inheritance in this family.
-        A variant is following the XR pattern if:
-        
-        Healthy:
-            - Can not be homozygote alternative
-            - If no call we can not exclude XR
-            - Males can not have variant at all. This is added since sometimes males 
-                get called as heterozygotes but this should not be possible since 
-                they only have one copy of the X chromosome.
-            if strict:
-                - Have to be homozygote reference(if male) or heterozygote(if female).
-                - No call will return False
-        
-        Affected:
-            - Have to be homozygote alternative(or heterozygote if male).
-            - If no call we can not exclude AR
-            if strict:
-                - Have to be homozygote alternative(or heterozygote if male)
-                - No call will return false
-        
-        No affection status:
-                We can not tell if variant follows the model or not.
-        
-        Args:
-            variant: variant dictionary.
-            family: A family object with the individuals
-            strict: A boolean that tells if strict analyzis should be performed.
-        
-        Return:
-            bool: depending on if the model is followed in these indivduals
-        
-        """
-    
-    for individual in family.individuals:
-        # Get the genotype for this variant for this individual
-        individual_genotype = variant['genotypes'][individual]
-        
-        if strict:
-            if not individual_genotype.genotyped:
-                return False
-        # The case where the individual is healthy
-        if family.individuals[individual].healthy:
-            # If individual is healthy and homozygote alternative the variant can not be deleterious:
-            if individual_genotype.genotyped:
-                if individual_genotype.homo_alt:
-                    return False
-                # If individual is male it can not have the variant at all
-                if family.individuals[individual].sex == 1:
-                    if individual_genotype.has_variant:
-                        return False
-        
-        # The case when the individual is sick
-        elif family.individuals[individual].affected:
-        #If the individual is sick and homozygote ref it can not be x-recessive
-            if individual_genotype.genotyped:
-                if individual_genotype.homo_ref:
-                    return False
-        # Women have to be hom alt to be sick (almost allways carriers)
-                elif family.individuals[individual].sex == 2:
-                    if not individual_genotype.homo_alt:
-                        return False
-    return True
-
-def check_X_dominant(variant, family, strict):
-    """Check if the variant follows the x linked dominant (XD) pattern of inheritance in this family.
-        A variant is following the XD pattern if:
-        
-        Healthy:
-            - Can not be homozygote alternative
-            - Healthy females can be heterozygotes. This is possible since there are several
-             documented diseases where only one allele at a time is expressed during development.
-            - If no call we can not exclude XR
-            if strict:
-                - Have to be homozygote reference (or heterozygote womens).
-                - No call will return False
-        
-        Affected:
-            - Have to be heterozygote.
-            - If no call we can not exclude AR
-            if strict:
-                - Have to be heterozygote or homozygote(for males)
-                - No call will return false
-        
-        No affection status:
-                We can not tell if variant follows the model or not.
-        
-        Args:
-            variant: variant dictionary.
-            family: A family object with the individuals
-            strict: A boolean that tells if strict analyzis should be performed.
-        
-        Return:
-            bool: depending on if the model is followed in these indivduals
-        
-        """
-    for individual in family.individuals:
-        # Get the genotype for this variant for this individual
-        individual_genotype = variant['genotypes'][individual]
-        
-        if strict:
-            if not individual_genotype.genotyped:
-                return False
-        # The case where the individual is healthy
-        if family.individuals[individual].healthy:
-        # Healthy womans can be carriers but not homozygote:
-            if individual_genotype.genotyped:
-                if family.individuals[individual].sex == 2:
-                    if individual_genotype.homo_alt:
-                        return False
-                # Males can not carry the variant:
-                elif family.individuals[individual].sex == 1:
-                    if individual_genotype.has_variant:
-                        return False
-        
-        # The case when the individual is sick
-        elif family.individuals[individual].affected:
-        #If the individual is sick and homozygote ref it can not be x-linked-dominant
-            if individual_genotype.genotyped:
-                if individual_genotype.homo_ref:
-                    return False
-    return True
 
 def check_parents(model, individual_id, family, variant, variant_2={}, strict = False):
     """Check if information in the parents can tell us if model is de novo or not. 
@@ -629,21 +335,27 @@ def check_parents(model, individual_id, family, variant, variant_2={}, strict = 
             parent_genotypes_2.append(father_genotype_2)
         # One of the variants must come from father and one from mother
         if (len(parent_genotypes) == 2 and len(parent_genotypes_2) == 2):
-            if not (mother_genotype.has_variant or mother_genotype_2.has_variant):
-                variant['inheritance_models'][family_id]['AR_comp_dn'] = True
-                variant_2['inheritance_models'][family_id]['AR_comp_dn'] = True
-                if mother_genotype.genotyped and mother_genotype_2.genotyped:
-                    variant['inheritance_models'][family_id]['AR_comp'] = False
-                    variant_2['inheritance_models'][family_id]['AR_comp'] = False
-            if not (father_genotype.has_variant or father_genotype_2.has_variant):
-                variant['inheritance_models'][family_id]['AR_comp_dn'] = True
-                variant_2['inheritance_models'][family_id]['AR_comp_dn'] = True
-                if father_genotype.genotyped and father_genotype_2.genotyped:
-                    variant['inheritance_models'][family_id]['AR_comp'] = False
-                    variant_2['inheritance_models'][family_id]['AR_comp'] = False
+            # If both parents are genotyped and one of them are homozygote reference for both variants
+            # the pair will be considered AR compound de novo
+            if ((mother_genotype.genotyped and mother_genotype_2.genotyped) and
+                father_genotype.genotyped and father_genotype_2.genotyped):
+                
+                # if not both parents have one of the variants it is de novo
+                if not ((mother_genotype.has_variant or mother_genotype_2.has_variant) and 
+                        (father_genotype.has_variant or father_genotype_2.has_variant)):
+                    variant['inheritance_models'][family_id]['AR_comp_dn'] = True
+                    variant_2['inheritance_models'][family_id]['AR_comp_dn'] = True
+                
+                else:
+                    
+                    variant['inheritance_models'][family_id]['AR_comp'] = True
+                    variant_2['inheritance_models'][family_id]['AR_comp'] = True
+            
         elif not strict:
             variant['inheritance_models'][family_id]['AR_comp_dn'] = True
             variant_2['inheritance_models'][family_id]['AR_comp_dn'] = True
+            variant['inheritance_models'][family_id]['AR_comp'] = True
+            variant_2['inheritance_models'][family_id]['AR_comp'] = True
             
     return
             

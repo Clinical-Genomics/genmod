@@ -13,17 +13,18 @@ from __future__ import print_function, unicode_literals
 
 import sys
 import os
-import multiprocessing
 
+from multiprocessing import Process
 from codecs import open
 from tempfile import NamedTemporaryFile
 from pprint import pprint as pp
-from genmod import warning
 
-class VariantPrinter(multiprocessing.Process):
+from genmod.errors import warning
+
+class VariantPrinter(Process):
     """docstring for VariantPrinter"""
-    def __init__(self, task_queue, temp_dir, head, chr_prefix, verbosity):
-        multiprocessing.Process.__init__(self)
+    def __init__(self, task_queue, temp_dir, head, verbosity):
+        Process.__init__(self)
         self.task_queue = task_queue
         self.verbosity = verbosity
         self.file_handles = {}
@@ -39,10 +40,13 @@ class VariantPrinter(multiprocessing.Process):
         if self.verbosity:
             print(('%s: starting!' % proc_name), file=sys.stderr)
         while True:
+            
             next_result = self.task_queue.get()
+            
             if self.verbosity:
                 if self.task_queue.full():
                     warning('Printing queue full')
+            
             if next_result is None:
                 if self.verbosity:
                     print('All variants printed!', file=sys.stderr)
@@ -51,9 +55,11 @@ class VariantPrinter(multiprocessing.Process):
                 break
                 
             else:
+                
                 for variant_id in next_result:
                     chrom = next_result[variant_id]['CHROM']
-                    if self.chr_prefix or chrom.startswith('chr'):
+                    
+                    if chrom.startswith('chr'):
                         chrom = chrom[3:]
                         self.chr_prefix = True
                     print_line = [next_result[variant_id].get(entry, '-') for entry in self.header]
