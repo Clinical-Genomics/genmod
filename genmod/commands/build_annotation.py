@@ -38,7 +38,7 @@ from genmod import AnnotationParser
 )
 @click.option('-o', '--outdir', 
                     type=click.Path(exists=True),
-                    default=pkg_resources.resource_filename('genmod', 'annotations')
+                    default=pkg_resources.resource_filename('genmod', 'annotations'),
                     help=("""Specify the path to a folder where the annotation files should be stored. 
                             Default is the annotations dir of the ditribution.""")
 )

@@ -30,7 +30,6 @@ class VariantPrinter(Process):
         self.file_handles = {}
         self.temp_dir = temp_dir
         self.header = head.header
-        self.chr_prefix = chr_prefix
     
     def run(self):
         """Starts the printing"""
@@ -61,7 +60,6 @@ class VariantPrinter(Process):
                     
                     if chrom.startswith('chr'):
                         chrom = chrom[3:]
-                        self.chr_prefix = True
                     print_line = [next_result[variant_id].get(entry, '-') for entry in self.header]
                     if chrom in self.file_handles:
                         self.file_handles[chrom].write('\t'.join(print_line) + '\n')

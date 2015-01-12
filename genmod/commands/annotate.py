@@ -340,7 +340,8 @@ def annotate(family_file, variant_file, family_type, vep, silent, phased, strict
         print('Number of model checkers: %s' % num_model_checkers, file=sys.stderr)
     
     # These are the workers that do the heavy part of the analysis
-    model_checkers = [VariantConsumer(
+    model_checkers = [
+                    VariantConsumer(
                                 variant_queue, 
                                 results,
                                 families,
@@ -356,8 +357,9 @@ def annotate(family_file, variant_file, family_type, vep, silent, phased, strict
                                 exac,
                                 dbnfsp,
                                 strict,
-                                verbose)
-                                for i in range(num_model_checkers)
+                                verbose
+                            )
+                        for i in range(num_model_checkers)
                         ]
     
     for w in model_checkers:

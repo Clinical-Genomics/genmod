@@ -23,7 +23,7 @@ from functools import reduce
 from multiprocessing import Process
 from math import log10
 
-from genmod.models import check_genetic_models
+from genmod import check_genetic_models
 from genmod.errors import warning
 
 class VariantConsumer(Process):

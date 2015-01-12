@@ -20,6 +20,11 @@ import pkg_resources
 import click
 import genmod
 
+try:
+    from queue import Queue
+except:
+    from Queue import Queue
+
 from multiprocessing import JoinableQueue
 from codecs import open, getwriter
 from tempfile import NamedTemporaryFile
@@ -27,7 +32,8 @@ from datetime import datetime
 
 from pprint import pprint as pp
 
-from genmod import variant_scorer, variant_sorter, plugin_reader
+from genmod import VariantScorer, FileSort
+from genmod.utils import read_config
 
 from ped_parser import parser as ped_parser
 from vcf_parser import parser as vcf_parser
@@ -236,14 +242,13 @@ def score(family_file, variant_file, family_type, annotation_dir, vep,
     alt_dict, score_dict, value_dict, operation_dict = check_plugin(plugin_file, my_vcf_parser, verbose)
     
     variant_queue = JoinableQueue(maxsize=1000)
-    
     temp_file = NamedTemporaryFile(delete=False)
     temp_file.close()
     
     try:
         temporary_variant_file = open(temp_file.name, mode='w', encoding='utf-8', errors='replace')
         
-        chromosome_list = get_batches.get_batches(
+        chromosome_list = get_batches(
                                 variant_parser, 
                                 variant_queue,
                                 individuals = [],
@@ -255,9 +260,8 @@ def score(family_file, variant_file, family_type, annotation_dir, vep,
                                 verbose = verbose
                             )
         
-        variant_queue.put(None)
         
-        scorer = variant_scorer.VariantScorer(
+        scorer = VariantScorer(
                                 variant_queue,
                                 temporary_variant_file,
                                 prefered_models,
@@ -267,6 +271,8 @@ def score(family_file, variant_file, family_type, annotation_dir, vep,
                                 operation_dict, 
                                 verbose
                             )
+        
+        variant_queue.put(None)
         
         scorer.parse()
         variant_queue.join()
@@ -286,6 +292,7 @@ def score(family_file, variant_file, family_type, annotation_dir, vep,
         var_sorter.sort()
         
     finally:
+        
         temporary_variant_file.close()
         os.remove(temp_file.name)
     

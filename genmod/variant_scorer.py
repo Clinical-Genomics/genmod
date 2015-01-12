@@ -34,8 +34,9 @@ from genmod.models import score_variants
 
 class VariantScorer(object):
     """Creates parser objects for parsing variant files"""
-    def __init__(self, variant_queue, variant_out_file, models_of_inheritance,
-                 alt_dict, score_dict, value_dict, operation_dict, verbose):
+    def __init__(self, variant_queue, variant_out_file, 
+                models_of_inheritance, alt_dict, score_dict, value_dict, 
+                operation_dict, verbose):
         super(VariantScorer, self).__init__()
         self.variant_queue = variant_queue
         self.temp_file = variant_out_file
@@ -113,6 +114,8 @@ class VariantScorer(object):
                         self.variant_parser.header,
                         self.temp_file
                     )
+            
+            self.results_queue.put(variant_batch)        
             self.task_queue.task_done()
 
 

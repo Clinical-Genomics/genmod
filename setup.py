@@ -35,6 +35,9 @@ setup(name='genmod',
     packages = [
         'genmod',
         'genmod/commands',
+        'genmod/utils',
+        'genmod/errors',
+        'genmod/models',
     ],
     package_data = {
         'genmod': ['annotations/*.db']
