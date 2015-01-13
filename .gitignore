@@ -4,6 +4,7 @@
 /dist
 /build
 /pickles
+/tests/*.py
 *.pyc
 .DS_Store
 *.egg-info

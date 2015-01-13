@@ -23,7 +23,7 @@ from codecs import getwriter
 import pkg_resources
 import genmod
 
-from genmod.commands import build_annotation, annotate, analyze, summarize_variants
+from genmod.commands import build_annotation, annotate, analyze, summarize_variants, score_variants
 
 if sys.version_info < (3,0):
     sys.stdout = getwriter('UTF-8')(sys.stdout)
@@ -66,6 +66,7 @@ run_genmod.add_command(build_annotation.build_annotation)
 run_genmod.add_command(annotate.annotate)
 run_genmod.add_command(analyze.analyze)
 run_genmod.add_command(summarize_variants.summarize)
+run_genmod.add_command(score_variants.score)
 
 
 
