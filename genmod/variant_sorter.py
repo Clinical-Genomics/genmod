@@ -18,10 +18,11 @@ import sys
 import os
 import click
 import re
+
 from tempfile import NamedTemporaryFile
 from codecs import open
 
-from genmod.is_number import is_number
+from genmod.utils import is_number
 
 
 def get_cadd_score(variant_line):
@@ -35,33 +36,45 @@ def get_cadd_score(variant_line):
     # print(cadd_score)
     return cadd_score
 
+def get_rank_score(variant_line):
+    """Return the rank score as an integer."""
+    rank_score = 0
+    for info in variant_line.split('\t')[7].split(';'):
+        info = info.split('=')
+        # print(info)
+        if info[0] == 'RankScore':
+            rank_score = int(info[-1])
+    
+    return rank_score
 
 class FileSort(object):
-    def __init__(self, inFile, mode='pos', outfile=None, splitSize=20, silent=False):
+    def __init__(self, infile, mode='pos', outfile=None, splitSize=20, silent=False):
         """ split size (in MB) """
-        self._inFile = inFile
+        self._infile = infile
         self._silent = silent
         self._mode = mode
                 
-        self._outFile = outfile
+        self._outfile = outfile
         self._splitSize = splitSize * 1000000
                 
         if mode == 'cadd':
             # this will only work if variants have cadd scores so it needs to be fixed before
             # self._getKey = lambda variant_line: (float(re.findall(r"CADD=(\d+.\d+)", variant_line)[0]))
             self._getKey = lambda variant_line: get_cadd_score(variant_line)
+        elif mode == 'rank':
+            self._getKey = lambda variant_line: get_rank_score(variant_line)
         else:
             self._getKey = lambda variant_line: (int(variant_line.split('\t')[1]))
         
     
     def sort(self):
         
-        # files = self._splitFile()
+        # files = self._splitfile()
         files = None
 
         if files is None:
             """ file size <= self._splitSize """            
-            self._sortFile(self._inFile, outFile=self._outFile, ready_to_print=True)
+            self._sortFile(self._infile, outfile=self._outfile, ready_to_print=True)
             return
 
         for fn in files:
@@ -71,7 +84,7 @@ class FileSort(object):
         self._deleteFiles(files)
 
         
-    def _sortFile(self, fileName, outFile=None, ready_to_print=False):
+    def _sortFile(self, fileName, outfile=None, ready_to_print=False):
         try:
             lines = open(fileName, mode='r', encoding='utf-8').readlines()
         except TypeError:
@@ -80,16 +93,18 @@ class FileSort(object):
         data = [(get_key(line), line) for line in lines if line!='']
         if self._mode == 'cadd':
             data.sort(reverse=True)
+        elif self._mode == 'rank':
+            data.sort(reverse=True)
         else:
             data.sort()
         lines = [line[1] for line in data]
         if ready_to_print:
-            if outFile:
+            if outfile:
                 try:
-                    open(outFile, mode='a', encoding='utf-8').write(''.join(lines))
+                    open(outfile, mode='a', encoding='utf-8').write(''.join(lines))
                 except TypeError:
                 #If we deal with temporary files:
-                    open(outFile.name, mode='a', encoding='utf-8').write(''.join(lines))
+                    open(outfile.name, mode='a', encoding='utf-8').write(''.join(lines))
                 
             else:
                 if not self._silent:
@@ -105,13 +120,13 @@ class FileSort(object):
             f.write(''.join(lines))
     
     def _splitFile(self):
-        totalSize = os.path.getsize(self._inFile)
+        totalSize = os.path.getsize(self._infile)
         if totalSize <= self._splitSize:
             # do not split file, the file isn't so big.
             return None
 
         fileNames = []
-        with open(self._inFile, mode='r', encoding='utf-8') as f:
+        with open(self._infile, mode='r', encoding='utf-8') as f:
             size = 0
             lines = []
             for line in f:
@@ -152,8 +167,8 @@ class FileSort(object):
         buff = []
         buffSize = self._splitSize/2
         append = buff.append
-        if self._outFile:
-            output = open(self._outFile, mode='a', encoding = 'utf-8')
+        if self._outfile:
+            output = open(self._outfile, mode='a', encoding = 'utf-8')
         try:
             key = max(keys)
             index = keys.index(key)
@@ -162,7 +177,7 @@ class FileSort(object):
                 while key == max(keys):
                     append(lines[index])
                     if len(buff) > buffSize:
-                        if self._outFile:
+                        if self._outfile:
                             output.write(''.join(buff))
                         else:
                             if not self._silent:
@@ -187,13 +202,13 @@ class FileSort(object):
                 index = keys.index(key)
 
             if len(buff)>0:
-                if self._outFile:
+                if self._outfile:
                     output.write(''.join(buff))
                 else:
                     if not self._silent:
                         print(''.join(buff))
         finally:
-            if self._outFile:
+            if self._outfile:
                 output.close()
     
     def _deleteFiles(self, files):   

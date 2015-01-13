@@ -29,11 +29,15 @@ setup(name='genmod',
         'pytest', 
         'interval_tree', 
         'click',
-        'configobj'
+        'configparser',
+        'logbook'
     ],
     packages = [
         'genmod',
         'genmod/commands',
+        'genmod/utils',
+        'genmod/errors',
+        'genmod/models',
     ],
     package_data = {
         'genmod': ['annotations/*.db']
