@@ -93,6 +93,8 @@ class FileSort(object):
         data = [(get_key(line), line) for line in lines if line!='']
         if self._mode == 'cadd':
             data.sort(reverse=True)
+        elif self._mode == 'rank':
+            data.sort(reverse=True)
         else:
             data.sort()
         lines = [line[1] for line in data]

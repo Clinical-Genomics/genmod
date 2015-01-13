@@ -32,8 +32,8 @@ from datetime import datetime
 
 from pprint import pprint as pp
 
-from genmod import VariantScorer, FileSort
-from genmod.utils import read_config
+from genmod import (VariantScorer, FileSort, get_batches)
+from genmod.utils import (collectKeys, load_annotations)
 
 from ped_parser import parser as ped_parser
 from vcf_parser import parser as vcf_parser
@@ -47,24 +47,27 @@ log_handler = StderrHandler()
 if sys.version_info < (3,0):
     sys.stdout = getwriter('UTF-8')(sys.stdout)
 
-Version = pkg_resources.require("genmod")[0].version
+VERSION = pkg_resources.require("genmod")[0].version
 
 
-def check_plugin(config_file, my_vcf_parser, verbose=False):
+def check_plugin(config_file, variant_parser, verbose=False):
     """
     Collect keys from config_file and check vcf compatibility.
     
     Args:
         config_file   (file) : plugin file
-        my_vcf_parser (object) : vcf_parser object
+        variant_parser (object) : vcf_parser object
         verbose       (boolean, optional) : Enable informative print
     
     Returns:
-        dict:   Dictionnary of alternatives
+        dict:   Dictionary of alternatives
     """
     ## Collect supplied plugin
-    alt_dict, score_dict, value_dict, operation_dict = plugin_reader.collectKeys(config_file,
-                                                                       my_vcf_parser, verbose)
+    alt_dict, score_dict, value_dict, operation_dict = collectKeys(
+                                                            config_file,
+                                                            variant_parser,
+                                                            verbose
+                                                        )
     if verbose:
         log.info("Plugin file: " + config_file)
         log.info("alt_dict:" + str(alt_dict))
@@ -99,7 +102,7 @@ def add_metadata(head, command_line_string):
 
     head.add_info('RankScore', '1', 'Integer',
                   "Combined rank score for the variant in this family.")
-    head.add_version_tracking('score_mip_variants', Version,
+    head.add_version_tracking('score_mip_variants', VERSION,
                               str(datetime.now()), command_line_string)
     
     return
@@ -131,7 +134,7 @@ def print_version(ctx, param, value):
     """
     if not value or ctx.resilient_parsing:
         return
-    click.echo('score_mip_variants version: ' + Version)
+    click.echo('score_mip_variants version: ' + VERSION)
     ctx.exit()
 
 
@@ -193,10 +196,16 @@ def score(family_file, variant_file, family_type, annotation_dir, vep,
     
     start_time_analysis = datetime.now()
     
+    if verbose:
+        print('\nRunning GENMOD score, version: %s \n' % VERSION, file=sys.stderr)
+    
     ## Start by parsing the pedigree file:
     prefered_models = []
-    if prefered_models:
+    if family_file:
         prefered_models = get_genetic_models(family_file, family_type)
+    
+    if verbose:
+        print('Prefered model found in family file: %s \n' % prefered_models, file=sys.stderr)
     
     ######### Read to the annotation data structures #########
     
@@ -205,27 +214,7 @@ def score(family_file, variant_file, family_type, annotation_dir, vep,
     
     # If the variants are already annotated we do not need to redo the annotation
     if not vep:
-        
-        if verbose:
-            print('Reading annotations...\n', file=sys.stderr)
-        
-        gene_db = os.path.join(annotation_dir, 'genes.db')
-        exon_db = os.path.join(annotation_dir, 'exons.db')
-        
-        try:
-            with open(gene_db, 'rb') as f:
-                gene_trees = pickle.load(f)
-            with open(exon_db, 'rb') as g:
-                exon_trees = pickle.load(g)
-        except IOError as e:
-            if verbose:
-                warning.warning('No annotations found.')
-                warning.warning('You need to build annotations! See documentation.')
-                # It is possible to continue the analysis without annotation files
-            pass
-    
-        if verbose:
-            print('Annotations used found in: %s, %s\n' % (gene_db, exon_db), file=sys.stderr)
+        gene_trees, exon_trees = load_annotations(annotation_dir, verbose)
     else:
         if verbose:
             print('Using VEP annotation', file=sys.stderr)
@@ -237,9 +226,10 @@ def score(family_file, variant_file, family_type, annotation_dir, vep,
     else:
         variant_parser = vcf_parser.VCFParser(infile=variant_file)
     
-    head = my_vcf_parser.metadata
+    head = variant_parser.metadata
     
-    alt_dict, score_dict, value_dict, operation_dict = check_plugin(plugin_file, my_vcf_parser, verbose)
+    alt_dict, score_dict, value_dict, operation_dict = check_plugin(plugin_file, variant_parser, verbose)
+    
     
     variant_queue = JoinableQueue(maxsize=1000)
     temp_file = NamedTemporaryFile(delete=False)
@@ -256,14 +246,15 @@ def score(family_file, variant_file, family_type, annotation_dir, vep,
                                 exon_trees = exon_trees, 
                                 phased = False, 
                                 vep = vep, 
-                                whole_gene = True, 
-                                verbose = verbose
+                                whole_genes = True, 
+                                verbosity = verbose
                             )
         
         
         scorer = VariantScorer(
                                 variant_queue,
                                 temporary_variant_file,
+                                variant_parser.header,
                                 prefered_models,
                                 alt_dict, 
                                 score_dict, 
@@ -283,12 +274,12 @@ def score(family_file, variant_file, family_type, annotation_dir, vep,
         add_metadata(head, ','.join(argument_list))
         print_headers(head, outfile, silent)
         
-        var_sorter = variant_sorter.FileSort(
-                                    infile=temporary_variant_file,
-                                    mode='rank',
-                                    outfile=outfile, 
-                                    silent=silent
-                                )
+        var_sorter = FileSort(
+                            infile=temporary_variant_file,
+                            mode='rank',
+                            outfile=outfile, 
+                            silent=silent
+                        )
         var_sorter.sort()
         
     finally:

@@ -45,7 +45,7 @@ import pkg_resources
 from vcf_parser import parser as vcf_parser
 
 import genmod
-from genmod import warning
+from genmod.errors import warning
 
 
 

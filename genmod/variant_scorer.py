@@ -34,12 +34,13 @@ from genmod.models import score_variants
 
 class VariantScorer(object):
     """Creates parser objects for parsing variant files"""
-    def __init__(self, variant_queue, variant_out_file, 
+    def __init__(self, variant_queue, variant_out_file, header,
                 models_of_inheritance, alt_dict, score_dict, value_dict, 
                 operation_dict, verbose):
         super(VariantScorer, self).__init__()
         self.variant_queue = variant_queue
         self.temp_file = variant_out_file
+        self.header = header
         self.prefered_models = models_of_inheritance
         self.alt_dict = alt_dict
         self.score_dict = score_dict
@@ -88,8 +89,8 @@ class VariantScorer(object):
             variant_batch = self.variant_queue.get()
             
             if variant_batch is None:
-                self.task_queue.task_done()
-                if self.verbosity:
+                self.variant_queue.task_done()
+                if self.verbose:
                     print('%s: Exiting' % proc_name, file=sys.stderr)
                 break
             
@@ -99,24 +100,25 @@ class VariantScorer(object):
             
             
             score_variants(
-                        batch, 
+                        variant_batch, 
                         self.prefered_models,
-                        self.alt_dict, self.score_dict,
+                        self.alt_dict, 
+                        self.score_dict,
                         self.value_dict,
                         self.operation_dict,
                         self.verbose
                     )
             
-            self.score_compounds(batch)
+            self.score_compounds(variant_batch)
             
             self.print_variants(
-                        batch, 
-                        self.variant_parser.header,
+                        variant_batch, 
+                        self.header,
                         self.temp_file
                     )
             
-            self.results_queue.put(variant_batch)        
-            self.task_queue.task_done()
+            # self.results_queue.put(variant_batch)
+            self.variant_queue.task_done()
 
 
 def main():

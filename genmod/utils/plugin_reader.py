@@ -95,7 +95,7 @@ def collectKeys(config_file, my_vcf_parser, verbose):
         section_name = section[0]  # Alias
         if verbose:
             log.info("Config alternative: " + str(config[section_name]))
-            if 'version' in config[key]:
+            if 'version' in config[section_name]:
                 log.info("Plugin version: " + str(config[section_name]['version']))
         
         ## Only vcf records

@@ -38,14 +38,11 @@ def convert_to_number(record_element):
         float:  If able
         None:   If unable to turn into float
     """
-    if isinstance(record_element, (unicode)):  # Unicode type
-        try:
-            float(record_element)
-            return float(record_element)
-        except ValueError:  # Not a float
-            return None
-    
-    return None
+    try:
+        float(record_element)
+        return float(record_element)
+    except ValueError:  # Not a float
+        return None
 
 def number_to_list(record_list, separator=','):
     """
