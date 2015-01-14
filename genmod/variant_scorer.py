@@ -26,13 +26,14 @@ import os
 import argparse
 from datetime import datetime
 from tempfile import NamedTemporaryFile
+from multiprocessing import Process
 
 from pprint import pprint as pp
 
 from genmod.models import score_variants
 
 
-class VariantScorer(object):
+class VariantScorer(Process):
     """Creates parser objects for parsing variant files"""
     def __init__(self, variant_queue, variant_out_file, header,
                 models_of_inheritance, alt_dict, score_dict, value_dict, 
@@ -80,9 +81,12 @@ class VariantScorer(object):
             print_line = [batch[variant].get(entry, '-') for entry in header]
             outfile.write('\t'.join(print_line) + '\n')
     
-    def parse(self):
+    def run(self):
         """Start the parsing"""
-        nr_of_variants = 0
+        proc_name = self.name
+        
+        if self.verbose:
+            print('%s: Starting!' % proc_name, file=sys.stderr)
         
         while True:
             # A batch is a dictionary on the form {variant_id:variant_dict}
