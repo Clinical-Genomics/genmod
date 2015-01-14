@@ -17,7 +17,7 @@ import click
 import inspect
 
 
-from multiprocessing import JoinableQueue, Manager, cpu_count
+from multiprocessing import JoinableQueue,  Manager, cpu_count
 from codecs import open
 from datetime import datetime
 from tempfile import mkdtemp, TemporaryFile, NamedTemporaryFile
@@ -380,6 +380,7 @@ def annotate(family_file, variant_file, family_type, vep, silent, phased, strict
         print('Start parsing the variants ... \n', file=sys.stderr)
     
     # This process parses the original vcf and create batches to put in the variant queue:
+    
     chromosome_list = get_batches(
                                 variant_parser, 
                                 variant_queue,
@@ -395,6 +396,8 @@ def annotate(family_file, variant_file, family_type, vep, silent, phased, strict
     # Put stop signs in the variant queue
     for i in range(num_model_checkers):
         variant_queue.put(None)
+    
+    
     
     variant_queue.join()
     results.put(None)

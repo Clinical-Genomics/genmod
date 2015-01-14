@@ -125,7 +125,6 @@ def get_batches(variant_parser, batch_queue, individuals, gene_trees={}, exon_tr
             warning('Queue full!!')
     
     nr_of_variants = 0
-    
     for variant in variant_parser:
         
         variant_id = variant['variant_id']
