@@ -20,11 +20,6 @@ import pkg_resources
 import click
 import genmod
 
-try:
-    from queue import Queue
-except:
-    from Queue import Queue
-
 from multiprocessing import JoinableQueue
 from codecs import open, getwriter
 from tempfile import NamedTemporaryFile
@@ -238,19 +233,6 @@ def score(family_file, variant_file, family_type, annotation_dir, vep,
     try:
         temporary_variant_file = open(temp_file.name, mode='w', encoding='utf-8', errors='replace')
         
-        chromosome_list = get_batches(
-                                variant_parser, 
-                                variant_queue,
-                                individuals = [],
-                                gene_trees = gene_trees, 
-                                exon_trees = exon_trees, 
-                                phased = False, 
-                                vep = vep, 
-                                whole_genes = True, 
-                                verbosity = verbose
-                            )
-        
-        
         scorer = VariantScorer(
                                 variant_queue,
                                 temporary_variant_file,
@@ -263,9 +245,22 @@ def score(family_file, variant_file, family_type, annotation_dir, vep,
                                 verbose
                             )
         
+        scorer.start()
+        
+        chromosome_list = get_batches(
+                                variant_parser, 
+                                variant_queue,
+                                individuals = [],
+                                gene_trees = gene_trees, 
+                                exon_trees = exon_trees, 
+                                phased = False, 
+                                vep = vep, 
+                                whole_genes = True, 
+                                verbosity = verbose
+                            )
+        
         variant_queue.put(None)
         
-        scorer.parse()
         variant_queue.join()
         
         temporary_variant_file.seek(0)
