@@ -16,14 +16,14 @@ except (IOError, ImportError, RuntimeError):
 #     long_description = file.read()
 
 setup(name='genmod',
-    version='1.10.1',
+    version='1.10.2',
     description='Annotate genetic inheritance models in variant files',
     author = 'Mans Magnusson',
     author_email = 'mans.magnusson@scilifelab.se',
     url = 'http://github.com/moonso/genmod',
     license = 'MIT License',
     install_requires=[
-        'ped_parser == 1.2.2',
+        'ped_parser >= 1.2.3',
         'vcf_parser >= 1.0',
         'pytabix',
         'pytest',
