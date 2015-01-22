@@ -35,14 +35,15 @@ from genmod.models import score_variants
 
 class VariantScorer(Process):
     """Creates parser objects for parsing variant files"""
-    def __init__(self, variant_queue, variant_out_file, header,
-                models_of_inheritance, alt_dict, score_dict, value_dict, 
-                operation_dict, verbose):
+    def __init__(self, variant_queue, results, header,
+                models_of_inheritance, family_id, alt_dict, score_dict, 
+                value_dict, operation_dict, verbose):
         super(VariantScorer, self).__init__()
         self.variant_queue = variant_queue
-        self.temp_file = variant_out_file
+        self.results = results
         self.header = header
         self.prefered_models = models_of_inheritance
+        self.family_id = family_id
         self.alt_dict = alt_dict
         self.score_dict = score_dict
         self.value_dict = value_dict
@@ -52,24 +53,40 @@ class VariantScorer(Process):
         # self.phased = args.phased
     
     def score_compounds(self, batch):
-        """Score the compounds in a batch."""
-        for var in batch:
-            if batch[var]['info_dict'].get('Compounds', None):
-                compounds = batch[var]['info_dict']['Compounds']
-                comp_list = []
-                for comp in compounds:
-                    comp_score = (int(batch[var].get(
-                                  'Individual_rank_score', 0))
-                                  + int(batch.get(comp, {}).get(
-                                  'Individual_rank_score', 0)))
-                    comp_list.append(comp+'>'+str(comp_score))
-                    batch[var]['Compounds'] = ','.join(comp_list)
+        """
+        Score the compounds in a batch.
+        Takes av input a batch with variants and scores all the compound pairs.
+        If any of the compounds have a score<10 then the total score will be
+        penalized with -6.
+        
+        Arguments:
+            batch  : A dictionary with variants
+        
+        Returns:
+            Nothing
+            Only updates the variants in the bath.
+        """
+        for variant_id in batch:
+            comp_list = []
+            variant = batch[variant_id]
+            for family in variant.get('compound_variants', {}):
+                print(family)
+            #     pair_1_score = int(variant.get('Individual_rank_score', 0))
+            #     pair_2_score = int(batch.get(comp, {}).get(
+            #                                     'Individual_rank_score', 0))
+            #     comp_score = pair_1_score + pair_2_score
+            #     if (pair_1_score < 10) or (pair_2_score < 10):
+            #         comp_score -= 6
+            #
+            #     comp_list.append(comp+'>'+str(comp_score))
+            # batch[var]['scored_compounds'] = ','.join(comp_list)
     
     def print_variants(self, batch, header, outfile):
         """Prints the variants to a file"""
         for variant in batch:
             # Modify the INFO field:
             info_field = batch[variant]['INFO'].split(';')
+            # We need to replace the compound field with the annotated variants
             for pos in range(len(info_field)):
                 if info_field[pos].split('=')[0] == 'Compounds':
                     if info_field[pos].split('=')[-1] != '-':
@@ -121,7 +138,8 @@ class VariantScorer(Process):
                         self.temp_file
                     )
             
-            # self.results_queue.put(variant_batch)
+            self.results.put(variant_batch)
+            
             self.variant_queue.task_done()
 
 

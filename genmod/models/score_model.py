@@ -371,7 +371,7 @@ def score_variants(batch, predicted_models=[], alt_dict=None, score_dict=None,
         category_dict = {}  # Collects all alternative categories
         
         for alt in alt_dict:  # Config alternatives
-        
+            
             category = ""
             record_aggregate = "max"  # Set default
             separator_list = []
@@ -452,7 +452,8 @@ def score_variants(batch, predicted_models=[], alt_dict=None, score_dict=None,
             
         if verbose:
             log.info("Variant score " + str(variant_score))
-            
+        
+        # Added the individual rank score to the variant.
         variant['Individual_rank_score'] = int(variant_score)
         
     return
