@@ -17,7 +17,7 @@ import click
 import inspect
 
 
-from multiprocessing import JoinableQueue,  Manager, cpu_count
+from multiprocessing import JoinableQueue, Manager, cpu_count
 from codecs import open
 from datetime import datetime
 from tempfile import mkdtemp, TemporaryFile, NamedTemporaryFile
@@ -26,70 +26,30 @@ from pprint import pprint as pp
 import shutil
 import pkg_resources
 
-from ped_parser import parser as ped_parser
-from vcf_parser import parser as vcf_parser
+from ped_parser import FamilyParser
+from vcf_parser import VCFParser
 
-from genmod import (VariantConsumer, FileSort, annotation_parser, VariantPrinter, get_batches)
-from genmod.utils import load_annotations
-from genmod.errors import warning
+from genmod import (VariantConsumer, annotation_parser, 
+                    VariantPrinter, get_batches, sort_variants,
+                    load_annotations, print_headers, print_variants,
+                    add_metadata, warning)
 
 VERSION = pkg_resources.require("genmod")[0].version
 
 
-def add_metadata(head, annotate_models=False, vep=False, cadd_annotation=False, cadd_raw=False, thousand_g=None,
-                 exac=None, command_line_string=''):
-    """Add metadata for the information added by this script."""
-    # Update INFO headers
-    if not vep:
-        head.add_info('Annotation', '.', 'String', 'Annotates what feature(s) this variant belongs to.')
-    if annotate_models:
-        head.add_info('Compounds', '.', 'String', "':'-separated list of compound pairs for this variant.")
-        head.add_info('GeneticModels', '.', 'String', "':'-separated list of genetic models for this variant.")
-        head.add_info('ModelScore', '1', 'Integer', "PHRED score for genotype models.")
-    if cadd_annotation:
-        head.add_info('CADD', 'A', 'Float', "The CADD relative score for this alternative.")
-        if cadd_raw:
-            head.add_info('CADD_raw', 'A', 'Float', "The CADD raw score(s) for this alternative(s).")
-    
-    if thousand_g:
-        head.add_info('1000G_freq', 'A', 'Float', "Frequency in the 1000G database.")
-    if exac:
-        head.add_info('ExAC_freq', 'A', 'Float', "Frequency in the ExAC database.")
-    
-    # Update version logging
-    head.add_version_tracking('genmod', VERSION, datetime.now().strftime("%Y-%m-%d %H:%M"), command_line_string)
-    return
-
-def print_headers(head, outfile, silent=False):
-    """Print the headers to a results file."""
-    if outfile:
-        with open(outfile, 'w', encoding='utf-8') as f:
-            for head_count in head.print_header():
-                f.write(head_count+'\n')
-    else:
-        if not silent:
-            for line in head.print_header():
-                print(line)
-    return
-
-
-def print_variants(sorted_variants, outfile, silent=False):
-    """Print the variants to a results file or stdout."""
-    
-    with open(sorted_variants, mode='r', encoding='utf-8') as f:
-        if outfile:
-            with open(outfile, 'a', encoding='utf-8') as g:
-                for variant in f:
-                    g.write(variant)
-        else:
-            if not silent:
-                for line in f:
-                    print(line.rstrip())
-    return
-
-
 def check_tabix_index(compressed_file, file_type='cadd', verbose=False):
-    """Check if a compressed file have a tabix index. If not build one."""
+    """
+    Check if a compressed file have a tabix index, if not build one.
+    
+    Args:
+        compressed_file : Path to a file that is assumed to be compressed.
+        file_type   : The type of the file.
+        verobe      : Increase output verbosity
+    
+    Returns:
+        0 if everythong went ok.
+    
+    """
     if file_type == 'cadd':
         try:
             tabix_index(compressed_file, seq_col=0, start_col=1, end_col=1, meta_char='#')
@@ -100,7 +60,7 @@ def check_tabix_index(compressed_file, file_type='cadd', verbose=False):
             tabix_index(compressed_file, preset='vcf')
         except IOError as e:
             pass
-    return
+    return 0
 
 
 
@@ -127,15 +87,15 @@ def check_tabix_index(compressed_file, file_type='cadd', verbose=False):
                     is_flag=True,
                     help='If variants are annotated with the Variant Effect Predictor.'
 )
-@click.option('-p' ,'--phased', 
+@click.option('--phased', 
                     is_flag=True,
                     help='If data is phased use this flag.'
 )
-@click.option('-strict' ,'--strict', 
+@click.option('-s' ,'--strict', 
                     is_flag=True,
                     help='If strict model annotations should be used(see documentation).'
 )
-@click.option('-s' ,'--silent', 
+@click.option('--silent', 
                     is_flag=True,
                     help='Do not print the variants.'
 )
@@ -232,21 +192,30 @@ def annotate(family_file, variant_file, family_type, vep, silent, phased, strict
     ######### Setup a variant parser #########
     
     if variant_file == '-':
-        variant_parser = vcf_parser.VCFParser(fsock = sys.stdin, split_variants=split_variants)
+        variant_parser = VCFParser(fsock = sys.stdin, split_variants=split_variants)
     else:
-        variant_parser = vcf_parser.VCFParser(infile = variant_file, split_variants=split_variants)
+        variant_parser = VCFParser(infile = variant_file, split_variants=split_variants)
     
     # These are the individuals in from the vcf file
     individuals = variant_parser.individuals
     
     head = variant_parser.metadata
     
+    # Update version logging
+    add_metadata(
+        head,
+        'version',    
+        'genmod', 
+        version=VERSION, 
+        command_line_string=' '.join(argument_list)
+    )
+    
     ######### Parse the ped file (if there is one) #########
     
     families = {}
     
     if family_file:
-        family_parser = ped_parser.FamilyParser(family_file, family_type)
+        family_parser = FamilyParser(family_file, family_type)
         # The individuals in the ped file must be present in the variant file:
         families = family_parser.families
         
@@ -257,12 +226,41 @@ def annotate(family_file, variant_file, family_type, vep, silent, phased, strict
                 warning('Individuals in VCF file: %s' % ' '.join(individuals))
                 print('Exiting...', file=sys.stderr)
                 sys.exit()
+        
+        add_metadata(
+            head,
+            'info',
+            'GeneticModels', 
+            annotation_number='.', 
+            entry_type='String', 
+            description="':'-separated list of genetic models for this variant."
+        )
+        add_metadata(
+            head,
+            'info',
+            'ModelScore', 
+            annotation_number='1', 
+            entry_type='Integer', 
+            description="PHRED score for genotype models."
+        )
+        add_metadata(
+            head,
+            'info',
+            'Compounds', 
+            annotation_number='.', 
+            entry_type='String', 
+            description=("List of compound pairs for this variant."
+            "The list is splitted on ',' family id is separated with compounds"
+            "with ':'. Compounds are separated with '|'.")
+        )
+        
     
     if verbose:
         if family_file:
-            print('Starting analysis of families: %s' % ','.join(list(families.keys())), file=sys.stderr)
-            print('Individuals included in analysis: %s\n' % ','.join(list(family_parser.individuals.keys())), file=sys.stderr)
-    
+            print('Starting analysis of families: %s' % 
+                    ','.join(list(families.keys())), file=sys.stderr)
+            print('Individuals included in analysis: %s\n' % 
+                    ','.join(list(family_parser.individuals.keys())), file=sys.stderr)
     ######### Read to the annotation data structures #########
     
     gene_trees = {}
@@ -272,7 +270,15 @@ def annotate(family_file, variant_file, family_type, vep, silent, phased, strict
     if not vep:
         
         gene_trees, exon_trees = load_annotations(annotation_dir, verbose)
-    
+        
+        add_metadata(
+            head,
+            'info',
+            'Annotation', 
+            annotation_number='.', 
+            entry_type='String', 
+            description='Annotates what feature(s) this variant belongs to.'
+        )
     else:
         if verbose:
             print('Using VEP annotation', file=sys.stderr)
@@ -302,12 +308,51 @@ def annotate(family_file, variant_file, family_type, vep, silent, phased, strict
         if verbose:
             print('Cadd ExAC file! %s' % cadd_exac, file=sys.stderr)
         cadd_annotation = True
+    
+    
+    if cadd_annotation:
+        add_metadata(
+            head,
+            'info',
+            'CADD', 
+            annotation_number='A',
+            entry_type='Float', 
+            description="The CADD relative score for this alternative."
+        )
+        if cadd_raw:
+            add_metadata(
+                head,
+                'info',
+                'CADD_raw', 
+                annotation_number='A',
+                entry_type='Float', 
+                description="The CADD raw score(s) for this alternative(s)."
+            )
+        
     if thousand_g:
         if verbose:
             print('1000G frequency file! %s' % thousand_g, file=sys.stderr)
+        add_metadata(
+            head,
+            'info',
+            '1000G_freq', 
+            annotation_number='A', 
+            entry_type='Float', 
+            description="Frequency in the 1000G database."
+        )
+        
     if exac:
         if verbose:
             print('ExAC frequency file! %s' % exac, file=sys.stderr)
+        add_metadata(
+            head,
+            'info',
+            'ExAC_freq', 
+            annotation_number='A', 
+            entry_type='Float', 
+            description="Frequency in the ExAC database."
+        )
+        
     if dbnfsp:
         if verbose:
             print('dbNFSP file! %s' % dbnfsp, file=sys.stderr)
@@ -323,10 +368,6 @@ def annotate(family_file, variant_file, family_type, vep, silent, phased, strict
     # The consumers will put their results in the results queue
     results = Manager().Queue()
     
-    # Create a directory to keep track of temp files. The annotated variants will be printed to these files
-    # They are then sorted and printed to a proper vcf
-    temp_dir = mkdtemp()
-    
     num_model_checkers = processes
     #Adapt the number of processes to the machine that run the analysis
     if cadd_annotation:
@@ -338,6 +379,18 @@ def annotate(family_file, variant_file, family_type, vep, silent, phased, strict
     if verbose:
         print('Number of CPU:s %s' % cpu_count(), file=sys.stderr)
         print('Number of model checkers: %s' % num_model_checkers, file=sys.stderr)
+    
+    # We use a temp file to store the processed variants
+    temp_file = NamedTemporaryFile(delete=False)
+    temp_file.close()
+    # Open the temp file with codecs
+    temporary_variant_file = open(
+                                temp_file.name, 
+                                mode='w', 
+                                encoding='utf-8', 
+                                errors='replace'
+                                )
+    
     
     # These are the workers that do the heavy part of the analysis
     model_checkers = [
@@ -368,9 +421,10 @@ def annotate(family_file, variant_file, family_type, vep, silent, phased, strict
     # This process prints the variants to temporary files
     var_printer = VariantPrinter(
                             results, 
-                            temp_dir, 
-                            head, 
-                            verbose
+                            temporary_variant_file, 
+                            head,
+                            mode='chromosome',
+                            verbosity=verbose
                         )
     var_printer.start()
     
@@ -397,55 +451,27 @@ def annotate(family_file, variant_file, family_type, vep, silent, phased, strict
     for i in range(num_model_checkers):
         variant_queue.put(None)
     
-    
-    
     variant_queue.join()
     results.put(None)
     var_printer.join()
     
-    
+    temporary_variant_file.close()
+        
     if verbose:
         print('Cromosomes found in variant file: %s \n' % ','.join(chromosome_list), file=sys.stderr)
         print('Models checked!\n', file=sys.stderr)
-        print('Start sorting the variants:\n', file=sys.stderr)
-        start_time_variant_sorting = datetime.now()
     
-    # Add the new metadata to the headers:
-    add_metadata(
-                    head, 
-                    families, 
-                    vep, 
-                    cadd_annotation, 
-                    cadd_raw, 
-                    thousand_g, 
-                    exac, 
-                    ' '.join(argument_list)
-                 )
+    sort_variants(temp_file.name, mode='chromosome', verbose=verbose)
     
     print_headers(head, outfile, silent)
     
-    # We need to open and close files to read and write proper with codecs:
-    sorted_temp = NamedTemporaryFile(delete=False)
-    sorted_temp.close()
-    sorted_file = sorted_temp.name
-    for chromosome in chromosome_list:
-        for temp_file in os.listdir(temp_dir):
-            if temp_file.split('_')[0] == chromosome:
-                var_sorter = FileSort(os.path.join(temp_dir, temp_file), 
-                                                        outfile=sorted_file, 
-                                                        silent=silent
-                                                    )
-                var_sorter.sort()
-    
-    if verbose:
-        print('Sorting done!', file=sys.stderr)
-        print('Time for sorting: %s \n' % str(datetime.now()-start_time_variant_sorting), file=sys.stderr)
-        print('Time for whole analyis: %s' % str(datetime.now() - start_time_analysis), file=sys.stderr)
-    
-    print_variants(sorted_file, outfile, silent)
+    print_variants(temp_file.name, outfile, mode='modified',  silent=silent)
     
     # Remove all temp files:
-    shutil.rmtree(temp_dir)
+    os.remove(temp_file.name)
+    
+    if verbose:
+        print('Time for whole analyis: %s' % str(datetime.now() - start_time_analysis), file=sys.stderr)
     
 
 

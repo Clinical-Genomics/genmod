@@ -3,7 +3,8 @@
 """
 annotation_parser.py
 
-This script will parse a file with intervals in .ccds or .bed format and build one interval tree for each chromosome.
+This script will parse a file with intervals in .ccds or .bed format and build 
+one interval tree for each chromosome.
 So self.chromosomes will look like:
 
 {'1':intervalTree, '2':intervalTree, ..., 'X':intervalTree}
@@ -13,8 +14,10 @@ The intervals represent features that are annotated in the infile.
 
 ###UPDATE 2014-04-15###
 
-This parser has been a bit naive since files can have one transcript per line and some one gene per line.
-It is hard to write a tool to parse everything. I will now focus on the refGene format that is one transcript per line and each line is like:
+This parser has been a bit naive since files can have one transcript per line 
+and some one gene per line.
+It is hard to write a tool to parse everything. It will now focus on the refGene 
+format that is one transcript per line and each line is like:
 
 from http://genome.ucsc.edu/FAQ/FAQformat.html#format9:
 
@@ -63,15 +66,25 @@ from genmod.utils import is_number
 from interval_tree import interval_tree
 
 class AnnotationParser(object):
-    """Parses a file with family info and creates a family object with individuals."""
-    def __init__(self, infile, annotation_type, zipped = False, splice_padding = 2, verbosity=False):
+    """
+    Parses a file with genetic region annotations.
+    
+    Creates gene_trees and exon_trees.
+    """
+    def __init__(self, infile, annotation_type, zipped = False, 
+                    splice_padding = 2, verbosity=False):
         super(AnnotationParser, self).__init__()
         self.verbosity = verbosity
         self.annotation_type = annotation_type
-        
-        self.gene_trees = {}# A dictionary with {<chr>:<intervalTree>} the trees are intervals with genes
-        self.exon_trees = {}# A dictionary with {<chr>:<intervalTree>} the trees are intervals with exons
-        chromosome_stops = {}## A dictionary with information about the last positions on each chromosome:
+        # A dictionary with {<chr>:<intervalTree>} 
+        # the trees are intervals with genes
+        self.gene_trees = {}
+        # A dictionary with {<chr>:<intervalTree>} 
+        # the trees are intervals with exons
+        self.exon_trees = {}
+        # A dictionary with information about the last 
+        # positions on each chromosome:
+        chromosome_stops = {}
         infile_name, infile_extension = os.path.splitext(infile)
         
         genes = {}
@@ -110,13 +123,20 @@ class AnnotationParser(object):
                 gene_intervals.append(feature)
                 
                 # Update the end position of the interval
-                if genes[chrom][gene_id]['gene_stop'] > chromosome_stops.get(chrom, 0):
+                if (genes[chrom][gene_id]['gene_stop'] > 
+                            chromosome_stops.get(chrom, 0)):
                     chromosome_stops[chrom] = genes[chrom][gene_id]['gene_stop'] + 1
                 
             genes[chrom] = gene_intervals
             
             for exon in dict(exons.get(chrom,{})):
-                exon_intervals.append([exon[0], exon[1], ':'.join(exons[chrom][exon])])
+                exon_intervals.append(
+                                    [
+                                        exon[0], 
+                                        exon[1], 
+                                        ':'.join(exons[chrom][exon])
+                                    ]
+                                    )
                 
             exons[chrom] = exon_intervals
         
@@ -126,16 +146,29 @@ class AnnotationParser(object):
         
         for chrom in genes:
             nr_of_genes += len(genes[chrom])
-            self.gene_trees[chrom] = interval_tree.IntervalTree(genes[chrom], 1, chromosome_stops[chrom])
+            self.gene_trees[chrom] = interval_tree.IntervalTree(
+                                                        genes[chrom], 
+                                                        1, 
+                                                        chromosome_stops[chrom]
+                                                        )
         for chrom in exons:
             if len(exons[chrom]) > 0:
-                self.exon_trees[chrom] = interval_tree.IntervalTree(exons[chrom], 1, chromosome_stops[chrom])
+                self.exon_trees[chrom] = interval_tree.IntervalTree(
+                                                        exons[chrom], 
+                                                        1, 
+                                                        chromosome_stops[chrom]
+                                                        )
             # If no exons found
             else:
-                self.exon_trees[chrom] = interval_tree.IntervalTree([[0,0,None]], 0, 0)
+                self.exon_trees[chrom] = interval_tree.IntervalTree(
+                                                        [[0,0,None]], 
+                                                        0, 
+                                                        0
+                                                        )
         
         if self.verbosity:
-            print('Number of genes in annotation file: %s' % nr_of_genes, file=sys.stderr)
+            print('Number of genes in annotation file: %s' % nr_of_genes, 
+                    file=sys.stderr)
                 
         return
     
@@ -145,10 +178,12 @@ class AnnotationParser(object):
             genes[chrom] = {}
         
         if gene_id in genes[chrom]:
-            # If this transcript starts before the previous, update the start of the gene:
+            # If this transcript starts before the previous, 
+            # update the start of the gene:
             if start < genes[chrom][gene_id]['gene_start']:
                 genes[chrom][gene_id]['gene_start'] = start
-            # If this transcript ends after the previous update the stop of the gene:
+            # If this transcript ends after the previous update 
+            # the stop of the gene:
             if stop > genes[chrom][gene_id]['gene_stop']:
                 genes[chrom][gene_id]['gene_stop'] = stop
         else:
@@ -180,8 +215,21 @@ class AnnotationParser(object):
                 if len(line) > 3:
                     feature_id = line [3]
             
-                self.add_gene(genes, chrom, feature_start, feature_stop, feature_id)
-                self.add_exon(exons, chrom, feature_start, feature_stop, feature_id, splice_padding)
+                self.add_gene(
+                            genes, 
+                            chrom, 
+                            feature_start, 
+                            feature_stop, 
+                            feature_id
+                            )
+                self.add_exon(
+                            exons, 
+                            chrom, 
+                            feature_start, 
+                            feature_stop, 
+                            feature_id, 
+                            splice_padding
+                            )
             
         return genes, exons
     
@@ -201,7 +249,13 @@ class AnnotationParser(object):
                     feature_stop = int(line[8])
                     #TODO raise exception?
                 
-                    self.add_gene(genes, chrom, feature_start, feature_stop, gene_id)
+                    self.add_gene(
+                                genes, 
+                                chrom, 
+                                feature_start, 
+                                feature_stop, 
+                                gene_id
+                                )
                 
                     for interval in line[9][1:-1].split(','):
                         boundaries = (interval.split('-'))
@@ -240,18 +294,38 @@ class AnnotationParser(object):
                         gene_name = entry[1][1:-1]
                 
                 if line[2] == 'gene':
-                    self.add_gene(genes, chrom, feature_start, feature_stop, gene_id)
+                    self.add_gene(
+                                genes, 
+                                chrom, 
+                                feature_start, 
+                                feature_stop, 
+                                gene_id
+                                )
                  
                 elif line[2] == 'exon':
-                    self.add_exon(exons, chrom, feature_start, feature_stop, transcript_id, splice_padding)
+                    self.add_exon(
+                                exons, 
+                                chrom, 
+                                feature_start, 
+                                feature_stop, 
+                                transcript_id, 
+                                splice_padding
+                                )
                 
         
         return genes,exons
     
     def gene_pred_parser(self, ref_file_handle, splice_padding):
-        """Parse a file in the refGene format, we should add the information about gene or transcript here"""
-        genes = {} # A dictionary with {<chr>: {gene_id:{'gene_start':0,'gene_stop':0}}
-        exons = {} # A dictionary with {<chr>: {(exon_start, exon_stop, transcript_id_1):[gene_id_1, ..]
+        """
+        Parse a file in the refGene format.
+        
+        We should add the information about gene or transcript here.
+        """
+        # A dictionary with {<chr>: {gene_id:{'gene_start':0,'gene_stop':0}}
+        genes = {}
+        # A dictionary with {<chr>: 
+        # {(exon_start, exon_stop, transcript_id_1):[gene_id_1, ..]
+        exons = {} 
         ### Features look like [start,stop, feature_id] ###
         nr_of_lines = 0
         for line in ref_file_handle:
@@ -266,14 +340,31 @@ class AnnotationParser(object):
                 coding_start = int(line[6])
                 coding_stop = int(line[7])
                 nr_of_exons = int(line[8])
-                exon_starts = [int(boundary) for boundary in line[9].split(',')[:-1]]
-                exon_stops = [int(boundary) for boundary in line[10].split(',')[:-1]]
+                exon_starts = [
+                        int(boundary) for boundary in line[9].split(',')[:-1]
+                        ]
+                exon_stops = [
+                        int(boundary) for boundary in line[10].split(',')[:-1]
+                        ]
                 gene_id = line[12]
                 transcript_id = ':'.join([transcript, gene_id])
                                 
-                self.add_gene(genes, chrom, transc_start, transc_stop, gene_id)
+                self.add_gene(
+                            genes, 
+                            chrom, 
+                            transc_start, 
+                            transc_stop, 
+                            gene_id
+                            )
                 for i in range(len(exon_starts)):
-                    self.add_exon(exons, chrom, exon_starts[i], exon_stops[i], transcript_id, splice_padding)
+                    self.add_exon(
+                            exons, 
+                            chrom, 
+                            exon_starts[i], 
+                            exon_stops[i], 
+                            transcript_id, 
+                            splice_padding
+                            )
                 
         return genes,exons
         

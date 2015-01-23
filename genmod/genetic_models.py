@@ -3,7 +3,8 @@
 """
 genetic_models.py
 
-Genetic models take a family object with individuals and variants and annotates for each variant which models they follow in this family.
+Genetic models take a family object with individuals and variants and annotates
+for each variant which models they follow in this family.
 
 The following models are checked:
 
@@ -13,16 +14,21 @@ The following models are checked:
 - Autosomal Recessive De Novo(AR_DN)
 - Autosomal Recesive Compound(AR_comp).
 
-In this model a variant must imply affected status, otherwise it can not be dominant. All sick has to be ay least heterozygote for the variant and all healthy can not have it.
+In this model a variant must imply affected status, otherwise it can not be 
+dominant. All sick has to be ay least heterozygote for the variant and all 
+healthy can not have it.
 
-We will assume that each individual that we have information about is present among the individual in self.family.individuals.
+We will assume that each individual that we have information about is present
+among the individual in self.family.individuals.
 
 
 is the individual sick?
 
-    - If the individual is homozygote alternative then AD/AD-denovo and AR/AR-denovo are ok
+    - If the individual is homozygote alternative then AD/AD-denovo 
+        and AR/AR-denovo are ok
 
-    - If the individual is is heterozygote then AD/AD-denovo are ok but AR/AR-denovo are not ok
+    - If the individual is is heterozygote then AD/AD-denovo are ok 
+        but AR/AR-denovo are not ok
 
     - If the individual is homozygote reference no model is ok
 
@@ -34,7 +40,8 @@ is the individual healthy?
 
     - If the individual is homozygote alternative then no model is ok
 
-    - If the individual is heterozygote then AR/AR-denove are ok but AD/AD-denovo are not ok
+    - If the individual is heterozygote then AR/AR-denove are ok but 
+        AD/AD-denovo are not ok
 
     - If the individual is homozygote referense all models are ok
 
@@ -59,12 +66,14 @@ import sys
 from datetime import datetime
 from pprint import pprint as pp
 
-from genmod.utils import pair_generator
-from genmod.models import (check_dominant, check_recessive, check_compounds,
-                             check_X_recessive, check_X_dominant)
+from genmod.models import (check_dominant, check_recessive, 
+                        check_compounds, check_X_recessive, check_X_dominant)
+from genmod.utils import PairGenerator
 
-def check_genetic_models(variant_batch, families, verbose = False, phased = False, strict = False, proc_name = None):
-    # A variant batch is a dictionary on the form {variant_id:variant_dict, variant_2_id:variant_dict_2, ...}
+def check_genetic_models(variant_batch, families, verbose = False, 
+                        phased = False, strict = False, proc_name = None):
+    # A variant batch is a dictionary on the form 
+    # {variant_id:variant_dict, variant_2_id:variant_dict_2, ...}
     intervals = variant_batch.pop('haploblocks', {})
     for family_id in families:
         family = families[family_id]
@@ -109,14 +118,24 @@ def check_genetic_models(variant_batch, families, verbose = False, phased = Fals
                     for individual_id in individuals:
                         individual = individuals[individual_id]
                         if individual.has_parents:
-                            check_parents('X_recessive', individual_id, family, variant)
+                            check_parents(
+                                'X_recessive', 
+                                individual_id, 
+                                family, 
+                                variant
+                            )
             
                 if check_X_dominant(variant, family, strict):
                     variant['inheritance_models'][family_id]['XD'] = True
                     for individual_id in family.individuals:
                         individual = individuals[individual_id]
                         if individual.has_parents:
-                            check_parents('X_dominant', individual_id, family, variant)
+                            check_parents(
+                                'X_dominant', 
+                                individual_id, 
+                                family, 
+                                variant
+                            )
             # If variant is not on X:
             else:
                 # Check the dominant model:
@@ -125,7 +144,12 @@ def check_genetic_models(variant_batch, families, verbose = False, phased = Fals
                     for individual_id in individuals:
                         individual = individuals[individual_id]
                         if individual.has_parents:
-                            check_parents('dominant', individual_id, family, variant)
+                            check_parents(
+                                'dominant', 
+                                individual_id, 
+                                family, 
+                                variant
+                            )
                 
                 # Check the recessive model:
                 if check_recessive(variant, family, strict):
@@ -133,12 +157,17 @@ def check_genetic_models(variant_batch, families, verbose = False, phased = Fals
                     for individual_id in individuals:
                         individual = individuals[individual_id]
                         if individual.has_parents:
-                            check_parents('recessive', individual_id, family, variant)
+                            check_parents(
+                                'recessive', 
+                                individual_id, 
+                                family, 
+                                variant
+                            )
             
             # Now check the compound models:
             
         if len(compound_candidates) > 1:
-            compound_pairs = pair_generator.Pair_Generator(compound_candidates)
+            compound_pairs = PairGenerator(compound_candidates)
             for pair in compound_pairs.generate_pairs():
             # If the variants in the pair belong to the same gene we check for compounds:
                 variant_1 = variant_batch[pair[0]]
@@ -163,29 +192,35 @@ def check_genetic_models(variant_batch, families, verbose = False, phased = Fals
     return
 
 def check_compound_candidate(variant, family, strict):
-    """Sort out the variants that are potential compound candidates. 
-        This function is used to reduce the number of potential candidates for the future analysis.
-        It will go through all variants in a batch(gene or other feature) and filter out those variants that not fit the model.
-        Returns a bool depending on if the variant is a potential compound candidate.
-        
-        Cases:
-            Affected:
-                - If individual is affected it needs to be heterozygpte otherwise it can not be a compound candidate
-                
-            Healthy:
-                - Can not be hom. alt for any variant in a potential compound pair.
-        
-        If strict:
-            Affected must be heterozygote
-        
-        Args:
-            variant: A variant dictionary.
-            family: A family object with information about the family members for this analysis
+    """
+    Sort out the variants that are potential compound candidates. 
+    This function is used to reduce the number of potential candidates
+    for the future analysis. It will go through all variants in a 
+    batch(gene or other feature) and filter out those variants that not 
+    fit the model. Returns a bool depending on if the variant is a 
+    potential compound candidate.
+    
+    Cases:
+        Affected:
+            - If individual is affected it needs to be heterozygpte 
+            otherwise it can not be a compound candidate
             
-        Returns:
-            bool: depending on if the variant is a potential compound candidate according to the
-            rules stated above
+        Healthy:
+            - Can not be hom. alt for any variant in a potential 
+            compound pair.
+    
+    If strict:
+        Affected must be heterozygote
+    
+    Args:
+        variant : A variant dictionary.
+        family  : A family object with information about the family 
+                    members for this analysis
         
+    Returns:
+        bool: depending on if the variant is a potential compound 
+                candidate according to therules stated above
+    
     """
     # This is the case when the variant is located in an uninteresting region(non gene region):
     if not variant.get('comp_candidate',True):
@@ -214,27 +249,45 @@ def check_compound_candidate(variant, family, strict):
                 father_genotype = variant['genotypes'][father_id]
                 father = family.individuals[father_id]
             
-            # If both parents exist and both are healthy, both can not have the variant
+            # If both parents exist and both are healthy, 
+            # both can not have the variant
             if mother_id != '0' and father_id != '0':
                 if mother.healthy and father.healthy:
-                    if mother_genotype.has_variant and father_genotype.has_variant:
+                    if (mother_genotype.has_variant and 
+                            father_genotype.has_variant):
                         return False
-            # We have now significantly rediced the number of compound candidates.
-            # In the next step we check if pairs of compounds follow the compound inheritance pattern.
+            # We have now significantly rediced the number
+            # of compound candidates.
+            # In the next step we check if pairs of compounds
+            # follow the compound inheritance pattern.
     
     return True
 
 
-def check_parents(model, individual_id, family, variant, variant_2={}, strict = False):
-    """Check if information in the parents can tell us if model is de novo or not. 
-        Model IN ['recessive', 'compound', 'dominant', 'X_recessive', 'X_dominant'].
-        If the expected pattern of a variant is followed in the family, de novo will be False. 
-        Otherwise de novo will be True.
-        
-        If only one parent is present then we can never exclude denovo for heterozygous inheritance patterns
-        If strict and one parent we will never say it is denovo
-         
-         """
+def check_parents(model, individual_id, family, variant, variant_2={}, 
+                    strict = False):
+    """
+    Check if information in the parents can tell us if model is 
+    de novo or not. 
+    Model IN ['recessive', 'compound', 'dominant', 'X_recessive', 'X_dominant'].
+    If the expected pattern of a variant is followed in the family, 
+    de novo will be False. Otherwise de novo will be True.
+    
+    
+    If only one parent is present then we can never exclude denovo for 
+    heterozygous inheritance patterns.
+    If strict and one parent we will never say it is denovo
+    
+    Args:
+        model  : String, one of 'recessive', 'compound', 'dominant', 
+                    'X_recessive', 'X_dominant'
+        individual_id   : String that represents the individual id
+        family  : A family object
+        variant : A dictionary that represents the variant
+        variant_2   : If compound pair this is the second variant
+        strict  : Bool
+    
+    """
     sex = family.individuals[individual_id].sex
     family_id = family.family_id
     
@@ -256,16 +309,19 @@ def check_parents(model, individual_id, family, variant, variant_2={}, strict = 
         parent_genotypes.append(father_genotype)
 
     if model == 'recessive':
-        # If a parent is homozygote or if both parents are heterozygote the variant is not denovo.
+        # If a parent is homozygote or if both parents are heterozygote 
+        # the variant is not denovo.
         # If strict we know from before that both parents are genotyped
         if len(parent_genotypes) == 2:
-            if not (mother_genotype.has_variant and father_genotype.has_variant):
+            if not (mother_genotype.has_variant and 
+                    father_genotype.has_variant):
                 variant['inheritance_models'][family_id]['AR_hom_dn'] = True
-            # If both parents are called but none of the above is fullfilled it is pure denovo
-                if mother_genotype.genotyped and father_genotype.genotyped:
+            # If both parents are called but none of the above is 
+            # fullfilled it is pure denovo
+                if (mother_genotype.genotyped and father_genotype.genotyped):
                     variant['inheritance_models'][family_id]['AR_hom'] = False
         elif not strict:
-            variant['inheritance_models'][family_id]['AR_hom_dn'] = True            
+            variant['inheritance_models'][family_id]['AR_hom_dn'] = True
                     
     elif model == 'dominant':
         # If none of the parents carry variant it is de novo

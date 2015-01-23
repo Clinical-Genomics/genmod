@@ -27,11 +27,16 @@ from genmod import check_genetic_models
 from genmod.errors import warning
 
 class VariantConsumer(Process):
-    """Yeilds all unordered pairs from a list of objects as tuples, like (obj_1, obj_2)"""
+    """
+    Yeilds all unordered pairs from a list of objects as tuples, 
+    like (obj_1, obj_2)
+    """
     
-    def __init__(self, task_queue, results_queue, families={}, phased=False, vep=False, cadd_raw=False,
-                    cadd_file=None, cadd_1000g=None, cadd_exac=None, cadd_ESP=None, cadd_InDels=None, 
-                    thousand_g=None, exac=None, dbNSFP=None, strict=False, verbosity=False):
+    def __init__(self, task_queue, results_queue, families={}, phased=False, 
+                vep=False, cadd_raw=False, cadd_file=None, cadd_1000g=None, 
+                cadd_exac=None, cadd_ESP=None, cadd_InDels=None, 
+                thousand_g=None, exac=None, dbNSFP=None, strict=False, 
+                verbosity=False):
         Process.__init__(self)
         self.task_queue = task_queue
         self.families = families
@@ -83,7 +88,17 @@ class VariantConsumer(Process):
                 if gt_call.genotype_quality > 0:
                     genotype_scores.append(10**-(float(gt_call.genotype_quality)/10))
         if len(genotype_scores) > 0:
-            model_score = (str(round(-10*log10(1-reduce(operator.mul, [1-score for score in genotype_scores])))))
+            model_score = (str(
+                            round(-10*log10(
+                                    1-reduce(
+                                        operator.mul, 
+                                            [
+                                            1-score for score in genotype_scores]
+                                            )
+                                        )
+                                    )
+                                )
+                            )
         
         return model_score
     
@@ -120,23 +135,52 @@ class VariantConsumer(Process):
         #Check CADD file(s):
         for alt in variant['ALT'].split(','):
             if self.cadd_file:
-                cadd_score = self.get_cadd_score(self.cadd_file, variant['CHROM'], 
-                                                variant['POS'], alt)
+                cadd_score = self.get_cadd_score(
+                                        self.cadd_file, 
+                                        variant['CHROM'], 
+                                        variant['POS'], 
+                                        alt
+                                    )
             # If variant not found in big CADD file check the 1000G file:
             if not cadd_score and self.cadd_1000g:
-                cadd_score = self.get_cadd_score(self.cadd_1000g, variant['CHROM'], variant['POS'], alt)
+                cadd_score = self.get_cadd_score(
+                                        self.cadd_1000g, 
+                                        variant['CHROM'], 
+                                        variant['POS'], 
+                                        alt
+                                    )
             
             if not cadd_score and self.cadd_exac:
-                cadd_score = self.get_cadd_score(self.cadd_exac, variant['CHROM'], variant['POS'], alt)
+                cadd_score = self.get_cadd_score(
+                                        self.cadd_exac, 
+                                        variant['CHROM'], 
+                                        variant['POS'], 
+                                        alt
+                                    )
             
             if not cadd_score and self.cadd_ESP:
-                cadd_score = self.get_cadd_score(self.cadd_ESP, variant['CHROM'], variant['POS'], alt)
+                cadd_score = self.get_cadd_score(
+                                        self.cadd_ESP, 
+                                        variant['CHROM'], 
+                                        variant['POS'], 
+                                        alt
+                                    )
             
             if not cadd_score and self.cadd_ESP:
-                cadd_score = self.get_cadd_score(self.cadd_ESP, variant['CHROM'], variant['POS'], alt)
+                cadd_score = self.get_cadd_score(
+                                        self.cadd_ESP, 
+                                        variant['CHROM'], 
+                                        variant['POS'], 
+                                        alt
+                                    )
             
             if not cadd_score and self.cadd_ESP:
-                cadd_score = self.get_cadd_score(self.cadd_ESP, variant['CHROM'], variant['POS'], alt)
+                cadd_score = self.get_cadd_score(
+                                        self.cadd_ESP, 
+                                        variant['CHROM'], 
+                                        variant['POS'], 
+                                        alt
+                                    )
             
             if cadd_score:
                 cadd_relative_scores.append(str(cadd_score[1]))
@@ -246,42 +290,78 @@ class VariantConsumer(Process):
                             model_list.append(model)
                         model_string = '|'.join(model_list)
                     if len(model_list) > 0:
-                        family_model_strings.append(':'.join([family_id, model_string]))
-                        model_scores[family_id] = self.get_model_score(self.families[family_id].individuals, variant)
+                        family_model_strings.append(':'.join(
+                                                    [
+                                                        family_id, 
+                                                        model_string
+                                                    ]
+                                                    )
+                                                )
+                        model_scores[family_id] = self.get_model_score(
+                                                    self.families[
+                                                        family_id
+                                                    ].individuals, variant)
                 
                 if len(family_model_strings) > 0:
-                    vcf_info.append('GeneticModels=' + ','.join(family_model_strings))
+                    vcf_info.append(
+                                'GeneticModels=' + 
+                                ','.join(family_model_strings)
+                                )
                     model_score_list = []
                     for family_id in model_scores:
                         if model_scores[family_id]:
                             if float(model_scores[family_id]) > 0:
-                                model_score_list.append(':'.join([family_id, model_scores[family_id]]))
+                                model_score_list.append(
+                                    ':'.join(
+                                                [
+                                                    family_id, 
+                                                    model_scores[family_id]
+                                                ]
+                                            )
+                                        )
                     if len(model_score_list) > 0:
-                        vcf_info.append('ModelScore=' +  ','.join(model_score_list))
+                        vcf_info.append(
+                                    'ModelScore=' +  
+                                    ','.join(model_score_list)
+                                    )
             
             # We only want to include annotations where we have a value
             
             if not self.vep:
                 if 'Annotation' not in variant['info_dict']:
                     if len(feature_list) != 0 and feature_list != ['-']:
-                        vcf_info.append('Annotation=' + ','.join(feature_list))
+                        vcf_info.append(
+                                    'Annotation=' + 
+                                    ','.join(feature_list)
+                                    )
             
             if variant.get('CADD', None):
                 if 'CADD' not in variant['info_dict']:
-                    vcf_info.append('CADD=%s' % str(variant.pop('CADD', '.')))
+                    vcf_info.append(
+                                'CADD=%s' % str(variant.pop('CADD', '.'))
+                                )
             
             if self.cadd_raw:
                 if 'CADD_raw' not in variant['info_dict']:
                     if variant.get('CADD_raw', None):
-                        vcf_info.append('CADD_raw=%s' % str(variant.pop('CADD_raw', '.')))
+                        vcf_info.append(
+                                    'CADD_raw=%s' % 
+                                    str(variant.pop('CADD_raw', '.'))
+                                    )
             
             if variant.get('1000G_freq', None):
                 if '1000G_freq' not in variant['info_dict']:
-                    vcf_info.append('1000G_freq=%s' % str(variant.pop('1000G_freq', '.')))
+                    vcf_info.append(
+                                '1000G_freq=%s' % 
+                                str(variant.pop('1000G_freq', '.'))
+                                )
 
             if variant.get('ExAC_freq', None):
                 if 'ExAC_freq' not in variant['info_dict']:
-                    vcf_info.append('ExAC_freq=%s' % str(variant.pop('ExAC_freq', '.')))
+                    vcf_info.append(
+                                'ExAC_freq=%s' % 
+                                str(variant.pop('ExAC_freq', '.'))
+                                )
             
             variant_dict[variant_id]['INFO'] = ';'.join(vcf_info)
             

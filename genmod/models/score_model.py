@@ -326,7 +326,7 @@ def evaluate_float(alt, category, value_dict, operation_dict,
         record_list = number_to_list(record)
     
     if len(record_list) > 0:
-        if verbose:
+        if verbose == 2:
             log.info("Record elements:" + str(record_list))
         perf_score_dict[category].append(score_float(alt,
                                          record_list,
@@ -363,7 +363,7 @@ def score_variants(batch, predicted_models=[], alt_dict=None, score_dict=None,
     for variant_id in batch:
         
         variant = batch[variant_id]  # Get variant
-        if verbose:
+        if verbose == 2:
             log.info("Variant Line: " + str(variant))
         variant_score = 0  # Variant score
         perf_score_dict = defaultdict(list)  # Performance score dict
@@ -371,12 +371,12 @@ def score_variants(batch, predicted_models=[], alt_dict=None, score_dict=None,
         category_dict = {}  # Collects all alternative categories
         
         for alt in alt_dict:  # Config alternatives
-        
+            
             category = ""
             record_aggregate = "max"  # Set default
             separator_list = []
             
-            if verbose:
+            if verbose == 2:
                 log.info("Alternative: " + alt)
             
             category = alt_dict[alt]['category']  # Alias
@@ -402,7 +402,7 @@ def score_variants(batch, predicted_models=[], alt_dict=None, score_dict=None,
                     record = ','.join(record_list)
                 
             if record is not None:  # Record exists in vcf
-                if verbose:
+                if verbose == 2:
                     log.info("Record:" + record)
                 
                 ## Number comparisons
@@ -433,7 +433,7 @@ def score_variants(batch, predicted_models=[], alt_dict=None, score_dict=None,
                     perf_score_dict[category].append(float(score_dict[alt]
                                                            ['notreported']))
             
-            if verbose:
+            if verbose == 2:
                 log.info(category + ": " + str(perf_score_dict[category]))
             
         for category in category_dict:  # All should be numbers from here on
@@ -450,9 +450,10 @@ def score_variants(batch, predicted_models=[], alt_dict=None, score_dict=None,
             
             variant_score += category_score
             
-        if verbose:
+        if verbose == 2:
             log.info("Variant score " + str(variant_score))
-            
+        
+        # Added the individual rank score to the variant.
         variant['Individual_rank_score'] = int(variant_score)
         
     return

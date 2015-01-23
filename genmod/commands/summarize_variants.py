@@ -8,7 +8,8 @@ Analyze the the variants in a vcf, the following will be printed:
     - How many variants found
     - How many mendelian violations
     - How many variants where not covered in all individuals. (Default depth 7)
-    - How many variants did not satisfy the base call quality treshold. (Default 10)
+    - How many variants did not satisfy the base call 
+        quality treshold. (Default 10)
     - How many variants followed each model:
         - AR_hom
         - AR_comp
@@ -30,7 +31,7 @@ Created by Måns Magnusson on 2014-09-08.
 Copyright (c) 2014 __MoonsoInc__. All rights reserved.
 """
 
-from __future__ import print_function, unicode_literals, division
+from __future__ import (print_function, unicode_literals, division)
 
 import sys
 import os
@@ -42,10 +43,10 @@ from pprint import pprint as pp
 
 import pkg_resources
 
-from vcf_parser import parser as vcf_parser
+from vcf_parser import VCFParser
 
 import genmod
-from genmod.errors import warning
+from genmod import warning
 
 
 
@@ -53,13 +54,13 @@ def check_families(variant_file):
     """Loop through the vcf file and check which families that are found."""
     families = set([])
     if variant_file == '-':
-        variant_parser = vcf_parser.VCFParser(fsock = sys.stdin)
+        variant_parser = VCFParser(fsock = sys.stdin)
     else:
-        variant_parser = vcf_parser.VCFParser(infile = variant_file)
+        variant_parser = VCFParser(infile = variant_file)
     for variant in variant_parser:
         genetic_models = variant['info_dict'].get('GeneticModels', None)
         if genetic_models:
-            for family_models in genetic_models.split(','):
+            for family_models in genetic_models:
                 family = family_models.split(':')[0]
                 families.add(family)
     return families
@@ -71,7 +72,7 @@ def get_inheritance_models(variant, family_id, inheritance_keyword):
     family_models = variant['info_dict'].get(inheritance_keyword, None)
     if family_models:
         #This is a string on the form 'fam_1:AR_hom,fam_2:AR_hom|AR_hom_dn
-        for family_info in family_models.split(','):
+        for family_info in family_models:
             splitted_family = family_info.split(':')
             if splitted_family[0] == family_id:
                 models_found = set(splitted_family[1].split('|'))
@@ -135,14 +136,17 @@ def get_inheritance_models(variant, family_id, inheritance_keyword):
 #                 is_flag=True,
 #                 help='Increase output verbosity.'
 # )
-def summarize(variant_file, frequency_treshold, frequency_keyword, cadd_treshold, cadd_keyword, gq_treshold, read_depth_treshold):
+def summarize(variant_file, frequency_treshold, frequency_keyword, 
+                cadd_treshold, cadd_keyword, gq_treshold, read_depth_treshold):
     """
     Analyze the the variants in a vcf, the following will be printed:
     
-        - How many variants found\n
-        - How many variants did not satisfy the base call quality treshold. (Default 20)\n
-        - How many variants where not covered in all individuals. (Default depth 10)\n
-        - How many variants followed each model in each family:\n
+    - How many variants found\n
+    - How many variants did not satisfy the base call 
+        quality treshold. (Default 20)\n
+    - How many variants where not covered in all individuals. 
+        (Default depth 10)\n
+    - How many variants followed each model in each family:\n
             - AR_hom\n
             - AR_comp\n
             - AR_hom_dn\n
@@ -169,8 +173,18 @@ def summarize(variant_file, frequency_treshold, frequency_keyword, cadd_treshold
     print('Found families: %s' % ','.join(families))
     inheritance_keyword = 'GeneticModels'
     
-    inheritance_models = ['AR_hom', 'AR_hom_dn', 'AR_comp', 'AR_comp_dn', 'AD', 'AD_dn', 
-                            'XD', 'XD_dn', 'XR', 'XR_dn']
+    inheritance_models = [
+                            'AR_hom', 
+                            'AR_hom_dn', 
+                            'AR_comp', 
+                            'AR_comp_dn', 
+                            'AD', 
+                            'AD_dn', 
+                            'XD', 
+                            'XD_dn', 
+                            'XR', 
+                            'XR_dn'
+                        ]
     
     family_dict = {}
     for family_id in families:
@@ -197,14 +211,30 @@ def summarize(variant_file, frequency_treshold, frequency_keyword, cadd_treshold
     analysis_start = datetime.now()
     
     if variant_file == '-':
-        variant_parser = vcf_parser.VCFParser(fsock = sys.stdin)
+        variant_parser = VCFParser(fsock = sys.stdin)
     else:
-        variant_parser = vcf_parser.VCFParser(infile = variant_file)
+        variant_parser = VCFParser(infile = variant_file)
     
     for variant in variant_parser:
         
-        maf = min([float(frequency) for frequency in variant['info_dict'].get(frequency_keyword, '0').split(',')])
-        cadd_score = max([float(cscore) for cscore in variant['info_dict'].get(cadd_keyword, '0').split(',')])
+        maf = min(
+                [
+                    float(frequency) for frequency in 
+                        variant['info_dict'].get(
+                                            frequency_keyword, 
+                                            '0'
+                                            )
+                ]
+                )
+        cadd_score = max(
+                [
+                    float(cscore) for cscore in 
+                    variant['info_dict'].get(
+                                        cadd_keyword, 
+                                        '0'
+                                        )
+                ]
+                )
         reference = variant['REF']
         alternative = variant['ALT']
         
