@@ -43,13 +43,13 @@ class VariantPrinter(Process):
     
     """
     def __init__(self, task_queue, temp_file, head, mode='chromosome', 
-                    chr_map=None, verbosity=False):
+                verbosity=False):
         Process.__init__(self)
         self.task_queue = task_queue
         self.verbosity = verbosity
-        self.chr_map = chr_map
         self.temp_file = temp_file
         self.header = head.header
+        self.mode = mode
     
     def run(self):
         """Starts the printing"""
@@ -77,26 +77,31 @@ class VariantPrinter(Process):
                 for variant_id in next_result:
                     variant = next_result[variant_id]
                     
-                    if mode == 'score':
+                    if self.mode == 'score':
                         try:
                             priority = variant['Individual_rank_score']
                         except KeyError:
                             priority = '0'
-                    elif mode == 'chromosome':
+                    elif self.mode == 'chromosome':
                         chrom = variant['CHROM']
                         if chrom.startswith('chr'):
                             chrom = chrom[3:]
                         try:
-                            priority = chr_map[chrom]
-                        except KeyError:
-                            priority = 0
-                            print('Warning, chr %s is not in chr_map' % chrom,
-                                     file=sys.stderr)
+                            priority = int(chrom)
+                        except ValueError:
+                            if chrom == 'X':
+                                priority = 23
+                            elif chrom == 'Y':
+                                priority = 24
+                            elif chrom == 'MT':
+                                priority = 25
+                            else:
+                                priority = 26
                     else:
                         raise SyntaxError("""Need to specify priority mode for 
                                             printing the variants""")
                     
-                    print_line = [priority] + [variant.get(entry, '-')
+                    print_line = [str(priority)] + [variant.get(entry, '-')
                                                  for entry in self.header]
                     
                     self.temp_file.write('\t'.join(print_line) + '\n')

@@ -20,18 +20,19 @@ import pkg_resources
 import click
 import genmod
 
-from multiprocessing import JoinableQueue
+from multiprocessing import JoinableQueue, Manager, cpu_count
 from codecs import open, getwriter
 from tempfile import NamedTemporaryFile
 from datetime import datetime
 
 from pprint import pprint as pp
 
-from genmod import (VariantScorer, FileSort, get_batches)
-from genmod.utils import (collectKeys, load_annotations)
+from genmod import (VariantScorer, VariantPrinter, get_batches, collectKeys, 
+                    load_annotations, add_metadata, warning, print_headers,
+                    sort_variants, print_variants)
 
-from ped_parser import parser as ped_parser
-from vcf_parser import parser as vcf_parser
+from ped_parser import FamilyParser
+from vcf_parser import VCFParser
 
 # Import third party library
 # https://github.com/mitsuhiko/logbook
@@ -63,7 +64,7 @@ def check_plugin(config_file, variant_parser, verbose=False):
                                                             variant_parser,
                                                             verbose
                                                         )
-    if verbose:
+    if verbose == 2:
         log.info("Plugin file: " + config_file)
         log.info("alt_dict:" + str(alt_dict))
         log.info("score_dict: " + str(score_dict))
@@ -85,7 +86,7 @@ def get_genetic_models(family_file, family_type):
         family_id   : A string that represents the family id
     """
     inheritance_models = set([])
-    my_family_parser = ped_parser.FamilyParser(family_file, family_type)
+    my_family_parser = FamilyParser(family_file, family_type)
     family_id = None
     for family in my_family_parser.families:
         family_id = family
@@ -94,55 +95,6 @@ def get_genetic_models(family_file, family_type):
                 inheritance_models.add(model)
     # Stupid thing but for now when we only look at one family
     return inheritance_models, family_id
-
-
-def add_metadata(head, command_line_string):
-    """
-    Add metadata for the information added by this script.
-    
-    Take the header pbject and a argument string and add a new line
-    to the VCF header.
-    
-    Args:
-        head : A vcf header object
-        command_line_string : The information that should be added
-    
-    Returns:
-        nothing, just adds the information to header.
-    """
-    
-    head.add_info('RankScore', '1', 'Integer',
-                  "Combined rank score for the variant in this family.")
-    head.add_version_tracking('score_mip_variants', VERSION,
-                              str(datetime.now()), command_line_string)
-    
-    return
-
-
-def print_headers(head, outfile=None, silent=False):
-    """
-    Print the headers to a results file.
-    If an outfile is specified print the variant to outfile.
-    
-    Args:
-        head: A vcf header object
-        outfile: path to outfile
-        silent: Boolean if anything should be printed at all
-    
-    Returns:
-        nothing, just prints the vcf header.
-    
-    """
-    if outfile:
-        with open(outfile, 'w', encoding='utf-8') as f:
-            for head_count in head.print_header():
-                f.write(head_count+'\n')
-    else:
-        if not silent:
-            for line in head.print_header():
-                print(line)
-    return
-
 
 def print_version(ctx, param, value):
     """Callback function for printing version and exiting.
@@ -206,8 +158,8 @@ def print_version(ctx, param, value):
                 help='Define how many processes that should be use for annotation.'
 )
 @click.option('-v', '--verbose',
-              is_flag=True,
-              help='Increase output verbosity.'
+              count=True,
+              help='Increase output verbosity. If -vv all scores will be printed'
 )
 def score(family_file, variant_file, family_type, annotation_dir, vep,
                        plugin_file, processes, silent, outfile, verbose):
@@ -224,6 +176,7 @@ def score(family_file, variant_file, family_type, annotation_dir, vep,
     
     start_time_analysis = datetime.now()
     
+    
     if verbose:
         print('\nRunning GENMOD score, version: %s \n' % VERSION, 
                 file=sys.stderr)
@@ -231,6 +184,7 @@ def score(family_file, variant_file, family_type, annotation_dir, vep,
     ## Start by parsing the pedigree file:
     prefered_models = []
     family_id = None
+    
     if family_file:
         prefered_models, family_id = get_genetic_models(
                                                     family_file, 
@@ -256,11 +210,28 @@ def score(family_file, variant_file, family_type, annotation_dir, vep,
     ## Check the variants:
     
     if variant_file == '-':
-        variant_parser = vcf_parser.VCFParser(fsock=sys.stdin)
+        variant_parser = VCFParser(fsock=sys.stdin)
     else:
-        variant_parser = vcf_parser.VCFParser(infile=variant_file)
+        variant_parser = VCFParser(infile=variant_file)
     
     head = variant_parser.metadata
+    
+    add_metadata(
+        head,
+        'version',    
+        'genmod_score', 
+        version=VERSION, 
+        command_line_string=' '.join(argument_list)
+    )
+    
+    add_metadata(
+        head,
+        'info',
+        'RankScore',
+        annotation_number='1', 
+        entry_type='Integer', 
+        description="Combined rank score for the variant in this family."'GeneticModels'
+    )
     
     alt_dict, score_dict, value_dict, operation_dict = check_plugin(
                                                             plugin_file, 
@@ -281,77 +252,104 @@ def score(family_file, variant_file, family_type, annotation_dir, vep,
     
     num_model_scorers = processes
     
+    if verbose:
+        print('Number of CPU:s %s' % cpu_count(), file=sys.stderr)
+        print('Number of model scorers: %s' % num_model_scorers, file=sys.stderr)
+    
+    
     temp_file = NamedTemporaryFile(delete=False)
     temp_file.close()
     
-    try:
-        # We open a variant file to print the variants before sorting:
-        temporary_variant_file = open(
-                                    temp_file.name, 
-                                    mode='w', 
-                                    encoding='utf-8', 
-                                    errors='replace'
-                                    )
-        
-        scorer = VariantScorer(
-                                variant_queue,
-                                results,
-                                variant_parser.header,
-                                prefered_models,
-                                family_id,
-                                alt_dict, 
-                                score_dict, 
-                                value_dict,
-                                operation_dict, 
-                                verbose
-                            )
-        
-        scorer.start()
-        
-        # This process prints the variants to temporary files
-        var_printer = VariantPrinter(
-                                results,
-                                temporary_variant_file,
-                                head,
-                                verbose
-                            )
-        
-        # get_batches put the variants in the queue and returns all chromosomer
-        # found among the variants
-        chromosome_list = get_batches(
-                                variant_parser, 
-                                variant_queue,
-                                individuals = [],
-                                gene_trees = gene_trees, 
-                                exon_trees = exon_trees, 
-                                phased = False, 
-                                vep = vep, 
-                                whole_genes = True, 
-                                verbosity = verbose
-                            )
-        
-        variant_queue.put(None)
-        
-        variant_queue.join()
-        
-        temporary_variant_file.seek(0)
-        
-        ## Add the new metadata to the headers:
-        add_metadata(head, ','.join(argument_list))
-        print_headers(head, outfile, silent)
-        
-        var_sorter = FileSort(
-                            infile=temporary_variant_file,
-                            mode='rank',
-                            outfile=outfile, 
-                            silent=silent
+    # We open a variant file to print the variants before sorting:
+    temporary_variant_file = open(
+                                temp_file.name, 
+                                mode='w', 
+                                encoding='utf-8', 
+                                errors='replace'
+                                )
+    
+    model_scorers = [
+                        VariantScorer(
+                            variant_queue,
+                            results,
+                            variant_parser.header,
+                            prefered_models,
+                            family_id,
+                            alt_dict, 
+                            score_dict, 
+                            value_dict,
+                            operation_dict, 
+                            verbose
                         )
-        var_sorter.sort()
-        
-    finally:
-        
-        temporary_variant_file.close()
-        os.remove(temp_file.name)
+                        for i in range(num_model_scorers)
+                    ]
+    
+    
+    for proc in model_scorers:
+        proc.start()
+    
+    # This process prints the variants to temporary files
+    var_printer = VariantPrinter(
+                        results,
+                        temporary_variant_file,
+                        head,
+                        mode='score',
+                        verbosity=verbose
+                    )
+    
+    var_printer.start()
+    
+    start_time_variant_parsing = datetime.now()
+    
+    if verbose:
+        print('Start parsing the variants ... \n', file=sys.stderr)
+    
+    # get_batches put the variants in the queue and returns all chromosomer
+    # found among the variants
+    chromosome_list = get_batches(
+                        variant_parser, 
+                        variant_queue,
+                        individuals = [],
+                        gene_trees = gene_trees, 
+                        exon_trees = exon_trees, 
+                        phased = False, 
+                        vep = vep, 
+                        whole_genes = True, 
+                        verbosity = verbose
+                    )
+    
+    
+    # Put stop signs in the variant queue
+    for i in range(num_model_scorers):
+        variant_queue.put(None)
+    
+    variant_queue.join()
+    
+    results.put(None)
+    var_printer.join()
+    
+    temporary_variant_file.close()
+    
+    if verbose:
+        print('Cromosomes found in variant file: %s \n' % ','.join(chromosome_list), file=sys.stderr)
+        print('Variants scored!\n', file=sys.stderr)
+    
+    
+    sort_variants(
+            infile=temp_file.name,
+            mode='rank',
+            verbose=verbose
+    )
+    
+    print_headers(head, outfile, silent)
+    
+    print_variants(temp_file.name, outfile, mode='modified',  silent=silent)
+    
+    os.remove(temp_file.name)
+    
+    if verbose:
+        print('Time for whole analyis: %s' % str(datetime.now() - start_time_analysis), file=sys.stderr)
+    
     
 if __name__ == '__main__':
     score()

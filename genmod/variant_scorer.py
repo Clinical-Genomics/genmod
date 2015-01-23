@@ -52,7 +52,7 @@ class VariantScorer(Process):
         # self.verbosity = args.verbose
         # self.phased = args.phased
     
-    def score_compounds(self, batch):
+    def score_compounds(self, batch, family_id):
         """
         Score the compounds in a batch.
         Takes av input a batch with variants and scores all the compound pairs.
@@ -69,34 +69,98 @@ class VariantScorer(Process):
         for variant_id in batch:
             comp_list = []
             variant = batch[variant_id]
-            for family in variant.get('compound_variants', {}):
-                print(family)
-            #     pair_1_score = int(variant.get('Individual_rank_score', 0))
-            #     pair_2_score = int(batch.get(comp, {}).get(
-            #                                     'Individual_rank_score', 0))
-            #     comp_score = pair_1_score + pair_2_score
-            #     if (pair_1_score < 10) or (pair_2_score < 10):
-            #         comp_score -= 6
-            #
-            #     comp_list.append(comp+'>'+str(comp_score))
-            # batch[var]['scored_compounds'] = ','.join(comp_list)
+            only_compound = True
+            for model in variant['genetic_models'].get(family_id,[]):
+                if model not in ['AR_comp', 'AR_comp_dn']:
+                    only_compound = False
+            
+            rank_score = int(variant.get('Individual_rank_score', 0))
+            # If the variant is only AR_compound and one of the variants in the 
+            # pair have a low compound score we want to downprioritize that
+            # variant
+            
+            highest_scoring_partner = 0
+            for compound in variant.get('compound_variants', {}).get(family_id, []):
+                compound_id = compound['variant_id']
+                
+                pair_2_score = int(batch.get(compound_id, {}).get(
+                                                'Individual_rank_score', 0))
+                
+                compound['compound_score'] = rank_score + pair_2_score
+                
+                if pair_2_score > highest_scoring_partner:
+                    highest_scoring_partner = pair_2_score
+            
+            # If the variant is only 'AR_comp' and all compound partners are
+            # low scoring variants we want to downprioritize the variant.
+            if rank_score > 10:
+                if only_compound:
+                    if (highest_scoring_partner < 10):
+                        rank_score -= 6
+                        variant['Individual_rank_score'] = rank_score
+                        for compound in variant.get(
+                                        'compound_variants', {}).get(family_id, []):
+                            compound['compound_score'] -= 6
     
-    def print_variants(self, batch, header, outfile):
-        """Prints the variants to a file"""
-        for variant in batch:
+    
+    def make_scored_compound_string(self, variant, family_id):
+        """
+        Make a new compound string with scores in the proper format.
+        
+        Args:
+            variant     : A dictionary with variant information
+            family_id   : The id of the family that we want to change for.
+        
+        Returns:
+            compound_string : A string on the proper compound format
+        
+        """
+        compound_list = []
+        for compound in variant.get('compound_variants', {}).get(family_id, []):
+            compound_id = compound['variant_id']
+            compound_score = str(compound['compound_score'])
+            compound_list.append(compound_id + '>' + compound_score)
+        
+        return '|'.join(compound_list)
+        
+    def make_print_version(self, batch, family_id):
+        """
+        Add the new informatin in the proper vcf format.
+        
+        Args:
+            batch  : A dictionary with variants
+            family_id   : The id of the family that we want to change for.
+        
+        """
+        for variant_id in batch:
             # Modify the INFO field:
-            info_field = batch[variant]['INFO'].split(';')
+            variant = batch[variant_id]
+            
+            # We turn the info field into a list
+            info_field = variant['INFO'].split(';')
             # We need to replace the compound field with the annotated variants
-            for pos in range(len(info_field)):
-                if info_field[pos].split('=')[0] == 'Compounds':
-                    if info_field[pos].split('=')[-1] != '-':
-                        info_field[pos] = ('Compounds=' +
-                                           batch[variant]['Compounds'])
-            info_field.append('RankScore=' +
-                              str(batch[variant]['Individual_rank_score']))
-            batch[variant]['INFO'] = ';'.join(info_field)
-            print_line = [batch[variant].get(entry, '-') for entry in header]
-            outfile.write('\t'.join(print_line) + '\n')
+            for position in range(len(info_field)):
+                
+                entry_info = info_field[position].split('=')
+                if entry_info[0] == 'Compounds':
+                    splitted_compunds = entry_info[1].split(',')
+                    for family_number in range(len(splitted_compunds)):
+                        if splitted_compunds[family_number].split(':')[0] == family_id:
+                            scored_compounds = self.make_scored_compound_string(
+                                    variant,
+                                    family_id
+                                )
+                            splitted_compunds[family_number] = ':'.join([family_id, scored_compounds])
+                    
+                    info_field[position] = ','.join(splitted_compunds)
+            
+            # Add the rank score to the info field 
+            info_field.append('RankScore=' + family_id + ':' +
+                              str(variant['Individual_rank_score']))
+            
+            variant['INFO'] = ';'.join(info_field)
+        
+        return
     
     def run(self):
         """Start the parsing"""
@@ -130,16 +194,10 @@ class VariantScorer(Process):
                         self.verbose
                     )
             
-            self.score_compounds(variant_batch)
-            
-            self.print_variants(
-                        variant_batch, 
-                        self.header,
-                        self.temp_file
-                    )
+            self.score_compounds(variant_batch, self.family_id)
+            self.make_print_version(variant_batch, self.family_id)
             
             self.results.put(variant_batch)
-            
             self.variant_queue.task_done()
 
 
