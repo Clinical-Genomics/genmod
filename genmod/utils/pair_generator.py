@@ -17,7 +17,7 @@ import sys
 import os
 import argparse
 
-class Pair_Generator(object):
+class PairGenerator(object):
     """Yeilds all unordered pairs from a list of objects as tuples, like (obj_1, obj_2)"""
     def __init__(self, list_of_objects):
         super(Pair_Generator, self).__init__()

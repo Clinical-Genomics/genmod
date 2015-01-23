@@ -1,2 +1,3 @@
 recursive-include examples *.ped *.vcf *.gz *.tbi
 recursive-include genmod/annotations *.db
+recursive-include genmod/configs *.ini

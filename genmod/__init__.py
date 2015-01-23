@@ -7,5 +7,11 @@ from genmod.variant_printer import VariantPrinter
 from genmod.get_batches import get_batches
 from genmod.variant_sorter import FileSort
 from genmod.utils import (sort_variants, load_annotations, is_number,
-    collectKeys, print_variants, print_headers, add_metadata)
+    collectKeys, print_variants, print_headers, add_metadata, PairGenerator)
 from genmod.errors import warning
+
+from genmod.models import check_dominant
+from genmod.models import check_recessive
+from genmod.models import check_compounds
+from genmod.models import check_X_recessive, check_X_dominant
+from genmod.models import score_variants

@@ -7,3 +7,4 @@ from genmod.utils.sort_variants import sort_variants
 from genmod.utils.print_variants import print_variants
 from genmod.utils.print_headers import print_headers
 from genmod.utils.add_metadata import add_metadata
+from genmod.utils.pair_generator import PairGenerator

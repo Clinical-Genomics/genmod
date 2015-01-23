@@ -16,10 +16,9 @@ import os
 
 from multiprocessing import Process
 from codecs import open
-from tempfile import NamedTemporaryFile
 from pprint import pprint as pp
 
-from genmod.errors import warning
+from genmod import warning
 
 class VariantPrinter(Process):
     """

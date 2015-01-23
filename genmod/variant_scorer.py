@@ -30,7 +30,7 @@ from multiprocessing import Process
 
 from pprint import pprint as pp
 
-from genmod.models import score_variants
+from genmod import score_variants
 
 
 class VariantScorer(Process):
@@ -163,7 +163,13 @@ class VariantScorer(Process):
         return
     
     def run(self):
-        """Start the parsing"""
+        """
+        Score all variants in the batches.
+        
+        Take the batches from the queue and score all variants.
+        Put the scored variants in the results queue for further processing.
+        
+        """
         proc_name = self.name
         
         if self.verbose:

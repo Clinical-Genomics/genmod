@@ -44,7 +44,7 @@ Created by Måns Magnusson on 2014-03-17.
 Copyright (c) 2014 __MyCompanyName__. All rights reserved.
 """
 
-from __future__ import print_function, unicode_literals
+from __future__ import (print_function, unicode_literals)
 
 import sys
 import os
@@ -52,15 +52,10 @@ import argparse
 from datetime import datetime
 from codecs import open
   
-try:
-    import cPickle as pickle
-except:
-    import pickle
-
 from pprint import pprint as pp
 
 from interval_tree import interval_tree
-from genmod.errors import warning
+from genmod import warning
 
 
 # These are the SO-terms for genetic variants used by VEP:

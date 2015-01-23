@@ -8,7 +8,8 @@ Analyze the the variants in a vcf, the following will be printed:
     - How many variants found
     - How many mendelian violations
     - How many variants where not covered in all individuals. (Default depth 7)
-    - How many variants did not satisfy the base call quality treshold. (Default 10)
+    - How many variants did not satisfy the base call 
+        quality treshold. (Default 10)
     - How many variants followed each model:
         - AR_hom
         - AR_comp
@@ -30,7 +31,7 @@ Created by Måns Magnusson on 2014-09-08.
 Copyright (c) 2014 __MoonsoInc__. All rights reserved.
 """
 
-from __future__ import print_function, unicode_literals, division
+from __future__ import (print_function, unicode_literals, division)
 
 import sys
 import os
@@ -45,7 +46,7 @@ import pkg_resources
 from vcf_parser import parser as vcf_parser
 
 import genmod
-from genmod.errors import warning
+from genmod import warning
 
 
 
@@ -139,10 +140,12 @@ def summarize(variant_file, frequency_treshold, frequency_keyword, cadd_treshold
     """
     Analyze the the variants in a vcf, the following will be printed:
     
-        - How many variants found\n
-        - How many variants did not satisfy the base call quality treshold. (Default 20)\n
-        - How many variants where not covered in all individuals. (Default depth 10)\n
-        - How many variants followed each model in each family:\n
+    - How many variants found\n
+    - How many variants did not satisfy the base call 
+        quality treshold. (Default 20)\n
+    - How many variants where not covered in all individuals. 
+        (Default depth 10)\n
+    - How many variants followed each model in each family:\n
             - AR_hom\n
             - AR_comp\n
             - AR_hom_dn\n
@@ -203,8 +206,24 @@ def summarize(variant_file, frequency_treshold, frequency_keyword, cadd_treshold
     
     for variant in variant_parser:
         
-        maf = min([float(frequency) for frequency in variant['info_dict'].get(frequency_keyword, '0').split(',')])
-        cadd_score = max([float(cscore) for cscore in variant['info_dict'].get(cadd_keyword, '0').split(',')])
+        maf = min(
+                [
+                    float(frequency) for frequency in 
+                        variant['info_dict'].get(
+                                            frequency_keyword, 
+                                            '0'
+                                            ).split(',')
+                ]
+                )
+        cadd_score = max(
+                [
+                    float(cscore) for cscore in 
+                    variant['info_dict'].get(
+                                        cadd_keyword, 
+                                        '0'
+                                        ).split(',')
+                ]
+                )
         reference = variant['REF']
         alternative = variant['ALT']
         
