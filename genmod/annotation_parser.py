@@ -61,7 +61,7 @@ from codecs import open, getreader
 
 from pprint import pprint as pp
 
-from genmod import is_number
+from genmod.utils import is_number
 
 from interval_tree import interval_tree
 

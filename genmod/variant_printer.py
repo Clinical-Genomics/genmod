@@ -18,7 +18,7 @@ from multiprocessing import Process
 from codecs import open
 from pprint import pprint as pp
 
-from genmod import warning
+from genmod.errors import warning
 
 class VariantPrinter(Process):
     """

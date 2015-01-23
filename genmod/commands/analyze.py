@@ -30,11 +30,11 @@ from configobj import ConfigObj
 
 import pkg_resources
 
-from vcf_parser import parser as vcf_parser
-from ped_parser import parser as ped_parser
+from vcf_parser import VCFParser
 
 import genmod
-from genmod import variant_sorter, variant_printer
+
+from genmod.utils import print_headers
 from genmod.errors import warning
 
 # This is an ad hoc solution to remove huge mostly uninteresting genes. 
@@ -73,29 +73,17 @@ def check_families(variant_file):
     """Loop through the vcf file and check which families that are found."""
     families = set([])
     if variant_file == '-':
-        variant_parser = vcf_parser.VCFParser(fsock = sys.stdin)
+        variant_parser = VCFParser(fsock = sys.stdin)
     else:
-        variant_parser = vcf_parser.VCFParser(infile = variant_file)
+        variant_parser = VCFParser(infile = variant_file)
     for variant in variant_parser:
         genetic_models = variant['info_dict'].get('GeneticModels', None)
         if genetic_models:
-            for family_models in genetic_models.split(','):
+            for family_models in genetic_models:
                 family = family_models.split(':')[0]
                 families.add(family)
     return families
 
-
-def print_headers(head, outfile=None, silent=False):
-    """Print the headers to a results file."""
-    if outfile:
-        with open(outfile, 'w', encoding='utf-8') as f:
-            for header_line in head.print_header():
-                f.write(header_line+'\n')
-    else:
-        if not silent:
-            for header_line in head.print_header():
-                print(header_line)
-    return
 
 def print_results(variant_dict, 
                     outfile, 
@@ -113,19 +101,33 @@ def print_results(variant_dict,
     length_of_output = 20
     for variant_id in variant_dict:
         # Get the score for each variant:
-        max_score = max([float(score) for score in variant_dict[variant_id]['info_dict'].get(score_key, '0').split(',')])
+        max_score = max(
+                            [
+                                float(score) for score in 
+                                variant_dict[variant_id]['info_dict'].get(
+                                                                    score_key, 
+                                                                    '0')
+                            ]
+                        )
         if mode == 'compound':
             # If we look at compounds we want to consider the combined score
             family_compounds = compound_dict[variant_id]['info_dict'].get('Compounds', None)
             if compounds:
-                for family in family_compounds.split(','):
+                for family in family_compounds:
                     splitted_compounds = family.split(':')
                     if splitted_compounds[0] == family_id:
                         compounds = splitted_compounds[1].split('|')
             
                 for variant_2_id in compounds:
                     if variant_2_id in variant_dict:
-                        max_score_2 = max([float(score) for score in variant_dict[variant_2_id]['info_dict'].get(score_key, '0').split(',')])
+                        max_score_2 = max(
+                                        [
+                                            float(score) for score in
+                                            variant_dict[variant_2_id]['info_dict'].get(
+                                                                                score_key, 
+                                                                                '0')
+                                        ]
+                                    )
                     if max_score_2 > 10:
                         # print(variant_dict[variant_2_id])
                         variant_pair = (variant_id, variant_2_id)
@@ -183,9 +185,9 @@ def print_results(variant_dict,
                                 variant_dict[variant_id]['POS'],
                                 variant_dict[variant_id]['REF'],
                                 variant_dict[variant_id]['ALT'],
-                                variant_dict[variant_id]['info_dict'].get(score_key, '-'),
-                                variant_dict[variant_id]['info_dict'].get(freq_key, '-'),
-                                variant_dict[variant_id]['info_dict'].get('Annotation', '-')
+                                variant_dict[variant_id]['info_dict'].get(score_key, ['-'])[0],
+                                variant_dict[variant_id]['info_dict'].get(freq_key, ['-'])[0],
+                                variant_dict[variant_id]['info_dict'].get('Annotation', ['-'])[0]
                             ]
                 # Print the highest ranked variants to screen:
                 if i < length_of_output:
@@ -257,20 +259,10 @@ def covered_in_all(variant, coverage_treshold = 7):
     return True
         
 
-def get_interesting_variants(variant_parser, 
-                                family_id, 
-                                dominant_dict, 
-                                homozygote_dict, 
-                                compound_dict, 
-                                x_linked_dict,
-                                dominant_dn_dict, 
-                                freq_treshold, 
-                                freq_keyword, 
-                                cadd_treshold, 
-                                cadd_keyword,
-                                gq_treshold, 
-                                coverage, 
-                                exclude_problematic):
+def get_interesting_variants(variant_parser, family_id, dominant_dict, 
+        homozygote_dict, compound_dict, x_linked_dict, dominant_dn_dict, 
+        freq_treshold, freq_keyword, cadd_treshold, cadd_keyword, gq_treshold, 
+        coverage, exclude_problematic):
     """Collect the interesting variants in their dictionarys. add RankScore."""
     
     inheritance_keyword = 'GeneticModels'
@@ -285,19 +277,35 @@ def get_interesting_variants(variant_parser,
     
     
     for variant in variant_parser:
-        annotation = set(variant['info_dict'].get('Annotation', '').split(','))
+        annotation = set(variant['info_dict'].get('Annotation', ''))
         models_found = set([])
         
         family_models = variant['info_dict'].get(inheritance_keyword, None)
         if family_models:
             #This is a string on the form 'fam_1:AR_hom,fam_2:AR_hom|AR_hom_dn
-            for family_info in family_models.split(','):
+            for family_info in family_models:
                 splitted_family = family_info.split(':')
                 if splitted_family[0] == family_id:
                     models_found = set(splitted_family[1].split('|'))
         
-        maf = min([float(frequency) for frequency in variant['info_dict'].get(freq_keyword, '0').split(',')])
-        cadd_score = max([float(cscore) for cscore in variant['info_dict'].get(cadd_keyword, '0').split(',')])
+        maf = min(
+                    [
+                        float(frequency) for frequency in 
+                        variant['info_dict'].get(
+                                            freq_keyword, 
+                                            '0'
+                                            )
+                    ]
+                )
+        cadd_score = max(
+                            [
+                                float(cscore) for cscore in 
+                                variant['info_dict'].get(
+                                                cadd_keyword, 
+                                                '0'
+                                                )
+                            ]
+                        )
         
         variant_id = variant['variant_id']
         
@@ -457,7 +465,7 @@ def analyze(variant_file, family_type, frequency_treshold, frequency_keyword,
     
     inheritance_keyword = 'GeneticModels'
     families = check_families(variant_file)
-    vcf_file_name = os.path.splitext(os.path.split(variant_file)[-1])[0]
+    file_name = os.path.splitext(os.path.split(variant_file)[-1])[0]
     
     
     # if config_file:
@@ -468,9 +476,9 @@ def analyze(variant_file, family_type, frequency_treshold, frequency_keyword,
     #     prefered_models = make_models(inheritance_patterns)
     
     if variant_file == '-':
-        variant_parser = vcf_parser.VCFParser(fsock = sys.stdin)
+        variant_parser = VCFParser(fsock = sys.stdin)
     else:
-        variant_parser = vcf_parser.VCFParser(infile = variant_file)
+        variant_parser = VCFParser(infile = variant_file)
     
     for family_id in families:
         print('Analysis for family: %s' % family_id)
@@ -506,6 +514,7 @@ def analyze(variant_file, family_type, frequency_treshold, frequency_keyword,
                                     outdir, 
                                     file_name+'_dominant_analysis.vcf'
                                     )
+            
             print_headers(head, dominant_file)
             
             print_results(

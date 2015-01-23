@@ -20,7 +20,7 @@ import argparse
 class PairGenerator(object):
     """Yeilds all unordered pairs from a list of objects as tuples, like (obj_1, obj_2)"""
     def __init__(self, list_of_objects):
-        super(Pair_Generator, self).__init__()
+        super(PairGenerator, self).__init__()
         if len(list_of_objects) < 2:
             #TODO raise a proper exception here
             raise SyntaxError('List must include at least 2 objects!. List: %s' % list_of_objects)

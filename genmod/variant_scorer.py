@@ -30,7 +30,7 @@ from multiprocessing import Process
 
 from pprint import pprint as pp
 
-from genmod import score_variants
+from genmod.models import score_variants
 
 
 class VariantScorer(Process):

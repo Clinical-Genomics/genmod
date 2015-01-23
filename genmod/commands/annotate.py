@@ -87,15 +87,15 @@ def check_tabix_index(compressed_file, file_type='cadd', verbose=False):
                     is_flag=True,
                     help='If variants are annotated with the Variant Effect Predictor.'
 )
-@click.option('-p' ,'--phased', 
+@click.option('--phased', 
                     is_flag=True,
                     help='If data is phased use this flag.'
 )
-@click.option('-strict' ,'--strict', 
+@click.option('-s' ,'--strict', 
                     is_flag=True,
                     help='If strict model annotations should be used(see documentation).'
 )
-@click.option('-s' ,'--silent', 
+@click.option('--silent', 
                     is_flag=True,
                     help='Do not print the variants.'
 )

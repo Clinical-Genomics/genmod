@@ -111,8 +111,8 @@ def check_compounds(variant_1, variant_2, family, intervals, phased):
                 if variant_1_interval == variant_2_interval:
                 # If they are in the same interval they can not be on same 
                 #allele
-                    if (genotype_1.allele_1 == genotype_2.allele_1) or 
-                        (genotype_1.allele_2 == genotype_2.allele_2):
+                    if ((genotype_1.allele_1 == genotype_2.allele_1) or 
+                        (genotype_1.allele_2 == genotype_2.allele_2)):
                         return False
     
     return True

@@ -55,7 +55,7 @@ from codecs import open
 from pprint import pprint as pp
 
 from interval_tree import interval_tree
-from genmod import warning
+from genmod.errors import warning
 
 
 # These are the SO-terms for genetic variants used by VEP:

@@ -66,8 +66,9 @@ import sys
 from datetime import datetime
 from pprint import pprint as pp
 
-from genmod import (PairGenerator, check_dominant, check_recessive, 
-                    check_compounds, check_X_recessive, check_X_dominant)
+from genmod.models import (check_dominant, check_recessive, 
+                        check_compounds, check_X_recessive, check_X_dominant)
+from genmod.utils import PairGenerator
 
 def check_genetic_models(variant_batch, families, verbose = False, 
                         phased = False, strict = False, proc_name = None):
@@ -166,7 +167,7 @@ def check_genetic_models(variant_batch, families, verbose = False,
             # Now check the compound models:
             
         if len(compound_candidates) > 1:
-            compound_pairs = pair_generator.Pair_Generator(compound_candidates)
+            compound_pairs = PairGenerator(compound_candidates)
             for pair in compound_pairs.generate_pairs():
             # If the variants in the pair belong to the same gene we check for compounds:
                 variant_1 = variant_batch[pair[0]]
