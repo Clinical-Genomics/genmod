@@ -16,7 +16,7 @@ except (IOError, ImportError, RuntimeError):
 #     long_description = file.read()
 
 setup(name='genmod',
-    version='1.10.2',
+    version='2.0',
     description='Annotate genetic inheritance models in variant files',
     author = 'Mans Magnusson',
     author_email = 'mans.magnusson@scilifelab.se',
