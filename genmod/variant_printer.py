@@ -16,20 +16,39 @@ import os
 
 from multiprocessing import Process
 from codecs import open
-from tempfile import NamedTemporaryFile
 from pprint import pprint as pp
 
 from genmod.errors import warning
 
 class VariantPrinter(Process):
-    """docstring for VariantPrinter"""
-    def __init__(self, task_queue, temp_dir, head, verbosity):
+    """
+    Print variants to a temporary file.
+    
+    There are two modes that will be used when sorting the file.
+    'chromosome': In this case the priority order of the chromosome is printed
+                    to the first position in the results file
+    
+    'score': Here the Individual score of the variant is printed to the first
+            position of the results file
+    
+    Args:
+        task_queue : A variants queue with batches of variants
+        temp_file : The temporary file that all variants should be printed to
+        head : The header line to specify what from the variant object to print
+        mode : 'chromosome' or 'score'. See above.
+        chr_map : If mode='chromosome' we need a map to specify the sort order
+                    of the chromosomes
+        verbosity : Increase output verbosity
+    
+    """
+    def __init__(self, task_queue, temp_file, head, mode='chromosome', 
+                verbosity=False):
         Process.__init__(self)
         self.task_queue = task_queue
         self.verbosity = verbosity
-        self.file_handles = {}
-        self.temp_dir = temp_dir
+        self.temp_file = temp_file
         self.header = head.header
+        self.mode = mode
     
     def run(self):
         """Starts the printing"""
@@ -49,25 +68,43 @@ class VariantPrinter(Process):
             if next_result is None:
                 if self.verbosity:
                     print('All variants printed!', file=sys.stderr)
-                for chromosome in self.file_handles:
-                    self.file_handles[chromosome].close()
+                self.temp_file.close()
                 break
                 
             else:
                 
                 for variant_id in next_result:
-                    chrom = next_result[variant_id]['CHROM']
+                    variant = next_result[variant_id]
                     
-                    if chrom.startswith('chr'):
-                        chrom = chrom[3:]
-                    print_line = [next_result[variant_id].get(entry, '-') for entry in self.header]
-                    if chrom in self.file_handles:
-                        self.file_handles[chrom].write('\t'.join(print_line) + '\n')
+                    if self.mode == 'score':
+                        try:
+                            priority = variant['Individual_rank_score']
+                        except KeyError:
+                            priority = '0'
+                    elif self.mode == 'chromosome':
+                        chrom = variant['CHROM']
+                        if chrom.startswith('chr'):
+                            chrom = chrom[3:]
+                        try:
+                            priority = int(chrom)
+                        except ValueError:
+                            if chrom == 'X':
+                                priority = 23
+                            elif chrom == 'Y':
+                                priority = 24
+                            elif chrom == 'MT':
+                                priority = 25
+                            else:
+                                priority = 26
                     else:
-                        temp_file = NamedTemporaryFile(prefix=chrom+'_', dir=self.temp_dir, delete=False)
-                        temp_file.close()
-                        self.file_handles[chrom] = open(temp_file.name, mode='w', encoding='utf-8', errors='replace')
-                        self.file_handles[chrom].write('\t'.join(print_line) + '\n')
+                        raise SyntaxError("""Need to specify priority mode for 
+                                            printing the variants""")
+                    
+                    print_line = [str(priority)] + [variant.get(entry, '-')
+                                                 for entry in self.header]
+                    
+                    self.temp_file.write('\t'.join(print_line) + '\n')
+        
         return
     
 def main():
