@@ -210,7 +210,8 @@ def main():
     from tempfile import NamedTemporaryFile
     from score_mip_variants import variant_sorter
     from vcf_parser import parser
-
+    from codecs import open
+    
     parser = argparse.ArgumentParser(description=
                                      "Parse different kind of pedigree files.")
     parser.add_argument('variant_file',
@@ -244,9 +245,9 @@ def main():
     my_parser.parse()
     temporary_variant_file.seek(0)
 
-    for variant_line in open(temporary_variant_file.name, 'r'):
-
-        print(variant_line.rstrip().split('\t')[7].split(';')[-1].split('=')[-1])
+    with open(temporary_variant_file.name, 'r', encoding='utf-8') as f:
+        for variant_line in f:
+            print(variant_line.rstrip().split('\t')[7].split(';')[-1].split('=')[-1])
 
     # outFile=args.outfile[0]
     var_sorter = variant_sorter.FileSort(temporary_variant_file,
