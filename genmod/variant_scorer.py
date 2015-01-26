@@ -153,6 +153,9 @@ class VariantScorer(Process):
                     
                     info_field[position] = 'Compounds=' + ','.join(splitted_compunds)
             
+            info_field.append('IndividualRankScore=' + family_id + ':' +
+                              str(variant['original_rank_score']))
+            
             # Add the rank score to the info field 
             info_field.append('RankScore=' + family_id + ':' +
                               str(variant['Individual_rank_score']))
@@ -198,6 +201,12 @@ class VariantScorer(Process):
                         self.operation_dict,
                         self.verbose
                     )
+            
+            # We want to store the original rank score for traceability since
+            # the rank score can change during the process:
+            for variant_id in variant_batch:
+                variant = variant_batch[variant_id]
+                variant['original_rank_score'] = variant.get('Individual_rank_score', '0')
             
             self.score_compounds(variant_batch, self.family_id)
             self.make_print_version(variant_batch, self.family_id)
