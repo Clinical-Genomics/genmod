@@ -15,6 +15,7 @@ import sys
 import os
 import click
 
+from codecs import open
 
 def print_headers(head, outfile=None, silent=False):
     """

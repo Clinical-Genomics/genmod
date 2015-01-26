@@ -20,6 +20,8 @@ try:
 except:
     import pickle
 
+from codecs import open
+
 from genmod.errors import warning
 
 
