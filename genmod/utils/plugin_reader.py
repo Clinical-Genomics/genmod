@@ -10,6 +10,8 @@ Created by Henrik Stranneheim on 2015-01-12.
 Copyright (c) 2015 __MyCompanyName__. All rights reserved.
 """
 
+from __future__ import print_function, unicode_literals
+
 import sys
 import configparser
 

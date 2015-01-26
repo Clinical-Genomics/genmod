@@ -9,6 +9,8 @@ Created by Måns Magnusson on 2015-01-22.
 Copyright (c) 2015 __MoonsoInc__. All rights reserved.
 """
 
+from __future__ import print_function, unicode_literals
+
 import sys
 import os
 import click
