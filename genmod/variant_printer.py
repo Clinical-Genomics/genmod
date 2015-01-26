@@ -15,7 +15,6 @@ import sys
 import os
 
 from multiprocessing import Process
-from codecs import open
 from pprint import pprint as pp
 
 from genmod.errors import warning
