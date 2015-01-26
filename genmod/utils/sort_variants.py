@@ -9,6 +9,8 @@ Created by Måns Magnusson on 2015-01-22.
 Copyright (c) 2015 __MoonsoInc__. All rights reserved.
 """
 
+from __future__ import print_function, unicode_literals
+
 import sys
 import os
 import click
@@ -38,16 +40,16 @@ def sort_variants(infile, mode='chromosome', verbose=False):
             'sort',
             ]
     if mode == 'chromosome':
-        command.append('-n')        
+        command.append('-n')
         command.append('-k1')
         command.append('-k3')
-    
+
     elif mode == 'rank':
         command.append('-rn')
         command.append('-k1')
-        
+
     command = command + [infile, '-o', infile]
-    
+
     if verbose:
         print("Start sorting variants...", file=sys.stderr)
         print("Sort command: %s" % ' '.join(command), file=sys.stderr)
@@ -57,14 +59,13 @@ def sort_variants(infile, mode='chromosome', verbose=False):
         call(command)
     except OSError:
         if verbose:
-            print("unix command sort does not seem to exist on your system...",
-                    file=sys.stderr)
+            print("unix command sort does not seem to exist on your system...")
             print("genmod needs unix sort to provide a sorted output.",
                     file=sys.stderr)
         print("""Output VCF will not be sorted since genmod can not find
                 unix sort""", file=sys.stderr)
         return 1
-    
+
     if verbose:
         print("Sorting done!", file=sys.stderr)
         print("Time to sort %s" % (datetime.now()-sort_start), file=sys.stderr)
