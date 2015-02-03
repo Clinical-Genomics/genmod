@@ -162,7 +162,7 @@ class VariantScorer(Process):
             variant['INFO'] = ';'.join(info_field)
         
         return
-    
+
     def run(self):
         """
         Score all variants in the batches.
@@ -188,8 +188,6 @@ class VariantScorer(Process):
             
             # We can now free som space by removing the haploblocks
             variant_batch.pop('haploblocks', None)
-            
-            
             
             score_variants(
                         variant_batch, 

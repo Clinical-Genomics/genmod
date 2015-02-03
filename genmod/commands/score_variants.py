@@ -144,6 +144,7 @@ def get_genetic_models(family_file, family_type):
               count=True,
               help='Increase output verbosity. If -vv all scores will be printed'
 )
+
 def score(family_file, variant_file, family_type, annotation_dir, vep,
                        plugin_file, processes, silent, outfile, verbose):
     """
@@ -287,7 +288,7 @@ def score(family_file, variant_file, family_type, annotation_dir, vep,
     if verbose:
         print('Start parsing the variants ... \n', file=sys.stderr)
     
-    # get_batches put the variants in the queue and returns all chromosomer
+    # get_batches put the variants in the queue and returns all chromosomes
     # found among the variants
     chromosome_list = get_batches(
                         variant_parser, 
