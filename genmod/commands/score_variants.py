@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # encoding: utf-8
 """
-score.py
+score_variants.py
 
 Script for scoring genetic variants in VCF files.
 
@@ -95,22 +95,6 @@ def get_genetic_models(family_file, family_type):
     # Stupid thing but for now when we only look at one family
     return inheritance_models, family_id
 
-def print_version(ctx, param, value):
-    """Callback function for printing version and exiting.
-
-    Args:
-        ctx   (object) : Current context
-        param (object) : Click parameter(s)
-        value (boolean) : Click parameter was supplied or not
-
-    Returns:
-        None:
-    """
-    if not value or ctx.resilient_parsing:
-        return
-    click.echo('score_mip_variants version: ' + VERSION)
-    ctx.exit()
-
 
 @click.command()
 @click.argument('variant_file',
@@ -149,7 +133,7 @@ def print_version(ctx, param, value):
 )
 @click.option('-pi', '--plugin_file',
               type=click.Path(exists=True),
-              default=pkg_resources.resource_filename('genmod', 'configs/rank_model_test_v1.0.ini'),
+              default=pkg_resources.resource_filename('genmod', 'configs/rank_model_test_v1.4.ini'),
               help="The plug-in config file(.ini)"
 )
 @click.option('-p', '--processes', 
