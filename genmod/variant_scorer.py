@@ -1,14 +1,13 @@
 #!/usr/bin/env python
 # encoding: utf-8
 """
-vcf_parser.py
+variant_scorer.py
 
-Parse a file with variant info in vcf format.
+Score a file with variant info in vcf format.
 
 Creates batches and put them into a queue object.
 The batches are dictionary objects with overlapping features where the feature
 id:s are keys and the values are dictionarys with variants.
-
 
 Batch = {feature_1_id:{variant_1_id:variant_1_info, variant_2_id:
 variant_2_info}, feature_2_id:... }
@@ -33,7 +32,7 @@ from genmod.models import score_variants
 
 
 class VariantScorer(Process):
-    """Creates parser objects for parsing variant files"""
+    """Creates parser objects for scoring variants in vcf files"""
     def __init__(self, variant_queue, results, header,
                 models_of_inheritance, family_id, alt_dict, score_dict, 
                 value_dict, operation_dict, verbose):
@@ -163,7 +162,7 @@ class VariantScorer(Process):
             variant['INFO'] = ';'.join(info_field)
         
         return
-    
+
     def run(self):
         """
         Score all variants in the batches.
@@ -190,8 +189,6 @@ class VariantScorer(Process):
             # We can now free som space by removing the haploblocks
             variant_batch.pop('haploblocks', None)
             
-            
-            
             score_variants(
                         variant_batch, 
                         self.prefered_models,
@@ -217,10 +214,9 @@ class VariantScorer(Process):
 
 def main():
     from tempfile import NamedTemporaryFile
-    from score_mip_variants import variant_sorter
     from vcf_parser import parser
     from codecs import open
-    
+
     parser = argparse.ArgumentParser(description=
                                      "Parse different kind of pedigree files.")
     parser.add_argument('variant_file',
