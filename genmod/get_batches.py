@@ -90,8 +90,9 @@ INTERESTING_SO_TERMS = set(
             ]
 )
 
-def get_batches(variant_parser, batch_queue, individuals, gene_trees={}, exon_trees={}, phased=False, 
-                    vep=False, whole_genes=False, verbosity=False):
+def get_batches(variant_parser, batch_queue, individuals, gene_trees={}, 
+                exon_trees={}, phased=False, vep=False, whole_genes=False, 
+                verbosity=False):
     """
     Create batches and put them into the queue.
     Annotate the variants with regions, either from the annotation built by
@@ -129,7 +130,14 @@ def get_batches(variant_parser, batch_queue, individuals, gene_trees={}, exon_tr
             new_chrom = new_chrom[3:]
         
         # Annotate which features the variant belongs to:
-        annotate_variant(variant, gene_trees, exon_trees, vep, whole_genes)
+        annotate_variant(
+                            variant, 
+                            gene_trees, 
+                            exon_trees, 
+                            vep, 
+                            whole_genes, 
+                            verbosity
+                        )
         
         new_features = variant['annotation']
         
@@ -189,7 +197,10 @@ def get_batches(variant_parser, batch_queue, individuals, gene_trees={}, exon_tr
                 
                 if verbosity:
                     print('Chromosome %s parsed!' % current_chrom, file=sys.stderr)
-                    print('Time to parse chromosome %s' % str(datetime.now()-start_chrom_time), file=sys.stderr)
+                    print('Time to parse chromosome %s' % 
+                            str(datetime.now()-start_chrom_time), 
+                            file=sys.stderr
+                            )
                     start_chrom_time = datetime.now()
             
                 current_chrom = new_chrom
@@ -285,7 +296,7 @@ def check_vep_annotation(variant):
     return annotation
         
     
-def annotate_variant(variant, gene_trees, exon_trees, vep, whole_genes):
+def annotate_variant(variant, gene_trees, exon_trees, vep, whole_genes, verbosity):
     """
     Annotate variants with what regions the belong.
     Adds 'annotation' = set(set, of, genes) and 
