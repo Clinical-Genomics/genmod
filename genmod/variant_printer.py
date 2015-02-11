@@ -17,7 +17,11 @@ import os
 from multiprocessing import Process
 from pprint import pprint as pp
 
-from genmod.errors import warning
+# Import third party library
+# https://github.com/mitsuhiko/logbook
+from logbook import Logger, StderrHandler
+log = Logger('Logbook')
+log_handler = StderrHandler()
 
 class VariantPrinter(Process):
     """
@@ -55,18 +59,18 @@ class VariantPrinter(Process):
         number_of_finished = 0
         proc_name = self.name
         if self.verbosity:
-            print(('%s: starting!' % proc_name), file=sys.stderr)
+            log.info(('%s: starting!' % proc_name))
         while True:
             
             next_result = self.task_queue.get()
             
             if self.verbosity:
                 if self.task_queue.full():
-                    warning('Printing queue full')
+                    log.warn('Printing queue full')
             
             if next_result is None:
                 if self.verbosity:
-                    print('All variants printed!', file=sys.stderr)
+                    log.info('All variants printed!')
                 self.temp_file.close()
                 break
                 

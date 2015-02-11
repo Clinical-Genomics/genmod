@@ -26,6 +26,12 @@ from math import log10
 from genmod import check_genetic_models
 from genmod.errors import warning
 
+# Import third party library
+# https://github.com/mitsuhiko/logbook
+from logbook import Logger, StderrHandler
+log = Logger('Logbook')
+log_handler = StderrHandler()
+
 class VariantConsumer(Process):
     """
     Yeilds all unordered pairs from a list of objects as tuples, 
@@ -371,7 +377,7 @@ class VariantConsumer(Process):
         """Run the consuming"""
         proc_name = self.name
         if self.verbosity:
-            print('%s: Starting!' % proc_name, file=sys.stderr)
+            log.info('%s: Starting!' % proc_name)
         while True:
             # A batch is a dictionary on the form {variant_id:variant_dict}
             variant_batch = self.task_queue.get()
@@ -379,7 +385,7 @@ class VariantConsumer(Process):
             if variant_batch is None:
                 self.task_queue.task_done()
                 if self.verbosity:
-                    print('%s: Exiting' % proc_name, file=sys.stderr)
+                    log.info('%s: Exiting' % proc_name)
                 break
 
             
