@@ -30,6 +30,12 @@ from pprint import pprint as pp
 
 from genmod.models import score_variants
 
+# Import third party library
+# https://github.com/mitsuhiko/logbook
+from logbook import Logger, StderrHandler
+log = Logger('Logbook')
+log_handler = StderrHandler()
+
 
 class VariantScorer(Process):
     """Creates parser objects for scoring variants in vcf files"""
@@ -174,7 +180,7 @@ class VariantScorer(Process):
         proc_name = self.name
         
         if self.verbose:
-            print('%s: Starting!' % proc_name, file=sys.stderr)
+            log.info('%s: Starting!' % proc_name)
         
         while True:
             # A batch is a dictionary on the form {variant_id:variant_dict}
@@ -183,7 +189,7 @@ class VariantScorer(Process):
             if variant_batch is None:
                 self.variant_queue.task_done()
                 if self.verbose:
-                    print('%s: Exiting' % proc_name, file=sys.stderr)
+                    log.info('%s: Exiting' % proc_name)
                 break
             
             # We can now free som space by removing the haploblocks
