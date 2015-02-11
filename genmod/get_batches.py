@@ -57,6 +57,11 @@ from pprint import pprint as pp
 from interval_tree import interval_tree
 from genmod.errors import warning
 
+# Import third party library
+# https://github.com/mitsuhiko/logbook
+from logbook import Logger, StderrHandler
+log = Logger('Logbook')
+log_handler = StderrHandler()
 
 # These are the SO-terms for genetic variants used by VEP:
 INTERESTING_SO_TERMS = set(
@@ -135,9 +140,9 @@ def get_batches(variant_parser, batch_queue, individuals, gene_trees={}, exon_tr
         
         if verbosity:
             if nr_of_variants % 20000 == 0:
-                print('%s variants parsed!' % nr_of_variants, file=sys.stderr)
-                print('Last 20.000 took %s to parse.\n' % 
-                        str(datetime.now() - start_twenty_time), file=sys.stderr)
+                log.info('%s variants parsed!' % nr_of_variants)
+                log.info('Last 20.000 took %s to parse.\n' % 
+                         str(datetime.now() - start_twenty_time))
                 start_twenty_time = datetime.now()
         
         # If we look at the first variant, setup boundary conditions:
@@ -188,8 +193,8 @@ def get_batches(variant_parser, batch_queue, individuals, gene_trees={}, exon_tr
                 send = True
                 
                 if verbosity:
-                    print('Chromosome %s parsed!' % current_chrom, file=sys.stderr)
-                    print('Time to parse chromosome %s' % str(datetime.now()-start_chrom_time), file=sys.stderr)
+                    log.info('Chromosome %s parsed!' % current_chrom)
+                    log.info('Time to parse chromosome %s' % str(datetime.now()-start_chrom_time))
                     start_chrom_time = datetime.now()
             
                 current_chrom = new_chrom
@@ -232,12 +237,12 @@ def get_batches(variant_parser, batch_queue, individuals, gene_trees={}, exon_tr
     nr_of_batches += 1
     
     if verbosity:
-        print('Chromosome %s parsed!' % current_chrom, file=sys.stderr)
-        print('Time to parse chromosome %s \n' % str(datetime.now()-start_chrom_time), file=sys.stderr)
-        print('Variants parsed!', file=sys.stderr)
-        print('Time to parse variants:%s' % str(datetime.now() - start_parsing_time), file=sys.stderr)
-        print('Number of variants in variant file:%s\n' % nr_of_variants, file=sys.stderr)
-        print('Number of batches created:%s\n' % nr_of_batches, file=sys.stderr)
+        log.info('Chromosome %s parsed!' % current_chrom)
+        log.info('Time to parse chromosome %s \n' % str(datetime.now()-start_chrom_time))
+        log.info('Variants parsed!')
+        log.info('Time to parse variants:%s' % str(datetime.now() - start_parsing_time))
+        log.info('Number of variants in variant file:%s\n' % nr_of_variants)
+        log.info('Number of batches created:%s\n' % nr_of_batches)
     
     if phased:
     # Create an interval tree for each individual with the phasing intervals
