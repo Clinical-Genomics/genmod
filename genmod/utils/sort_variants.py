@@ -19,6 +19,12 @@ import click
 from subprocess import call
 from datetime import datetime
 
+# Import third party library
+# https://github.com/mitsuhiko/logbook
+from logbook import Logger, StderrHandler
+log = Logger('Logbook')
+log_handler = StderrHandler()
+
 
 def sort_variants(infile, mode='chromosome', verbose=False):
     """
@@ -51,24 +57,23 @@ def sort_variants(infile, mode='chromosome', verbose=False):
     command = command + [infile, '-o', infile]
 
     if verbose:
-        print("Start sorting variants...", file=sys.stderr)
-        print("Sort command: %s" % ' '.join(command), file=sys.stderr)
+        log.info("Start sorting variants...")
+        log.info("Sort command: %s" % ' '.join(command))
         sort_start = datetime.now()
     
     try:
         call(command)
     except OSError:
         if verbose:
-            print("unix command sort does not seem to exist on your system...")
-            print("genmod needs unix sort to provide a sorted output.",
-                    file=sys.stderr)
-        print("""Output VCF will not be sorted since genmod can not find
-                unix sort""", file=sys.stderr)
+            log.warn("unix command sort does not seem to exist on your system...")
+            log.warn("genmod needs unix sort to provide a sorted output.")
+        log.warn("""Output VCF will not be sorted since genmod can not find
+                unix sort""")
         return 1
 
     if verbose:
-        print("Sorting done!", file=sys.stderr)
-        print("Time to sort %s" % (datetime.now()-sort_start), file=sys.stderr)
+        log.info("Sorting done!")
+        log.info("Time to sort %s" % (datetime.now()-sort_start))
     
     return 0
 

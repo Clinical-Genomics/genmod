@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # encoding: utf-8
 """
-score.py
+score_variants.py
 
 Script for scoring genetic variants in VCF files.
 
@@ -95,22 +95,6 @@ def get_genetic_models(family_file, family_type):
     # Stupid thing but for now when we only look at one family
     return inheritance_models, family_id
 
-def print_version(ctx, param, value):
-    """Callback function for printing version and exiting.
-
-    Args:
-        ctx   (object) : Current context
-        param (object) : Click parameter(s)
-        value (boolean) : Click parameter was supplied or not
-
-    Returns:
-        None:
-    """
-    if not value or ctx.resilient_parsing:
-        return
-    click.echo('score_mip_variants version: ' + VERSION)
-    ctx.exit()
-
 
 @click.command()
 @click.argument('variant_file',
@@ -149,7 +133,7 @@ def print_version(ctx, param, value):
 )
 @click.option('-pi', '--plugin_file',
               type=click.Path(exists=True),
-              default=pkg_resources.resource_filename('genmod', 'configs/rank_model_test_v1.0.ini'),
+              default=pkg_resources.resource_filename('genmod', 'configs/rank_model_test_v1.4.ini'),
               help="The plug-in config file(.ini)"
 )
 @click.option('-p', '--processes', 
@@ -160,6 +144,7 @@ def print_version(ctx, param, value):
               count=True,
               help='Increase output verbosity. If -vv all scores will be printed'
 )
+
 def score(family_file, variant_file, family_type, annotation_dir, vep,
                        plugin_file, processes, silent, outfile, verbose):
     """
@@ -177,8 +162,7 @@ def score(family_file, variant_file, family_type, annotation_dir, vep,
     
     
     if verbose:
-        print('\nRunning GENMOD score, version: %s \n' % VERSION, 
-                file=sys.stderr)
+        log.info('Running GENMOD score, version: %s \n' % VERSION)
     
     ## Start by parsing the pedigree file:
     prefered_models = []
@@ -191,8 +175,8 @@ def score(family_file, variant_file, family_type, annotation_dir, vep,
                                                     )
     
     if verbose:
-        print('Prefered model found in family file: %s \n' % 
-                prefered_models, file=sys.stderr)
+        log.info('Prefered model found in family file: %s \n' % 
+                prefered_models)
     
     ######### Read to the annotation data structures #########
     
@@ -204,7 +188,7 @@ def score(family_file, variant_file, family_type, annotation_dir, vep,
         gene_trees, exon_trees = load_annotations(annotation_dir, verbose)
     else:
         if verbose:
-            print('Using VEP annotation', file=sys.stderr)
+            log.info('Using VEP annotation')
     
     ## Check the variants:
     
@@ -252,8 +236,8 @@ def score(family_file, variant_file, family_type, annotation_dir, vep,
     num_model_scorers = processes
     
     if verbose:
-        print('Number of CPU:s %s' % cpu_count(), file=sys.stderr)
-        print('Number of model scorers: %s' % num_model_scorers, file=sys.stderr)
+        log.info('Number of CPU:s %s' % cpu_count(), file=sys.stderr)
+        log.info('Number of model scorers: %s' % num_model_scorers, file=sys.stderr)
     
     
     temp_file = NamedTemporaryFile(delete=False)
@@ -301,9 +285,9 @@ def score(family_file, variant_file, family_type, annotation_dir, vep,
     start_time_variant_parsing = datetime.now()
     
     if verbose:
-        print('Start parsing the variants ... \n', file=sys.stderr)
+        log.info('Start parsing the variants ... \n')
     
-    # get_batches put the variants in the queue and returns all chromosomer
+    # get_batches put the variants in the queue and returns all chromosomes
     # found among the variants
     chromosome_list = get_batches(
                         variant_parser, 
@@ -330,8 +314,8 @@ def score(family_file, variant_file, family_type, annotation_dir, vep,
     temporary_variant_file.close()
     
     if verbose:
-        print('Cromosomes found in variant file: %s \n' % ','.join(chromosome_list), file=sys.stderr)
-        print('Variants scored!\n', file=sys.stderr)
+        log.info('Cromosomes found in variant file: %s \n' % ','.join(chromosome_list))
+        log.info('Variants scored!\n')
     
     
     sort_variants(
@@ -347,7 +331,7 @@ def score(family_file, variant_file, family_type, annotation_dir, vep,
     os.remove(temp_file.name)
     
     if verbose:
-        print('Time for whole analyis: %s' % str(datetime.now() - start_time_analysis), file=sys.stderr)
+        log.info('Time for whole analyis: %s' % str(datetime.now() - start_time_analysis))
     
     
 if __name__ == '__main__':
