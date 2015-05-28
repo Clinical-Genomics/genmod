@@ -48,8 +48,9 @@ from __future__ import print_function, unicode_literals
 
 import sys
 import os
-import argparse
 import gzip
+
+import click
 import genmod
 try:
     import cPickle as pickle
@@ -113,7 +114,11 @@ class AnnotationParser(object):
         elif self.annotation_type == 'bed':
             genes,exons = self.bed_parser(f, splice_padding)
         
-        for chrom in dict(genes):
+        elif self.annotation_type == 'gff':
+            genes,exons = self.gff_parser(f, splice_padding)
+            
+        
+        for chrom in genes:
             # prepare the intervals for the tree:
             gene_intervals = []
             exon_intervals = []
@@ -314,6 +319,65 @@ class AnnotationParser(object):
                 
         
         return genes,exons
+
+    def gff_parser(self, gff_file_handle, splice_padding, id_key='ID'):
+        """Parse a gtf file"""
+        genes = {}
+        exons = {}
+        
+        for line in gff_file_handle:
+            line = line.rstrip()
+            if not line.startswith('#') and len(line) > 1:
+                if line.startswith('>'):
+                    break
+                transcript_id = ''
+                gene_id = ''
+                gene_name = ''
+                feature_start = 0
+                feature_stop = 0
+
+                line = line.split('\t')
+                if len(line) < 5:
+                    line = line.split()
+                chrom = line[0].lstrip('chr')
+
+                if is_number(line[3]) and is_number(line[4]):
+                    feature_start = int(line[3])
+                    feature_stop = int(line[4])
+                #TODO Raise exception?
+
+                for information in line[8].split(';'):
+                    entry = information.split('=')
+                    if entry[0] == 'transcript_id':
+                        transcript_id = entry[1][1:-1]
+                    if entry[0] == 'gene_id':
+                        gene_id = entry[1][1:-1]
+                    if entry[0] == 'gene_name':
+                        gene_name = entry[1][1:-1]
+                    if entry[0] == id_key:
+                        gene_id = entry[1]
+                
+                if line[2] in ['gene', 'CDS']:
+                    self.add_gene(
+                                genes,
+                                chrom,
+                                feature_start,
+                                feature_stop,
+                                gene_id
+                                )
+
+                elif line[2] == 'exon':
+                    self.add_exon(
+                                exons,
+                                chrom,
+                                feature_start,
+                                feature_stop,
+                                transcript_id,
+                                splice_padding
+                                )
+
+
+        return genes,exons
     
     def gene_pred_parser(self, ref_file_handle, splice_padding):
         """
@@ -369,74 +433,23 @@ class AnnotationParser(object):
         return genes,exons
         
         
-
-def main():
-    parser = argparse.ArgumentParser(description="Parse different kind of annotation files. If no annotation file given, use genes.db and exons.db")
-    parser.add_argument('-an','--annotation_file', type=str, nargs=1, default=[None], help='A file with anotations.')
-    parser.add_argument('-bed', '--bed', action="store_true", help='Annotation file is in bed format.')
-    parser.add_argument('-ccds', '--ccds', action="store_true", help='Annotation file is in ccds format.')
-    parser.add_argument('-gtf', '--gtf', action="store_true", help='Annotation file is in gtf format.')
-    parser.add_argument('-gene_pred', '--gene_pred', action="store_true", help='Annotation file is in gene pred format. This is the format for the ref_seq and ensembl gene files.')
-    parser.add_argument('-v', '--verbose', action="store_true", help='Increase output verbosity.')
-    args = parser.parse_args()
-    anno_file = args.annotation_file[0]
-    gene_trees = {}
-    exon_trees = {}
-    
-    outpath = os.path.join(os.path.split(os.path.dirname(genmod.__file__))[0], 'annotations/')
-    gene_db = os.path.join(outpath, 'genes.db')
-    exon_db = os.path.join(outpath, 'exons.db')
-    
-    if args.verbose:
-        print(gene_db)
-        print(exon_db)
-        print('Start parsing annotation!')
-        start = datetime.now()
-    
-    if anno_file:
-        file_name, file_extension = os.path.splitext(anno_file)
-        zipped = False
-        if file_extension == '.gz':
-            zipped = True
-            file_name, file_extension = os.path.splitext(file_name)
-        
-        file_type = 'gene_pred'
-        if args.bed or file_extension[1:] == 'bed':
-            file_type = 'bed'
-        if args.ccds or file_extension[1:] == 'ccds':
-            file_type = 'ccds'
-        if args.gtf or file_extension[1:] == 'gtf':
-            file_type = 'gtf'
-        if args.gene_pred or file_extension[1:] in ['ref_gene', 'gene_pred']:
-            file_type = 'gene_pred'
-        
-        my_parser = AnnotationParser(anno_file, file_type, zipped=zipped, verbosity=args.verbose)
-        
-        gene_trees = my_parser.gene_trees
-        exon_trees = my_parser.exon_trees
-    
-    else:
-        try:
-            with open(gene_db, 'rb') as f:
-                gene_trees = pickle.load(f)
-            with open(exon_db, 'rb') as g:
-                exon_trees = pickle.load(g)
-        except FileNotFoundError:
-            print('You need to build annotations! See documentation.')
-            pass
-            # raise FileNotFoundError("You need to make annotations for genmod with an annotation file!")
-            #TODO write help line
-    
-    if args.verbose:
-        print('Gene chromosomes:%s' % sorted(gene_trees.keys()))
-        print('Exon chromosomes:%s' % sorted(exon_trees.keys()))
-        pp(gene_trees.get('1',interval_tree.IntervalTree([[0,0,None]], 1, 1)))
-        pp(gene_trees.get('1',interval_tree.IntervalTree([[0,0,None]], 1, 1)).find_range([11900, 11901]))
-        pp(gene_trees.get('8',interval_tree.IntervalTree([[0,0,None]], 1, 1)).find_range([6913070, 6913071]))
-        pp(exon_trees.get('8',interval_tree.IntervalTree([[0,0,None]], 1, 1)).find_range([6913070, 6913071]))
-        pp(gene_trees.get('1',interval_tree.IntervalTree([[0,0,None]], 1, 1)).find_range([721190, 821290]))
-        pp(exon_trees.get('1',interval_tree.IntervalTree([[0,0,None]], 1, 1)).find_range([721190, 821290]))
-        print('Time to parse file: %s' % str(datetime.now()-start))
+@click.command()
+@click.argument('annotation_file', 
+                nargs=1, 
+                type=click.Path(exists=True),
+)
+@click.option('-t' ,'--annotation_type',
+                type=click.Choice(['bed', 'ccds', 'gtf', 'gene_pred', 'gff']), 
+                default='gene_pred',
+                help='Specify the format of the annotation file.'
+)
+@click.option('-v', '--verbose', 
+                is_flag=True,
+                help='Increase output verbosity.'
+)
+def main(annotation_file, annotation_type, verbose):
+    print(annotation_file)
+    AnnotationParser(annotation_file, annotation_type, verbosity=verbose)
 
 
 if __name__ == '__main__':
