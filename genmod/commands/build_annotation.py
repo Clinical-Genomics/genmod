@@ -13,6 +13,8 @@ from __future__ import print_function, unicode_literals
 
 import sys
 import os
+
+import logging
 import click
 import pkg_resources
 
@@ -52,9 +54,11 @@ from genmod import AnnotationParser
 )
 def build_annotation(annotation_file, annotation_type, outdir, splice_padding, verbose):
     """Build a new annotation database."""
+    logger = logging.getLogger(__name__)
+    logger.info("Building new annotation databases from {0} into {1}.".format(
+        annotation_file, outdir))
     
-    if verbose:
-        print('Building new annotation databases from %s into %s.' % (annotation_file, outdir), file=sys.stderr)
+    logger.info("Initializing annotation parser.")
     
     anno_parser = AnnotationParser(
                             annotation_file, 
@@ -67,10 +71,14 @@ def build_annotation(annotation_file, annotation_type, outdir, splice_padding, v
     exon_db = os.path.join(outdir, 'exons.db')
     
     with open(gene_db, 'wb') as f:
+        logger.info("Dumping gene database to {0}.".format(gene_db))
         pickle.dump(anno_parser.gene_trees, f)
+        logger.debug("Dumping successful.".)
     
     with open(exon_db, 'wb') as g:
+        logger.info("Dumping exon database to {0}.".format(exon_db))
         pickle.dump(anno_parser.exon_trees, g)
+        logger.debug("Dumping successful.".)
     
 
 if __name__ == '__main__':
