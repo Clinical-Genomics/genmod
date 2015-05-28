@@ -14,6 +14,7 @@ from __future__ import print_function, unicode_literals
 
 import os
 import sys
+import logging
 
 def check_compounds(variant_1, variant_2, family, intervals, phased):
     """
@@ -43,9 +44,10 @@ def check_compounds(variant_1, variant_2, family, intervals, phased):
     """
     # Check in all individuals what genotypes that are in the trio based of the
     # individual picked.
-    
+    logger = logging.getLogger(__name__)
     
     for individual_id in family.individuals:
+        logger.debug("Check compounds for individual {0}".format(individual_id))
         individual = family.individuals[individual_id]
         
         genotype_1 = variant_1['genotypes'][individual_id]

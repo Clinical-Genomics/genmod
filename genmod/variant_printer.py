@@ -11,17 +11,9 @@ Copyright (c) 2013 __MyCompanyName__. All rights reserved.
 
 from __future__ import print_function, unicode_literals
 
-import sys
-import os
-
 from multiprocessing import Process
-from pprint import pprint as pp
 
-# Import third party library
-# https://github.com/mitsuhiko/logbook
-from logbook import Logger, StderrHandler
-log = Logger('Logbook')
-log_handler = StderrHandler()
+import logging
 
 class VariantPrinter(Process):
     """
@@ -47,6 +39,7 @@ class VariantPrinter(Process):
     def __init__(self, task_queue, temp_file, head, mode='chromosome', 
                 verbosity=False):
         Process.__init__(self)
+        self.logger = logging.getLogger(__name__)
         self.task_queue = task_queue
         self.verbosity = verbosity
         self.temp_file = temp_file
@@ -58,19 +51,19 @@ class VariantPrinter(Process):
         # Print the results to a temporary file:
         number_of_finished = 0
         proc_name = self.name
-        if self.verbosity:
-            log.info(('%s: starting!' % proc_name))
+        self.logger.info(('{0}: starting'.format(proc_name)))
+        
         while True:
-            
+            self.logger.debug(('{0} fetching next variant batch'.format(proc_name)))
+            # A task is a dictionary with variants where variant_id is key and
+            # a variant dict is value
             next_result = self.task_queue.get()
             
-            if self.verbosity:
-                if self.task_queue.full():
-                    log.warn('Printing queue full')
+            if self.task_queue.full():
+                self.logger.warning('Variant queue full')
             
             if next_result is None:
-                if self.verbosity:
-                    log.info('All variants printed!')
+                self.logger.info('All variants printed.')
                 self.temp_file.close()
                 break
                 
@@ -107,8 +100,6 @@ class VariantPrinter(Process):
                                                  for entry in self.header]
                     
                     self.temp_file.write('\t'.join(print_line) + '\n')
-        
-        return
     
 def main():
     pass

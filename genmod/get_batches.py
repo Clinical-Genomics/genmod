@@ -48,20 +48,15 @@ from __future__ import (print_function, unicode_literals)
 
 import sys
 import os
-import argparse
+import logging
+
 from datetime import datetime
 from codecs import open
   
 from pprint import pprint as pp
 
 from interval_tree import interval_tree
-from genmod.errors import warning
 
-# Import third party library
-# https://github.com/mitsuhiko/logbook
-from logbook import Logger, StderrHandler
-log = Logger('Logbook')
-log_handler = StderrHandler()
 
 # These are the SO-terms for genetic variants used by VEP:
 INTERESTING_SO_TERMS = set(
@@ -95,17 +90,33 @@ INTERESTING_SO_TERMS = set(
             ]
 )
 
+
+
 def get_batches(variant_parser, batch_queue, individuals, gene_trees={}, 
                 exon_trees={}, phased=False, vep=False, whole_genes=False, 
                 verbosity=False):
     """
-    Create batches and put them into the queue.
-    Annotate the variants with regions, either from the annotation built by
-    genmod or check the VEP terms. The variants in one feature will be a 
-    batch(default feature is a gene), if intergenic the batch sixe is 
-    maximun 10000 variants long. After one batch is filled it is sent 
-    to the variant queue.
+    Create variant batches based on their annotation.and put them into the queue.
+    
+    Variants are first annotated and will be given a new 'annotation' field in 
+    the variant dictionary.
+    get_batches will then use the annotation to search for sequences of variants
+    that have overlapping annotations. These are collected into one batch and gets
+    put into a queue.
+    Variants that are in between features will be in their own batch.
+    
+    Arguments:
+         variant_parser (VariantParser): A parser object that is a iterator that
+         returns variant dictionaries
+         batch_queue (Queue): A queue where the batches will be putted
+         gene_trees (dict): A dictionary where keys are chromosome names and 
+                            values are interval trees with gene features
+         exon_trees (dict): A dictionary where keys are chromosome names and 
+                             values are interval trees with exon features
+        
     """
+    logger = logging.getLogger(__name__)
+    
     beginning = True
     # A batch is a dictionary with variants
     batch = {}
@@ -113,17 +124,18 @@ def get_batches(variant_parser, batch_queue, individuals, gene_trees={},
     current_chrom = None
     current_features = []
     haploblock_id = 1
-    # Haploblocks is a dictionary with list of lists like {ind_id:[[start, stop, id],[start, stop,id],...], ...}
+    # Haploblocks is a dictionary with list of lists like 
+    # {ind_id:[[start, stop, id],[start, stop,id],...], ...}
     haploblocks = {ind_id:[] for ind_id in individuals}
     nr_of_batches = 0
     chromosomes = []
     # Parse the vcf file:
-    if verbosity:
-        start_parsing_time = datetime.now()
-        start_chrom_time = start_parsing_time
-        start_twenty_time = start_parsing_time
-        if batch_queue.full():
-            warning('Queue full!!')
+    
+    start_parsing_time = datetime.now()
+    start_chrom_time = start_parsing_time
+    start_twenty_time = start_parsing_time
+    if batch_queue.full():
+        logger.warning('Queue full!!')
     
     nr_of_variants = 0
     for variant in variant_parser:
@@ -135,34 +147,36 @@ def get_batches(variant_parser, batch_queue, individuals, gene_trees={},
             new_chrom = new_chrom[3:]
         
         # Annotate which features the variant belongs to:
-        annotate_variant(
+        variant = annotate_variant(
                             variant, 
                             gene_trees, 
                             exon_trees, 
                             vep, 
                             whole_genes, 
-                            verbosity
+                            logger
                         )
         
         new_features = variant['annotation']
         
-        if verbosity:
-            if nr_of_variants % 20000 == 0:
-                log.info('%s variants parsed!' % nr_of_variants)
-                log.info('Last 20.000 took %s to parse.\n' % 
-                         str(datetime.now() - start_twenty_time))
-                start_twenty_time = datetime.now()
+        if nr_of_variants % 20000 == 0:
+            logger.info("{0} variants parsed".format(nr_of_variants))
+            logger.info("Last 20.000 took {} to parse.".format(
+                str(datetime.now() - start_twenty_time)))
+            start_twenty_time = datetime.now()
         
         # If we look at the first variant, setup boundary conditions:
         if beginning:
             current_features = new_features
-            # Add the variant to each of its features in a batch
+            
             batch[variant_id] = variant
             current_chrom = new_chrom
+            
             batch['haploblocks'] = {}
+            
             if phased:
                 # We collect the starts of the haploblocks
-                haploblock_starts = {ind_id:int(variant['POS']) for ind_id in individuals}
+                haploblock_starts = {ind_id:int(variant['POS']) 
+                                    for ind_id in individuals}
             beginning = False
         else:
             # If we should put the batch in the queue:
@@ -172,7 +186,8 @@ def get_batches(variant_parser, batch_queue, individuals, gene_trees={},
                 for ind_id in individuals:
                     #A new haploblock is indicated by '/' if the data is phased
                     if '/' in variant.get(ind_id, './.'):
-                    #If call is not passed we consider it to be on same haploblock(GATK recommendations)
+                    #If call is not passed we consider it to be on same 
+                    # haploblock(GATK recommendations)
                         if variant.get('FILTER', '.') == 'PASS':
                             haploblocks[ind_id].append(
                                                 [   
@@ -185,6 +200,7 @@ def get_batches(variant_parser, batch_queue, individuals, gene_trees={},
                             haploblock_starts[ind_id] = int(variant['POS'])
             
         # Check if we are in a space between features:
+            # If we are in a intergeneic region we put the variant in the queue
             if len(new_features) == 0:
                 if len(current_features) == 0:
                     # If the intergeneic region is bigger than 10000 we send it as a batch
@@ -210,7 +226,7 @@ def get_batches(variant_parser, batch_queue, individuals, gene_trees={},
             
             if send:
                 if phased:
-                # Create an interval tree for each individual with the phaing intervals 
+                # Create an interval tree for each individual with the phaing intervals
                     for ind_id in individuals:
                         #Check if we have just finished an interval
                         if haploblock_starts[ind_id] != int(variant['POS']):                                        
@@ -283,9 +299,13 @@ def check_vep_annotation(variant):
     """
     Return a set with the genes that vep has annotated this variant with.
     
-    Input: A variant
+    Arguments:
+        variant (dict): A variant dictionary
+        
     
-    Returns: A set with genes"""
+    Returns:
+        annotation (set): A set with genes
+    """
     
     annotation = set()
     # vep_info is a dictionary with genes as key and annotation as values
@@ -294,14 +314,17 @@ def check_vep_annotation(variant):
         if allele != 'gene_ids':
             for vep_annotation in variant['vep_info'][allele]:
                 for consequence in vep_annotation.get('Consequence', '').split('&'):
+                    # These are the SO terms that indivate that the variant 
+                    # belongs to a gene
                     if consequence in INTERESTING_SO_TERMS:
                         annotation.add(vep_annotation.get('SYMBOL', ''))
     return annotation
         
     
-def annotate_variant(variant, gene_trees, exon_trees, vep, whole_genes, verbosity):
+def annotate_variant(variant, gene_trees, exon_trees, vep, whole_genes, logger):
     """
     Annotate variants with what regions the belong.
+    
     Adds 'annotation' = set(set, of, genes) and 
     'compound_candidate' = Boolean to variant dictionary.
     Variants are compound candidates is the are exonic
@@ -309,11 +332,18 @@ def annotate_variant(variant, gene_trees, exon_trees, vep, whole_genes, verbosit
     If 'while_gene' is used intronic variants are also
     compound candidates.
     
-    Input: variant_dictionary
-    
-    Returns: variant_dictionary with annotation added    
-    """
+    Arguments: 
+        variant (dict): A variant dictionary
+        gene_trees (dict): A dictionary with interval trees
+        exon_trees (dict): A dictionary with interval trees
+        vep (bool): If vep annotation is used
+        whole_genes (bool): If whole genes should be used
+        logger (logger): A logging object
         
+    Returns: 
+        variant (dict): A annotated variant dictionary
+    """
+    
     variant['comp_candidate'] = False
     variant['annotation'] = set()
     
@@ -326,34 +356,32 @@ def annotate_variant(variant, gene_trees, exon_trees, vep, whole_genes, verbosit
     alternatives = variant['ALT'].split(',')
     # When checking what features that are overlapped we use the longest alternative
     longest_alt = max([len(alternative) for alternative in alternatives])
+    
     variant_position = int(variant['POS'])
     variant_interval = [variant_position, (variant_position + longest_alt-1)]
     
     #If annotated with vep we do not need to check interval trees
     if vep:
         variant['annotation'] = check_vep_annotation(variant)
-        if len(variant['annotation']) > 0:
-            variant['comp_candidate'] = True
     else:
         try:
             variant['annotation'] = set(gene_trees[chrom].find_range(variant_interval))
         except KeyError:
-            if verbosity:
-                warning(''.join(['Chromosome ', chrom, ' is not in annotation file!']))
+            logger.warning("Chromosome {0} is not in annotation file".format(chrom))
         
-        if whole_genes:
+    if whole_genes:
         # If compounds are to be checked in whole genes (including introns):
-            if len(variant['annotation']) > 0:
+        if len(variant['annotation']) > 0:
+            variant['comp_candidate'] = True
+    else:
+    #Check if exonic:
+        try:
+            if len(exon_trees[chrom].find_range(variant_interval)):
                 variant['comp_candidate'] = True
-        else:
-        #Check if exonic:
-            try:
-                if len(exon_trees[chrom].find_range(variant_interval)):
-                    variant['comp_candidate'] = True
-            except KeyError:
-                if verbosity:
-                    warning(''.join(['Chromosome ', chrom, ' is not in annotation file!']))
-        return
+        except KeyError:
+            logger.warning("Chromosome {0} is not in annotation file".format(chrom))
+    
+    return variant
 
 def main():
     pass

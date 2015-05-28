@@ -9,25 +9,18 @@ Created by Måns Magnusson on 2014-01-21.
 Copyright (c) 2013 __MyCompanyName__. All rights reserved.
 """
 
-from __future__ import print_function
-from __future__ import unicode_literals
+from __future__ import (print_function, unicode_literals)
 
 import sys
 import os
 import click
-
-from pprint import pprint as pp
-
-from codecs import getwriter
-
-import pkg_resources
-import genmod
+import logging
 
 from genmod.commands import (build_annotation, annotate, analyze, 
                             summarize_variants, score_variants)
 
+from genmod import __version__
 
-version = pkg_resources.require("genmod")[0].version
 
 
 def print_version(ctx, param, value):
@@ -41,7 +34,7 @@ def print_version(ctx, param, value):
     """
     if not value or ctx.resilient_parsing:
         return
-    click.echo('genmod version: ' + version)
+    click.echo('genmod version: ' + __version__)
     ctx.exit()
 
 
@@ -54,12 +47,24 @@ def print_version(ctx, param, value):
                 expose_value=False,
                 is_eager=True
 )
-def run_genmod():
+@click.option('-l', '--logfile',
+                    type=click.Path(exists=False),
+                    help="Path to log file. If none logging is "\
+                          "printed to stderr."
+)
+@click.option('--loglevel',
+                    type=click.Choice(['DEBUG', 'INFO', 'WARNING', 'ERROR', 
+                                        'CRITICAL']),
+                    help="Set the level of log output."
+)
+def run_genmod(logfile, loglevel):
     """Tool for annotating and analyzing genetic variants in the vcf format.\n
         For more information, please run:
         genmod COMMAND --help \n
         """
-    pass
+    from genmod import logger, init_log
+    init_log(logger, logfile, loglevel)
+    
 
 run_genmod.add_command(build_annotation.build_annotation)
 run_genmod.add_command(annotate.annotate)

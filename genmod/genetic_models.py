@@ -68,7 +68,7 @@ from pprint import pprint as pp
 
 from genmod.models import (check_dominant, check_recessive, 
                         check_compounds, check_X_recessive, check_X_dominant)
-from genmod.utils import PairGenerator
+from genmod.utils import generate_pairs
 
 def check_genetic_models(variant_batch, families, verbose = False, 
                         phased = False, strict = False, proc_name = None):

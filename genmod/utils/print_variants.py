@@ -17,10 +17,6 @@ Copyright (c) 2015 __MoonsoInc__. All rights reserved.
 
 from __future__ import print_function, unicode_literals
 
-import sys
-import os
-import click
-
 from codecs import open
 
 
@@ -37,10 +33,10 @@ def print_variants(variant_file, outfile=None, mode='modified', silent=False):
     that one.
     
     Args:
-        variants_file  : A string with the path to a file
-        outfile : Path to outfile or None
-        mode    : 'vcf' or 'modified'
-        silent  : Bool. If nothing should be printed.
+        variants_file (str): A string with the path to a file
+        outfile (str): Path to outfile or None
+        mode (str): 'vcf' or 'modified'
+        silent (bool): Bool. If nothing should be printed.
     
     """
     
@@ -61,29 +57,4 @@ def print_variants(variant_file, outfile=None, mode='modified', silent=False):
                     if not silent:
                         print('\t'.join(line))
     return
-
-@click.command()
-@click.argument('vcf_file', 
-                nargs=1, 
-                type=click.Path(),
-                metavar='<vcf_file> or -'
-)
-@click.option('-o' ,'--outfile', 
-                type=click.Path(exists=False),
-                help='Print to output.'
-)
-@click.option('--silent',
-              is_flag=True,
-              help='Only error messages printed.'
-)
-@click.option('-v', '--verbose',
-              is_flag=True,
-              help='Increase output verbosity.'
-)
-def cli(vcf_file, outfile, silent, verbose):
-    
-    print_variants(vcf_file, outfile, silent, verbose)
-
-if __name__ == '__main__':
-    cli()
 

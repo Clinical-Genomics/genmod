@@ -14,6 +14,7 @@ from __future__ import print_function, unicode_literals
 
 import sys
 import os
+import logging
 
 try:
     import cPickle as pickle
@@ -22,20 +23,17 @@ except:
 
 from codecs import open
 
-from genmod.errors import warning
-
 
 def load_annotations(annotation_dir, verbose=False):
     """
     Load the annotations found in the indata path.
     These are pickled interval trees that are returned as dictionaries.
     """
-    
+    logger = logging.getLogger(__name__)
     gene_trees = {}
     exon_trees = {}
     
-    if verbose:
-        print('Reading annotations...\n', file=sys.stderr)
+    logger.info('Reading annotations...')
     
     gene_db = os.path.join(annotation_dir, 'genes.db')
     exon_db = os.path.join(annotation_dir, 'exons.db')
@@ -46,13 +44,11 @@ def load_annotations(annotation_dir, verbose=False):
         with open(exon_db, 'rb') as g:
             exon_trees = pickle.load(g)
     except IOError as e:
-        if verbose:
-            warning('No annotations found.')
-            warning('You need to build annotations! See documentation.')
-            # It is possible to continue the analysis without annotation files
+        logger.warning("No annotations found. You need to build annotations!"\
+                        " See documentation.")
+        logger.info("Continuing analysis without annotations")
         pass
     
-    if verbose:
-        print('Annotations used found in: %s, %s\n' % (gene_db, exon_db), file=sys.stderr)
+    logger.info("Annotations used found in: {0}, {1}".format(gene_db, exon_db))
      
     return gene_trees, exon_trees

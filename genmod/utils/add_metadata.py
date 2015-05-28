@@ -11,8 +11,7 @@ Copyright (c) 2015 __MoonsoInc__. All rights reserved.
 
 from __future__ import print_function, unicode_literals
 
-import sys
-import os
+import logging
 import click
 
 from datetime import datetime
@@ -37,8 +36,12 @@ def add_metadata(head, metadata_type, annotation_id, annotation_number='.',
         command_line_string : A string with the command that envoked genmod
     
     """
-    # Update INFO headers
+    logger = logging.getLogger(__name__)
+    
     if metadata_type == 'info':
+        logger.debug("Updating INFO header with {0}".format(
+            annotation_id
+        ))
         head.add_info(
             annotation_id,
             annotation_number,
@@ -46,6 +49,9 @@ def add_metadata(head, metadata_type, annotation_id, annotation_number='.',
             description
         )
     elif metadata_type == 'version':
+        logger.debug("Updating version header with {0}".format(
+            annotation_id
+        ))
         head.add_version_tracking(
                         annotation_id, 
                         version, 

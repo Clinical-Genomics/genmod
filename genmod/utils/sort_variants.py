@@ -14,19 +14,14 @@ from __future__ import print_function, unicode_literals
 import sys
 import os
 import click
-
+import logging
 
 from subprocess import call
 from datetime import datetime
 
-# Import third party library
-# https://github.com/mitsuhiko/logbook
-from logbook import Logger, StderrHandler
-log = Logger('Logbook')
-log_handler = StderrHandler()
 
 
-def sort_variants(infile, mode='chromosome', verbose=False):
+def sort_variants(infile, mode='chromosome'):
     """
     Sort variants based on rank score or chromosome.
     
@@ -36,12 +31,12 @@ def sort_variants(infile, mode='chromosome', verbose=False):
         infile : A string that is the path to a file
         mode : 'chromosome' or 'rank'
         outfile : The path to an outfile where the variants should be printed
-        verbose : Increase output verbosity
     
     Returns:
         0 if sorting was performed
         1 if variants where not sorted
     """
+    logger = logging.getLogger(__name__)
     command = [
             'sort',
             ]
@@ -56,26 +51,22 @@ def sort_variants(infile, mode='chromosome', verbose=False):
 
     command = command + [infile, '-o', infile]
 
-    if verbose:
-        log.info("Start sorting variants...")
-        log.info("Sort command: %s" % ' '.join(command))
-        sort_start = datetime.now()
+    logger.info("Start sorting variants...")
+    logger.info("Sort command: {0}".format(' '.join(command)))
+    sort_start = datetime.now()
     
     try:
         call(command)
-    except OSError:
-        if verbose:
-            log.warn("unix command sort does not seem to exist on your system...")
-            log.warn("genmod needs unix sort to provide a sorted output.")
-        log.warn("""Output VCF will not be sorted since genmod can not find
-                unix sort""")
-        return 1
+    except OSError as e:
+        logger.warning("unix command sort does not seem to exist on your system...")
+        logger.warning("genmod needs unix sort to provide a sorted output.")
+        logger.warning("Output VCF will not be sorted since genmod can not find"\
+                        "unix sort")
+        raise e
 
-    if verbose:
-        log.info("Sorting done!")
-        log.info("Time to sort %s" % (datetime.now()-sort_start))
+    logger.info("Sorting done. Time to sort: {0}".format(datetime.now()-sort_start))
     
-    return 0
+    return 
 
 @click.command()
 @click.argument('csv_file',
