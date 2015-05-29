@@ -104,7 +104,7 @@ def get_genetic_models(family_file, family_type):
 )
 @click.option('-f', '--family_file',
                 nargs=1, 
-                type=click.Path(exists=True),
+                type=click.File('r'),
                 metavar='<ped_file>'
 )
 @click.option('-t' ,'--family_type', 
@@ -173,6 +173,9 @@ def score(family_file, variant_file, family_type, annotation_dir, vep,
                                                     family_file, 
                                                     family_type
                                                     )
+    else:
+        log.critical("Please provide a family file")
+        sys.exit()
     
     if verbose:
         log.info('Prefered model found in family file: %s \n' % 
@@ -193,9 +196,15 @@ def score(family_file, variant_file, family_type, annotation_dir, vep,
     ## Check the variants:
     
     if variant_file == '-':
-        variant_parser = VCFParser(fsock=sys.stdin)
+        variant_parser = VCFParser(
+            fsock = sys.stdin, 
+            skip_info_check=True
+            )
     else:
-        variant_parser = VCFParser(infile=variant_file)
+        variant_parser = VCFParser(
+            infile = variant_file, 
+            skip_info_check=True
+            )
     
     head = variant_parser.metadata
     

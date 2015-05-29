@@ -75,7 +75,7 @@ def check_tabix_index(compressed_file, file_type='cadd', verbose=False):
 )
 @click.option('-f', '--family_file',
                     nargs=1, 
-                    type=click.Path(exists=True),
+                    type=click.File('r'),
                     metavar='<ped_file>'
 )
 @click.option('-t' ,'--family_type', 
@@ -192,9 +192,17 @@ def annotate(family_file, variant_file, family_type, vep, silent, phased, strict
     ######### Setup a variant parser #########
     
     if variant_file == '-':
-        variant_parser = VCFParser(fsock = sys.stdin, split_variants=split_variants)
+        variant_parser = VCFParser(
+            fsock = sys.stdin, 
+            split_variants=split_variants, 
+            skip_info_check=True
+            )
     else:
-        variant_parser = VCFParser(infile = variant_file, split_variants=split_variants)
+        variant_parser = VCFParser(
+            infile = variant_file, 
+            split_variants=split_variants,
+            skip_info_check=True
+            )
     
     # These are the individuals in from the vcf file
     individuals = variant_parser.individuals
