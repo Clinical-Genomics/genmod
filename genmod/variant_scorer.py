@@ -158,12 +158,12 @@ class VariantScorer(Process):
                     
                     info_field[position] = 'Compounds=' + ','.join(splitted_compunds)
             
-            info_field.append('IndividualRankScore=' + family_id + ':' +
-                              str(variant['original_rank_score']))
+            info_field.append('IndividualRankScore={0}:{1}'.format(
+                family_id, str(variant['original_rank_score'])))
             
             # Add the rank score to the info field 
-            info_field.append('RankScore=' + family_id + ':' +
-                              str(variant['Individual_rank_score']))
+            info_field.append('RankScore={0}:{1}'.format(
+                family_id, str(variant['Individual_rank_score'])))
             
             variant['INFO'] = ';'.join(info_field)
         
