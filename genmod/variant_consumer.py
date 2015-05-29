@@ -17,20 +17,16 @@ import sys
 import os
 import operator
 import tabix
+import logging
 
 from pprint import pprint as pp
-from functools import reduce
 from multiprocessing import Process
 from math import log10
 
 from genmod import check_genetic_models
 from genmod.errors import warning
 
-# Import third party library
-# https://github.com/mitsuhiko/logbook
-from logbook import Logger, StderrHandler
-log = Logger('Logbook')
-log_handler = StderrHandler()
+from . import get_model_score, get_frequency, get_cadd_scores
 
 class VariantConsumer(Process):
     """
@@ -44,6 +40,7 @@ class VariantConsumer(Process):
                 thousand_g=None, exac=None, dbNSFP=None, strict=False, 
                 verbosity=False):
         Process.__init__(self)
+        self.logger = logging.getLogger(__name__)
         self.task_queue = task_queue
         self.families = families
         self.results_queue = results_queue
@@ -83,114 +80,69 @@ class VariantConsumer(Process):
         if self.dbNSFP:
             self.exac = tabix.open(self.exac)
     
-    def get_model_score(self, individuals, variant):
-        """Return the model score for this variant."""
-        model_score = None
-        genotype_scores = []
-        
-        for individual in individuals:
-            gt_call = variant['genotypes'].get(individual, None)
-            if gt_call:
-                if gt_call.genotype_quality > 0:
-                    genotype_scores.append(10**-(float(gt_call.genotype_quality)/10))
-        if len(genotype_scores) > 0:
-            model_score = (str(
-                            round(-10*log10(
-                                    1-reduce(
-                                        operator.mul, 
-                                            [
-                                            1-score for score in genotype_scores]
-                                            )
-                                        )
-                                    )
-                                )
-                            )
-        
-        return model_score
-    
-    def get_cadd_score(self, tabix_reader, chrom, start, alt=None):
-        """Return the record from a cadd file."""
-        score = None
-        # CADD values are only for snps:
-        cadd_key = int(start)
-        try:
-            for record in tabix_reader.query(chrom, cadd_key-1, cadd_key):
-                if record[3] == alt:
-                    #We need to send both cadd values
-                    cadd_raw = record[-2]
-                    cadd_phred = record[-1]
-                    return (cadd_raw, cadd_phred)
-        except TypeError:
-            for record in tabix_reader.query(str(chrom), cadd_key-1, cadd_key):
-                record = record.split('\t')
-                if record[3] == alt:
-                    #We need to send both cadd values
-                    cadd_raw = record[-2]
-                    cadd_phred = record[-1]
-                    return (cadd_raw, cadd_phred)
-        except:
-            pass
-        
-        return score
-    
     def add_cadd_score(self, variant):
         """Add the CADD relative score to this variant."""
         cadd_score = None
+        cadd_relative = None
+        cadd_absolute = None
         cadd_relative_scores = []
         cadd_absolute_scores = []
         #Check CADD file(s):
         for alt in variant['ALT'].split(','):
             if self.cadd_file:
-                cadd_score = self.get_cadd_score(
+                cadd_scores = get_cadd_scores(
                                         self.cadd_file, 
                                         variant['CHROM'], 
                                         variant['POS'], 
                                         alt
                                     )
+                cadd_relative = cadd_score['cadd_phred']
+                cadd_absolute = cadd_score['cadd_raw']
             # If variant not found in big CADD file check the 1000G file:
-            if not cadd_score and self.cadd_1000g:
-                cadd_score = self.get_cadd_score(
+            if not (cadd_relative and cadd_absolute) and self.cadd_1000g:
+                cadd_scores = get_cadd_scores(
                                         self.cadd_1000g, 
                                         variant['CHROM'], 
                                         variant['POS'], 
                                         alt
                                     )
+                cadd_relative = cadd_score['cadd_phred']
+                cadd_absolute = cadd_score['cadd_raw']
             
-            if not cadd_score and self.cadd_exac:
-                cadd_score = self.get_cadd_score(
+            if not (cadd_relative and cadd_absolute) and self.cadd_exac:
+                cadd_scores = get_cadd_scores(
                                         self.cadd_exac, 
                                         variant['CHROM'], 
                                         variant['POS'], 
                                         alt
                                     )
+                cadd_relative = cadd_score['cadd_phred']
+                cadd_absolute = cadd_score['cadd_raw']
             
-            if not cadd_score and self.cadd_ESP:
-                cadd_score = self.get_cadd_score(
+            if not (cadd_relative and cadd_absolute) and self.cadd_ESP:
+                cadd_scores = get_cadd_scores(
                                         self.cadd_ESP, 
                                         variant['CHROM'], 
                                         variant['POS'], 
                                         alt
                                     )
+                cadd_relative = cadd_score['cadd_phred']
+                cadd_absolute = cadd_score['cadd_raw']
             
-            if not cadd_score and self.cadd_ESP:
-                cadd_score = self.get_cadd_score(
+            if not (cadd_relative and cadd_absolute) and self.cadd_InDels:
+                cadd_scores = get_cadd_scores(
                                         self.cadd_ESP, 
                                         variant['CHROM'], 
                                         variant['POS'], 
                                         alt
                                     )
+                cadd_relative = cadd_score['cadd_phred']
+                cadd_absolute = cadd_score['cadd_raw']
             
-            if not cadd_score and self.cadd_ESP:
-                cadd_score = self.get_cadd_score(
-                                        self.cadd_ESP, 
-                                        variant['CHROM'], 
-                                        variant['POS'], 
-                                        alt
-                                    )
-            
-            if cadd_score:
-                cadd_relative_scores.append(str(cadd_score[1]))
-                cadd_absolute_scores.append(str(cadd_score[0]))
+            if cadd_relative:
+                cadd_relative_scores.append(str(cadd_relative))
+            if cadd_absolute:
+                cadd_absolute_scores.append(str(cadd_absolute))
         
         if len(cadd_relative_scores) > 0:
             variant['CADD'] = ','.join(cadd_relative_scores)
@@ -198,41 +150,6 @@ class VariantConsumer(Process):
                 variant['CADD_raw'] = ','.join(cadd_absolute_scores)
         return
 
-    def get_freq(self, tabix_reader, chrom, start, alt):
-        """Return the record from a cadd file."""
-        freq = None
-        # CADD values are only for snps:
-        cadd_key = int(start)
-        try:
-            for record in tabix_reader.query(chrom, cadd_key-1, cadd_key):
-                i = 0
-                #We can get multiple rows so need to check each one
-                #We also need to check each one of the alternatives per row
-                for alternative in record[4].split(','):
-                    if alternative == alt:
-                        for info in record[7].split(';'):
-                            info = info.split('=')
-                            if info[0] == 'AF':
-                                frequencies = info[-1].split(',')
-                                return frequencies[i]
-                    i += 1
-        except TypeError:            
-            for record in tabix_reader.query(str(chrom), cadd_key-1, cadd_key):
-                i = 0
-                #We can get multiple rows so need to check each one
-                #We also need to check each one of the alternatives per row
-                for alternative in record[4].split(','):
-                    if alternative == alt:
-                        for info in record[7].split(';'):
-                            info = info.split('=')
-                            if info[0] == 'AF':
-                                frequencies = info[-1].split(',')
-                                return frequencies[i]
-                    i += 1
-        except:
-            pass
-        
-        return freq
     
     def add_frequency(self, variant):
         """Add the thousand genome frequency if present."""
@@ -240,13 +157,21 @@ class VariantConsumer(Process):
         thousand_g_freq = None
         exac_freq = None
         if self.thousand_g:
-            thousand_g_freq = self.get_freq(self.thousand_g, variant['CHROM'], variant['POS'],
-                                                              variant['ALT'].split(',')[0])
+            thousand_g_freq = get_frequency(
+                                            self.thousand_g, 
+                                            variant['CHROM'], 
+                                            variant['POS'],
+                                            variant['ALT'].split(',')[0]
+                                            )
             if thousand_g_freq:
                 variant['1000G_freq'] = thousand_g_freq
         if self.exac:
-            exac_freq = self.get_freq(self.exac, variant['CHROM'], variant['POS'],
-                                                              variant['ALT'].split(',')[0])
+            exac_freq = get_frequency(
+                                        self.exac, 
+                                        variant['CHROM'], 
+                                        variant['POS'],
+                                        variant['ALT'].split(',')[0]
+                                    )
             if exac_freq:
                 variant['ExAC_freq'] = exac_freq
         return
@@ -303,10 +228,10 @@ class VariantConsumer(Process):
                                                     ]
                                                     )
                                                 )
-                        model_scores[family_id] = self.get_model_score(
+                        model_scores[family_id] = str(get_model_score(
                                                     self.families[
                                                         family_id
-                                                    ].individuals, variant)
+                                                    ].individuals, variant))
                 
                 if len(family_model_strings) > 0:
                     vcf_info.append(

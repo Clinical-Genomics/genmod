@@ -462,13 +462,13 @@ def annotate(family_file, variant_file, family_type, vep, silent, phased, strict
                             )
 
     sys.exit()
-    # logger.info('Put stop signs in the variant queue')
-    # for i in range(num_model_checkers):
-    #     variant_queue.put(None)
-    #
-    # variant_queue.join()
-    # results.put(None)
-    # var_printer.join()
+    logger.info('Put stop signs in the variant queue')
+    for i in range(num_model_checkers):
+        variant_queue.put(None)
+
+    variant_queue.join()
+    results.put(None)
+    var_printer.join()
     #
     # temporary_variant_file.close()
     #

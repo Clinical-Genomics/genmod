@@ -68,10 +68,11 @@ from pprint import pprint as pp
 
 from genmod.models import (check_dominant, check_recessive, 
                         check_compounds, check_X_recessive, check_X_dominant)
+
 from genmod.utils import generate_pairs
 
 def check_genetic_models(variant_batch, families, verbose = False, 
-                        phased = False, strict = False, proc_name = None):
+                        phased = False, strict = False):
     # A variant batch is a dictionary on the form 
     # {variant_id:variant_dict, variant_2_id:variant_dict_2, ...}
     intervals = variant_batch.pop('haploblocks', {})
@@ -100,12 +101,12 @@ def check_genetic_models(variant_batch, families, verbose = False,
                 variant['compounds'][family_id] = set()
             else:
                 variant['compounds'] = {family_id : set()}
+            
             # Add information of models followed:
             if 'inheritance_models' in variant:
                 variant['inheritance_models'][family_id] = inheritance_models
             else:
-                variant['inheritance_models'] = {}
-                variant['inheritance_models'][family_id] = inheritance_models
+                variant['inheritance_models'] = {family_id: inheritance_models}
                 
             if len(variant['annotation']) > 0:
                 if check_compound_candidate(variant, family, strict):
@@ -167,6 +168,10 @@ def check_genetic_models(variant_batch, families, verbose = False,
             # Now check the compound models:
             
         if len(compound_candidates) > 1:
+<<<<<<< HEAD:genmod/genetic_models.py
+=======
+            # If there is only one individual we know that all candidates are compounds
+>>>>>>> More changes to structure:genmod/models/genetic_models.py
             if len(individuals) == 1:
                 for variant_id in compound_candidates:
                     variant = variant_batch[variant_id]
@@ -236,6 +241,7 @@ def check_compound_candidate(variant, family, strict):
         # No individuals can be homo_alt
         if individual_genotype.homo_alt:
             return False
+        
         if individual.affected:
             # Affected have to be heterozygote for compounds
             if not individual_genotype.heterozygote:
@@ -260,7 +266,7 @@ def check_compound_candidate(variant, family, strict):
                     if (mother_genotype.has_variant and 
                             father_genotype.has_variant):
                         return False
-            # We have now significantly rediced the number
+            # We have now significantly reduced the number
             # of compound candidates.
             # In the next step we check if pairs of compounds
             # follow the compound inheritance pattern.
