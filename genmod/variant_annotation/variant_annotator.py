@@ -3,15 +3,15 @@
 """
 variant_consumer.py
 
-Class that takes a list of objects and return all unordered pairs as a generator.
-
-If only one object? Raise Exception
+Consumes batches of variants and annotates them. Each batch is a dictionary 
+with variant_id:s as keys and dictionaries with variant information.
+The variants will get different annotations depending on input
  
 Created by Måns Magnusson on 2013-03-01.
 Copyright (c) 2013 __MyCompanyName__. All rights reserved.
 """
 
-from __future__ import division, print_function, unicode_literals
+from __future__ import (division, print_function, unicode_literals, relative_import)
 
 import sys
 import os
@@ -23,62 +23,94 @@ from pprint import pprint as pp
 from multiprocessing import Process
 from math import log10
 
-from genmod import check_genetic_models
+from . import check_genetic_models
 from genmod.errors import warning
 
-from . import get_model_score, get_frequency, get_cadd_scores
+from . import (get_model_score, get_frequency, get_cadd_scores)
 
-class VariantConsumer(Process):
+class VariantAnnotator(Process):
     """
-    Yeilds all unordered pairs from a list of objects as tuples, 
-    like (obj_1, obj_2)
+    Annotates variant in batches from the task queue and puts the result in 
+    the results queue.
     """
     
-    def __init__(self, task_queue, results_queue, families={}, phased=False, 
-                vep=False, cadd_raw=False, cadd_file=None, cadd_1000g=None, 
-                cadd_exac=None, cadd_ESP=None, cadd_InDels=None, 
-                thousand_g=None, exac=None, dbNSFP=None, strict=False, 
-                verbosity=False):
+    def __init__(self, task_queue, results_queue, **kwargs):
+        
         Process.__init__(self)
         self.logger = logging.getLogger(__name__)
+        self.proc_name = self.name
+        self.logger.info("Setting up variant_annotator: {0}".format(
+            self.proc_name))
+        self.logger.debug("Setting up task queue")
         self.task_queue = task_queue
-        self.families = families
+        self.logger.debug("Setting up results queue")
         self.results_queue = results_queue
-        self.verbosity = verbosity
-        self.phased = phased
-        self.vep = vep
-        self.cadd_raw = cadd_raw
-        self.cadd_file = cadd_file
-        self.cadd_1000g = cadd_1000g
-        self.cadd_exac = cadd_exac
-        self.cadd_ESP = cadd_ESP
-        self.cadd_InDels = cadd_InDels
-        self.thousand_g = thousand_g
-        self.exac = exac
-        self.dbNSFP = dbNSFP
-        self.strict = strict
+        # The families that should be annotated
+        self.families = kwargs.get('families', {})
+        self.logger.debug("Families found: {0}".format(self.families))
+        # Settings for the annotation
+        self.phased = kwargs.get('phased', False)
+        self.logger.debug("Setting phased to {0}".format(self.phased))
+        self.strict = kwargs.get('strict', False)
+        self.logger.debug("Setting strict to {0}".format(self.strict))
+        self.cadd_raw = kwargs.get('cadd_raw', None)
+        self.logger.debug("Setting cadd raw to {0}".format(self.cadd_raw))
+        ######### Annotation files #########
+        # Cadd files #
+        self.cadd_file = kwargs.get('cadd_file', None)
+        self.logger.debug("Cadd file {0}".format(self.cadd_file))
+        self.cadd_1000g = kwargs.get('cadd_1000g', None)
+        self.logger.debug("Cadd 1000G file {0}".format(self.cadd_1000g))
+        self.cadd_exac = kwargs.get('cadd_exac', None)
+        self.logger.debug("Cadd exac file {0}".format(self.cadd_exac))
+        self.cadd_ESP = kwargs.get('cadd_ESP', None)
+        self.logger.debug("Cadd ESP file {0}".format(self.cadd_ESP))
+        self.cadd_InDels = kwargs.get('cadd_InDels', None)
+        self.logger.debug("Cadd InDels file {0}".format(self.cadd_InDels))
+        # Frequency files #
+        self.thousand_g = kwargs.get('thousand_g', None)
+        self.logger.debug("1000G frequency file {0}".format(self.thousand_g))
+        self.exac = kwargs.get('exac', None)
+        self.logger.debug("Exac frequency file {0}".format(self.thousand_g))
+        self.dbNSFP = kwargs.get('dbNSFP', None)
         self.any_cadd_info = False
+        # Setup file handles to the annotation files
         if self.cadd_file:
+            self.logger.debug("Opening cadd file with tabix open")
             self.cadd_file = tabix.open(self.cadd_file)
+            self.logger.debug("Cadd file opened")
             self.any_cadd_info = True
         if self.cadd_1000g:
+            self.logger.debug("Opening cadd 1000G file with tabix open")
             self.cadd_1000g = tabix.open(self.cadd_1000g)
+            self.logger.debug("Cadd 1000G file opened")
             self.any_cadd_info = True
         if self.cadd_exac:
+            self.logger.debug("Opening cadd exac file with tabix open")
             self.cadd_exac = tabix.open(self.cadd_exac)
+            self.logger.debug("Cadd exac file opened")
             self.any_cadd_info = True
         if self.cadd_ESP:
+            self.logger.debug("Opening cadd ESP file with tabix open")
             self.cadd_ESP = tabix.open(self.cadd_ESP)
+            self.logger.debug("Cadd ESP file opened")
             self.any_cadd_info = True
         if self.cadd_InDels:
+            self.logger.debug("Opening cadd InDels file with tabix open")
             self.cadd_InDels = tabix.open(self.cadd_InDels)
+            self.logger.debug("Cadd InDels file opened")
             self.any_cadd_info = True
         if self.thousand_g:
+            self.logger.debug("Opening 1000G frequency file with tabix open")
             self.thousand_g = tabix.open(self.thousand_g)
+            self.logger.debug("1000G frequency file opened")
         if self.exac:
+            self.logger.debug("Opening ExAC frequency file with tabix open")
             self.exac = tabix.open(self.exac)
+            self.logger.debug("ExAC frequency file opened")
         if self.dbNSFP:
             self.exac = tabix.open(self.exac)
+        self.logger.debug("Setting any cadd info to {0}".format(self.any_cadd_info))
     
     def add_cadd_score(self, variant):
         """Add the CADD relative score to this variant."""
@@ -256,15 +288,14 @@ class VariantConsumer(Process):
                                     ','.join(model_score_list)
                                     )
             
-            # We only want to include annotations where we have a value
             
-            if not self.vep:
-                if 'Annotation' not in variant['info_dict']:
-                    if len(feature_list) != 0 and feature_list != ['-']:
-                        vcf_info.append(
-                                    'Annotation=' + 
-                                    ','.join(feature_list)
-                                    )
+            # We only want to include annotations where we have a value
+            if 'Annotation' not in variant['info_dict']:
+                if len(feature_list) != 0 and feature_list != ['-']:
+                    vcf_info.append(
+                                'Annotation=' + 
+                                ','.join(feature_list)
+                                )
             
             if variant.get('CADD', None):
                 if 'CADD' not in variant['info_dict']:
@@ -300,17 +331,17 @@ class VariantConsumer(Process):
     
     def run(self):
         """Run the consuming"""
-        proc_name = self.name
         if self.verbosity:
-            log.info('%s: Starting!' % proc_name)
+            log.info('%s: Starting!' % self.proc_name)
+        # Check if there are any batches in the queue
         while True:
             # A batch is a dictionary on the form {variant_id:variant_dict}
             variant_batch = self.task_queue.get()
             
             if variant_batch is None:
+                self.logger.info('No more batches')
                 self.task_queue.task_done()
-                if self.verbosity:
-                    log.info('%s: Exiting' % proc_name)
+                self.logger.info('{0}: Exiting'.format(proc_name))
                 break
 
             

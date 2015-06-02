@@ -461,7 +461,6 @@ def annotate(family_file, variant_file, family_type, vep, silent, phased, strict
                                 gene_trees,
                             )
 
-    sys.exit()
     logger.info('Put stop signs in the variant queue')
     for i in range(num_model_checkers):
         variant_queue.put(None)
@@ -469,29 +468,29 @@ def annotate(family_file, variant_file, family_type, vep, silent, phased, strict
     variant_queue.join()
     results.put(None)
     var_printer.join()
-    #
-    # temporary_variant_file.close()
-    #
-    # logger.info('Cromosomes found in variant file: {0}'.format(
-    #     ','.join(chromosome_list)))
-    # logger.info('Models checked')
-    #
-    # logger.info("Start sorting the variants")
-    # sort_variants(temp_file.name, mode='chromosome')
-    #
-    # logger.info("Print the headers")
-    # print_headers(head, outfile, silent)
-    #
-    # logger.info("Start printing the variants")
-    # print_variants(temp_file.name, outfile, mode='modified',  silent=silent)
-    #
-    # logger.info("Removing temp file")
-    # os.remove(temp_file.name)
-    # logger.debug("Temp file removed")
-    #
-    # logger.info('Time for whole analyis: {0}'.format(
-    #     str(datetime.now() - start_time_analysis)))
-    #
+
+    temporary_variant_file.close()
+
+    logger.info('Cromosomes found in variant file: {0}'.format(
+        ','.join(chromosome_list)))
+    logger.info('Models checked')
+
+    logger.info("Start sorting the variants")
+    sort_variants(temp_file.name, mode='chromosome')
+
+    logger.info("Print the headers")
+    print_headers(head, outfile, silent)
+
+    logger.info("Start printing the variants")
+    print_variants(temp_file.name, outfile, mode='modified',  silent=silent)
+
+    logger.info("Removing temp file")
+    os.remove(temp_file.name)
+    logger.debug("Temp file removed")
+
+    logger.info('Time for whole analyis: {0}'.format(
+        str(datetime.now() - start_time_analysis)))
+
 
 
 if __name__ == '__main__':
