@@ -1,7 +1,7 @@
 
-import interval_tree
+from interval_tree import IntervalTree
 
-def get_haplo_blocks(variant_batch, individuals):
+def get_haploblocks(variant_batch, individuals):
     """
     Take a variant batch and return the haploblocks for each of the individuals.
     The haploblocks are dictionaries with individual trees as keys.
@@ -57,7 +57,7 @@ def get_haplo_blocks(variant_batch, individuals):
                             )
             haploblock_id += 1
         # Create interval trees of the haploblocks
-        interval_trees[ind_id] = interval_tree.IntervalTree(
+        interval_trees[ind_id] = IntervalTree(
                                                 haploblocks[ind_id], 
                                                 haploblocks[ind_id][0][0]-1, 
                                                 haploblocks[ind_id][-1][1]+1

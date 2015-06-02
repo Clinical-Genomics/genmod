@@ -28,9 +28,10 @@ import pkg_resources
 from ped_parser import FamilyParser
 from vcf_parser import VCFParser
 
-from genmod import (__version__)
+from genmod import (__version__, VariantPrinter)
 
-from genmod import (VariantConsumer, VariantPrinter)
+from genmod.variant_annotations import (VariantAnnotator)
+
 # , annotation_parser,
 #                     , get_batches, sort_variants,
 #                     load_annotations, print_headers, print_variants,
@@ -230,7 +231,8 @@ def annotate(family_file, variant_file, family_type, vep, silent, phased, strict
     ######### Parse the ped file (if there is one) #########
     
     families = {}
-    
+    # These are the individuals that should be used in the analysis
+    individuals = []
     if family_file:
         logger.info("Annotating Genetic Models")
         family_parser = FamilyParser(family_file, family_type)
@@ -245,6 +247,8 @@ def annotate(family_file, variant_file, family_type, vep, silent, phased, strict
                                 ', '.join(list(family_parser.individuals.keys()))))
                 logger.warning("Individuals in VCF file: {0}".format(', '.join(vcf_individuals)))
                 raise IOError() # Raise proper exception here
+            else:
+                individuals.append(individual)
         
         logger.info("Families used in analysis: {0}".format(
                     ','.join(list(families.keys()))))
@@ -412,7 +416,7 @@ def annotate(family_file, variant_file, family_type, vep, silent, phased, strict
     # These are the workers that do the heavy part of the analysis
     logger.info('Seting up the workers')
     model_checkers = [
-                    VariantConsumer(
+                    VariantAnnotator(
                                 variant_queue,
                                 results,
                                 families,
