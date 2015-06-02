@@ -11,7 +11,7 @@ Created by Måns Magnusson on 2013-03-01.
 Copyright (c) 2013 __MyCompanyName__. All rights reserved.
 """
 
-from __future__ import (division, print_function, unicode_literals, relative_import)
+from __future__ import (division, print_function, unicode_literals, absolute_import)
 
 import sys
 import os
@@ -346,6 +346,9 @@ class VariantAnnotator(Process):
 
             
             if self.families:
+                if len(variant_batch) > 1:
+                    self.logger.debug("Get haploblocks for variant batch")
+                    variant_batch['haploblocks'] = get_haploblocks(variant_batch)
                 check_genetic_models(
                                 variant_batch, 
                                 self.families, 

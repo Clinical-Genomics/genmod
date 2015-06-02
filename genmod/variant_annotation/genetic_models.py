@@ -168,10 +168,7 @@ def check_genetic_models(variant_batch, families, verbose = False,
             # Now check the compound models:
             
         if len(compound_candidates) > 1:
-<<<<<<< HEAD:genmod/genetic_models.py
-=======
             # If there is only one individual we know that all candidates are compounds
->>>>>>> More changes to structure:genmod/models/genetic_models.py
             if len(individuals) == 1:
                 for variant_id in compound_candidates:
                     variant = variant_batch[variant_id]

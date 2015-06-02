@@ -36,6 +36,7 @@ setup(name='genmod',
     packages = [
         'genmod',
         'genmod/commands',
+        'genmod/variant_annotation',
         'genmod/utils',
         'genmod/errors',
         'genmod/models',
