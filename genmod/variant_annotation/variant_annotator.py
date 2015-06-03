@@ -26,7 +26,7 @@ from math import log10
 from . import check_genetic_models
 from genmod.errors import warning
 
-from . import (get_model_score, get_frequency, annotate_cadd_score, 
+from . import (get_model_score, annotate_cadd_score, 
                 get_haploblocks, annotate_frequency)
 
 class VariantAnnotator(Process):
@@ -129,7 +129,9 @@ class VariantAnnotator(Process):
                 self.task_queue.task_done()
                 self.logger.info('{0}: Exiting'.format(proc_name))
                 break
-
+                
+            # If there are families we will annotate the genetic inheritance 
+            # patterns that are followed
             if self.families:
                 if len(variant_batch) > 1:
                     self.logger.debug("Get haploblocks for variant batch")
@@ -151,9 +153,7 @@ class VariantAnnotator(Process):
                 if self.any_cadd_info:
                     variant = annotate_cadd_score(
                         variant,
-                        self.cadd_raw
-                        variant, 
-                        self.cadd_raw, 
+                        self.cadd_raw,
                         self.cadd_file, 
                         self.cadd_1000g, 
                         self.cadd_exac, 

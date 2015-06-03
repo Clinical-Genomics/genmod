@@ -147,7 +147,6 @@ def annotate_cadd_score(variant, cadd_raw, cadd_file, cadd_1000g, cadd_exac,
     cadd_absolute = None
     cadd_relative_scores = []
     cadd_absolute_scores = []
-    cadd_file = 
     #Check CADD file(s):
     for alt in variant['ALT'].split(','):
         if cadd_file:
