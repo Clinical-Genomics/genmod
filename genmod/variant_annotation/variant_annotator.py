@@ -23,11 +23,10 @@ from pprint import pprint as pp
 from multiprocessing import Process
 from math import log10
 
-from . import check_genetic_models
-from genmod.errors import warning
-
+from genmod.utils import check_exonic
 from . import (get_model_score, annotate_cadd_score, 
-                get_haploblocks, annotate_frequency)
+                get_haploblocks, annotate_frequency, check_genetic_models,
+                make_print_version)
 
 class VariantAnnotator(Process):
     """
@@ -58,6 +57,9 @@ class VariantAnnotator(Process):
         self.logger.debug("Setting strict to {0}".format(self.strict))
         self.cadd_raw = kwargs.get('cadd_raw', None)
         self.logger.debug("Setting cadd raw to {0}".format(self.cadd_raw))
+        
+        self.exon_trees = kwargs.get('exon_trees', {})
+        self.whole_gene = kwargs.get('whole_gene', False)
         ######### Annotation files #########
         # Cadd files #
         self.cadd_file = kwargs.get('cadd_file', None)
@@ -112,13 +114,12 @@ class VariantAnnotator(Process):
             self.exac = tabix.open(self.exac)
             self.logger.debug("ExAC frequency file opened")
         if self.dbNSFP:
-            self.exac = tabix.open(self.exac)
+            self.dbNSFP = tabix.open(self.exac)
         self.logger.debug("Setting any cadd info to {0}".format(self.any_cadd_info))
 
     def run(self):
         """Run the consuming"""
-        if self.verbosity:
-            log.info('%s: Starting!' % self.proc_name)
+        self.logger.info('%s: Starting!' % self.proc_name)
         # Check if there are any batches in the queue
         while True:
             # A batch is a dictionary on the form {variant_id:variant_dict}
@@ -127,7 +128,7 @@ class VariantAnnotator(Process):
             if variant_batch is None:
                 self.logger.info('No more batches')
                 self.task_queue.task_done()
-                self.logger.info('{0}: Exiting'.format(proc_name))
+                self.logger.info('{0}: Exiting'.format(self.proc_name))
                 break
                 
             # If there are families we will annotate the genetic inheritance 
@@ -137,13 +138,21 @@ class VariantAnnotator(Process):
                     self.logger.debug("Get haploblocks for variant batch")
                     variant_batch['haploblocks'] = get_haploblocks(variant_batch, self.individuals)
                 
+                for variant_id in variant_batch:
+                    variant = variant_batch[variant_id]
+                    variant['compound_candidate'] = False
+                    if variant['annotation']:
+                        if self.whole_gene:
+                            variant['compound_candidate'] = True
+                        else:
+                            variant['compound_candidate'] = check_exonic(variant)
+                    variant_batch[variant_id] = variant
+                
                 check_genetic_models(
-                                variant_batch, 
-                                self.families, 
-                                self.verbosity,
-                                self.phased, 
-                                self.strict, 
-                                proc_name
+                                variant_batch = variant_batch, 
+                                families = self.families, 
+                                phased = self.phased, 
+                                strict = self.strict, 
                             )
 
             # These are family independent annotations which will be done annyway:
@@ -169,7 +178,10 @@ class VariantAnnotator(Process):
                         )
                 
                 # Now we want to make versions of the variants that are ready for printing.
-                variant = make_print_version(variant)
+                variant = make_print_version(
+                    variant=variant,
+                    families=self.families
+                )
                 
                 variant_batch[variant_id] = variant
             

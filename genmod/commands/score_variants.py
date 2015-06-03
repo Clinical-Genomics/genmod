@@ -26,9 +26,9 @@ from datetime import datetime
 
 from pprint import pprint as pp
 
-from genmod import (VariantScorer, VariantPrinter, get_batches, collectKeys, 
-                    load_annotations, add_metadata, warning, print_headers,
-                    sort_variants, print_variants)
+# from genmod import (VariantScorer, VariantPrinter, get_batches, collectKeys,
+#                     load_annotations, add_metadata, warning, print_headers,
+#                     sort_variants, print_variants)
 
 from ped_parser import FamilyParser
 from vcf_parser import VCFParser

@@ -23,7 +23,7 @@ try:
 except:
     import pickle
 
-from genmod import AnnotationParser
+from genmod.annotation import AnnotationParser
 
 
 ###        This is for building new annotations     ###
@@ -73,12 +73,12 @@ def build_annotation(annotation_file, annotation_type, outdir, splice_padding, v
     with open(gene_db, 'wb') as f:
         logger.info("Dumping gene database to {0}.".format(gene_db))
         pickle.dump(anno_parser.gene_trees, f)
-        logger.debug("Dumping successful.".)
+        logger.debug("Dumping successful.")
     
     with open(exon_db, 'wb') as g:
         logger.info("Dumping exon database to {0}.".format(exon_db))
         pickle.dump(anno_parser.exon_trees, g)
-        logger.debug("Dumping successful.".)
+        logger.debug("Dumping successful.")
     
 
 if __name__ == '__main__':

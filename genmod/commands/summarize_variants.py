@@ -46,7 +46,6 @@ import pkg_resources
 from vcf_parser import VCFParser
 
 import genmod
-from genmod import warning
 
 
 

@@ -62,7 +62,8 @@ def run_genmod(logfile, loglevel):
         For more information, please run:
         genmod COMMAND --help \n
         """
-    from genmod import logger, init_log
+    from genmod import logger
+    from genmod.log import init_log
     init_log(logger, logfile, loglevel)
     
 

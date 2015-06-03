@@ -2,7 +2,7 @@ from __future__ import (print_function, unicode_literals, absolute_import)
 
 import logging
 
-from . import INTERESTING_SO_TERMS
+from . import INTERESTING_SO_TERMS, EXONIC_SO_TERMS
 
 def check_vep_annotation(variant):
     """
@@ -80,3 +80,36 @@ def get_annotation(variant, gene_trees):
     
     return annotation
 
+def check_exonic(variant, exon_trees={}):
+    """
+    Check if the variant is in a exonic region
+    
+    Arguments:
+        variant (dict): A variant dictionary
+        exon_trees (dict): A dictionary with chromosomes as keys and 
+                           IntervalTrees as values 
+    """
+    #If the variant is annotated with vep we look at the consequence terms
+    # to see if they are exonic
+    
+    if variant.get("CSQ", None):
+        for allele in variant.get('vep_info',{}):
+            for vep_annotation in variant['vep_info'][allele]:
+                for consequence in vep_annotation.get('Consequence', {}).split('&'):
+                    # These are the SO terms that indicate that the variant 
+                    # belongs to a exon
+                    if consequence in EXONIC_SO_TERMS:
+                        return True
+    else:
+        chrom = variant['CHROM']
+        pos = variant['POS']
+        alternatives = variant['ALT'].split(',')
+        # When checking what features that are overlapped we use the longest alternative
+        longest_alt = max([len(alternative) for alternative in alternatives])
+        variant_interval = [variant_position, (variant_position + longest_alt-1)]
+        if chrom in exon_trees:
+            if len(exon_trees[chrom].find_range(variant_interval)):
+                return True
+        
+    return False
+            

@@ -5,6 +5,7 @@ import os
 import logging
 
 from datetime import datetime
+from collections import OrderedDict
 
 import click
 
@@ -38,9 +39,9 @@ def get_batches(variant_parser, batch_queue, gene_trees={}):
     
     logger.debug("Set beginning to True")
     beginning = True
-    # A batch is a dictionary with variants
     logger.debug("Create first empty batch")
-    batch = {}
+    # A batch is a ordered dictionary with variants
+    batch = OrderedDict()
     logger.debug("Set current_chrom and new_chrom to None")
     new_chrom = None
     current_chrom = None
@@ -71,6 +72,12 @@ def get_batches(variant_parser, batch_queue, gene_trees={}):
         new_features = get_annotation(variant, gene_trees)
         logger.debug("Features found for {0}: {1}".format(
             variant_id, ', '.join(new_features)))
+
+        logger.debug("Adding {0} to variant {1}".format(
+            variant_id, new_features
+        ))
+        variant['annotation'] = new_features
+        
         
         if nr_of_variants % 20000 == 0:
             logger.info("{0} variants parsed".format(nr_of_variants))

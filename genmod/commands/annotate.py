@@ -30,14 +30,15 @@ from vcf_parser import VCFParser
 
 from genmod import (__version__, VariantPrinter)
 
-from genmod.variant_annotations import (VariantAnnotator)
+from genmod.variant_annotation import (VariantAnnotator)
 
 # , annotation_parser,
 #                     , get_batches, sort_variants,
 #                     load_annotations, print_headers, print_variants,
 #                     add_metadata, warning, __version__)
 
-from genmod.utils import (get_batches, load_annotations, add_metadata)
+from genmod.utils import (get_batches, load_annotations, add_metadata, 
+                          sort_variants, print_variants, print_headers)
 
 from genmod.log import init_log
 
@@ -176,20 +177,34 @@ def check_tabix_index(compressed_file, file_type='cadd', verbose=False):
 def annotate(family_file, variant_file, family_type, vep, silent, phased, strict, cadd_raw, whole_gene, 
                 annotation_dir, cadd_file, cadd_1000g, cadd_exac, cadd_esp, cadd_indels, thousand_g, exac, outfile,
                 split_variants, processes, dbnfsp, verbose):
-    """Annotate variants in a VCF file.\n
-        The main function with genmod is to annotate genetic inheritance patterns for variants in families. 
-        Use flag --family together with a .ped file to describe which individuals in the vcf you wish to check inheritance for in the analysis.
-        Individuals that are not present in the ped file will not be considered in the analysis.\n
-        It is also possible to use genmod without a family file. In this case the variants will be annotated with a variety of options seen below.
-        Please see docuentation on github.com/moonso/genmod or genmod/examples/readme.md for more information.
+    """
+    Annotate variants in a VCF file.\n
+    
+    The main function with genmod is to annotate genetic inheritance 
+    patterns for variants in families. 
+    Use flag --family together with a .ped file to describe which individuals
+     in the vcf you wish to check inheritance patterns for.
+    Individuals that are not present in the ped file will not be considered 
+    in the analysis.\n
+    It is also possible to use genmod without a family file. In this case the 
+    variants will be annotated with a variety of options seen below.
+    Please see docuentation on github.com/moonso/genmod or 
+    genmod/examples/readme.md for more information.
     """    
     logger = logging.getLogger(__name__)
-    logger = logging.getLogger("genmod.commands.annotate")
+    # logger = logging.getLogger("genmod.commands.annotate")
     ######### This is for logging the command line string #########
     frame = inspect.currentframe()
     args, _, _, values = inspect.getargvalues(frame)
-    argument_list = [i+'='+str(values[i]) for i in values if values[i] and 
-                    i != 'config' and i != 'frame' and i != 'logger']
+    argument_list = [
+        i+'='+str(values[i]) for i in values if values[i] and 
+        i not in ['config','frame','logger']
+    ]
+    annotator_arguments = {}
+    annotator_arguments['phased'] = phased
+    annotator_arguments['strict'] = strict
+    annotator_arguments['cadd_raw'] = cadd_raw
+    annotator_arguments['whole_gene'] = whole_gene
     ##############################################################
     
     logger.info("Running GENMOD annotate version {0}".format(__version__))
@@ -199,6 +214,7 @@ def annotate(family_file, variant_file, family_type, vep, silent, phased, strict
     
     ######### Setup a variant parser #########
     init_log(logging.getLogger("vcf_parser"), loglevel="INFO")
+    
     logger.debug("Setting up a variant parser")
     if variant_file == '-':
         variant_parser = VCFParser(
@@ -250,6 +266,9 @@ def annotate(family_file, variant_file, family_type, vep, silent, phased, strict
             else:
                 individuals.append(individual)
         
+        annotator_arguments['individuals'] = individuals
+        annotator_arguments['families'] = families
+        
         logger.info("Families used in analysis: {0}".format(
                     ','.join(list(families.keys()))))
         logger.info("Individuals included in analysis: {0}".format(
@@ -287,7 +306,8 @@ def annotate(family_file, variant_file, family_type, vep, silent, phased, strict
             "The list is splitted on ',' family id is separated with compounds"
             "with ':'. Compounds are separated with '|'.")
         )
-
+    else:
+        logger.info("No families included in analysis")
 
     ######### Read to the annotation data structures #########
 
@@ -298,7 +318,7 @@ def annotate(family_file, variant_file, family_type, vep, silent, phased, strict
     if not vep:
 
         gene_trees, exon_trees = load_annotations(annotation_dir)
-
+        annotator_arguments['exon_trees'] = exon_trees
         logger.debug("Adding vcf metadata for annotation")
         add_metadata(
             head,
@@ -318,18 +338,23 @@ def annotate(family_file, variant_file, family_type, vep, silent, phased, strict
     if cadd_file:
         logger.info('Cadd file! {0}'.format(cadd_file))
         cadd_annotation = True
+        annotator_arguments['cadd_file'] = cadd_file
     if cadd_1000g:
         logger.info('Cadd 1000G file! {0}'.format(cadd_1000g))
         cadd_annotation = True
+        annotator_arguments['cadd_1000g'] = cadd_1000g
     if cadd_esp:
         logger.info('Cadd ESP6500 file! {0}'.format(cadd_esp))
         cadd_annotation = True
+        annotator_arguments['cadd_ESP'] = cadd_esp
     if cadd_indels:
         logger.info('Cadd InDel file! {0}'.format(cadd_indels))
         cadd_annotation = True
+        annotator_arguments['cadd_InDels'] = cadd_indels
     if cadd_exac:
         logger.info('Cadd ExAC file! {0}'.format(cadd_exac))
         cadd_annotation = True
+        annotator_arguments['cadd_exac'] = cadd_exac
 
 
     if cadd_annotation:
@@ -364,6 +389,7 @@ def annotate(family_file, variant_file, family_type, vep, silent, phased, strict
             entry_type='Float',
             description="Frequency in the 1000G database."
         )
+        annotator_arguments['thousand_g'] = thousand_g
 
     if exac:
         logger.info('ExAC frequency file! {0}'.format(exac))
@@ -375,6 +401,7 @@ def annotate(family_file, variant_file, family_type, vep, silent, phased, strict
             entry_type='Float',
             description="Frequency in the ExAC database."
         )
+        annotator_arguments['exac'] = exac
 
 
     ###################################################################
@@ -416,26 +443,13 @@ def annotate(family_file, variant_file, family_type, vep, silent, phased, strict
     # These are the workers that do the heavy part of the analysis
     logger.info('Seting up the workers')
     model_checkers = [
-                    VariantAnnotator(
-                                variant_queue,
-                                results,
-                                families,
-                                phased,
-                                vep,
-                                cadd_raw,
-                                cadd_file,
-                                cadd_1000g,
-                                cadd_exac,
-                                cadd_esp,
-                                cadd_indels,
-                                thousand_g,
-                                exac,
-                                dbnfsp,
-                                strict,
-                                verbose
-                            )
-                        for i in range(num_model_checkers)
-                        ]
+        VariantAnnotator(
+            variant_queue, 
+            results, 
+            **annotator_arguments
+        )
+        for i in range(num_model_checkers)
+    ]
 
     logger.info('Starting the workers')
     for worker in model_checkers:
@@ -461,7 +475,6 @@ def annotate(family_file, variant_file, family_type, vep, silent, phased, strict
     chromosome_list = get_batches(
                                 variant_parser,
                                 variant_queue,
-                                vcf_individuals,
                                 gene_trees,
                             )
 

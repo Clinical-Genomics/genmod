@@ -8,7 +8,7 @@ __version__ = require("genmod")[0].version
 
 # from genmod.annotation_parser import AnnotationParser
 from genmod.variant_annotation import (check_genetic_models, VariantAnnotator)
-# from genmod.variant_scorer import VariantScorer
+from .variant_scorer import VariantScorer
 from .variant_printer import VariantPrinter
 # from genmod.get_batches import get_batches
 # from genmod.utils import (sort_variants, load_annotations, is_number,

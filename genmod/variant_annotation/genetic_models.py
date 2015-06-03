@@ -63,6 +63,7 @@ from __future__ import print_function, unicode_literals
 
 import os
 import sys
+import logging
 from datetime import datetime
 from pprint import pprint as pp
 
@@ -71,29 +72,51 @@ from genmod.models import (check_dominant, check_recessive,
 
 from genmod.utils import generate_pairs
 
-def check_genetic_models(variant_batch, families, verbose = False, 
-                        phased = False, strict = False):
+def check_genetic_models(variant_batch, families, phased = False, 
+                         strict = False):
+    """
+    Check and annotate which genetic models that are followed for the variants 
+    in a batch
+    
+    See more description in header of file or documentation.
+    
+    Arguments:
+        variant_batch (dict): A dictionary with variant ids as keys and variant
+                              dictionaries as values
+        families (dict): A dictionary with family ids as keys and Family 
+                        objects as values
+        phased (bool): If the variants are phased
+        strict (bool): If the strict mode should be used when checking the 
+                       genetic models
+        
+    """
     # A variant batch is a dictionary on the form 
     # {variant_id:variant_dict, variant_2_id:variant_dict_2, ...}
+    logger = logging.getLogger(__name__)
     intervals = variant_batch.pop('haploblocks', {})
     for family_id in families:
+        logger.debug("Checking genetic models for family {0}".format(
+            family_id
+        ))
         family = families[family_id]
         individuals = family.individuals
         
         compound_candidates = []
         compound_pairs = []
+        
         for variant_id in variant_batch:
-            inheritance_models = {'XR' : False,
-                                    'XR_dn' : False,
-                                    'XD' : False,
-                                    'XD_dn' : False,
-                                    'AD' : False,
-                                    'AD_dn' : False,
-                                    'AR_hom' : False,
-                                    'AR_hom_dn' : False,
-                                    'AR_comp' : False,
-                                    'AR_comp_dn' : False
-                                    }
+            inheritance_models = {
+                'XR' : False,
+                'XR_dn' : False,
+                'XD' : False,
+                'XD_dn' : False,
+                'AD' : False,
+                'AD_dn' : False,
+                'AR_hom' : False,
+                'AR_hom_dn' : False,
+                'AR_comp' : False,
+                'AR_comp_dn' : False
+            }
             
             variant = variant_batch[variant_id]
             # save the compound pairs for a variant in a set
@@ -108,9 +131,14 @@ def check_genetic_models(variant_batch, families, verbose = False,
             else:
                 variant['inheritance_models'] = {family_id: inheritance_models}
                 
-            if len(variant['annotation']) > 0:
+                
+            # If the variant is in a genetic region we check for compound 
+            # candidates
+            if variant.get('compound_candidate',True):
+                
                 if check_compound_candidate(variant, family, strict):
                     compound_candidates.append(variant_id)
+            
             # Only check X-linked for the variants in the X-chromosome:
             # For X-linked we do not need to check the other models
             if variant['CHROM'] == 'X':
@@ -165,7 +193,7 @@ def check_genetic_models(variant_batch, families, verbose = False,
                                 variant
                             )
             
-            # Now check the compound models:
+        # Now check the compound models:
             
         if len(compound_candidates) > 1:
             # If there is only one individual we know that all candidates are compounds
@@ -229,8 +257,7 @@ def check_compound_candidate(variant, family, strict):
     
     """
     # This is the case when the variant is located in an uninteresting region(non gene region):
-    if not variant.get('comp_candidate',True):
-        return False
+    
     for individual_id in family.individuals:
         individual = family.individuals[individual_id]
         individual_genotype = variant['genotypes'][individual_id]
