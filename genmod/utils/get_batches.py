@@ -111,7 +111,7 @@ def get_batches(variant_parser, batch_queue, gene_trees={}):
                 if new_features.intersection(current_features):
                     logger.debug("Set send to False since variant features overlap") 
                     send = False
-                
+            
             # If we are at a new chromosome we finish the current batch:
             if new_chrom != current_chrom:
                 chromosomes.append(current_chrom)
