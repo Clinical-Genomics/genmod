@@ -180,6 +180,10 @@ def score(family_file, variant_file, family_type, annotation_dir, vep,
         log.info('Prefered model found in family file: %s \n' % 
                 prefered_models)
     
+    if not plugin_file:
+        log.critical("Please provide a plugin file")
+        sys.exit()
+    
     ######### Read to the annotation data structures #########
     
     gene_trees = {}
