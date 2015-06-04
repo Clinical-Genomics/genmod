@@ -136,17 +136,23 @@ class VariantAnnotator(Process):
             if self.families:
                 if len(variant_batch) > 1:
                     self.logger.debug("Get haploblocks for variant batch")
-                    variant_batch['haploblocks'] = get_haploblocks(variant_batch, self.individuals)
-                
-                for variant_id in variant_batch:
-                    variant = variant_batch[variant_id]
-                    variant['compound_candidate'] = False
-                    if variant['annotation']:
-                        if self.whole_gene:
-                            variant['compound_candidate'] = True
-                        else:
-                            variant['compound_candidate'] = check_exonic(variant)
-                    variant_batch[variant_id] = variant
+                    if self.phased:
+                        variant_batch['haploblocks'] = get_haploblocks(
+                            variant_batch, self.individuals
+                        )
+                    
+                    # We only need to check compound candidates if there is 
+                    # more than one variant in the batch
+                    for variant_id in variant_batch:
+                        self.logger.debug("Check compound candidates")
+                        variant = variant_batch[variant_id]
+                        variant['compound_candidate'] = False
+                        if variant['annotation']:
+                            if self.whole_gene:
+                                variant['compound_candidate'] = True
+                            else:
+                                variant['compound_candidate'] = check_exonic(variant)
+                        variant_batch[variant_id] = variant
                 
                 check_genetic_models(
                                 variant_batch = variant_batch, 
@@ -161,20 +167,20 @@ class VariantAnnotator(Process):
                 
                 if self.any_cadd_info:
                     variant = annotate_cadd_score(
-                        variant,
-                        self.cadd_raw,
-                        self.cadd_file, 
-                        self.cadd_1000g, 
-                        self.cadd_exac, 
-                        self.cadd_ESP, 
-                        self.cadd_InDels
+                        variant=variant,
+                        cadd_raw=self.cadd_raw,
+                        cadd_file=self.cadd_file, 
+                        cadd_1000g=self.cadd_1000g, 
+                        cadd_exac=self.cadd_exac, 
+                        cadd_ESP=self.cadd_ESP, 
+                        cadd_InDels=self.cadd_InDels
                         )
                 
                 if self.thousand_g or self.exac:
                     variant = annotate_frequency(
-                        variant,
-                        self.thousand_g,
-                        self.exac
+                        variant=variant,
+                        thousand_g=self.thousand_g,
+                        exac=self.exac
                         )
                 
                 # Now we want to make versions of the variants that are ready for printing.

@@ -1,5 +1,7 @@
-from functools import reduce
 import logging
+import operator
+import functools
+import math
 
 def get_model_score(individuals, variant):
     """
@@ -17,7 +19,7 @@ def get_model_score(individuals, variant):
         model_score (float): The model score
     
     """
-    logger = logger.getLogger(__name__)
+    logger = logging.getLogger(__name__)
     
     model_score = None
     genotype_scores = []
@@ -34,7 +36,7 @@ def get_model_score(individuals, variant):
     
     if len(genotype_scores) > 0:
         model_score = (
-            round(-10*log10(1-reduce(
+            round(-10*math.log10(1-functools.reduce(
                 operator.mul, [1-score for score in genotype_scores]))))
     
     return model_score

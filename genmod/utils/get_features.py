@@ -102,11 +102,11 @@ def check_exonic(variant, exon_trees={}):
                         return True
     else:
         chrom = variant['CHROM']
-        pos = variant['POS']
+        variant_position = int(variant['POS'])
         alternatives = variant['ALT'].split(',')
         # When checking what features that are overlapped we use the longest alternative
         longest_alt = max([len(alternative) for alternative in alternatives])
-        variant_interval = [variant_position, (variant_position + longest_alt-1)]
+        variant_interval = [variant_position, (variant_position + longest_alt - 1)]
         if chrom in exon_trees:
             if len(exon_trees[chrom].find_range(variant_interval)):
                 return True

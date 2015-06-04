@@ -81,7 +81,7 @@ def annotate_frequency(variant, thousand_g, exac):
                                 )
         if exac_freq:
             variant['ExAC_freq'] = exac_freq
-    return
+    return variant
 
 def get_cadd_scores(tabix_reader, chrom, start, alt=None):
     """
@@ -156,8 +156,8 @@ def annotate_cadd_score(variant, cadd_raw, cadd_file, cadd_1000g, cadd_exac,
                                     variant['POS'], 
                                     alt
                                 )
-            cadd_relative = cadd_score['cadd_phred']
-            cadd_absolute = cadd_score['cadd_raw']
+            cadd_relative = cadd_scores['cadd_phred']
+            cadd_absolute = cadd_scores['cadd_raw']
         # If variant not found in big CADD file check the 1000G file:
         if not (cadd_relative and cadd_absolute) and cadd_1000g:
             cadd_scores = get_cadd_scores(
@@ -166,8 +166,8 @@ def annotate_cadd_score(variant, cadd_raw, cadd_file, cadd_1000g, cadd_exac,
                                     variant['POS'], 
                                     alt
                                 )
-            cadd_relative = cadd_score['cadd_phred']
-            cadd_absolute = cadd_score['cadd_raw']
+            cadd_relative = cadd_scores['cadd_phred']
+            cadd_absolute = cadd_scores['cadd_raw']
         
         if not (cadd_relative and cadd_absolute) and cadd_exac:
             cadd_scores = get_cadd_scores(
@@ -176,8 +176,8 @@ def annotate_cadd_score(variant, cadd_raw, cadd_file, cadd_1000g, cadd_exac,
                                     variant['POS'], 
                                     alt
                                 )
-            cadd_relative = cadd_score['cadd_phred']
-            cadd_absolute = cadd_score['cadd_raw']
+            cadd_relative = cadd_scores['cadd_phred']
+            cadd_absolute = cadd_scores['cadd_raw']
         
         if not (cadd_relative and cadd_absolute) and cadd_ESP:
             cadd_scores = get_cadd_scores(
@@ -186,8 +186,8 @@ def annotate_cadd_score(variant, cadd_raw, cadd_file, cadd_1000g, cadd_exac,
                                     variant['POS'], 
                                     alt
                                 )
-            cadd_relative = cadd_score['cadd_phred']
-            cadd_absolute = cadd_score['cadd_raw']
+            cadd_relative = cadd_scores['cadd_phred']
+            cadd_absolute = cadd_scores['cadd_raw']
         
         if not (cadd_relative and cadd_absolute) and cadd_InDels:
             cadd_scores = get_cadd_scores(
@@ -196,8 +196,8 @@ def annotate_cadd_score(variant, cadd_raw, cadd_file, cadd_1000g, cadd_exac,
                                     variant['POS'], 
                                     alt
                                 )
-            cadd_relative = cadd_score['cadd_phred']
-            cadd_absolute = cadd_score['cadd_raw']
+            cadd_relative = cadd_scores['cadd_phred']
+            cadd_absolute = cadd_scores['cadd_raw']
         
         # If there are several alternatives we want to annotate with multiple
         # values
@@ -217,7 +217,8 @@ def annotate_cadd_score(variant, cadd_raw, cadd_file, cadd_1000g, cadd_exac,
     
     if any_annotation:
         variant['CADD'] = ','.join(cadd_relative_scores)
-        if self.cadd_raw:
+        if cadd_raw:
             variant['CADD_raw'] = ','.join(cadd_absolute_scores)
-    return
+    
+    return variant
 

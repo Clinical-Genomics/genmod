@@ -7,7 +7,7 @@ There are three test families
 - A "dominant" family in dominant_trio.ped, with one affected parent, one healthy parent and one affected child.
 - A multi family file with two families.
 
-There are annotation files included in the distribution of **genmod** that are made from the [latest](ftp://hgdownload.cse.ucsc.edu/goldenPath/hg19/database/refGene.txt.gz) ref gene dataset. These will be used as default if no other annotation is given.
+There are annotation files included in the distribution of **genmod** that are made from the [latest](ftp://hgdownload.cse.ucsc.edu/goldenPath/hg19/database/refGene.txt.gz) refGene dataset. These will be used as default if no other annotation is given.
 If the user want to build own annotations please use **genmod build_annotation**.
 
 ##Annotate variants for Recessive Family##

@@ -111,13 +111,16 @@ def get_haploblocks(variant_batch, individuals):
             ))
             
         # Create interval trees of the haploblocks
-        logger.debug("Creating IntervalTree for individual {0} with:{1}".format(
-            ind_id, haploblocks[ind_id]
-        ))
-        interval_trees[ind_id] = IntervalTree(
-                                                haploblocks[ind_id], 
-                                                haploblocks[ind_id][0][0]-1, 
-                                                haploblocks[ind_id][-1][1]+1
+        if haploblocks[ind_id]:
+            logger.debug("Creating IntervalTree for individual {0} with haploblocks:{1}, "\
+            "start:{2}, stop:{3}".format(
+                ind_id, haploblocks[ind_id], 
+                haploblocks[ind_id][0][0]-1, haploblocks[ind_id][-1][1]+1
+                ))
+            interval_trees[ind_id] = IntervalTree(
+                                            haploblocks[ind_id], 
+                                            haploblocks[ind_id][0][0]-1, 
+                                            haploblocks[ind_id][-1][1]+1
                                         )
         logger.debug("Interval tree created")
     
