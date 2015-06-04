@@ -133,7 +133,6 @@ def get_genetic_models(family_file, family_type):
 )
 @click.option('-pi', '--plugin_file',
               type=click.Path(exists=True),
-              default=pkg_resources.resource_filename('genmod', 'configs/rank_model_test_v1.4.ini'),
               help="The plug-in config file(.ini)"
 )
 @click.option('-p', '--processes', 
