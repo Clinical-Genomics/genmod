@@ -172,7 +172,8 @@ def check_genetic_models(variant_batch, families, verbose = False,
                     variant = variant_batch[variant_id]
                     variant['compounds'][family_id].add(variant_id)
             else:
-                for pair in generate_pairs(compound_candidates):
+                pairs = PairGenerator(compound_candidates)
+                for pair in pairs.generate_pairs():
                 # If the variants in the pair belong to the same gene we check for compounds:
                     variant_1 = variant_batch[pair[0]]
                     variant_2 = variant_batch[pair[1]]
