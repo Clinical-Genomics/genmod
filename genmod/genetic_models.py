@@ -171,6 +171,7 @@ def check_genetic_models(variant_batch, families, verbose = False,
                 for variant_id in compound_candidates:
                     variant = variant_batch[variant_id]
                     variant['compounds'][family_id].add(variant_id)
+                    variant['inheritance_models'][family_id]['AR_comp'] = True
             else:
                 pairs = PairGenerator(compound_candidates)
                 for pair in pairs.generate_pairs():
