@@ -174,9 +174,10 @@ def check_tabix_index(compressed_file, file_type='cadd', verbose=False):
                 is_flag=True,
                 help='Increase output verbosity.'
 )
-def annotate(family_file, variant_file, family_type, vep, silent, phased, strict, cadd_raw, whole_gene, 
-                annotation_dir, cadd_file, cadd_1000g, cadd_exac, cadd_esp, cadd_indels, thousand_g, exac, outfile,
-                split_variants, processes, dbnfsp, verbose):
+def annotate(family_file, variant_file, family_type, vep, silent, phased, 
+             strict, cadd_raw, whole_gene, annotation_dir, cadd_file, 
+             cadd_1000g, cadd_exac, cadd_esp, cadd_indels, thousand_g, exac, 
+             outfile, split_variants, processes, dbnfsp, verbose):
     """
     Annotate variants in a VCF file.\n
     
@@ -192,7 +193,10 @@ def annotate(family_file, variant_file, family_type, vep, silent, phased, strict
     genmod/examples/readme.md for more information.
     """    
     logger = logging.getLogger(__name__)
+    
+    # For testing only:
     # logger = logging.getLogger("genmod.commands.annotate")
+    
     ######### This is for logging the command line string #########
     frame = inspect.currentframe()
     args, _, _, values = inspect.getargvalues(frame)
