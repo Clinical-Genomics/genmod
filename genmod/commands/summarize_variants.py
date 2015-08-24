@@ -31,7 +31,7 @@ Created by Måns Magnusson on 2014-09-08.
 Copyright (c) 2014 __MoonsoInc__. All rights reserved.
 """
 
-from __future__ import (print_function, unicode_literals, division)
+from __future__ import (print_function, division)
 
 import sys
 import os

@@ -5,3 +5,4 @@
 
 from __future__ import absolute_import
 
+from .parse_annotations import parse_annotations

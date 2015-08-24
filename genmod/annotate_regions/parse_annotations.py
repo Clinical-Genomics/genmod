@@ -51,6 +51,9 @@ import os
 import gzip
 import logging
 
+# For testing:
+import click
+
 try:
     import cPickle as pickle
 except:
@@ -66,7 +69,8 @@ from genmod.utils import is_number
 from interval_tree import interval_tree
 
 
-def parse_annotations():
+def parse_annotations(infile, annotation_type, zipped = False, 
+                    splice_padding = 2):
     """
     Parses a file with genetic region annotations.
     
@@ -80,7 +84,9 @@ def parse_annotations():
         splice_padding (int): How many bases around each exon should be added
                               (These are the canonical splice regions)
     """
+    
     logger = logging.getLogger(__name__)
+    logger = logging.getLogger("genmod.annotate_regions.parse_annotation")
     # A dictionary with {<chr>:<intervalTree>} 
     # the trees are intervals with genes
     logger.info("Initializing gene trees")
@@ -101,7 +107,7 @@ def parse_annotations():
     exons = {}
     nr_of_genes = 0
     zipped = False
-
+    
     if infile_extension == '.gz':
         zipped = True        
     
@@ -113,8 +119,8 @@ def parse_annotations():
     if annotation_type == 'gene_pred':
         genes,exons = gene_pred_parser(annotation_handle, splice_padding)
     
-    elif annotation_type == 'gtf':
-        genes,exons = gtf_parser(annotation_handle, splice_padding)
+    # elif annotation_type == 'gtf':
+    #     genes,exons = gtf_parser(annotation_handle, splice_padding)
     
     elif annotation_type == 'ccds':
         genes,exons = ccds_parser(annotation_handle, splice_padding)
@@ -124,7 +130,71 @@ def parse_annotations():
     
     elif annotation_type == 'gff':
         genes,exons = gff_parser(annotation_handle, splice_padding)
+
     
+    for chrom in genes:
+        # prepare the intervals for the tree:
+        gene_intervals = []
+        exon_intervals = []
+        
+        if chrom not in chromosome_stops:
+            chromosome_stops[chrom] = 0
+        
+        for gene_id in genes[chrom]:
+            feature = genes[chrom][gene_id]
+            feature_stop = feature[1]
+            
+            gene_intervals.append(feature)
+            
+            # Update the end position of the interval
+            if feature_stop > chromosome_stops.get(chrom, 0):
+                chromosome_stops[chrom] = feature_stop + 1
+
+        genes[chrom] = gene_intervals
+
+        if chrom in exons:
+            for exon_id in exons[chrom]:
+                exon_feature = exons[chrom][exon_id]
+                exon_intervals.append(exon_feature)
+            
+        exons[chrom] = exon_intervals
+    
+    #Build one interval tree for each chromosome:
+            
+    nr_of_genes = 0
+    
+    
+    for chrom in genes:
+        nr_of_genes += len(genes[chrom])
+        gene_trees[chrom] = interval_tree.IntervalTree(
+                                                    genes[chrom], 
+                                                    1, 
+                                                    chromosome_stops[chrom]
+                                                    )
+    
+    logger.info("Gene interval trees created")
+    
+    for chrom in exons:
+        if len(exons[chrom]) > 0:
+            exon_trees[chrom] = interval_tree.IntervalTree(
+                                                    exons[chrom], 
+                                                    1, 
+                                                    chromosome_stops[chrom]
+                                                    )
+        # If no exons found
+        else:
+            exon_trees[chrom] = interval_tree.IntervalTree(
+                                                    [[0,0,None]], 
+                                                    0, 
+                                                    0
+                                                    )
+
+    logger.info("Exon interval trees created")
+    
+    logger.info("Number of genes in annotation file: {0}".format(nr_of_genes))
+    
+    return gene_trees, exon_trees
+        
 
 def get_coordinates(genes, start, stop, gene_id):
     """
@@ -275,400 +345,242 @@ def gene_pred_parser(ref_file_handle, splice_padding=2):
                     exon_starts[i] - splice_padding,
                     exon_stops[i] + splice_padding,
                     exon_id
-                    
                 ]
-            
+
     return genes,exons
 
-class AnnotationParser(object):
+def gff_parser(gff_file_handle, splice_padding=2, id_key='ID'):
     """
-    Parses a file with genetic region annotations.
+    Parse a file in the gff format.
     
-    Creates gene_trees and exon_trees.
+    Arguments:
+        gff_file_handle (file_handle): An opened file in gff file format
+        splice_padding (int): An integer that describes how we should expand 
+                              the exons
+        id_key (str): The key that defines the gene id in the info string
+    
+    Returns:
+        genes (dict): A dictionary chromosome ids as keys and gene dictionarys
+                      as values.
+        exons (dict): A dictionary chromosome ids as keys and exon dictionarys
+                      as values.
     """
-    def __init__(self, infile, annotation_type, zipped = False, 
-                    splice_padding = 2, verbosity=False):
-        """
-        This could be simplified to a function instead of being a class.
-        """
-        super(AnnotationParser, self).__init__()
-        self.verbosity = verbosity
-        self.annotation_type = annotation_type
-        # A dictionary with {<chr>:<intervalTree>} 
-        # the trees are intervals with genes
-        self.gene_trees = {}
-        # A dictionary with {<chr>:<intervalTree>} 
-        # the trees are intervals with exons
-        self.exon_trees = {}
-        # A dictionary with information about the last 
-        # positions on each chromosome:
-        chromosome_stops = {}
-        infile_name, infile_extension = os.path.splitext(infile)
-        
-        genes = {}
-        exons = {}
-        nr_of_genes = 0
-        zipped = False
-    
-        if infile_extension == '.gz':
-            zipped = True        
-        
-        if zipped:
-            f = getreader('utf-8')(gzip.open(infile), errors='replace')
-        else: 
-            f = open(infile, mode='r', encoding='utf-8', errors='replace')
-        
-        
-        if self.annotation_type == 'gene_pred':
-            genes,exons = self.gene_pred_parser(f, splice_padding)
-        
-        elif self.annotation_type == 'gtf':
-            genes,exons = self.gtf_parser(f, splice_padding)
-        
-        elif self.annotation_type == 'ccds':
-            genes,exons = self.ccds_parser(f, splice_padding)
-        
-        elif self.annotation_type == 'bed':
-            genes,exons = self.bed_parser(f, splice_padding)
-        
-        elif self.annotation_type == 'gff':
-            genes,exons = self.gff_parser(f, splice_padding)
+    genes = {}
+    exons = {}
+
+    for line in gff_file_handle:
+        line = line.rstrip()
+        if not line.startswith('#') and len(line) > 1:
+            if line.startswith('>'):
+                break
+            transcript_id = ''
+            gene_id = ''
+            gene_name = ''
+            feature_start = 0
+            feature_stop = 0
             
-        
-        for chrom in genes:
-            # prepare the intervals for the tree:
-            gene_intervals = []
-            exon_intervals = []
-            for gene_id in dict(genes[chrom]):
-                feature = [genes[chrom][gene_id]['gene_start'],
-                        genes[chrom][gene_id]['gene_stop'], gene_id]
-                gene_intervals.append(feature)
-                
-                # Update the end position of the interval
-                if (genes[chrom][gene_id]['gene_stop'] > 
-                            chromosome_stops.get(chrom, 0)):
-                    chromosome_stops[chrom] = genes[chrom][gene_id]['gene_stop'] + 1
-                
-            genes[chrom] = gene_intervals
-            
-            for exon in dict(exons.get(chrom,{})):
-                exon_intervals.append(
-                                    [
-                                        exon[0], 
-                                        exon[1], 
-                                        ':'.join(exons[chrom][exon])
-                                    ]
-                                    )
-                
-            exons[chrom] = exon_intervals
-        
-        #Build one interval tree for each chromosome:
-                
-        nr_of_genes = 0
-        
-        for chrom in genes:
-            nr_of_genes += len(genes[chrom])
-            self.gene_trees[chrom] = interval_tree.IntervalTree(
-                                                        genes[chrom], 
-                                                        1, 
-                                                        chromosome_stops[chrom]
-                                                        )
-        for chrom in exons:
-            if len(exons[chrom]) > 0:
-                self.exon_trees[chrom] = interval_tree.IntervalTree(
-                                                        exons[chrom], 
-                                                        1, 
-                                                        chromosome_stops[chrom]
-                                                        )
-            # If no exons found
-            else:
-                self.exon_trees[chrom] = interval_tree.IntervalTree(
-                                                        [[0,0,None]], 
-                                                        0, 
-                                                        0
-                                                        )
-        
-        if self.verbosity:
-            print('Number of genes in annotation file: %s' % nr_of_genes, 
-                    file=sys.stderr)
-                
-        return
-    
-    def add_gene(self, genes, chrom, start, stop, gene_id):
-        """Add a gene to a gene dict"""
-        if chrom not in genes:
-            genes[chrom] = {}
-        
-        if gene_id in genes[chrom]:
-            # If this transcript starts before the previous, 
-            # update the start of the gene:
-            if start < genes[chrom][gene_id]['gene_start']:
-                genes[chrom][gene_id]['gene_start'] = start
-            # If this transcript ends after the previous update 
-            # the stop of the gene:
-            if stop > genes[chrom][gene_id]['gene_stop']:
-                genes[chrom][gene_id]['gene_stop'] = stop
-        else:
-            genes[chrom][gene_id] = {'gene_start':start, 'gene_stop':stop}
-        return
-    
-    def add_exon(self, exons, chrom, start, stop, feature_id, splice_padding):
-        """Add a exon to a exon dict"""
-        if chrom not in exons:
-            exons[chrom] = {}
-        exon = (start - splice_padding, stop + splice_padding)
-        if exon in exons[chrom]:
-            exons[chrom][exon].append(feature_id)
-        else:
-            exons[chrom][exon] = [feature_id]
-        return
-    
-    def bed_parser(self, bed_file_handle, splice_padding):
-        """Parse a .bed."""
-        genes = {}
-        exons = {}        
-        for line in bed_file_handle:
-            if not line.startswith('#') and len(line) > 1:
+            line = line.split('\t')
+            if len(line) < 5:
                 line = line.split()
-                feature_id = 'None'
-                chrom = line[0].lstrip('chr')
-                feature_start = int(line[1])
-                feature_stop = int(line[2])
-                if len(line) > 3:
-                    feature_id = line [3]
+            chrom = line[0].lstrip('chr')
             
-                self.add_gene(
-                            genes, 
-                            chrom, 
-                            feature_start, 
-                            feature_stop, 
-                            feature_id
-                            )
-                self.add_exon(
-                            exons, 
-                            chrom, 
-                            feature_start, 
-                            feature_stop, 
-                            feature_id, 
-                            splice_padding
-                            )
+            feature_type = line[2]
+
+            if is_number(line[3]) and is_number(line[4]):
+                feature_start = int(line[3])
+                feature_stop = int(line[4])
+            #TODO Raise exception?
+
+            for information in line[8].split(';'):
+                entry = information.split('=')
+                if entry[0] == 'transcript_id':
+                    transcript_id = entry[1][1:-1]
+                if entry[0] == 'gene_id':
+                    gene_id = entry[1][1:-1]
+                if entry[0] == 'gene_name':
+                    gene_name = entry[1][1:-1]
+                if entry[0] == id_key:
+                    gene_id = entry[1]
             
-        return genes, exons
-    
-    def ccds_parser(self, ccds_file_handle, splice_padding):
-        """Parse a ccds line"""
-        genes = {}
-        exons = {}
-        
-        for line in ccds_file_handle:
-            if not line.startswith('#') and len(line) > 1:
-                line = line.split('\t')                
-                chrom = line[0].lstrip('chr')
-                transcript_id = line[1]
-                gene_id = line[2]
-                if is_number(line[7]) and is_number(line[8]):
-                    feature_start = int(line[7])
-                    feature_stop = int(line[8])
-                    #TODO raise exception?
-                
-                    self.add_gene(
-                                genes, 
-                                chrom, 
-                                feature_start, 
-                                feature_stop, 
-                                gene_id
-                                )
-                
-                    for interval in line[9][1:-1].split(','):
-                        print(interval)
-                        boundaries = (interval.split('-'))
-                        exon_start = int(boundaries[0].lstrip())
-                        exon_stop = int(boundaries[1].lstrip())
-        
-        return genes, exons
-    
-    def gtf_parser(self, gtf_file_handle, splice_padding):
-        """Parse a gtf file"""
-        genes = {}
-        exons = {}
-        
-        for line in gtf_file_handle:
-            if not line.startswith('#') and len(line) > 1:
-                transcript_id = ''
-                gene_id = ''
-                gene_name = ''
-                
-                line = line.split('\t')
-                if len(line) < 5:
-                    line = line.split()
-                chrom = line[0].lstrip('chr')
-                if is_number(line[3]) and is_number(line[4]):
-                    feature_start = int(line[3])
-                    feature_stop = int(line[4])
-                #TODO Raise exception?
-                info_field = line[8].split(';')[:-1]
-                for information in info_field:
-                    entry = information.split()
-                    if entry[0] == 'transcript_id':
-                        transcript_id = entry[1][1:-1]
-                    if entry[0] == 'gene_id':
-                        gene_id = entry[1][1:-1]
-                    if entry[0] == 'gene_name':
-                        gene_name = entry[1][1:-1]
-                
-                if line[2] == 'gene':
-                    self.add_gene(
-                                genes, 
-                                chrom, 
-                                feature_start, 
-                                feature_stop, 
-                                gene_id
-                                )
-                 
-                elif line[2] == 'exon':
-                    self.add_exon(
-                                exons, 
-                                chrom, 
-                                feature_start, 
-                                feature_stop, 
-                                transcript_id, 
-                                splice_padding
-                                )
-                
-        
-        return genes,exons
+            if feature_type in ['gene', 'CDS', 'exon']:
+                if chrom not in genes:
+                    genes[chrom] = {}
+                if chrom not in exons:
+                    exons[chrom] = {}
 
-    def gff_parser(self, gff_file_handle, splice_padding, id_key='ID'):
-        """Parse a gtf file"""
-        genes = {}
-        exons = {}
-        
-        for line in gff_file_handle:
-            line = line.rstrip()
-            if not line.startswith('#') and len(line) > 1:
-                if line.startswith('>'):
-                    break
-                transcript_id = ''
-                gene_id = ''
-                gene_name = ''
-                feature_start = 0
-                feature_stop = 0
-
-                line = line.split('\t')
-                if len(line) < 5:
-                    line = line.split()
-                chrom = line[0].lstrip('chr')
-
-                if is_number(line[3]) and is_number(line[4]):
-                    feature_start = int(line[3])
-                    feature_stop = int(line[4])
-                #TODO Raise exception?
-
-                for information in line[8].split(';'):
-                    entry = information.split('=')
-                    if entry[0] == 'transcript_id':
-                        transcript_id = entry[1][1:-1]
-                    if entry[0] == 'gene_id':
-                        gene_id = entry[1][1:-1]
-                    if entry[0] == 'gene_name':
-                        gene_name = entry[1][1:-1]
-                    if entry[0] == id_key:
-                        gene_id = entry[1]
-                
-                if line[2] in ['gene', 'CDS']:
-                    self.add_gene(
-                                genes,
-                                chrom,
-                                feature_start,
-                                feature_stop,
-                                gene_id
-                                )
-
-                elif line[2] == 'exon':
-                    self.add_exon(
-                                exons,
-                                chrom,
-                                feature_start,
-                                feature_stop,
-                                transcript_id,
-                                splice_padding
-                                )
-
-
-        return genes,exons
-    
-    def gene_pred_parser(self, ref_file_handle, splice_padding):
-        """
-        Parse a file in the refGene format.
-        
-        We should add the information about gene or transcript here.
-        """
-        # A dictionary with {<chr>: {gene_id:{'gene_start':0,'gene_stop':0}}
-        genes = {}
-        # A dictionary with {<chr>: 
-        # {(exon_start, exon_stop, transcript_id_1):[gene_id_1, ..]
-        exons = {} 
-        ### Features look like [start,stop, feature_id] ###
-        nr_of_lines = 0
-        for line in ref_file_handle:
-            if not line.startswith('#') and len(line) > 1:
-                line = line.split('\t')
-                nr_of_lines += 1
-                transcript = line[1]
-                chrom = line[2].lstrip('chr')
-                direction = line[3]
-                transc_start = int(line[4])
-                transc_stop = int(line[5])
-                coding_start = int(line[6])
-                coding_stop = int(line[7])
-                nr_of_exons = int(line[8])
-                exon_starts = [
-                        int(boundary) for boundary in line[9].split(',')[:-1]
-                        ]
-                exon_stops = [
-                        int(boundary) for boundary in line[10].split(',')[:-1]
-                        ]
-                gene_id = line[12]
-                transcript_id = ':'.join([transcript, gene_id])
-                                
-                self.add_gene(
-                            genes, 
-                            chrom, 
-                            transc_start, 
-                            transc_stop, 
+            if feature_type in ['gene', 'CDS']:
+                genes[chrom][gene_id] = get_coordinates(
+                            genes[chrom],
+                            feature_start,
+                            feature_stop,
                             gene_id
                             )
-                for i in range(len(exon_starts)):
-                    self.add_exon(
-                            exons, 
-                            chrom, 
-                            exon_starts[i], 
-                            exon_stops[i], 
-                            transcript_id, 
-                            splice_padding
-                            )
-                
-        return genes,exons
+
+            elif line[2] == 'exon':
+                exon_id = str(feature_start) + str(feature_stop)
+                exon_feature = [
+                    feature_start - splice_padding,
+                    feature_stop + splice_padding,
+                    exon_id
+                ]
+                print(exon_feature)
+                exons[chrom][exon_id] = exon_feature
+
+
+    return genes,exons
+
+
+def bed_parser(bed_file_handle, splice_padding=2):
+    """
+    Parse a file in the bed format.
+    
+    Arguments:
+        bed_file_handle (file_handle): An opened file in gff file format
+        splice_padding (int): An integer that describes how we should expand 
+                              the exons
+    
+    Returns:
+        genes (dict): A dictionary chromosome ids as keys and gene dictionarys
+                      as values.
+        exons (dict): A dictionary chromosome ids as keys and exon dictionarys
+                      as values.
+    
+    """
+    genes = {}
+    exons = {}        
+    for line in bed_file_handle:
+        if not line.startswith('#') and len(line) > 1:
+            line = line.split()
+            feature_id = 'None'
+            chrom = line[0].lstrip('chr')
+            feature_start = int(line[1])
+            feature_stop = int(line[2])
+            if len(line) > 3:
+                feature_id = line [3]
+            
+            if chrom not in genes:
+                genes[chrom] = {}
+            if chrom not in exons:
+                exons[chrom] = {}
+            
+            genes[chrom][gene_id] = get_coordinates(
+                        genes[chrom],
+                        feature_start,
+                        feature_stop,
+                        feature_id
+                        )
+            
+            exon_id = str(feature_start) + str(feature_stop)
+            
+            exons[chrom][exon_id] = [
+                feature_start - splice_padding,
+                feature_stop + splice_padding,
+                exon_id
+                ]
+    
+    return genes, exons
+
+def gtf_parser(gtf_file_handle, splice_padding=2):
+   """
+   Parse a file in the bed format.
+   
+   Arguments:
+       gtf_file_handle (file_handle): An opened file in gtf file format
+       splice_padding (int): An integer that describes how we should expand 
+                             the exons
+   
+   Returns:
+       genes (dict): A dictionary chromosome ids as keys and gene dictionarys
+                     as values.
+       exons (dict): A dictionary chromosome ids as keys and exon dictionarys
+                     as values.
+   
+   """
+   genes = {}
+   exons = {}
+
+   for line in gtf_file_handle:
+       if not line.startswith('#') and len(line) > 1:
+           transcript_id = ''
+           gene_id = ''
+           gene_name = ''
+
+           line = line.split('\t')
+
+           if len(line) < 5:
+               line = line.split()
+
+           chrom = line[0].lstrip('chr')
+           feature_type = line[2]
+           
+           if is_number(line[3]) and is_number(line[4]):
+               feature_start = int(line[3])
+               feature_stop = int(line[4])
+
+           info_field = line[8].split(';')[:-1]
+
+           for information in info_field:
+               entry = information.split()
+
+               if entry[0] == 'transcript_id':
+                   transcript_id = entry[1].strip('"')
+               if entry[0] == 'gene_id':
+                   gene_id = entry[1].strip('"')
+               if entry[0] == 'gene_name':
+                   gene_name = entry[1].strip('"')
+
+           if feature_type == 'gene':
+               
+               if chrom not in genes:
+                   genes[chrom] = {}
+               
+               genes[chrom][gene_id] = get_coordinates(
+                           genes[chrom],
+                           feature_start,
+                           feature_stop,
+                           gene_id
+                           )
+
+           elif feature_type == 'exon':
+               
+               if chrom not in exons:
+                   exons[chrom] = {}
+               
+               exon_id = str(feature_start) + str(feature_stop)
+               exons[chrom][exon_id] = [
+                   feature_start - splice_padding,
+                   feature_stop + splice_padding,
+                   exon_id
+                   ]
+               
+
+   return genes,exons
+
         
         
-# @click.command()
-# @click.argument('annotation_file',
-#                 nargs=1,
-#                 type=click.Path(exists=True),
-# )
-# @click.option('-t' ,'--annotation_type',
-#                 type=click.Choice(['bed', 'ccds', 'gtf', 'gene_pred', 'gff']),
-#                 default='gene_pred',
-#                 help='Specify the format of the annotation file.'
-# )
-# @click.option('-v', '--verbose',
-#                 is_flag=True,
-#                 help='Increase output verbosity.'
-# )
-# def main(annotation_file, annotation_type, verbose):
-#     print(annotation_file)
-#     AnnotationParser(annotation_file, annotation_type, verbosity=verbose)
-#
-#
-# if __name__ == '__main__':
-#     main()
+@click.command()
+@click.argument('annotation_file',
+                nargs=1,
+                type=click.Path(exists=True),
+)
+@click.option('-t' ,'--annotation_type',
+                type=click.Choice(['bed', 'ccds', 'gtf', 'gene_pred', 'gff']),
+                default='gene_pred',
+                help='Specify the format of the annotation file.'
+)
+@click.option('-v', '--verbose',
+                is_flag=True,
+                help='Increase output verbosity.'
+)
+def main(annotation_file, annotation_type, verbose):
+    from genmod import logger
+    from genmod.log import init_log
+    init_log(logger, loglevel="DEBUG")
+    print(annotation_file)
+    gene_trees, exon_trees = parse_annotations(annotation_file, annotation_type)
+    print(gene_trees.keys())
+    print(exon_trees.keys())
+
+
+if __name__ == '__main__':
+    main()

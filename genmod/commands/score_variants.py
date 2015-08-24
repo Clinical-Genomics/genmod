@@ -9,7 +9,7 @@ Created by Henrik Stranneheim and Måns Magnusson on 2015-01-08.
 Copyright (c) 2015 __MoonsoInc__. All rights reserved.
 """
 
-from __future__ import print_function, unicode_literals
+from __future__ import print_function
 
 import sys
 import os

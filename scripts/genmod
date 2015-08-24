@@ -9,7 +9,7 @@ Created by Måns Magnusson on 2014-01-21.
 Copyright (c) 2013 __MyCompanyName__. All rights reserved.
 """
 
-from __future__ import (print_function, unicode_literals)
+from __future__ import (print_function)
 
 import sys
 import os
@@ -49,13 +49,13 @@ def print_version(ctx, param, value):
 )
 @click.option('-l', '--logfile',
                     type=click.Path(exists=False),
-                    help="Path to log file. If none logging is "\
+                    help=u"Path to log file. If none logging is "\
                           "printed to stderr."
 )
 @click.option('--loglevel',
                     type=click.Choice(['DEBUG', 'INFO', 'WARNING', 'ERROR', 
                                         'CRITICAL']),
-                    help="Set the level of log output."
+                    help=u"Set the level of log output."
 )
 def run_genmod(logfile, loglevel):
     """Tool for annotating and analyzing genetic variants in the vcf format.\n
