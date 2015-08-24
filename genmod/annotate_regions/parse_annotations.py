@@ -221,7 +221,7 @@ def gene_pred_parser(ref_file_handle, splice_padding=2):
     Parse a file in the refGene format.
     
     Arguments:
-        ccds_file_handle (file_handle): An opened file in ccds format
+        ref_file_handle (file_handle): An opened file in ref_gene format
         splice_padding (int): An integer that describes how we should expand 
                               the exons
     Returns:
@@ -255,7 +255,13 @@ def gene_pred_parser(ref_file_handle, splice_padding=2):
                     ]
             gene_id = line[12]
             transcript_id = ':'.join([transcript, gene_id])
-                            
+            
+            if chrom not in genes:
+                genes[chrom] = {}
+            
+            if chrom not in exons:
+                exons[chrom] = {}
+            
             genes[chrom][gene_id] = get_coordinates(
                         genes[chrom], 
                         transc_start, 
@@ -264,7 +270,7 @@ def gene_pred_parser(ref_file_handle, splice_padding=2):
                         )
             
             for i in range(len(exon_starts)):
-                exon_id = exon_starts[i]+exon_stops[i]
+                exon_id = str(exon_starts[i]) + str(exon_stops[i])
                 exons[chrom][exon_id] = [
                     exon_starts[i] - splice_padding,
                     exon_stops[i] + splice_padding,
@@ -273,7 +279,6 @@ def gene_pred_parser(ref_file_handle, splice_padding=2):
                 ]
             
     return genes,exons
-
 
 class AnnotationParser(object):
     """
