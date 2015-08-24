@@ -196,33 +196,32 @@ def check_genetic_models(variant_batch, families, phased = False,
         # Now check the compound models:
             
         if len(compound_candidates) > 1:
-            # If there is only one individual we know that all candidates are compounds
-            if len(individuals) == 1:
-                for variant_id in compound_candidates:
-                    variant = variant_batch[variant_id]
-                    variant['compounds'][family_id].add(variant_id)
-            else:
-                for pair in generate_pairs(compound_candidates):
-                # If the variants in the pair belong to the same gene we check for compounds:
-                    variant_1 = variant_batch[pair[0]]
-                    variant_2 = variant_batch[pair[1]]
-                    # Check that the pair is in the same feature:
-                    if variant_1['annotation'].intersection(variant_2['annotation']):
-                    # We know from check_compound_candidates that all variants are present in all affected
-                        if check_compounds(variant_1, variant_2, family, intervals, phased):
-                            parents_found = False
-                            for individual_id in individuals:
-                                individual = individuals[individual_id]
-                                if individual.has_parents:
-                                    check_parents('compound', individual_id, family, variant_1, variant_2)
-                                    parents_found = True
-                            if not parents_found:
-                                variant_1['inheritance_models'][family_id]['AR_comp'] = True
-                                variant_2['inheritance_models'][family_id]['AR_comp'] = True
-                                    
-                            variant_1['compounds'][family_id].add(pair[1])
-                            variant_2['compounds'][family_id].add(pair[0])
-    
+            pairs = PairGenerator(compound_candidates)
+            for pair in pairs.generate_pairs():
+            # If the variants in the pair belong to the same gene we check for compounds:
+                variant_1 = variant_batch[pair[0]]
+                variant_2 = variant_batch[pair[1]]
+                # Check that the pair is in the same feature:
+                if variant_1['annotation'].intersection(variant_2['annotation']):
+                    if len(individuals) == 1:
+                        variant_1['compounds'][family_id].add(pair[1])
+                        variant_2['compounds'][family_id].add(pair[0])
+                        variant_1['inheritance_models'][family_id]['AR_comp'] = True
+                        variant_2['inheritance_models'][family_id]['AR_comp'] = True
+                # We know from check_compound_candidates that all variants are present in all affected
+                    elif check_compounds(variant_1, variant_2, family, intervals, phased):
+                        parents_found = False
+                        for individual_id in individuals:
+                            individual = individuals[individual_id]
+                            if individual.has_parents:
+                                check_parents('compound', individual_id, family, variant_1, variant_2)
+                                parents_found = True
+                        if not parents_found:
+                            variant_1['inheritance_models'][family_id]['AR_comp'] = True
+                            variant_2['inheritance_models'][family_id]['AR_comp'] = True
+                                
+                        variant_1['compounds'][family_id].add(pair[1])
+                        variant_2['compounds'][family_id].add(pair[0])
     return
 
 def check_compound_candidate(variant, family, strict):
