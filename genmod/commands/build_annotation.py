@@ -9,7 +9,7 @@ Created by Måns Magnusson on 2014-09-03.
 Copyright (c) 2014 __MoonsoInc__. All rights reserved.
 """
 
-from __future__ import print_function, unicode_literals
+from __future__ import print_function
 
 import sys
 import os
@@ -66,9 +66,12 @@ def build_annotation(annotation_file, annotation_type, outdir, splice_padding, v
                             splice_padding = splice_padding, 
                             verbosity=verbose
                         )
-    
+    logger.info("Creating files for dumping the data structures")
     gene_db = os.path.join(outdir, 'genes.db')
     exon_db = os.path.join(outdir, 'exons.db')
+    logger.info("Gene annotation files will be dumped on {0}".format(gene_db))
+    logger.info("Exon annotation files will be dumped on {0}".format(exon_db))
+    
     
     with open(gene_db, 'wb') as f:
         logger.info("Dumping gene database to {0}.".format(gene_db))

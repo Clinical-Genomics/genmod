@@ -38,18 +38,24 @@ class VariantAnnotator(Process):
         
         Process.__init__(self)
         self.logger = logging.getLogger(__name__)
+        
         self.proc_name = self.name
+        
         self.logger.info("Setting up variant_annotator: {0}".format(
             self.proc_name))
         self.logger.debug("Setting up task queue")
+        
         self.task_queue = task_queue
+        
         self.logger.debug("Setting up results queue")
         self.results_queue = results_queue
+        
         # The families that should be annotated
         self.families = kwargs.get('families', {})
         self.logger.debug("Families found: {0}".format(self.families))
         self.individuals = kwargs.get('individuals', [])
         self.logger.debug("Individuals found: {0}".format(self.individuals))
+        
         # Settings for the annotation
         self.phased = kwargs.get('phased', False)
         self.logger.debug("Setting phased to {0}".format(self.phased))
@@ -60,6 +66,7 @@ class VariantAnnotator(Process):
         
         self.exon_trees = kwargs.get('exon_trees', {})
         self.whole_gene = kwargs.get('whole_gene', False)
+        
         ######### Annotation files #########
         # Cadd files #
         self.cadd_file = kwargs.get('cadd_file', None)
@@ -79,6 +86,7 @@ class VariantAnnotator(Process):
         self.logger.debug("Exac frequency file {0}".format(self.thousand_g))
         self.dbNSFP = kwargs.get('dbNSFP', None)
         self.any_cadd_info = False
+        
         # Setup file handles to the annotation files
         if self.cadd_file:
             self.logger.debug("Opening cadd file with tabix open")
