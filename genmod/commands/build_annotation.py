@@ -5,6 +5,11 @@ build_annotation.py
 
 Command line tool for building new annotation databases for genmod.
 
+The annotation database is a data structure for fast feature annotation with 
+genmod. This gives the user the opportunity to use their own set of genes, or
+other features, to annotate their variants with.
+
+
 Created by Måns Magnusson on 2014-09-03.
 Copyright (c) 2014 __MoonsoInc__. All rights reserved.
 """
@@ -33,16 +38,15 @@ from genmod.annotate_regions import parse_annotations
                 nargs=1, 
                 type=click.Path(exists=True),
 )
+@click.option('-o', '--outdir', 
+                    type=click.Path(exists=True),
+                    help="Specify the path to a folder where the annotation"\
+                         " files should be stored."
+)
 @click.option('-t' ,'--annotation_type',
                 type=click.Choice(['bed', 'ccds', 'gtf', 'gene_pred', 'gff']), 
                 default='gene_pred',
                 help='Specify the format of the annotation file.'
-)
-@click.option('-o', '--outdir', 
-                    type=click.Path(exists=True),
-                    default=pkg_resources.resource_filename('genmod', 'annotations'),
-                    help=("""Specify the path to a folder where the annotation files should be stored. 
-                            Default is the annotations dir of the ditribution.""")
 )
 @click.option('--splice_padding',
                     type=int, nargs=1, default=2,
@@ -55,6 +59,9 @@ from genmod.annotate_regions import parse_annotations
 def build_annotation(annotation_file, annotation_type, outdir, splice_padding, verbose):
     """Build a new annotation database."""
     logger = logging.getLogger(__name__)
+    
+    if not outdir:
+        raise IOError("Please give a outdir with flag -o/--outdir")
     
     logger.info("Building new annotation databases from {0} into {1}.".format(
         annotation_file, outdir))

@@ -41,6 +41,7 @@ setup(name='genmod',
         'genmod/utils',
         'genmod/errors',
         'genmod/models',
+        'genmod/vcf_tools',
     ],
     package_data = {
         'genmod': ['annotations/*.db']

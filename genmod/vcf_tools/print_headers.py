@@ -9,7 +9,7 @@ Created by Måns Magnusson on 2015-01-22.
 Copyright (c) 2015 __MoonsoInc__. All rights reserved.
 """
 
-from __future__ import print_function, unicode_literals
+from __future__ import print_function
 
 from codecs import open
 
@@ -21,18 +21,17 @@ def print_headers(head, outfile=None, silent=False):
     they are printed to stdout.
     
     Args:
-        head    : A vcf header object
-        outfile : Path to outfile or None
-        silent  : Bool. If nothing should be printed.
+        head (HeaderParser): A vcf header object
+        outfile (FileHandle): A file handle
+        silent (Bool): If nothing should be printed.
         
     """
-    if outfile:
-        with open(outfile, 'w', encoding='utf-8') as f:
-            for head_count in head.print_header():
-                f.write(head_count+'\n')
-    else:
-        if not silent:
-            for line in head.print_header():
-                print(line)
+    for header_line in head.print_header():
+        
+        if outfile:
+            outfile.write(header_line+'\n')
+        else:
+            if not silent:
+                print(header_line)
     return
 
