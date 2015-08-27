@@ -24,7 +24,7 @@ import pkg_resources
 import genmod
 
 from genmod.commands import (build_annotation, annotate, analyze, 
-                            summarize_variants, score_variants)
+                            summarize_variants, score_variants, genmod_sort)
 
 
 version = pkg_resources.require("genmod")[0].version
@@ -66,6 +66,7 @@ run_genmod.add_command(annotate.annotate)
 run_genmod.add_command(analyze.analyze)
 run_genmod.add_command(summarize_variants.summarize)
 run_genmod.add_command(score_variants.score)
+run_genmod.add_command(genmod_sort.sort)
 
 
 
