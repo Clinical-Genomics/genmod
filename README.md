@@ -142,6 +142,25 @@ For more information do
 	genmod analyze --help
 
 
+### genmod sort ###
+
+
+Sort a VCF file based on Rank Score.
+
+```
+Usage: genmod sort [OPTIONS] <vcf_file> or -
+
+  Sort a VCF file based on rank score.
+
+Options:
+  -o, --outfile PATH    Specify the path to a file where results should be
+                        stored.
+  -f, --family_id TEXT  Specify the family id for sorting. If no family id the
+                        first family found in annotation will be used.
+  -v, --verbose         Increase output verbosity.
+  --help                Show this message and exit.
+```
+
 ###genmod summarize###
 
 Tool to get basic statistics of the annotated in a vcf file.
