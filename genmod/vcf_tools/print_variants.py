@@ -20,7 +20,7 @@ from __future__ import print_function
 from codecs import open
 
 
-def print_variants(variant_file, outfile=None, mode='modified', silent=False):
+def print_variant(variant_line, outfile=None, mode='vcf', silent=False):
     """
     Print the variants.
     
@@ -34,28 +34,23 @@ def print_variants(variant_file, outfile=None, mode='modified', silent=False):
     
     Args:
         variants_file (str): A string with the path to a file
-        outfile (str): Path to outfile or None
+        outfile (FileHandle): An opened file_handle
         mode (str): 'vcf' or 'modified'
         silent (bool): Bool. If nothing should be printed.
     
     """
     
-    with open(variant_file, mode='r', encoding='utf-8') as f:
+    if not variant_line.startswith('#'):
+        splitted_line = variant_line.rstrip().split('\t')
+        if mode == 'modified':
+            splitted_line = splitted_line[1:]
+            
         if outfile:
-            g = open(outfile, 'a', encoding='utf-8')
+            outfile.write('\t'.join(splitted_line)+'\n')
         
-        for line in f:
-            if not line.startswith('#'):
-                line = line.rstrip().split('\t')
-                if mode == 'modified':
-                    line = line[1:]
-                
-                if outfile:
-                    g.write('\t'.join(line)+'\n')
-                
-                else:
-                    if not silent:
-                        print('\t'.join(line))
+        else:
+            if not silent:
+                print('\t'.join(splitted_line))
     return
 
 def print_variant_for_sorting(variant_line, outfile, family_id=None):

@@ -53,13 +53,8 @@ EXONIC_SO_TERMS = set(
             ]
 )
 
-from .load_annotation import load_annotations
 from .is_number import is_number
-from genmod.utils.plugin_reader import collectKeys
-from .sort_variants import sort_variants
-from .print_variants import print_variants, print_variant_for_sorting
-from .print_headers import print_headers
-from .add_metadata import add_metadata
+from .plugin_reader import collectKeys
 from .pair_generator import generate_pairs
 
 from .get_features import (get_annotation, check_vep_annotation, check_exonic)

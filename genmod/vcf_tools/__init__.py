@@ -4,3 +4,5 @@ from .header_parser import HeaderParser
 from .add_variant_information import add_vcf_info
 from .add_metadata import add_metadata
 from .print_headers import print_headers
+from .print_variants import print_variant, print_variant_for_sorting
+from .sort_variants import sort_variants

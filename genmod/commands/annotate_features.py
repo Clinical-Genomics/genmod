@@ -21,7 +21,8 @@ import click
 
 from genmod import __version__
 from genmod.annotate_regions import load_annotations, check_overlap
-from genmod.vcf_tools import HeaderParser, add_vcf_info, add_metadata, print_headers
+from genmod.vcf_tools import (HeaderParser, add_vcf_info, add_metadata, print_headers,
+                              print_variant)
 
 @click.command()
 @click.argument('variant_file', 
@@ -129,13 +130,14 @@ def annotate_features(variant_file, annotation_dir, outfile, keyword):
                     variant_line = line,
                     keyword = "Exonic"
                 )
-            if outfile:
-                outfile.write(line)
-            else:
-                print(line)
+            
+            print_variant(
+                variant_line = line,
+                outfile = outfile
+            )
 
 if __name__ == '__main__':
     from genmod.log import init_log
     from genmod import logger
-    init_log(logger, loglevel="CRITICAL")
+    init_log(logger, loglevel="INFO")
     annotate_features()
