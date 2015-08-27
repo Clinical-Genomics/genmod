@@ -32,7 +32,7 @@ from genmod import AnnotationParser
                 type=click.Path(exists=True),
 )
 @click.option('-t' ,'--annotation_type',
-                type=click.Choice(['bed', 'ccds', 'gtf', 'gene_pred']), 
+                type=click.Choice(['bed', 'ccds', 'gtf', 'gene_pred', 'gff']), 
                 default='gene_pred',
                 help='Specify the format of the annotation file.'
 )
