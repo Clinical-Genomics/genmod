@@ -13,11 +13,16 @@ from __future__ import print_function
 
 import sys
 import os
+import logging
+
 import click
 
 
 from codecs import open
-from tempfile import TemporaryFile
+from tempfile import NamedTemporaryFile
+
+from genmod.utils import (print_variants, print_variant_for_sorting, 
+                          sort_variants)
 
 @click.command()
 @click.argument('variant_file', 
@@ -26,7 +31,7 @@ from tempfile import TemporaryFile
                     metavar='<vcf_file> or -'
 )
 @click.option('-o', '--outfile', 
-                    type=click.File('w'),
+                    type=click.Path(exists=False),
                     help='Specify the path to a file where results should be stored.'
 )
 @click.option('-f', '--family_id', 
@@ -41,7 +46,7 @@ def sort(variant_file, outfile, family_id, verbose):
     """
     Sort a VCF file based on rank score.\n
     """    
-    
+    logger = logging.getLogger(__name__)
     #Save the variant lines for printing
     header_lines = []
     
@@ -67,6 +72,7 @@ def sort(variant_file, outfile, family_id, verbose):
                 outfile = temp_file_handle,
                 family_id = family_id
             )
+    # The tempfile includes the unsorted variants
     temp_file_handle.close()
     
     # Sort the variants based on rank score
@@ -76,16 +82,23 @@ def sort(variant_file, outfile, family_id, verbose):
     )
     
     # Print the headers
-    print_headers(head, outfile)
+    if outfile:
+        g = open(outfile, 'w', encoding='utf-8')
+    
+    for header in header_lines:
+        if outfile:
+            g.write(header + '\n')
+        else:
+            print(header)
+    if outfile:
+        g.close()
     
     # Print the variants
-    with open(temp_file.name, mode='r', encoding='utf-8', errors='replace') as f:
-        for variant_line in f:
-            print_variant(
-                variant_line = variant_line,
-                outfile = outfile,
-                mode = 'modified'
-                )
+    print_variants(
+        variant_file = temp_file.name,
+        outfile = outfile,
+        mode = 'modified'
+    )
     
     logger.info("Removing temp file")
     os.remove(temp_file.name)
