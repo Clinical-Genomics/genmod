@@ -14,7 +14,7 @@ from __future__ import print_function
 import logging
 
 from datetime import datetime
-
+from genmod import __version__
 
 def add_metadata(head, metadata_type, annotation_id, annotation_number='.',
                 entry_type=None, description=None, version=None,
@@ -50,11 +50,87 @@ def add_metadata(head, metadata_type, annotation_id, annotation_number='.',
         logger.debug("Updating version header with {0}".format(
             annotation_id
         ))
-        head.add_version_tracking(
-                        annotation_id, 
-                        version, 
-                        datetime.now().strftime("%Y-%m-%d %H:%M"), 
-                        command_line_string
-                    )
     return
 
+def add_version_header(head, command_line_string = ""):
+    """Add Version information to the header"""
+    head.add_version_tracking(
+                    'genmod',
+                    __version__,
+                    datetime.now().strftime("%Y-%m-%d %H:%M"),
+                    command_line_string
+                )
+    return
+    
+
+def add_annotation_header(head):
+    """
+    Add the Annotation information to a vcf header
+    """
+    add_metadata(
+        head,
+        'info',
+        'Annotation',
+        annotation_number='.',
+        entry_type='String',
+        description='Annotates what feature(s) this variant belongs to.'
+    )
+    return
+
+def add_exonic_header(head):
+    """
+    Add the Exonic information to a vcf header
+    """
+    add_metadata(
+        head,
+        'info',
+        'Exonic',
+        annotation_number='0',
+        entry_type='Flag',
+        description='Indicates if the variant is exonic.'
+    )
+    return
+    
+def add_genetic_models_header(head):
+    """
+    Add Genetic Models to vcf header
+    """
+    add_metadata(
+        head,
+        'info',
+        'GeneticModels',
+        annotation_number='.',
+        entry_type='String',
+        description="':'-separated list of genetic models for this variant."
+    )
+    return
+
+def add_model_score_header(head):
+    """
+    Add Model Score to vcf header
+    """
+    add_metadata(
+        head,
+        'info',
+        'ModelScore',
+        annotation_number='1',
+        entry_type='Integer',
+        description="PHRED score for genotype models."
+    )
+    return
+
+def add_compounds_header(head):
+    """
+    Add compounds to vcf header
+    """
+    add_metadata(
+        head,
+        'info',
+        'Compounds',
+        annotation_number='.',
+        entry_type='String',
+        description=("List of compound pairs for this variant."
+        "The list is splitted on ',' family id is separated with compounds"
+        "with ':'. Compounds are separated with '|'.")
+    )
+    return

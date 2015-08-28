@@ -21,8 +21,8 @@ import click
 
 from genmod import __version__
 from genmod.annotate_regions import load_annotations, check_overlap
-from genmod.vcf_tools import (HeaderParser, add_vcf_info, add_metadata, print_headers,
-                              print_variant)
+from genmod.vcf_tools import (HeaderParser, add_vcf_info,add_annotation_header, 
+add_exonic_header, print_headers, print_variant)
 
 @click.command()
 @click.argument('variant_file', 
@@ -75,22 +75,8 @@ def annotate_features(variant_file, annotation_dir, outfile, keyword):
                 head.parse_header_line(line)
         else:
             if not headers_done:
-                add_metadata(
-                    head,
-                    'info',
-                    'Annotation',
-                    annotation_number='.',
-                    entry_type='String',
-                    description='Annotates what feature(s) this variant belongs to.'
-                )
-                add_metadata(
-                    head,
-                    'info',
-                    'Exonic',
-                    annotation_number='0',
-                    entry_type='Flag',
-                    description='Indicates if the variant is exonic.'
-                )
+                add_annotation_header(head)
+                add_exonic_header(head)
                 logger.info("Printing vcf header")
                 print_headers(head, outfile)
                 

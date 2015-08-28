@@ -59,4 +59,5 @@ from .pair_generator import generate_pairs
 
 from .get_features import (get_annotation, check_vep_annotation, check_exonic)
 from .get_batches import get_batches
+from .check_individuals import check_individuals
 
