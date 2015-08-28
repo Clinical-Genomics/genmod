@@ -222,10 +222,21 @@ def score(family_file, variant_file, family_type, annotation_dir, vep,
     add_metadata(
         head,
         'info',
+        'IndividualRankScore',
+        annotation_number='.', 
+        entry_type='String', 
+        description="Individual rank score for the variant in this family. "\
+        "This score is NOT corrected for compounds"
+    )
+    
+    add_metadata(
+        head,
+        'info',
         'RankScore',
-        annotation_number='1', 
-        entry_type='Integer', 
-        description="Combined rank score for the variant in this family."'GeneticModels'
+        annotation_number='.', 
+        entry_type='String', 
+        description="Combined rank score for the variant in this family. "\
+        "This score is corrected for compounds"
     )
     
     alt_dict, score_dict, value_dict, operation_dict = check_plugin(
