@@ -16,8 +16,8 @@ import os
 import click
 import logging
 
-from genmod.commands import (build_annotation, sort, annotate, analyze, 
-                            summarize_variants, score_variants)
+from . import (build_command, sort_command, models_command)
+# , sort, annotate, analyze, summarize_variants, score_variants)
 
 from genmod import __version__
 
@@ -55,10 +55,10 @@ def print_version(ctx, param, value):
 @click.option('--loglevel',
                     type=click.Choice(['DEBUG', 'INFO', 'WARNING', 'ERROR', 
                                         'CRITICAL']),
-                    default='WARNING'
+                    default='WARNING',
                     help=u"Set the level of log output."
 )
-def run_genmod(logfile, loglevel):
+def cli(logfile, loglevel):
     """Tool for annotating and analyzing genetic variants in the vcf format.\n
         For more information, please run:
         genmod COMMAND --help \n
@@ -68,13 +68,14 @@ def run_genmod(logfile, loglevel):
     init_log(logger, logfile, loglevel)
     
 
-run_genmod.add_command(build_annotation)
-run_genmod.add_command(annotate.annotate)
-run_genmod.add_command(analyze.analyze)
-run_genmod.add_command(summarize_variants.summarize)
-run_genmod.add_command(score_variants.score)
-run_genmod.add_command(sort)
+cli.add_command(build_command)
+cli.add_command(sort_command)
+cli.add_command(models_command)
+# run_genmod.add_command(annotate.annotate)
+# run_genmod.add_command(analyze.analyze)
+# run_genmod.add_command(summarize_variants.summarize)
+# run_genmod.add_command(score_variants.score)
 
 
 if __name__ == '__main__':
-    run_genmod()
+    cli()

@@ -1,5 +1,5 @@
 try:
-    from setuptools import setup
+    from setuptools import setup, find_packages
 except ImportError:
     from distutils.core import setup
 import pkg_resources
@@ -33,25 +33,29 @@ setup(name='genmod',
         'logbook',
         'configobj'
     ],
-    packages = [
-        'genmod',
-        'genmod/commands',
-        'genmod/variant_annotation',
-        'genmod/annotate_regions',
-        'genmod/utils',
-        'genmod/errors',
-        'genmod/models',
-        'genmod/vcf_tools',
-    ],
+    packages=find_packages(exclude=('tests*', 'docs', 'examples', 'configs')),
+    
+    # packages = [
+    #     'genmod',
+    #     'genmod/commands',
+    #     'genmod/variant_annotation',
+    #     'genmod/annotate_regions',
+    #     'genmod/utils',
+    #     'genmod/errors',
+    #     'genmod/annotate_models'
+    #     'genmod/annotate_models/models',
+    #     'genmod/vcf_tools',
+    # ],
     package_data = {
         'genmod': ['annotations/*.db']
     },
-    scripts = [
-        'scripts/genmod'
-    ],
-    # entry_points= { "console_scripts" : [
-    #     "run_genmod = scripts.run_genmod:main",
-    # ]},
+    # scripts = [
+    #     'scripts/genmod'
+    # ],
+    entry_points= { "console_scripts" : [
+        "genmod = genmod.commands.run_genmod:cli",
+        ]
+    },
     keywords = ['inheritance', 'vcf', 'variants'],
     classifiers = [
         "Programming Language :: Python",

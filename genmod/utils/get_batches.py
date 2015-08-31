@@ -1,4 +1,4 @@
-from __future__ import (print_function, absolute_import)
+from __future__ import (print_function)
 
 import sys
 import os
@@ -11,7 +11,7 @@ import click
 
 from genmod.utils import get_annotation
 
-def get_batches(variant_parser, batch_queue, gene_trees={}):
+def get_batches(variant_parser, batch_queue):
     """
     Create variant batches based on their annotation.and put them into the queue.
     
@@ -26,16 +26,13 @@ def get_batches(variant_parser, batch_queue, gene_trees={}):
          variant_parser (VariantParser): A parser object that is a iterator that
          returns variant dictionaries
          batch_queue (Queue): A queue where the batches will be putted
-         gene_trees (dict): A dictionary where keys are chromosome names and 
-                            values are interval trees with gene features
-         exon_trees (dict): A dictionary where keys are chromosome names and 
-                             values are interval trees with exon features
     
     Returns:
          Does not return but put the results in a queue
     """
     logger = logging.getLogger(__name__)
-    logger = logging.getLogger("genmod.utils.get_features")
+    #For testing only:
+    logger = logging.getLogger("genmod.utils.get_batches")
     
     logger.debug("Set beginning to True")
     beginning = True

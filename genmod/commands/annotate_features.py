@@ -30,7 +30,7 @@ add_exonic_header, print_headers, print_variant)
                     type=click.File('rb'),
                     metavar='<vcf_file> or -'
 )
-@click.option('-a' ,'--annotation_dir', 
+@click.option('-a' ,'--annotation_dir',
                     type=click.Path(exists=True),
                     default=pkg_resources.resource_filename('genmod', 'annotations'),
                     help="""Specify the path to the directory where the annotation 
@@ -41,7 +41,7 @@ add_exonic_header, print_headers, print_variant)
                     type=click.File('w'),
                     help='Specify the path to a file where results should be stored.'
 )
-@click.option('-k', '--keyword', 
+@click.option('-k', '--keyword',
                     default="Annotation",
                     help="What keyword should be used for annotation in vcf."\
                          "Default is Annotation"

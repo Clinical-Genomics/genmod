@@ -44,7 +44,7 @@ from genmod.vcf_tools import (print_variant_for_sorting, sort_variants,
 )
 def sort(variant_file, outfile, family_id, verbose):
     """
-    Sort a VCF file.\n
+    Sort a VCF file based on rank score.\n
     """    
     
     head = HeaderParser()

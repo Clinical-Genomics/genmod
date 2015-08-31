@@ -28,20 +28,22 @@ import shutil
 import pkg_resources
 
 from ped_parser import FamilyParser
+from vcf_parser import VCFParser
 
-from genmod import (__version__, VariantPrinter)
+from genmod import (__version__)
 
 from genmod.log import init_log
 from genmod.variant_annotation import (VariantAnnotator)
-from genmod.vcf_tools import (HeaderParser, add_vcf_info, add_version_header, 
+from genmod.vcf_tools import (add_vcf_info, add_version_header, 
 add_genetic_models_header, add_model_score_header, print_headers, print_variant,
-add_compounds_header,)
+add_compounds_header)
+
 from genmod.utils import check_individuals
 
 @click.command()
 @click.argument('variant_file', 
                     nargs=1, 
-                    type=click.File('rb'),
+                    type=click.Path(exists=True),
                     metavar='<vcf_file> or -'
 )
 @click.option('-f', '--family_file',
@@ -75,6 +77,10 @@ from genmod.utils import check_individuals
                     is_flag=True,
                     help='If the variants should be splitted.'
 )
+@click.option('-p', '--processes', 
+                default=min(4, cpu_count()),
+                help='Define how many processes that should be use for annotation.'
+)
 @click.option('--silent', 
                     is_flag=True,
                     help='Do not print the variants.'
@@ -89,7 +95,8 @@ from genmod.utils import check_individuals
                     help='Specify the path to a file where results should be stored.'
 )
 def annotate_models(variant_file, family_file, family_type, annotation, vep,
-                    split_variants, phased, strict, silent, whole_gene, outfile):
+                    split_variants, phased, strict, silent, processes, 
+                    whole_gene, outfile):
     """
     Annotate variants with what genetic models that are followed in a VCF file.
     The analysis is family based so each family that are specified in the family
@@ -98,7 +105,6 @@ def annotate_models(variant_file, family_file, family_type, annotation, vep,
     logger = logging.getLogger(__name__)
     # For testing only:
     logger = logging.getLogger("genmod.commands.annotate")
-    init_log(logger, loglevel="INFO")
     
     ######### This is for logging the command line string #########
     frame = inspect.currentframe()
@@ -110,7 +116,8 @@ def annotate_models(variant_file, family_file, family_type, annotation, vep,
     annotator_arguments = {}
     annotator_arguments['phased'] = phased
     annotator_arguments['strict'] = strict
-    ##############################################################
+    
+    ###########################################################################
     
     logger.info("Running GENMOD annotate version {0}".format(__version__))
     logger.debug("Arguments: {0}".format(', '.join(argument_list)))
@@ -122,93 +129,142 @@ def annotate_models(variant_file, family_file, family_type, annotation, vep,
     logger.info("Setting up a family parser")
     family_parser = FamilyParser(family_file, family_type)
     logger.debug("Family parser done")
+    # The individuals in the ped file must be present in the variant file:
+    families = family_parser.families
     logger.info("Families used in analysis: {0}".format(
-                    ','.join(list(family_parser.families.keys()))))
+                    ','.join(list(families.keys()))))
     logger.info("Individuals included in analysis: {0}".format(
                     ','.join(list(family_parser.individuals.keys()))))
     
     
+    logger.debug("Setting up a variant parser")
+    if variant_file == '-':
+        variant_parser = VCFParser(
+            fsock = sys.stdin, 
+            split_variants=split_variants, 
+            check_info=False
+            )
+    else:
+        variant_parser = VCFParser(
+            infile = variant_file, 
+            split_variants=split_variants,
+            check_info=False
+            )
+    logger.debug("Variant parser setup")
+    
+    head = variant_parser.metadata
+    
+    if "GeneticModels" in head.info_dict:
+        logger.warning("Genetic models are already annotated according to vcf"\
+        " header.")
+        logger.info("Exiting...")
+        sys.exit(0)
+    
+    vcf_individuals = variant_parser.individuals
+    logger.info("Individuals found in vcf file: {}".format(', '.join(vcf_individuals)))
+    
+    
     if vep:
         logger.info("Using VEP annotation")
-    
-    # The individuals in the ped file must be present in the variant file:
-    families = family_parser.families
-    
+        
     start_time_analysis = datetime.now()
     
-    head = HeaderParser()
+    logger.info("Adding genmod version to vcf header")
+    add_version_header(
+        head,
+        command_line_string=' '.join(argument_list)
+    )
+    logger.debug("Version added")
+    logger.info("Adding genetic models to vcf header")
+    add_genetic_models_header(head)
+    logger.debug("Genetic models added")
+    logger.info("Adding model score to vcf header")
+    add_model_score_header(head)
+    logger.debug("Model score added")
+    logger.info("Adding Compounds to vcf header")
+    add_compounds_header(head)
+    logger.debug("Compounds added")
     
-    headers_done = False
-    
-    for line in variant_file:
-        line = line.rstrip()
-        
-        if line.startswith('#'):
-            if line.startswith('##'):
-                head.parse_meta_data(line)
-            else:
-                head.parse_header_line(line)
-        else:
-            if not headers_done:
-                add_version_header(
-                    head, 
-                    command_line_string=' '.join(argument_list)
-                )
-                add_genetic_models_header(head)
-                add_model_score_header(head)
-                add_compounds_header(head)
+    try:
+        check_individuals(family_parser, vcf_individuals)
+    except IOError as e:
+        logger.error(e)
+        logger.info("Individuals in PED file: {0}".format(
+                        ', '.join(list(family_parser.individuals.keys()))))
+        logger.info("Individuals in VCF file: {0}".format(', '.join(vcf_individuals)))
+        logger.info("Exiting...")
+        sys.exit(1)
                 
-                vcf_individuals = head.individuals
-                logger.info("Individuals found in vcf file: {}".format(
-                    ', '.join(vcf_individuals)))
-                print_headers(head, outfile)
-                headers_done = True
-                check_individuals(family_parser, vcf_individuals)
-            else:
-                break
-                
-                
-    #
-    # ###################################################################
-    # ### The task queue is where all jobs(in this case batches that  ###
-    # ### represents variants in a region) is put. The consumers will ###
-    # ### then pick their jobs from this queue.                       ###
-    # ###################################################################
-    #
-    # logger.debug("Setting up a JoinableQueue for storing variant batches")
-    # variant_queue = JoinableQueue(maxsize=1000)
-    # logger.debug("Setting up a Queue for storing results from workers")
-    # results = Manager().Queue()
-    #
-    #
-    # num_model_checkers = processes
-    # #Adapt the number of processes to the machine that run the analysis
-    # logger.info('Number of CPU:s {}'.format(cpu_count()))
-    # logger.info('Number of model checkers: {}'.format(num_model_checkers))
-    #
-    # # We use a temp file to store the processed variants
-    # logger.debug("Build a tempfile for printing the variants")
-    # temp_file = NamedTemporaryFile(delete=False)
-    # temp_file.close()
-    # # Open the temp file with codecs
-    # temporary_variant_file = open(
-    #                             temp_file.name,
-    #                             mode='w',
-    #                             encoding='utf-8',
-    #                             errors='replace'
-    #                             )
-    #
-    #
-    # # These are the workers that do the heavy part of the analysis
-    # logger.info('Seting up the workers')
-    # model_checkers = [
-    #     VariantAnnotator(
-    #         variant_queue,
-    #         results,
-    #         **annotator_arguments
-    #     )
-    #     for i in range(num_model_checkers)
-    # ]
+    # from genmod.annotate_models.models import check_dominant
+    # for family in families:
+    #     family_object = families[family]
+    # for variant in variant_parser:
+    #     print(check_dominant(variant, family_object, False))
+    ###################################################################
+    ### The task queue is where all jobs(in this case batches that  ###
+    ### represents variants in a region) is put. The consumers will ###
+    ### then pick their jobs from this queue.                       ###
+    ###################################################################
+
+    logger.debug("Setting up a JoinableQueue for storing variant batches")
+    variant_queue = JoinableQueue(maxsize=1000)
+    logger.debug("Setting up a Queue for storing results from workers")
+    results = Manager().Queue()
+
+
+    num_model_checkers = processes
+    #Adapt the number of processes to the machine that run the analysis
+    logger.info('Number of CPU:s {}'.format(cpu_count()))
+    logger.info('Number of model checkers: {}'.format(num_model_checkers))
+
+    # We use a temp file to store the processed variants
+    logger.debug("Build a tempfile for printing the variants")
+    temp_file = NamedTemporaryFile(delete=False)
+    temp_file.close()
+    # Open the temp file with codecs
+    temporary_variant_file = open(
+                                temp_file.name,
+                                mode='w',
+                                encoding='utf-8',
+                                errors='replace'
+                                )
+
+
+    # These are the workers that do the heavy part of the analysis
+    logger.info('Seting up the workers')
+    model_checkers = [
+        VariantAnnotator(
+            variant_queue,
+            results,
+            **annotator_arguments
+        )
+        for i in range(num_model_checkers)
+    ]
+    logger.info('Starting the workers')
+    for worker in model_checkers:
+        logger.debug('Starting worker {0}'.format(worker))
+        worker.start()
+
+    # This process prints the variants to temporary files
+    logger.info('Seting up the variant printer')
+    var_printer = VariantPrinter(
+                            results,
+                            temporary_variant_file,
+                            head,
+                            mode='chromosome',
+                            verbosity=verbose
+                        )
+    logger.info('Starting the variant printer process')
+    var_printer.start()
+
+    start_time_variant_parsing = datetime.now()
+
+    # This process parses the original vcf and create batches to put in the variant queue:
+    logger.info('Start parsing the variants')
+    chromosome_list = get_batches(
+                                variant_parser,
+                                variant_queue
+                            )
     
 
 if __name__ == '__main__':

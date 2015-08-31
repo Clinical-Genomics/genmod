@@ -28,7 +28,7 @@ from multiprocessing import Process
 
 from pprint import pprint as pp
 
-from genmod.models import score_variants
+# from genmod.models import score_variants
 
 # Import third party library
 # https://github.com/mitsuhiko/logbook

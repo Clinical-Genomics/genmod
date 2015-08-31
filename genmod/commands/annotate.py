@@ -169,7 +169,6 @@ def check_tabix_index(compressed_file, file_type='cadd', verbose=False):
                 default=min(4, cpu_count()),
                 help='Define how many processes that should be use for annotation.'
 )
-
 @click.option('-v', '--verbose', 
                 is_flag=True,
                 help='Increase output verbosity.'

@@ -67,7 +67,7 @@ import logging
 from datetime import datetime
 from pprint import pprint as pp
 
-from genmod.models import (check_dominant, check_recessive, 
+from genmod.annotate_models.models import (check_dominant, check_recessive, 
                         check_compounds, check_X_recessive, check_X_dominant)
 
 from genmod.utils import generate_pairs
