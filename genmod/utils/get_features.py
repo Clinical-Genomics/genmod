@@ -28,13 +28,13 @@ def check_vep_annotation(variant):
                         annotation.add(vep_annotation.get('SYMBOL', ''))
     return annotation
 
-def get_annotation(variant, gene_trees):
+def get_annotation(variant, vep=False):
     """
     Return the features that a variant belongs to.
     
     Arguments: 
         variant (dict): A variant dictionary
-        gene_trees (dict): A dictionary with interval trees
+        vep (bool): If variants are annotated with vep
         
     Returns: 
         annotations (set): A set with annotated features
@@ -45,71 +45,40 @@ def get_annotation(variant, gene_trees):
     variant_id = variant.get('variant_id', '')
     # If the variant has already been annotated by genmod we do not need to 
     # check again
-    if variant.get('info_dict', {}).get('Annotation', None):
-        
-        logger.debug("Variant already annotated.")
-        return set(variant['info_dict']['Annotation'])
-    #If annotated with vep we do not need to check interval trees
-    if variant.get("CSQ", None):
-        
+    if vep:
         logger.debug("Using vep annotation.")        
-        return check_vep_annotation(variant)
-
-    chrom = variant['CHROM']
-    # Internally we never use 'chr' in the chromosome names:
-    if chrom.startswith('chr'):
-        chrom = chrom[3:]
-    position = int(variant['POS'])
-    # When checking what features that are overlapped we use the longest 
-    # alternative
-    longest_alt = max([len(alternative) for 
-                        alternative in variant['ALT'].split(',')])
-
-    variant_interval = [position, (position + longest_alt-1)]
-    logger.debug("Checking annotations for variant on chrom:{0} and"\
-                " position: {1}".format(chrom, position))
-
-
-    try:
-        annotation = set(gene_trees[chrom].find_range(variant_interval))
-        logger.debug("Annotations found for variant {0}: {1}".format(
-            variant_id, annotation))
+        annotation = check_vep_annotation(variant)
         
-    except KeyError:
-        logger.warning("Chromosome {0} is not in annotation file".format(chrom))
-    
+    if variant.get('info_dict', {}).get('Annotation', None):
+        annotation = set(variant['info_dict']['Annotation'])
     return annotation
 
-def check_exonic(variant, exon_trees={}):
+def check_exonic(variant, vep=False):
     """
     Check if the variant is in a exonic region
     
     Arguments:
         variant (dict): A variant dictionary
-        exon_trees (dict): A dictionary with chromosomes as keys and 
-                           IntervalTrees as values 
+        vep (bool):If the variant is annotated with vep
+        
+    Returns:
+        exonic (bool): If the variant is in an exonic region
     """
     #If the variant is annotated with vep we look at the consequence terms
     # to see if they are exonic
+    exonic = False
     
-    if variant.get("CSQ", None):
+    if vep:
         for allele in variant.get('vep_info',{}):
             for vep_annotation in variant['vep_info'][allele]:
                 for consequence in vep_annotation.get('Consequence', {}).split('&'):
                     # These are the SO terms that indicate that the variant 
                     # belongs to a exon
                     if consequence in EXONIC_SO_TERMS:
-                        return True
-    else:
-        chrom = variant['CHROM']
-        variant_position = int(variant['POS'])
-        alternatives = variant['ALT'].split(',')
-        # When checking what features that are overlapped we use the longest alternative
-        longest_alt = max([len(alternative) for alternative in alternatives])
-        variant_interval = [variant_position, (variant_position + longest_alt - 1)]
-        if chrom in exon_trees:
-            if len(exon_trees[chrom].find_range(variant_interval)):
-                return True
+                        exonic = True
+    
+    elif "Exonic" in variant['info_dict']:
+                exonic = True
         
-    return False
+    return exonic
             

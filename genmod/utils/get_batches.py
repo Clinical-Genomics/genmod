@@ -1,4 +1,4 @@
-from __future__ import (print_function)
+from __future__ import (print_function, absolute_import)
 
 import sys
 import os
@@ -9,23 +9,24 @@ from collections import OrderedDict
 
 import click
 
-from genmod.utils import get_annotation
+from . import get_annotation
 
-def get_batches(variant_parser, batch_queue):
+def get_batches(variants, batch_queue, vep=False):
     """
-    Create variant batches based on their annotation.and put them into the queue.
+    Create variant batches based on their annotation and put them into the 
+    batch queue.
     
-    Variants are first annotated and will be given a new 'annotation' field in 
-    the variant dictionary.
+    Variants are given a new 'annotation' field in the variant dictionary and 
+    also a 'exonic' field.
     get_batches will then use the annotation to search for sequences of variants
-    that have overlapping annotations. These are collected into one batch and gets
+    with overlapping annotations. These are collected into one batch and gets
     put into a queue.
     Variants that are in between features will be in their own batch.
     
     Arguments:
-         variant_parser (VariantParser): A parser object that is a iterator that
-         returns variant dictionaries
+         variants (Iterator):An iterator that returns variant dictionaries
          batch_queue (Queue): A queue where the batches will be putted
+         vep (bool): If variant is annotated with vep
     
     Returns:
          Does not return but put the results in a queue
@@ -66,19 +67,16 @@ def get_batches(variant_parser, batch_queue):
 
         logger.debug("Update new chrom to {0}".format(new_chrom))
 
-        new_features = get_annotation(variant, gene_trees)
-        logger.debug("Features found for {0}: {1}".format(
-            variant_id, ', '.join(new_features)))
-
+        new_features = get_annotation(variant, vep)
         logger.debug("Adding {0} to variant {1}".format(
-            variant_id, new_features
+            ', '.join(new_features), variant_id
         ))
         variant['annotation'] = new_features
         
         
         if nr_of_variants % 20000 == 0:
             logger.info("{0} variants parsed".format(nr_of_variants))
-            logger.info("Last 20.000 took {} to parse.".format(
+            logger.info("Last 20.000 took {0} to parse.".format(
                 str(datetime.now() - start_twenty_time)))
             start_twenty_time = datetime.now()
         
@@ -93,23 +91,23 @@ def get_batches(variant_parser, batch_queue):
             
             chromosomes.append(current_chrom)
             logger.debug("Adding chr {0} to chromosomes".format(new_chrom)) 
-            logger.debug("Updating beginning to False")
+            
             beginning = False
+            logger.debug("Updating beginning to False")
         
         else:
             # If we should put the batch in the queue:
             logger.debug("Updating send to True") 
             send = True
-            # Check if we are in a space between features:
-            # If we are in a between features we put the batch in the queue
+            
+            # Check if the variant ovelapps any features
             if len(new_features) != 0:
-
-            #If in a region with overlapping features
+                # Check if the features overlap the previous variants features
                 if new_features.intersection(current_features):
                     logger.debug("Set send to False since variant features overlap") 
                     send = False
             
-            # If we are at a new chromosome we finish the current batch:
+            # If we are at a new chromosom  e we finish the current batch:
             if new_chrom != current_chrom:
                 chromosomes.append(current_chrom)
                 logger.debug("Adding chr {0} to chromosomes".format(new_chrom)) 
