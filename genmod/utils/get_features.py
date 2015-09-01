@@ -46,7 +46,8 @@ def get_annotation(variant, vep=False):
     # If the variant has already been annotated by genmod we do not need to 
     # check again
     if vep:
-        logger.debug("Using vep annotation.")        
+        logger.debug("Using vep annotation.")
+        print("VEP!")
         annotation = check_vep_annotation(variant)
         
     if variant.get('info_dict', {}).get('Annotation', None):

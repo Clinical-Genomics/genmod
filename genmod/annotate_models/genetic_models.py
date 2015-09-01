@@ -59,7 +59,7 @@ Created by Måns Magnusson on 2013-02-12.
 Copyright (c) 2013 __MyCompanyName__. All rights reserved.
 """
 
-from __future__ import print_function, unicode_literals
+from __future__ import print_function, absolute_import
 
 import os
 import sys
@@ -67,8 +67,8 @@ import logging
 from datetime import datetime
 from pprint import pprint as pp
 
-from genmod.annotate_models.models import (check_dominant, check_recessive, 
-                        check_compounds, check_X_recessive, check_X_dominant)
+from .models import (check_dominant, check_recessive, check_compounds, 
+check_X_recessive, check_X_dominant)
 
 from genmod.utils import generate_pairs
 

@@ -40,12 +40,9 @@ def get_batches(variants, batch_queue, vep=False):
     logger.debug("Create first empty batch")
     # A batch is a ordered dictionary with variants
     batch = OrderedDict()
-    logger.debug("Set current_chrom and new_chrom to None")
     new_chrom = None
     current_chrom = None
-    logger.debug("Set current features to []")
     current_features = []
-    logger.debug("Set chromosomes to []")
     chromosomes = []
     
     start_parsing_time = datetime.now()
@@ -56,10 +53,10 @@ def get_batches(variants, batch_queue, vep=False):
     nr_of_batches = 0
     
     logger.info("Start parsing the variants")
-    for variant in variant_parser:
-        
+    for variant in variants:
         variant_id = variant['variant_id']
         logger.debug("Checking variant {0}".format(variant_id))
+        
         nr_of_variants += 1
         new_chrom = variant['CHROM']
         if new_chrom.startswith('chr'):
@@ -107,9 +104,10 @@ def get_batches(variants, batch_queue, vep=False):
                     logger.debug("Set send to False since variant features overlap") 
                     send = False
             
-            # If we are at a new chromosom  e we finish the current batch:
+            # If we are at a new chromosome we finish the current batch:
             if new_chrom != current_chrom:
-                chromosomes.append(current_chrom)
+                if current_chrom not in chromosomes:
+                    chromosomes.append(current_chrom)
                 logger.debug("Adding chr {0} to chromosomes".format(new_chrom)) 
                 # New chromosome means new batch
                 send = True
@@ -133,9 +131,10 @@ def get_batches(variants, batch_queue, vep=False):
             
             logger.debug("Adding variant {0} to batch".format(variant_id)) 
             batch[variant_id] = variant
-                
-    logger.debug("Adding chr {0} to chromosomes".format(current_chrom))
-    chromosomes.append(current_chrom)
+    
+    if current_chrom not in chromosomes:
+        logger.debug("Adding chr {0} to chromosomes".format(current_chrom))
+        chromosomes.append(current_chrom)
     nr_of_batches += 1
     
     logger.info("Chromosome {0} parsed. Time to parse"\
@@ -170,8 +169,9 @@ def cli(variant_file):
         variant_parser = VCFParser(fsock = sys.stdin, split_variants=True)
     else:
         variant_parser = VCFParser(infile = variant_file, split_variants=True)
+    
     batch_queue = Queue()
-    chromosomes = get_batches(variant_parser, batch_queue, gene_trees={})
+    chromosomes = get_batches(variant_parser, batch_queue)
     print(chromosomes)
 
 if __name__ == '__main__':
