@@ -68,23 +68,3 @@ def sort_variants(infile, mode='chromosome'):
     
     return 
 
-@click.command()
-@click.argument('csv_file',
-                nargs=1,
-                type=click.Path(exists=True)
-)
-@click.option('-m' ,'--mode', 
-                type=click.Choice(['chromosome', 'score']), 
-                default='chromosome',
-                help='Specify the mode on how we should sort the variants.'
-)
-@click.option('-v', '--verbose',
-              is_flag=True,
-              help='Increase output verbosity.'
-)
-def cli(csv_file,mode,verbose):
-    sort_variants(csv_file, mode, verbose)
-
-if __name__ == '__main__':
-    cli()
-

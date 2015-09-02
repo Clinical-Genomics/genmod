@@ -35,8 +35,9 @@ from genmod import (__version__)
 from genmod.utils import (get_batches, VariantPrinter)
 from genmod.annotate_models import (VariantAnnotator)
 from genmod.vcf_tools import (add_vcf_info, add_version_header, 
-add_genetic_models_header, add_model_score_header, print_headers, print_variant,
-add_compounds_header)
+add_genetic_models_header, add_model_score_header, add_compounds_header,
+print_headers, sort_variants
+)
 
 from genmod.utils import check_individuals
 
@@ -211,13 +212,6 @@ def annotate_models(variant_file, family_file, family_type, vep,
     logger.debug("Build a tempfile for printing the variants")
     temp_file = NamedTemporaryFile(delete=False)
     temp_file.close()
-    # Open the temp file with codecs
-    temporary_variant_file = open(
-                                temp_file.name,
-                                mode='w',
-                                encoding='utf-8',
-                                errors='replace'
-                                )
 
 
     # These are the workers that do the heavy part of the analysis
@@ -246,7 +240,7 @@ def annotate_models(variant_file, family_file, family_type, vep,
             task_queue=results,
             head=head,
             mode='chromosome', 
-            outfile = None
+            outfile = temp_file.name
     )
     logger.info('Starting the variant printer process')
     variant_printer.start()
@@ -267,6 +261,8 @@ def annotate_models(variant_file, family_file, family_type, vep,
     variant_queue.join()
     results.put(None)
     variant_printer.join()
+    
+    
 
 if __name__ == '__main__':
     from genmod import logger
