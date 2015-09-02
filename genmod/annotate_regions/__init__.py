@@ -7,3 +7,4 @@ from __future__ import absolute_import
 
 from .check_overlap import check_overlap
 from .load_annotation import load_annotations
+from .parse_annotations import parse_annotations

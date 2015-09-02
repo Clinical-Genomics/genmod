@@ -47,11 +47,14 @@ def get_annotation(variant, vep=False):
     # check again
     if vep:
         logger.debug("Using vep annotation.")
-        print("VEP!")
         annotation = check_vep_annotation(variant)
         
     if variant.get('info_dict', {}).get('Annotation', None):
         annotation = set(variant['info_dict']['Annotation'])
+    
+    logger.debug("Annotations found for {0}: {1}".format(
+        variant_id, ','.join(annotation)
+    ))
     return annotation
 
 def check_exonic(variant, vep=False):

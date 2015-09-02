@@ -53,34 +53,17 @@ def print_variant(variant_line, outfile=None, mode='vcf', silent=False):
                 print('\t'.join(splitted_line))
     return
 
-def print_variant_for_sorting(variant_line, outfile, family_id=None):
+def print_variant_for_sorting(variant_line, priority, outfile, family_id=None):
     """
     Print the variants for sorting
     
     Arguments:
         variant_line (str): A vcf variant line
+        prority (str): The priotiy for this variant
         outfile (file_handle): A filehandle to the temporary variant file
         family_id (str): The family Id for sorting on rank score
     """
     variant_line = variant_line.split("\t")
     
-    rank_score = -100
-    for info_annotation in variant_line[7].split(';'):
-        info_annotation = info_annotation.split('=')
-        if len(info_annotation) == 2:
-            key = info_annotation[0]
-            value = info_annotation[1]
-        if key == "RankScore":
-            for family_annotation in value.split(','):
-                family_annotation = family_annotation.split(':')
-                if family_id:
-                    # If we should sort on a certain family we look for the
-                    # correct id
-                    if family_id == family_annotation[0]:
-                        rank_score = float(family_annotation[1])
-                else:
-                # If no family id is given we choose the first family found
-                    rank_score = float(family_annotation[1])
-                    break
-    outfile.write("{0}\t{1}".format(rank_score, '\t'.join(variant_line)))
+    outfile.write("{0}\t{1}".format(priority, '\t'.join(variant_line)))
                     

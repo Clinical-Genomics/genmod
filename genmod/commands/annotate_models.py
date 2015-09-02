@@ -32,8 +32,8 @@ from vcf_parser import VCFParser
 
 from genmod import (__version__)
 
-from genmod.log import init_log
-from genmod.variant_annotation import (VariantAnnotator)
+from genmod.utils import (get_batches, VariantPrinter)
+from genmod.annotate_models import (VariantAnnotator)
 from genmod.vcf_tools import (add_vcf_info, add_version_header, 
 add_genetic_models_header, add_model_score_header, print_headers, print_variant,
 add_compounds_header)
@@ -55,11 +55,6 @@ from genmod.utils import check_individuals
                 type=click.Choice(['ped', 'alt', 'cmms', 'mip']), 
                 default='ped',
                 help='If the analysis use one of the known setups, please specify which one.'
-)
-@click.option('-a', '--annotation',
-                    default="Annotation",
-                    help="Specify what field to search for annotations in."\
-                         "Default is Annotation"
 )
 @click.option('--vep', 
                     is_flag=True,
@@ -94,7 +89,7 @@ from genmod.utils import check_individuals
                     type=click.File('w'),
                     help='Specify the path to a file where results should be stored.'
 )
-def annotate_models(variant_file, family_file, family_type, annotation, vep,
+def annotate_models(variant_file, family_file, family_type, vep,
                     split_variants, phased, strict, silent, processes, 
                     whole_gene, outfile):
     """
@@ -113,9 +108,6 @@ def annotate_models(variant_file, family_file, family_type, annotation, vep,
         i+'='+str(values[i]) for i in values if values[i] and 
         i not in ['frame']
     ]
-    annotator_arguments = {}
-    annotator_arguments['phased'] = phased
-    annotator_arguments['strict'] = strict
     
     ###########################################################################
     
@@ -123,7 +115,7 @@ def annotate_models(variant_file, family_file, family_type, annotation, vep,
     logger.debug("Arguments: {0}".format(', '.join(argument_list)))
     
     if not family_file:
-        logger.warning("Please provide a family file with -f/--family_file")
+        print("Please provide a family file with -f/--family_file")
         sys.exit(0)
     
     logger.info("Setting up a family parser")
@@ -161,7 +153,7 @@ def annotate_models(variant_file, family_file, family_type, annotation, vep,
         sys.exit(0)
     
     vcf_individuals = variant_parser.individuals
-    logger.info("Individuals found in vcf file: {}".format(', '.join(vcf_individuals)))
+    logger.debug("Individuals found in vcf file: {}".format(', '.join(vcf_individuals)))
     
     
     if vep:
@@ -187,19 +179,18 @@ def annotate_models(variant_file, family_file, family_type, annotation, vep,
     
     try:
         check_individuals(family_parser, vcf_individuals)
+        analysis_individuals = list(family_parser.individuals.keys())
     except IOError as e:
         logger.error(e)
         logger.info("Individuals in PED file: {0}".format(
-                        ', '.join(list(family_parser.individuals.keys()))))
+                        ', '.join(analysis_individuals)))
         logger.info("Individuals in VCF file: {0}".format(', '.join(vcf_individuals)))
         logger.info("Exiting...")
         sys.exit(1)
-                
-    # from genmod.annotate_models.models import check_dominant
-    # for family in families:
-    #     family_object = families[family]
-    # for variant in variant_parser:
-    #     print(check_dominant(variant, family_object, False))
+    
+    logger.info("Individuals used in analysis: {0}".format(
+        ', '.join(analysis_individuals)))
+    
     ###################################################################
     ### The task queue is where all jobs(in this case batches that  ###
     ### represents variants in a region) is put. The consumers will ###
@@ -210,7 +201,6 @@ def annotate_models(variant_file, family_file, family_type, annotation, vep,
     variant_queue = JoinableQueue(maxsize=1000)
     logger.debug("Setting up a Queue for storing results from workers")
     results = Manager().Queue()
-
 
     num_model_checkers = processes
     #Adapt the number of processes to the machine that run the analysis
@@ -234,9 +224,14 @@ def annotate_models(variant_file, family_file, family_type, annotation, vep,
     logger.info('Seting up the workers')
     model_checkers = [
         VariantAnnotator(
-            variant_queue,
-            results,
-            **annotator_arguments
+            task_queue=variant_queue,
+            results_queue=results,
+            families=families,
+            individuals=analysis_individuals,
+            phased=phased,
+            strict=strict,
+            whole_gene=whole_gene,
+            vep=vep
         )
         for i in range(num_model_checkers)
     ]
@@ -247,15 +242,14 @@ def annotate_models(variant_file, family_file, family_type, annotation, vep,
 
     # This process prints the variants to temporary files
     logger.info('Seting up the variant printer')
-    var_printer = VariantPrinter(
-                            results,
-                            temporary_variant_file,
-                            head,
-                            mode='chromosome',
-                            verbosity=verbose
-                        )
+    variant_printer = VariantPrinter(
+            task_queue=results,
+            head=head,
+            mode='chromosome', 
+            outfile = None
+    )
     logger.info('Starting the variant printer process')
-    var_printer.start()
+    variant_printer.start()
 
     start_time_variant_parsing = datetime.now()
 
@@ -266,6 +260,17 @@ def annotate_models(variant_file, family_file, family_type, annotation, vep,
                                 variant_queue
                             )
     
+    logger.debug("Put stop signs in the variant queue")
+    for i in range(num_model_checkers):
+        variant_queue.put(None)
+    
+    variant_queue.join()
+    results.put(None)
+    variant_printer.join()
 
 if __name__ == '__main__':
+    from genmod import logger
+    from genmod.log import init_log
+    init_log(logger, loglevel="INFO")
+    
     annotate_models()

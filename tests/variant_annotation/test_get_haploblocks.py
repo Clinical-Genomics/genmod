@@ -1,4 +1,4 @@
-from genmod.variant_annotation import get_haploblocks
+from genmod.annotate_models import get_haploblocks
 
 def get_variant(**kwargs):
     """

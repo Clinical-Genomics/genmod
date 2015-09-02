@@ -94,6 +94,8 @@ def check_genetic_models(variant_batch, families, phased = False,
     # {variant_id:variant_dict, variant_2_id:variant_dict_2, ...}
     logger = logging.getLogger(__name__)
     intervals = variant_batch.pop('haploblocks', {})
+    
+    # We check the genetic models for one family at a time
     for family_id in families:
         logger.debug("Checking genetic models for family {0}".format(
             family_id

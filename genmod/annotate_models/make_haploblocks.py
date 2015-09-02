@@ -1,7 +1,6 @@
 from __future__ import (print_function)
 import logging
 from interval_tree import IntervalTree
-import click
 
 def get_haploblocks(variant_batch, individuals):
     """

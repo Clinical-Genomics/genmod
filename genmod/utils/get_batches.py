@@ -148,7 +148,7 @@ def get_batches(variants, batch_queue, vep=False):
     logger.info("Number of variants in variant file: {0}".format(nr_of_variants))
     logger.info("Number of batches created:{0}".format(nr_of_batches))
     
-    logger.debug("Adding batch in queue") 
+    logger.debug("Adding batch to queue") 
     
     batch_queue.put(batch)
     
