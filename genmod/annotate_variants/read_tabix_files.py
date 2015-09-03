@@ -1,5 +1,30 @@
-
 import logging
+
+# def check_tabix_index(compressed_file, file_type='cadd', verbose=False):
+#     """
+#     Check if a compressed file have a tabix index, if not build one.
+#
+#     Args:
+#         compressed_file (str): Path to a file that is assumed to be compressed.
+#         file_type (str): The type of the file. ('cadd' or 'vcf')
+#         verbose (bool): Increase output verbosity
+#
+#     Returns:
+#         0 if everything went ok.
+#
+#     """
+#     if file_type == 'cadd':
+#         try:
+#             tabix_index(compressed_file, seq_col=0, start_col=1, end_col=1, meta_char='#')
+#         except IOError as e:
+#             pass
+#     elif file_type == 'vcf':
+#         try:
+#             tabix_index(compressed_file, preset='vcf')
+#         except IOError as e:
+#             pass
+#     return 0
+
 
 def get_frequency(tabix_reader, chrom, start, alt):
     """
@@ -17,9 +42,9 @@ def get_frequency(tabix_reader, chrom, start, alt):
     logger = logging.getLogger(__name__)
     freq = None
     # CADD values are only for snps:
-    cadd_key = int(start)
+    tabix_key = int(start)
     try:
-        for record in tabix_reader.query(chrom, cadd_key-1, cadd_key):
+        for record in tabix_reader.query(chrom, tabix_key-1, tabix_key):
             i = 0
             #We can get multiple rows so need to check each one
             #We also need to check each one of the alternatives per row
@@ -32,7 +57,7 @@ def get_frequency(tabix_reader, chrom, start, alt):
                             return frequencies[i]
                 i += 1
     except TypeError:            
-        for record in tabix_reader.query(str(chrom), cadd_key-1, cadd_key):
+        for record in tabix_reader.query(str(chrom), tabix_key-1, tabix_key):
             i = 0
             #We can get multiple rows so need to check each one
             #We also need to check each one of the alternatives per row

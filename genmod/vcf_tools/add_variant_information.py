@@ -11,7 +11,6 @@ Copyright (c) 2015 __MoonsoInc__. All rights reserved.
 
 from __future__ import print_function
 
-import os
 import logging
 
 def add_vcf_info(variant_line, keyword, annotation=None):
@@ -34,7 +33,11 @@ def add_vcf_info(variant_line, keyword, annotation=None):
         new_info = '='.join([keyword, annotation])
     else:
         new_info = keyword
-    
+
+    logger.debug("New info: {0}".format(new_info))
+    logger.debug("Adding new info to variant line")
+        
     splitted_variant[7] = "{0};{1}".format(splitted_variant[7], new_info)
+    
     
     return '\t'.join(splitted_variant)
