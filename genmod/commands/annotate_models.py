@@ -36,8 +36,7 @@ from genmod.utils import (get_batches, VariantPrinter)
 from genmod.annotate_models import (VariantAnnotator)
 from genmod.vcf_tools import (add_vcf_info, add_version_header, 
 add_genetic_models_header, add_model_score_header, add_compounds_header,
-print_headers, sort_variants
-)
+print_headers, sort_variants, print_variant, HeaderParser)
 
 from genmod.utils import check_individuals
 
@@ -86,7 +85,7 @@ from genmod.utils import check_individuals
                     help="""If compounds should be checked in the whole gene regions. 
                     Not only exonic/splice sites."""
 )
-@click.option('-o', '--outfile', 
+@click.option('-o', '--outfile',
                     type=click.File('w'),
                     help='Specify the path to a file where results should be stored.'
 )
@@ -133,18 +132,29 @@ def annotate_models(variant_file, family_file, family_type, vep,
     logger.debug("Setting up a variant parser")
     if variant_file == '-':
         variant_parser = VCFParser(
-            fsock = sys.stdin, 
-            split_variants=split_variants, 
+            fsock = sys.stdin,
+            split_variants=split_variants,
             check_info=False
             )
     else:
         variant_parser = VCFParser(
-            infile = variant_file, 
+            infile = variant_file,
             split_variants=split_variants,
             check_info=False
             )
     logger.debug("Variant parser setup")
     
+    # head = HeaderParser()
+    # with open(variant_file, 'r') as f:
+    #     for line in f:
+    #         if line.startswith('#'):
+    #             if line.startswith('##'):
+    #                 head.parse_meta_data(line)
+    #             else:
+    #                 head.parse_header_line(line)
+    #         else:
+    #             break
+                
     head = variant_parser.metadata
     
     if "GeneticModels" in head.info_dict:
@@ -191,6 +201,7 @@ def annotate_models(variant_file, family_file, family_type, vep,
     
     logger.info("Individuals used in analysis: {0}".format(
         ', '.join(analysis_individuals)))
+    
     
     ###################################################################
     ### The task queue is where all jobs(in this case batches that  ###
@@ -246,7 +257,7 @@ def annotate_models(variant_file, family_file, family_type, vep,
     variant_printer.start()
 
     start_time_variant_parsing = datetime.now()
-
+    
     # This process parses the original vcf and create batches to put in the variant queue:
     logger.info('Start parsing the variants')
     chromosome_list = get_batches(
@@ -262,6 +273,26 @@ def annotate_models(variant_file, family_file, family_type, vep,
     results.put(None)
     variant_printer.join()
     
+    
+    sort_variants(infile=temp_file.name, mode='chromosome')
+
+    print_headers(head=head, outfile=outfile, silent=silent)
+
+    with open(temp_file.name, 'r', encoding='utf-8') as f:
+        for line in f:
+            print_variant(
+                variant_line=line,
+                outfile=outfile,
+                mode='modified',
+                silent=silent
+            )
+    
+    logger.debug("Removing temp file")
+    os.remove(temp_file.name)
+    logger.debug("Temp file removed")
+
+    logger.info('Time for whole analyis: {0}'.format(
+        str(datetime.now() - start_time_analysis)))
     
 
 if __name__ == '__main__':

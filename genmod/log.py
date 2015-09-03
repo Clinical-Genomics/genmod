@@ -2,6 +2,13 @@ import os
 import sys
 import logging
 
+LEVELS = {
+    0 : 'WARNING',
+    1 : 'INFO',
+    2 : 'DEBUG',
+}
+
+
 def init_log(logger, filename=None, loglevel=None):
     """
     Initializes the log file in the proper format.

@@ -1,4 +1,4 @@
-from genmod.annotate_models import get_model_score
+from . import get_model_score
 
 def make_print_version(variant, families):
     """
@@ -82,30 +82,6 @@ def make_print_version(variant, families):
                             )
     
     
-    # We only want to include annotations where we have a value
-    if 'Annotation' not in variant['info_dict']:
-        if len(feature_list) != 0 and feature_list != ['-']:
-            vcf_info.append('Annotation={0}'.format(
-                                    ','.join(feature_list)))
-    
-    if variant.get('CADD', None):
-        if 'CADD' not in variant['info_dict']:
-            vcf_info.append('CADD={0}'.format(variant.pop('CADD', '.')))
-    
-        if 'CADD_raw' not in variant['info_dict']:
-            if variant.get('CADD_raw', None):
-                vcf_info.append('CADD_raw={0}'.format(
-                    variant.pop('CADD_raw', '.')))
-    
-    if variant.get('1000G_freq', None):
-        if '1000G_freq' not in variant['info_dict']:
-            vcf_info.append('1000G_freq={0}'.format(
-                variant.pop('1000G_freq', '.')))
-
-    if variant.get('ExAC_freq', None):
-        if 'ExAC_freq' not in variant['info_dict']:
-            vcf_info.append('ExAC_freq={0}'.format(
-                variant.pop('ExAC_freq', '.')))
     
     variant['INFO'] = ';'.join(vcf_info)
 

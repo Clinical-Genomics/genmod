@@ -52,19 +52,20 @@ def print_version(ctx, param, value):
                     help=u"Path to log file. If none logging is "\
                           "printed to stderr."
 )
-@click.option('--loglevel',
-                    type=click.Choice(['DEBUG', 'INFO', 'WARNING', 'ERROR', 
-                                        'CRITICAL']),
-                    default='WARNING',
-                    help=u"Set the level of log output."
+@click.option('-v', '--verbose', 
+                count=True,
+                default=0,
+                help=u"Increase output verbosity. Can be used multiple times, eg. -vv"
 )
-def cli(logfile, loglevel):
+def cli(logfile, verbose):
     """Tool for annotating and analyzing genetic variants in the vcf format.\n
         For more information, please run:
         genmod COMMAND --help \n
         """
     from genmod import logger
-    from genmod.log import init_log
+    from genmod.log import init_log, LEVELS
+    loglevel = LEVELS.get(min(verbose,2), "WARNING")
+    
     init_log(logger, logfile, loglevel)
     
 

@@ -21,7 +21,7 @@ def get_model_score(individuals, variant):
     """
     logger = logging.getLogger(__name__)
     
-    model_score = None
+    model_score = 0
     genotype_scores = []
     
     for individual in individuals:

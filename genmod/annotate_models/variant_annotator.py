@@ -23,8 +23,8 @@ from multiprocessing import Process
 from math import log10
 
 from genmod.utils import check_exonic
-from genmod.variant_annotation import make_print_version
-from . import (get_haploblocks, check_genetic_models,get_model_score)
+from . import (get_haploblocks, check_genetic_models, get_model_score, 
+make_print_version)
                 
 
 class VariantAnnotator(Process):
@@ -124,24 +124,25 @@ class VariantAnnotator(Process):
                             self.logger.debug("Set compound_candidate to True")
                     
                     variant_batch[variant_id] = variant
-            #
-            # # Check the genetic models for all variants in the batch
-            # check_genetic_models(
-            #     variant_batch = variant_batch,
-            #     families = self.families,
-            #     phased = self.phased,
-            #     strict = self.strict,
-            # )
-            #
-            #     # Now we want to make versions of the variants that are ready for printing.
-            #     variant = make_print_version(
-            #         variant=variant,
-            #         families=self.families
-            #     )
-            #
-            #     variant_batch[variant_id] = variant
-            #
-            #
+
+            # Check the genetic models for all variants in the batch
+            check_genetic_models(
+                variant_batch = variant_batch,
+                families = self.families,
+                phased = self.phased,
+                strict = self.strict,
+            )
+
+            # Now we want to make versions of the variants that are ready for printing.
+            for variant_id in variant_batch:
+                variant = make_print_version(
+                    variant=variant_batch[variant_id],
+                    families=self.families
+                )
+
+                variant_batch[variant_id] = variant
+
+
             self.logger.debug("Putting batch in results_queue")
             self.results_queue.put(variant_batch)
             self.task_queue.task_done()

@@ -77,7 +77,7 @@ class VariantPrinter(Process):
                 self.logger.debug("Printing variant {0}".format(variant_id))
                 variant = next_result[variant_id]
                 
-                priority = variant['CHROM']
+                priority = get_chromosome_priority(variant['CHROM'])
                 
                 print_line = [priority] + [variant.get(entry, '.') 
                             for entry in self.header]
