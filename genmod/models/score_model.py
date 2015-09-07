@@ -16,14 +16,9 @@ import sys
 import os
 import numbers
 import re
+import logging
 from collections import defaultdict
 from pprint import pprint as pp
-
-# Import third party library
-# https://github.com/mitsuhiko/logbook
-from logbook import Logger, StderrHandler
-log = Logger('Logbook')
-log_handler = StderrHandler()
 
 
 def convert_to_number(record_element):
@@ -319,6 +314,8 @@ def evaluate_float(alt, category, value_dict, operation_dict,
     Return:
         Float:  Alternative final score for variant
     """
+    logger = logging.getLogger(__name__)
+    
     if len(separator_list) > 0:  # Multiple elements
         record_list = number_to_list(record, separator_list[0])
     
@@ -326,8 +323,7 @@ def evaluate_float(alt, category, value_dict, operation_dict,
         record_list = number_to_list(record)
     
     if len(record_list) > 0:
-        if verbose == 2:
-            log.info("Record elements:" + str(record_list))
+        logger.debug("Record elements:" + str(record_list))
         perf_score_dict[category].append(score_float(alt,
                                          record_list,
                                          value_dict,
@@ -360,11 +356,12 @@ def score_variants(batch, predicted_models=[], alt_dict=None, score_dict=None,
     Return:
         None:
     """
+    logger = logging.getLogger(__name__)
+    
     for variant_id in batch:
         
         variant = batch[variant_id]  # Get variant
-        if verbose == 2:
-            log.info("Variant Line: " + str(variant))
+        logger.debug("Variant Line: " + str(variant))
         variant_score = 0  # Variant score
         perf_score_dict = defaultdict(list)  # Performance score dict
         info_dict = variant.get('info_dict', {})  # Create dict of info field
@@ -376,8 +373,7 @@ def score_variants(batch, predicted_models=[], alt_dict=None, score_dict=None,
             record_aggregate = "max"  # Set default
             separator_list = []
             
-            if verbose == 2:
-                log.info("Alternative: " + alt)
+            logger.debug("Alternative: " + alt)
             
             category = alt_dict[alt]['category']  # Alias
             
@@ -402,8 +398,7 @@ def score_variants(batch, predicted_models=[], alt_dict=None, score_dict=None,
                     record = ','.join(record_list)
                 
             if record is not None:  # Record exists in vcf
-                if verbose == 2:
-                    log.info("Record:" + record)
+                logger.debug("Record:" + record)
                 
                 ## Number comparisons
                 if alt_dict[alt]['data_type'] == 'float':
@@ -433,8 +428,7 @@ def score_variants(batch, predicted_models=[], alt_dict=None, score_dict=None,
                     perf_score_dict[category].append(float(score_dict[alt]
                                                            ['notreported']))
             
-            if verbose == 2:
-                log.info(category + ": " + str(perf_score_dict[category]))
+            logger.debug(category + ": " + str(perf_score_dict[category]))
             
         for category in category_dict:  # All should be numbers from here on
             category_score = 0
@@ -450,8 +444,7 @@ def score_variants(batch, predicted_models=[], alt_dict=None, score_dict=None,
             
             variant_score += category_score
             
-        if verbose == 2:
-            log.info("Variant score " + str(variant_score))
+        logger.debug("Variant score " + str(variant_score))
         
         # Added the individual rank score to the variant.
         variant['Individual_rank_score'] = int(variant_score)
