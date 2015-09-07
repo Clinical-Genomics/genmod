@@ -9,19 +9,15 @@ Created by Måns Magnusson on 2013-01-17.
 Copyright (c) 2013 __MyCompanyName__. All rights reserved.
 """
 
-from __future__ import print_function, unicode_literals
+from __future__ import print_function
 
 import sys
 import os
+import logging
 
 from multiprocessing import Process
 from pprint import pprint as pp
 
-# Import third party library
-# https://github.com/mitsuhiko/logbook
-from logbook import Logger, StderrHandler
-log = Logger('Logbook')
-log_handler = StderrHandler()
 
 class VariantPrinter(Process):
     """
@@ -47,6 +43,7 @@ class VariantPrinter(Process):
     def __init__(self, task_queue, temp_file, head, mode='chromosome', 
                 verbosity=False):
         Process.__init__(self)
+        self.logger = logging.getLogger(__name__)
         self.task_queue = task_queue
         self.verbosity = verbosity
         self.temp_file = temp_file
@@ -58,19 +55,16 @@ class VariantPrinter(Process):
         # Print the results to a temporary file:
         number_of_finished = 0
         proc_name = self.name
-        if self.verbosity:
-            log.info(('%s: starting!' % proc_name))
+        self.logger.info(('{0}: starting!'.format(proc_name)))
         while True:
             
             next_result = self.task_queue.get()
             
-            if self.verbosity:
-                if self.task_queue.full():
-                    log.warn('Printing queue full')
+            if self.task_queue.full():
+                self.logger.warning('Printing queue full')
             
             if next_result is None:
-                if self.verbosity:
-                    log.info('All variants printed!')
+                self.logger.info('All variants printed!')
                 self.temp_file.close()
                 break
                 

@@ -39,14 +39,20 @@ from genmod.utils import (print_variants, print_variant_for_sorting,
                     "the first family found in annotation will be used."
 )
 @click.option('-v', '--verbose', 
-                is_flag=True,
+                count=True,
                 help='Increase output verbosity.'
 )
 def sort(variant_file, outfile, family_id, verbose):
     """
     Sort a VCF file based on rank score.\n
-    """    
+    """
+    from genmod.log import init_log, LEVELS
+    from genmod import root_logger
+    loglevel = LEVELS.get(min(verbose,2), "WARNING")
+    init_log(root_logger, loglevel=loglevel)
+    
     logger = logging.getLogger(__name__)
+    
     #Save the variant lines for printing
     header_lines = []
     

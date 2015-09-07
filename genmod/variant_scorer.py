@@ -16,12 +16,14 @@ Created by Måns Magnusson on 2014-03-17.
 Copyright (c) 2014 __MyCompanyName__. All rights reserved.
 """
 
-from __future__ import print_function, unicode_literals
+from __future__ import print_function
 
 
 import sys
 import os
 import argparse
+import logging
+
 from datetime import datetime
 from tempfile import NamedTemporaryFile
 from multiprocessing import Process
@@ -30,12 +32,6 @@ from pprint import pprint as pp
 
 from genmod.models import score_variants
 
-# Import third party library
-# https://github.com/mitsuhiko/logbook
-from logbook import Logger, StderrHandler
-log = Logger('Logbook')
-log_handler = StderrHandler()
-
 
 class VariantScorer(Process):
     """Creates parser objects for scoring variants in vcf files"""
@@ -43,6 +39,7 @@ class VariantScorer(Process):
                 models_of_inheritance, family_id, alt_dict, score_dict, 
                 value_dict, operation_dict, verbose):
         super(VariantScorer, self).__init__()
+        self.logger = logging.getLogger(__name__)
         self.variant_queue = variant_queue
         self.results = results
         self.header = header
@@ -179,8 +176,7 @@ class VariantScorer(Process):
         """
         proc_name = self.name
         
-        if self.verbose:
-            log.info('%s: Starting!' % proc_name)
+        self.logger.info('{0}: Starting!'.format(proc_name))
         
         while True:
             # A batch is a dictionary on the form {variant_id:variant_dict}
@@ -188,8 +184,7 @@ class VariantScorer(Process):
             
             if variant_batch is None:
                 self.variant_queue.task_done()
-                if self.verbose:
-                    log.info('%s: Exiting' % proc_name)
+                self.logger.info('{0}: Exiting'.format(proc_name))
                 break
             
             # We can now free som space by removing the haploblocks

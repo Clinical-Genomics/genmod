@@ -11,19 +11,14 @@ Created by Henrik Stranneheim on 2015-01-12.
 Copyright (c) 2015 __MyCompanyName__. All rights reserved.
 """
 
-from __future__ import print_function, unicode_literals
+from __future__ import print_function
 
 import sys
 import configparser
+import logging
 
 from collections import defaultdict
 from pprint import pprint as pp
-
-# Import third party library
-# https://github.com/mitsuhiko/logbook
-from logbook import Logger, StderrHandler
-log = Logger('Logbook')
-log_handler = StderrHandler()
 
 
 def read_config(config_file):
@@ -55,13 +50,13 @@ def LoggErrorandExist(text, key, config):
     Returns:
         None:
     """
-    log.critical('Plugin.' +
+    logger = logging.getLogger(__name__)
+    logger.critical('Plugin.' +
                  config['Plugin']['name'] +
                  ': ' + text + '"' + key +
                  '" in config file'
-                 + '\n'
                  )
-    log.critical('Aborting ranking' + '\n')
+    logger.critical('Aborting ranking')
     sys.exit()
     return
 
@@ -174,6 +169,8 @@ def collectKeys(config_file, my_vcf_parser, verbose):
     Returns:
         dict: dict[collection][list_of_keys]
     """
+    logger = logging.getLogger(__name__)
+    
     ## Create config object
     config = read_config(config_file)
 
@@ -189,17 +186,16 @@ def collectKeys(config_file, my_vcf_parser, verbose):
 
     ## Check that we have a plugin section
     if "Plugin" not in config:
-        log.critical("Could not find mandatory Plugin section in config file")
-        log.critical('Aborting ranking' + '\n')
+        logger.critical("Could not find mandatory Plugin section in config file")
+        logger.critical('Aborting ranking')
         sys.exit()
 
     ## Collect keys for Plugin
     for section_name in config.sections():
 
-        if verbose:
-            log.info("Config alternative: " + str(config[section_name]))
-            if 'version' in config[section_name]:
-                log.info("Plugin version: " +
+        logger.info("Config alternative: " + str(config[section_name]))
+        if 'version' in config[section_name]:
+            logger.info("Plugin version: " +
                          str(config[section_name]['version']))
 
         ## Only vcf data fields

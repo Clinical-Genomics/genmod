@@ -9,13 +9,13 @@ Created by Måns Magnusson on 2014-09-03.
 Copyright (c) 2014 __MoonsoInc__. All rights reserved.
 """
 
-from __future__ import print_function, unicode_literals
+from __future__ import print_function
 
 import sys
 import os
 import click
 import inspect
-
+import logging
 
 from multiprocessing import JoinableQueue, Manager, cpu_count
 from codecs import open
@@ -34,7 +34,7 @@ from genmod import (VariantConsumer, annotation_parser,
                     load_annotations, print_headers, print_variants,
                     add_metadata, warning)
 
-VERSION = pkg_resources.require("genmod")[0].version
+from genmod import __version__ as VERSION
 
 
 def check_tabix_index(compressed_file, file_type='cadd', verbose=False):
@@ -165,7 +165,7 @@ def check_tabix_index(compressed_file, file_type='cadd', verbose=False):
 )
 
 @click.option('-v', '--verbose', 
-                is_flag=True,
+                count=True,
                 help='Increase output verbosity.'
 )
 def annotate(family_file, variant_file, family_type, vep, silent, phased, strict, cadd_raw, whole_gene, 
@@ -178,14 +178,21 @@ def annotate(family_file, variant_file, family_type, vep, silent, phased, strict
         It is also possible to use genmod without a family file. In this case the variants will be annotated with a variety of options seen below.
         Please see docuentation on github.com/moonso/genmod or genmod/examples/readme.md for more information.
     """    
-    
     ######### This is for logging the command line string #########
     frame = inspect.currentframe()
     args, _, _, values = inspect.getargvalues(frame)
     argument_list = [i+'='+str(values[i]) for i in values if values[i] and i != 'config' and i != 'frame']
+
+    ######### Setup logging #########
+    from genmod.log import init_log, LEVELS
+    from genmod import logger as root_logger
+    loglevel = LEVELS.get(min(verbose,2), "WARNING")
+    init_log(root_logger, loglevel=loglevel)
     
-    if verbose:
-        print('\nRunning GENMOD annotate version %s \n' % VERSION ,file=sys.stderr)
+    logger = logging.getLogger(__name__)
+    
+    
+    logger.info('Running GENMOD annotate version {0}'.format(VERSION))
     
     start_time_analysis = datetime.now()
     
@@ -195,13 +202,11 @@ def annotate(family_file, variant_file, family_type, vep, silent, phased, strict
         variant_parser = VCFParser(
             fsock = sys.stdin, 
             split_variants=split_variants, 
-            skip_info_check=True
             )
     else:
         variant_parser = VCFParser(
             infile = variant_file, 
             split_variants=split_variants,
-            skip_info_check=True
             )
     
     # These are the individuals in from the vcf file
@@ -229,10 +234,10 @@ def annotate(family_file, variant_file, family_type, vep, silent, phased, strict
         
         for individual in family_parser.individuals:
             if individual not in individuals:
-                warning('All individuals in ped file must be in vcf file! Aborting...')
-                warning('Individuals in PED file: %s' % ' '.join(list(family_parser.individuals.keys())))
-                warning('Individuals in VCF file: %s' % ' '.join(individuals))
-                print('Exiting...', file=sys.stderr)
+                logger.warning('All individuals in ped file must be in vcf file! Aborting...')
+                logger.warning('Individuals in PED file:{0}'.format(' '.join(list(family_parser.individuals.keys()))))
+                logger.warning('Individuals in VCF file: {0}'.format(' '.join(individuals)))
+                logger.info('Exiting...')
                 sys.exit()
         
         add_metadata(
@@ -263,12 +268,11 @@ def annotate(family_file, variant_file, family_type, vep, silent, phased, strict
         )
         
     
-    if verbose:
-        if family_file:
-            print('Starting analysis of families: %s' % 
-                    ','.join(list(families.keys())), file=sys.stderr)
-            print('Individuals included in analysis: %s\n' % 
-                    ','.join(list(family_parser.individuals.keys())), file=sys.stderr)
+    if family_file:
+        logger.info('Starting analysis of families: {0}'.format( 
+                ','.join(list(families.keys()))))
+        logger.info('Individuals included in analysis: {0}'.format( 
+                ','.join(list(family_parser.individuals.keys()))))
     ######### Read to the annotation data structures #########
     
     gene_trees = {}
@@ -288,8 +292,7 @@ def annotate(family_file, variant_file, family_type, vep, silent, phased, strict
             description='Annotates what feature(s) this variant belongs to.'
         )
     else:
-        if verbose:
-            print('Using VEP annotation', file=sys.stderr)
+        logger.info('Using VEP annotation')
     
     
     ######### Check which other annotations files that should be used in the analysis #########
@@ -297,24 +300,19 @@ def annotate(family_file, variant_file, family_type, vep, silent, phased, strict
     cadd_annotation = False
     
     if cadd_file:
-        if verbose:
-            print('Cadd file! %s' % cadd_file, file=sys.stderr)
+        logger.info('Cadd file! {0}'.format(cadd_file))
         cadd_annotation = True
     if cadd_1000g:
-        if verbose:
-            print('Cadd 1000G file! %s' % cadd_1000g, file=sys.stderr)
+        logger.info('Cadd 1000G file! {0}'.format(cadd_1000g))
         cadd_annotation = True
     if cadd_esp:
-        if verbose:
-            print('Cadd ESP6500 file! %s' % cadd_esp, file=sys.stderr)
+        logger.info('Cadd ESP6500 file! {0}'.format(cadd_esp))
         cadd_annotation = True
     if cadd_indels:
-        if verbose:
-            print('Cadd InDel file! %s' % cadd_indels, file=sys.stderr)
+        logger.info('Cadd InDel file! {0}'.format(cadd_indels))
         cadd_annotation = True
     if cadd_exac:
-        if verbose:
-            print('Cadd ExAC file! %s' % cadd_exac, file=sys.stderr)
+        logger.info('Cadd ExAC file! {0}'.format(cadd_exac))
         cadd_annotation = True
     
     
@@ -338,8 +336,7 @@ def annotate(family_file, variant_file, family_type, vep, silent, phased, strict
             )
         
     if thousand_g:
-        if verbose:
-            print('1000G frequency file! %s' % thousand_g, file=sys.stderr)
+        logger.format('1000G frequency file! {0}'.format(thousand_g))
         add_metadata(
             head,
             'info',
@@ -350,8 +347,7 @@ def annotate(family_file, variant_file, family_type, vep, silent, phased, strict
         )
         
     if exac:
-        if verbose:
-            print('ExAC frequency file! %s' % exac, file=sys.stderr)
+        logger.info('ExAC frequency file! {0}'.format(exac))
         add_metadata(
             head,
             'info',
@@ -362,8 +358,7 @@ def annotate(family_file, variant_file, family_type, vep, silent, phased, strict
         )
         
     if dbnfsp:
-        if verbose:
-            print('dbNFSP file! %s' % dbnfsp, file=sys.stderr)
+        logger.info('dbNFSP file! {0}'.format(dbnfsp))
     
     
     ###################################################################
@@ -384,9 +379,8 @@ def annotate(family_file, variant_file, family_type, vep, silent, phased, strict
         if num_model_checkers == min(4, cpu_count()):
             num_model_checkers = min(8, cpu_count())
     
-    if verbose:
-        print('Number of CPU:s %s' % cpu_count(), file=sys.stderr)
-        print('Number of model checkers: %s' % num_model_checkers, file=sys.stderr)
+    logger.info('Number of CPU:s {0}'.format(cpu_count()))
+    logger.info('Number of model checkers: {0}'.format(num_model_checkers))
     
     # We use a temp file to store the processed variants
     temp_file = NamedTemporaryFile(delete=False)
@@ -438,8 +432,7 @@ def annotate(family_file, variant_file, family_type, vep, silent, phased, strict
     
     start_time_variant_parsing = datetime.now()
     
-    if verbose:
-        print('Start parsing the variants ... \n', file=sys.stderr)
+    logger.info('Start parsing the variants ... ')
     
     # This process parses the original vcf and create batches to put in the variant queue:
     
@@ -465,9 +458,8 @@ def annotate(family_file, variant_file, family_type, vep, silent, phased, strict
     
     temporary_variant_file.close()
         
-    if verbose:
-        print('Cromosomes found in variant file: %s \n' % ','.join(chromosome_list), file=sys.stderr)
-        print('Models checked!\n', file=sys.stderr)
+    logger.info('Cromosomes found in variant file: {0}'.format(','.join(chromosome_list)))
+    logger.info('Models checked!')
     
     sort_variants(temp_file.name, mode='chromosome', verbose=verbose)
     
@@ -478,8 +470,7 @@ def annotate(family_file, variant_file, family_type, vep, silent, phased, strict
     # Remove all temp files:
     os.remove(temp_file.name)
     
-    if verbose:
-        print('Time for whole analyis: %s' % str(datetime.now() - start_time_analysis), file=sys.stderr)
+    logger.info('Time for whole analyis: {0}'.format(str(datetime.now() - start_time_analysis)))
     
 
 

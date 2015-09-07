@@ -44,11 +44,12 @@ Created by Måns Magnusson on 2013-01-17.
 Copyright (c) 2013 __MyCompanyName__. All rights reserved.
 """
 
-from __future__ import print_function, unicode_literals
+from __future__ import print_function
 
 import sys
 import os
 import gzip
+import logging
 
 import click
 import genmod
@@ -75,6 +76,8 @@ class AnnotationParser(object):
     def __init__(self, infile, annotation_type, zipped = False, 
                     splice_padding = 2, verbosity=False):
         super(AnnotationParser, self).__init__()
+        self.logger = logging.getLogger(__name__)
+        
         self.verbosity = verbosity
         self.annotation_type = annotation_type
         # A dictionary with {<chr>:<intervalTree>} 
@@ -171,9 +174,7 @@ class AnnotationParser(object):
                                                         0
                                                         )
         
-        if self.verbosity:
-            print('Number of genes in annotation file: %s' % nr_of_genes, 
-                    file=sys.stderr)
+        self.logger.info('Number of genes in annotation file: {0}'.format(nr_of_genes))
                 
         return
     
