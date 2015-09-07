@@ -1,4 +1,7 @@
-from __future__ import print_function, unicode_literals
+from __future__ import print_function
+
+import logging
+logger = logging.getLogger(__name__)
 
 from genmod.annotation_parser import AnnotationParser
 from genmod.genetic_models import check_genetic_models
