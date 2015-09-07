@@ -3,6 +3,9 @@ from __future__ import print_function
 import logging
 logger = logging.getLogger(__name__)
 
+import pkg_resources
+__version__ = pkg_resources.require("genmod")[0].version
+
 from genmod.annotation_parser import AnnotationParser
 from genmod.genetic_models import check_genetic_models
 from genmod.variant_consumer import VariantConsumer
