@@ -9,21 +9,15 @@ Created by Måns Magnusson on 2015-01-22.
 Copyright (c) 2015 __MoonsoInc__. All rights reserved.
 """
 
-from __future__ import print_function, unicode_literals
+from __future__ import print_function
 
 import sys
 import os
 import click
-
+import logging
 
 from subprocess import call
 from datetime import datetime
-
-# Import third party library
-# https://github.com/mitsuhiko/logbook
-from logbook import Logger, StderrHandler
-log = Logger('Logbook')
-log_handler = StderrHandler()
 
 
 def sort_variants(infile, mode='chromosome', verbose=False):
@@ -42,6 +36,7 @@ def sort_variants(infile, mode='chromosome', verbose=False):
         0 if sorting was performed
         1 if variants where not sorted
     """
+    logger = logging.getLogger(__name__)
     command = [
             'sort',
             ]
@@ -56,24 +51,21 @@ def sort_variants(infile, mode='chromosome', verbose=False):
 
     command = command + [infile, '-o', infile]
 
-    if verbose:
-        log.info("Start sorting variants...")
-        log.info("Sort command: %s" % ' '.join(command))
-        sort_start = datetime.now()
+    logger.info("Start sorting variants...")
+    logger.info("Sort command: ".format(' '.join(command)))
+    sort_start = datetime.now()
     
     try:
         call(command)
     except OSError:
-        if verbose:
-            log.warn("unix command sort does not seem to exist on your system...")
-            log.warn("genmod needs unix sort to provide a sorted output.")
-        log.warn("""Output VCF will not be sorted since genmod can not find
+        logger.warning("unix command sort does not seem to exist on your system...")
+        logger.warning("genmod needs unix sort to provide a sorted output.")
+        logger.warning("""Output VCF will not be sorted since genmod can not find
                 unix sort""")
         return 1
 
-    if verbose:
-        log.info("Sorting done!")
-        log.info("Time to sort %s" % (datetime.now()-sort_start))
+    logger.info("Sorting done!")
+    logger.info("Time to sort {0}".format(datetime.now()-sort_start))
     
     return 0
 

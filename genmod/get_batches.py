@@ -44,11 +44,13 @@ Created by Måns Magnusson on 2014-03-17.
 Copyright (c) 2014 __MyCompanyName__. All rights reserved.
 """
 
-from __future__ import (print_function, unicode_literals)
+from __future__ import (print_function)
 
 import sys
 import os
-import argparse
+import logging
+
+
 from datetime import datetime
 from codecs import open
   
@@ -57,11 +59,6 @@ from pprint import pprint as pp
 from interval_tree import interval_tree
 from genmod.errors import warning
 
-# Import third party library
-# https://github.com/mitsuhiko/logbook
-from logbook import Logger, StderrHandler
-log = Logger('Logbook')
-log_handler = StderrHandler()
 
 # These are the SO-terms for genetic variants used by VEP:
 INTERESTING_SO_TERMS = set(
@@ -106,6 +103,7 @@ def get_batches(variant_parser, batch_queue, individuals, gene_trees={},
     maximun 10000 variants long. After one batch is filled it is sent 
     to the variant queue.
     """
+    logger = logging.getLogger(__name__)
     beginning = True
     # A batch is a dictionary with variants
     batch = {}
@@ -123,7 +121,7 @@ def get_batches(variant_parser, batch_queue, individuals, gene_trees={},
         start_chrom_time = start_parsing_time
         start_twenty_time = start_parsing_time
         if batch_queue.full():
-            warning('Queue full!!')
+            logger.warning('Queue full!!')
     
     nr_of_variants = 0
     for variant in variant_parser:
@@ -141,17 +139,16 @@ def get_batches(variant_parser, batch_queue, individuals, gene_trees={},
                             exon_trees, 
                             vep, 
                             whole_genes, 
-                            verbosity
+                            logger
                         )
         
         new_features = variant['annotation']
         
-        if verbosity:
-            if nr_of_variants % 20000 == 0:
-                log.info('%s variants parsed!' % nr_of_variants)
-                log.info('Last 20.000 took %s to parse.\n' % 
-                         str(datetime.now() - start_twenty_time))
-                start_twenty_time = datetime.now()
+        if nr_of_variants % 20000 == 0:
+            logger.info('{0} variants parsed!'.format(nr_of_variants))
+            logger.info('Last 20.000 took {0} to parse.'.format( 
+                     str(datetime.now() - start_twenty_time)))
+            start_twenty_time = datetime.now()
         
         # If we look at the first variant, setup boundary conditions:
         if beginning:
@@ -200,11 +197,10 @@ def get_batches(variant_parser, batch_queue, individuals, gene_trees={},
                 # New chromosome means new batch
                 send = True
                 
-                if verbosity:
-                    log.info('Chromosome %s parsed!' % current_chrom)
-                    log.info('Time to parse chromosome %s' 
-                                % str(datetime.now()-start_chrom_time))
-                    start_chrom_time = datetime.now()
+                logger.info('Chromosome {0} parsed!'.format(current_chrom))
+                logger.info('Time to parse chromosome {0}'.format( 
+                            str(datetime.now()-start_chrom_time)))
+                start_chrom_time = datetime.now()
             
                 current_chrom = new_chrom
             
@@ -245,13 +241,12 @@ def get_batches(variant_parser, batch_queue, individuals, gene_trees={},
     chromosomes.append(current_chrom)
     nr_of_batches += 1
     
-    if verbosity:
-        log.info('Chromosome %s parsed!' % current_chrom)
-        log.info('Time to parse chromosome %s \n' % str(datetime.now()-start_chrom_time))
-        log.info('Variants parsed!')
-        log.info('Time to parse variants:%s' % str(datetime.now() - start_parsing_time))
-        log.info('Number of variants in variant file:%s\n' % nr_of_variants)
-        log.info('Number of batches created:%s\n' % nr_of_batches)
+    logger.info('Chromosome {0} parsed!'.format(current_chrom))
+    logger.info('Time to parse chromosome {0}'.format(str(datetime.now()-start_chrom_time)))
+    logger.info('Variants parsed!')
+    logger.info('Time to parse variants:{0}'.format(str(datetime.now() - start_parsing_time)))
+    logger.info('Number of variants in variant file:{0}'.format(nr_of_variants))
+    logger.info('Number of batches created:{0}'.format(nr_of_batches))
     
     if phased:
     # Create an interval tree for each individual with the phasing intervals
@@ -299,7 +294,7 @@ def check_vep_annotation(variant):
     return annotation
         
     
-def annotate_variant(variant, gene_trees, exon_trees, vep, whole_genes, verbosity):
+def annotate_variant(variant, gene_trees, exon_trees, vep, whole_genes, logger):
     """
     Annotate variants with what regions the belong.
     Adds 'annotation' = set(set, of, genes) and 
@@ -338,8 +333,7 @@ def annotate_variant(variant, gene_trees, exon_trees, vep, whole_genes, verbosit
         try:
             variant['annotation'] = set(gene_trees[chrom].find_range(variant_interval))
         except KeyError:
-            if verbosity:
-                warning(''.join(['Chromosome ', chrom, ' is not in annotation file!']))
+            logger.warning('Chromosome {0} is not in annotation file!'.format(chrom))
         
         if whole_genes:
         # If compounds are to be checked in whole genes (including introns):
@@ -351,8 +345,7 @@ def annotate_variant(variant, gene_trees, exon_trees, vep, whole_genes, verbosit
                 if len(exon_trees[chrom].find_range(variant_interval)):
                     variant['comp_candidate'] = True
             except KeyError:
-                if verbosity:
-                    warning(''.join(['Chromosome ', chrom, ' is not in annotation file!']))
+                logger.warning('Chromosome {0} is not in annotation file!'.format(chrom))
         return
 
 def main():
