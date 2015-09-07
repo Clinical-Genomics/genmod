@@ -10,7 +10,7 @@ Created by Henrik Stranneheim on 2015-01-12.
 Copyright (c) 2013 __MoonsoInc__. All rights reserved.
 """
 
-from __future__ import print_function, unicode_literals
+from __future__ import print_function
 
 import sys
 import os
@@ -323,7 +323,7 @@ def evaluate_float(alt, category, value_dict, operation_dict,
         record_list = number_to_list(record)
     
     if len(record_list) > 0:
-        logger.debug("Record elements:" + str(record_list))
+        logger.debug("Record elements: {0}".format(record_list))
         perf_score_dict[category].append(score_float(alt,
                                          record_list,
                                          value_dict,
@@ -361,7 +361,7 @@ def score_variants(batch, predicted_models=[], alt_dict=None, score_dict=None,
     for variant_id in batch:
         
         variant = batch[variant_id]  # Get variant
-        logger.debug("Variant Line: " + str(variant))
+        logger.debug("Variant Line: {0}".format(variant))
         variant_score = 0  # Variant score
         perf_score_dict = defaultdict(list)  # Performance score dict
         info_dict = variant.get('info_dict', {})  # Create dict of info field
@@ -373,7 +373,7 @@ def score_variants(batch, predicted_models=[], alt_dict=None, score_dict=None,
             record_aggregate = "max"  # Set default
             separator_list = []
             
-            logger.debug("Alternative: " + alt)
+            logger.debug("Alternative: {0}".format(alt))
             
             category = alt_dict[alt]['category']  # Alias
             
@@ -398,7 +398,7 @@ def score_variants(batch, predicted_models=[], alt_dict=None, score_dict=None,
                     record = ','.join(record_list)
                 
             if record is not None:  # Record exists in vcf
-                logger.debug("Record:" + record)
+                logger.debug("Record: {0}".format(record))
                 
                 ## Number comparisons
                 if alt_dict[alt]['data_type'] == 'float':
@@ -428,7 +428,7 @@ def score_variants(batch, predicted_models=[], alt_dict=None, score_dict=None,
                     perf_score_dict[category].append(float(score_dict[alt]
                                                            ['notreported']))
             
-            logger.debug(category + ": " + str(perf_score_dict[category]))
+            logger.debug("{0}: {1}".format(category, str(perf_score_dict[category])))
             
         for category in category_dict:  # All should be numbers from here on
             category_score = 0
@@ -444,7 +444,7 @@ def score_variants(batch, predicted_models=[], alt_dict=None, score_dict=None,
             
             variant_score += category_score
             
-        logger.debug("Variant score " + str(variant_score))
+        logger.debug("Variant score {0}".format(variant_score))
         
         # Added the individual rank score to the variant.
         variant['Individual_rank_score'] = int(variant_score)

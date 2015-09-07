@@ -10,7 +10,6 @@ Copyright (c) 2013 __MyCompanyName__. All rights reserved.
 """
 
 from __future__ import print_function
-from __future__ import unicode_literals
 
 import sys
 import os
@@ -20,14 +19,13 @@ from pprint import pprint as pp
 
 from codecs import getwriter
 
-import pkg_resources
 import genmod
 
 from genmod.commands import (build_annotation, annotate, analyze, 
                             summarize_variants, score_variants, genmod_sort)
 
 
-version = pkg_resources.require("genmod")[0].version
+from genmod import __version__
 
 
 def print_version(ctx, param, value):
@@ -41,7 +39,7 @@ def print_version(ctx, param, value):
     """
     if not value or ctx.resilient_parsing:
         return
-    click.echo('genmod version: ' + version)
+    click.echo('genmod version: {0}'.format(__version__))
     ctx.exit()
 
 

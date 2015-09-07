@@ -11,12 +11,13 @@ Created by Måns Magnusson on 2013-03-01.
 Copyright (c) 2013 __MyCompanyName__. All rights reserved.
 """
 
-from __future__ import division, print_function, unicode_literals
+from __future__ import division, print_function
 
 import sys
 import os
 import operator
 import tabix
+import logging
 
 from pprint import pprint as pp
 from functools import reduce
@@ -26,11 +27,6 @@ from math import log10
 from genmod import check_genetic_models
 from genmod.errors import warning
 
-# Import third party library
-# https://github.com/mitsuhiko/logbook
-from logbook import Logger, StderrHandler
-log = Logger('Logbook')
-log_handler = StderrHandler()
 
 class VariantConsumer(Process):
     """
@@ -44,6 +40,7 @@ class VariantConsumer(Process):
                 thousand_g=None, exac=None, dbNSFP=None, strict=False, 
                 verbosity=False):
         Process.__init__(self)
+        self.logger = logging.getLogger(__name__)
         self.task_queue = task_queue
         self.families = families
         self.results_queue = results_queue
@@ -376,16 +373,14 @@ class VariantConsumer(Process):
     def run(self):
         """Run the consuming"""
         proc_name = self.name
-        if self.verbosity:
-            log.info('%s: Starting!' % proc_name)
+        self.logger.info('{0}: Starting!'.format(proc_name))
         while True:
             # A batch is a dictionary on the form {variant_id:variant_dict}
             variant_batch = self.task_queue.get()
             
             if variant_batch is None:
                 self.task_queue.task_done()
-                if self.verbosity:
-                    log.info('%s: Exiting' % proc_name)
+                self.logger.info('{0}: Exiting'.format(proc_name))
                 break
 
             

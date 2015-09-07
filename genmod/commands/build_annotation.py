@@ -9,12 +9,13 @@ Created by Måns Magnusson on 2014-09-03.
 Copyright (c) 2014 __MoonsoInc__. All rights reserved.
 """
 
-from __future__ import print_function, unicode_literals
+from __future__ import print_function
 
 import sys
 import os
 import click
 import pkg_resources
+import logging
 
 try:
     import cPickle as pickle
@@ -47,14 +48,20 @@ from genmod import AnnotationParser
                     help='Specify the the number of bases that the exons should be padded with. Default is 2 bases.'
 )
 @click.option('-v', '--verbose', 
-                is_flag=True,
+                count=True,
                 help='Increase output verbosity.'
 )
 def build_annotation(annotation_file, annotation_type, outdir, splice_padding, verbose):
     """Build a new annotation database."""
     
-    if verbose:
-        print('Building new annotation databases from %s into %s.' % (annotation_file, outdir), file=sys.stderr)
+    from genmod.log import init_log, LEVELS
+    from genmod import root_logger
+    loglevel = LEVELS.get(min(verbose,2), "WARNING")
+    init_log(root_logger, loglevel=loglevel)
+    
+    logger = logging.getLogger(__name__)
+    
+    logger.info('Building new annotation databases from {0} into {1}.'.format(annotation_file, outdir))
     
     anno_parser = AnnotationParser(
                             annotation_file, 

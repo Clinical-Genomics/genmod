@@ -59,7 +59,7 @@ Created by Måns Magnusson on 2013-02-12.
 Copyright (c) 2013 __MyCompanyName__. All rights reserved.
 """
 
-from __future__ import print_function, unicode_literals
+from __future__ import print_function
 
 import os
 import sys

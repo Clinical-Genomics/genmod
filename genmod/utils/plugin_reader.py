@@ -11,7 +11,7 @@ Created by Henrik Stranneheim on 2015-01-12.
 Copyright (c) 2015 __MyCompanyName__. All rights reserved.
 """
 
-from __future__ import print_function, unicode_literals
+from __future__ import print_function
 
 import sys
 import configparser
@@ -55,9 +55,8 @@ def LoggErrorandExist(text, key, config):
                  config['Plugin']['name'] +
                  ': ' + text + '"' + key +
                  '" in config file'
-                 + '\n'
                  )
-    logger.critical('Aborting ranking' + '\n')
+    logger.critical('Aborting ranking')
     sys.exit()
     return
 
@@ -187,8 +186,8 @@ def collectKeys(config_file, my_vcf_parser, verbose):
 
     ## Check that we have a plugin section
     if "Plugin" not in config:
-        log.critical("Could not find mandatory Plugin section in config file")
-        log.critical('Aborting ranking' + '\n')
+        logger.critical("Could not find mandatory Plugin section in config file")
+        logger.critical('Aborting ranking')
         sys.exit()
 
     ## Collect keys for Plugin

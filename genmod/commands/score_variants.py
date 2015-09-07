@@ -9,7 +9,7 @@ Created by Henrik Stranneheim and Måns Magnusson on 2015-01-08.
 Copyright (c) 2015 __MoonsoInc__. All rights reserved.
 """
 
-from __future__ import print_function, unicode_literals
+from __future__ import print_function
 
 import sys
 import os
@@ -35,7 +35,7 @@ from ped_parser import FamilyParser
 from vcf_parser import VCFParser
 
 
-VERSION = pkg_resources.require("genmod")[0].version
+from genmod import __version__ as VERSION
 
 
 def check_plugin(config_file, variant_parser, verbose=False):
@@ -50,18 +50,18 @@ def check_plugin(config_file, variant_parser, verbose=False):
     Returns:
         dict:   Dictionary of alternatives
     """
+    logger = logging.getLogger(__name__)
     ## Collect supplied plugin
     alt_dict, score_dict, value_dict, operation_dict = collectKeys(
                                                             config_file,
                                                             variant_parser,
                                                             verbose
                                                         )
-    if verbose == 2:
-        log.info("Plugin file: " + config_file)
-        log.info("alt_dict:" + str(alt_dict))
-        log.info("score_dict: " + str(score_dict))
-        log.info("value_dict: " + str(value_dict))
-        log.info("operation_dict" + str(operation_dict))
+    logging.debug("Plugin file: " + config_file)
+    logging.debug("alt_dict:" + str(alt_dict))
+    logging.debug("score_dict: " + str(score_dict))
+    logging.debug("value_dict: " + str(value_dict))
+    logging.debug("operation_dict" + str(operation_dict))
     
     return alt_dict, score_dict, value_dict, operation_dict
 
@@ -145,7 +145,7 @@ def score(family_file, variant_file, family_type, annotation_dir, vep,
     genmod/configs
     """
     from genmod.log import init_log, LEVELS
-    from genmod import root_logger
+    from genmod import logger as root_logger
     loglevel = LEVELS.get(min(verbose,2), "WARNING")
     init_log(root_logger, loglevel=loglevel)
     

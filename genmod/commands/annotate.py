@@ -165,7 +165,7 @@ def check_tabix_index(compressed_file, file_type='cadd', verbose=False):
 )
 
 @click.option('-v', '--verbose', 
-                is_flag=True,
+                count=True,
                 help='Increase output verbosity.'
 )
 def annotate(family_file, variant_file, family_type, vep, silent, phased, strict, cadd_raw, whole_gene, 
@@ -178,17 +178,19 @@ def annotate(family_file, variant_file, family_type, vep, silent, phased, strict
         It is also possible to use genmod without a family file. In this case the variants will be annotated with a variety of options seen below.
         Please see docuentation on github.com/moonso/genmod or genmod/examples/readme.md for more information.
     """    
+    ######### This is for logging the command line string #########
+    frame = inspect.currentframe()
+    args, _, _, values = inspect.getargvalues(frame)
+    argument_list = [i+'='+str(values[i]) for i in values if values[i] and i != 'config' and i != 'frame']
+
+    ######### Setup logging #########
     from genmod.log import init_log, LEVELS
-    from genmod import root_logger
+    from genmod import logger as root_logger
     loglevel = LEVELS.get(min(verbose,2), "WARNING")
     init_log(root_logger, loglevel=loglevel)
     
     logger = logging.getLogger(__name__)
     
-    ######### This is for logging the command line string #########
-    frame = inspect.currentframe()
-    args, _, _, values = inspect.getargvalues(frame)
-    argument_list = [i+'='+str(values[i]) for i in values if values[i] and i != 'config' and i != 'frame']
     
     logger.info('Running GENMOD annotate version {0}'.format(VERSION))
     
@@ -456,7 +458,7 @@ def annotate(family_file, variant_file, family_type, vep, silent, phased, strict
     
     temporary_variant_file.close()
         
-    logger.info('Cromosomes found in variant file: {0}'.formta(','.join(chromosome_list)))
+    logger.info('Cromosomes found in variant file: {0}'.format(','.join(chromosome_list)))
     logger.info('Models checked!')
     
     sort_variants(temp_file.name, mode='chromosome', verbose=verbose)
