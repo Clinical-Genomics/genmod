@@ -116,12 +116,11 @@ def get_batches(variant_parser, batch_queue, individuals, gene_trees={},
     nr_of_batches = 0
     chromosomes = []
     # Parse the vcf file:
-    if verbosity:
-        start_parsing_time = datetime.now()
-        start_chrom_time = start_parsing_time
-        start_twenty_time = start_parsing_time
-        if batch_queue.full():
-            logger.warning('Queue full!!')
+    start_parsing_time = datetime.now()
+    start_chrom_time = start_parsing_time
+    start_twenty_time = start_parsing_time
+    if batch_queue.full():
+        logger.warning('Queue full!!')
     
     nr_of_variants = 0
     for variant in variant_parser:
