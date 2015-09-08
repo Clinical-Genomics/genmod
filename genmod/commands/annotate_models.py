@@ -18,27 +18,24 @@ import os
 import click
 import inspect
 import logging
+import shutil
 
 from multiprocessing import JoinableQueue, Manager, cpu_count
 from codecs import open
 from datetime import datetime
 from tempfile import mkdtemp, TemporaryFile, NamedTemporaryFile
 
-import shutil
-import pkg_resources
 
 from ped_parser import FamilyParser
 from vcf_parser import VCFParser
 
 from genmod import (__version__)
 
-from genmod.utils import (get_batches, VariantPrinter)
+from genmod.utils import (get_batches, VariantPrinter, check_individuals)
 from genmod.annotate_models import (VariantAnnotator)
 from genmod.vcf_tools import (add_vcf_info, add_version_header, 
 add_genetic_models_header, add_model_score_header, add_compounds_header,
 print_headers, sort_variants, print_variant, HeaderParser)
-
-from genmod.utils import check_individuals
 
 @click.command()
 @click.argument('variant_file', 
@@ -116,7 +113,7 @@ def annotate_models(variant_file, family_file, family_type, vep,
     
     if not family_file:
         print("Please provide a family file with -f/--family_file")
-        sys.exit(0)
+        sys.exit(1)
     
     logger.info("Setting up a family parser")
     family_parser = FamilyParser(family_file, family_type)
@@ -151,7 +148,7 @@ def annotate_models(variant_file, family_file, family_type, vep,
         logger.warning("Genetic models are already annotated according to vcf"\
         " header.")
         logger.info("Exiting...")
-        sys.exit(0)
+        sys.exit(1)
     
     vcf_individuals = variant_parser.individuals
     logger.debug("Individuals found in vcf file: {}".format(', '.join(vcf_individuals)))
@@ -180,14 +177,15 @@ def annotate_models(variant_file, family_file, family_type, vep,
     
     try:
         check_individuals(family_parser.individuals, vcf_individuals)
-        analysis_individuals = list(family_parser.individuals.keys())
     except IOError as e:
         logger.error(e)
         logger.info("Individuals in PED file: {0}".format(
-                        ', '.join(analysis_individuals)))
+                        ', '.join(family_parser.individuals)))
         logger.info("Individuals in VCF file: {0}".format(', '.join(vcf_individuals)))
         logger.info("Exiting...")
         sys.exit(1)
+
+    analysis_individuals = list(family_parser.individuals.keys())
     
     logger.info("Individuals used in analysis: {0}".format(
         ', '.join(analysis_individuals)))
