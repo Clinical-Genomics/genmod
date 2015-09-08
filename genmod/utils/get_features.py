@@ -1,12 +1,15 @@
-from __future__ import (print_function, absolute_import)
+from __future__ import (print_function)
 
 import logging
 
-from . import INTERESTING_SO_TERMS, EXONIC_SO_TERMS
+from genmod.utils import INTERESTING_SO_TERMS, EXONIC_SO_TERMS
 
 def check_vep_annotation(variant):
     """
     Return a set with the genes that vep has annotated this variant with.
+    
+    Vep annotates all variants but we are only interested in the exonic ones.
+    The terms are specified in INTERESTING_SO_TERMS
     
     Arguments:
         variant (dict): A variant dictionary
@@ -43,6 +46,7 @@ def get_annotation(variant, vep=False):
     
     annotation = set()
     variant_id = variant.get('variant_id', '')
+    logger.debug("Checking variant annotation for {0}".format(variant_id))
     # If the variant has already been annotated by genmod we do not need to 
     # check again
     if vep:
