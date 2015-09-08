@@ -144,16 +144,6 @@ def annotate_models(variant_file, family_file, family_type, vep,
             )
     logger.debug("Variant parser setup")
     
-    # head = HeaderParser()
-    # with open(variant_file, 'r') as f:
-    #     for line in f:
-    #         if line.startswith('#'):
-    #             if line.startswith('##'):
-    #                 head.parse_meta_data(line)
-    #             else:
-    #                 head.parse_header_line(line)
-    #         else:
-    #             break
                 
     head = variant_parser.metadata
     
@@ -189,7 +179,7 @@ def annotate_models(variant_file, family_file, family_type, vep,
     logger.debug("Compounds added")
     
     try:
-        check_individuals(family_parser, vcf_individuals)
+        check_individuals(family_parser.individuals, vcf_individuals)
         analysis_individuals = list(family_parser.individuals.keys())
     except IOError as e:
         logger.error(e)

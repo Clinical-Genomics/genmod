@@ -24,7 +24,7 @@ setup(name='genmod',
     license = 'MIT License',
     install_requires=[
         'ped_parser >= 1.6.2',
-        'vcf_parser >= 1.5',
+        'vcf_parser >= 1.5.2',
         'pytabix',
         'pytest',
         'interval_tree >= 0.3.2',
