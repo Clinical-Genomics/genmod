@@ -55,7 +55,7 @@ def build_annotation(annotation_file, annotation_type, outdir, splice_padding, v
     """Build a new annotation database."""
     
     from genmod.log import init_log, LEVELS
-    from genmod import root_logger
+    from genmod import logger as root_logger
     loglevel = LEVELS.get(min(verbose,2), "WARNING")
     init_log(root_logger, loglevel=loglevel)
     

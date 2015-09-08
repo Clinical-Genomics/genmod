@@ -47,7 +47,7 @@ def sort(variant_file, outfile, family_id, verbose):
     Sort a VCF file based on rank score.\n
     """
     from genmod.log import init_log, LEVELS
-    from genmod import root_logger
+    from genmod import logger as root_logger 
     loglevel = LEVELS.get(min(verbose,2), "WARNING")
     init_log(root_logger, loglevel=loglevel)
     
