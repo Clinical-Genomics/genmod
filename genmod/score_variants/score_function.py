@@ -107,6 +107,7 @@ class ScoreFunction(object):
             value (int, float): The not reported score
         
         """
+        self.logger.debug("Setting not_reported_score to {0}".format(value))
         self._not_reported_score = float(value)
         return
 
@@ -116,11 +117,13 @@ class ScoreFunction(object):
         Args:
             value (int, float): The reported score
         """
+        self.logger.debug("Setting reported_score to {0}".format(value))
         self._reported_score = float(value)
         return
     
     def set_equal(self):
         """Set _equal to True
         """
+        self.logger.debug("Setting equal to True")
         self._equal = True
         return

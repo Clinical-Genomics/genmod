@@ -132,7 +132,9 @@ class ConfigParser(configobj.ConfigObj):
                     self.logger.error("{0} is missing category".format(plugin))
                     raise ValidateError("Plugins must have a category")
                 
-                self.get_score_function(plugin_info, plugin)
+                self.logger.info("Check score function for plugin {0}".format(plugin))
+                self.score_functions[plugin] = self.get_score_function(plugin_info)
+                self.logger.debug("Added score function for plugin {0}".format(plugin))
 
                     
     #
@@ -141,7 +143,7 @@ class ConfigParser(configobj.ConfigObj):
     #         logger.debug("Checking plugin score: {0}".format(plugin))
     #         self[plugin] = self.vcf_score_check(self[plugin], plugin)
     #
-    def get_score_function(self, plugin_info, plugin_name):
+    def get_score_function(self, plugin_info):
         """Convert the scoring information
         
         If data_type = String we use the string dict to get the score
@@ -153,7 +155,6 @@ class ConfigParser(configobj.ConfigObj):
         
         """
         
-        score_info = []
         score_dict = {}
         
         for key in plugin_info:
@@ -173,6 +174,10 @@ class ConfigParser(configobj.ConfigObj):
                 not_reported_score = float(raw_info['score'])
                 score_function.set_not_reported(not_reported_score)
             
+            elif match_type == 'flag':
+                reported_score = float(raw_info['score'])
+                score_function.set_reported(reported_score)
+            
             elif match_type == 'string':
                 string = raw_info['string']
                 score = float(raw_info['score'])
@@ -181,6 +186,18 @@ class ConfigParser(configobj.ConfigObj):
             else:
                 if raw_info['score'] == 'eq':
                     score_function.set_equal()
+                else:
+                    lower_bound = float(raw_info['lower'])
+                    upper_bound = float(raw_info['upper'])
+                    score = float(raw_info['score'])
+                    score_function.add_interval(
+                        lower=lower_bound,
+                        upper=upper_bound,
+                        score=score
+                    )
+        
+        return score_function
+                
         
     def get_string_dict(self, plugin_info):
         """Convert a section with information of priorities to a string dict.
@@ -325,7 +342,7 @@ class ConfigParser(configobj.ConfigObj):
         else:
             if data_type != 'flag':
                 raise ValidateError(
-                    "If data_type != flag the separators have to be defined"
+                    "If data_type != flag the separators have to be defined.\n"
                     "Missing separators in plugin: {0}".format(plugin)
                     )
                 

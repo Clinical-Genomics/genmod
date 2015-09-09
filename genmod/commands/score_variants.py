@@ -26,6 +26,7 @@ from ped_parser import FamilyParser
 from vcf_parser import VCFParser
 
 from genmod.vcf_tools import add_metadata
+from genmod.score_variants import ConfigParser
 
 from genmod import __version__
 
@@ -53,7 +54,7 @@ from genmod import __version__
                 type=click.Path(exists=False),
                 help='Specify the path to a file where results should be stored.'
 )
-@click.option('-pi', '--plugin_file',
+@click.option('-c', '--score_config',
               type=click.Path(exists=True),
               help="The plug-in config file(.ini)"
 )
@@ -63,7 +64,7 @@ from genmod import __version__
 )
 
 def score(family_file, variant_file, family_type,
-          plugin_file, silent, outfile, verbose):
+          score_config, silent, outfile, verbose):
     """
     Score variants in a vcf file using Weighted Sum Model.
     The specific scores should be defined in a config file, see examples on 
@@ -74,7 +75,12 @@ def score(family_file, variant_file, family_type,
     
     logger.info('Running GENMOD score, version: {0}'.format(__version__))
     
-    ## Check the variants:
+    ## Check the score config:
+    if not score_config:
+        logger.warning("Please provide a score config file.")
+        sys.exit(1)
+    
+    config_parser = ConfigParser(score_config)
     
     if variant_file == '-':
         variant_parser = VCFParser(
@@ -96,10 +102,7 @@ def score(family_file, variant_file, family_type,
         description="Combined rank score for the variant in this family."'GeneticModels'
     )
     
-    
-    
-    
-    
+
 if __name__ == '__main__':
     from genmod import logger
     from genmod.log import init_log
