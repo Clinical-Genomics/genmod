@@ -24,6 +24,7 @@ def add_metadata(head, metadata_type, annotation_id, annotation_number='.',
     
     Args:
         head            : A vcf header object
+        metadata_type(str): 'info' or 'version'
         annotate_models : Bool. If genetic models should be annotated
         vep             : Bool. If variants already annotated with vep the they
                          will not get any region annotation by genmod.

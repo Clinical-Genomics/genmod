@@ -26,6 +26,8 @@ class ScoreFunction(object):
         self._string_dict = {}
         self.logger.debug("Initializing interval_tree")
         self._interval_tree = IntervalTree()
+        self.logger.debug("Initializing value_dict")
+        self._value_dict = {}
         self.logger.debug("Initializing not_reported_score to 0")
         self._not_reported_score = 0
         self.logger.debug("Initializing reported_score to 0")
@@ -45,6 +47,7 @@ class ScoreFunction(object):
         self.logger.debug("Adding interval {0} to score function".format(
             ','.join([str(lower), str(upper), str(score)])
         ))
+        ##TODO Check if intervals overlap
         self._interval_tree[lower:upper] = score
         
         return
@@ -57,10 +60,24 @@ class ScoreFunction(object):
                 score (int,float): The score for the match
             
         """
-        self.logger.debug("Adding string {0} with score to string_dict".format(
+        self.logger.debug("Adding string {0} with score {1} to string_dict".format(
             key, str(score))
         )
         self._string_dict[key] = score
+        return
+
+    def add_value(self, value, score):
+        """Add the score for a value match
+        
+            Args:
+                value (number): The number that should be matched
+                score (int,float): The score for the match
+            
+        """
+        self.logger.debug("Adding value {0} with score {1} to value_dict".format(
+            value, str(score))
+        )
+        self._value_dict[str(value)] = score
         return
         
         
@@ -95,8 +112,13 @@ class ScoreFunction(object):
                 score = value
             
             elif self.match_type in ['integer', 'float']:
-                for interval in self._interval_tree[value]:
-                    score = interval.data
+                if self._value_dict:
+                    score = float(self._value_dict.get(str(value), 0))
+                else:
+                    #There should only be one interval matching
+                    ##TODO Check if intervals overlap
+                    for interval in self._interval_tree[value]:
+                        score = interval.data
         
         return score
     

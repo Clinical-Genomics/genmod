@@ -69,7 +69,7 @@ class HeaderParser(object):
             >''', re.VERBOSE)
         self.format_pattern = re.compile(r'''\#\#FORMAT=<
             ID=(?P<id>.+),
-            Number=(?P<number>-?\d+|\.|[AG]),
+            Number=(?P<number>-?\d+|\.|[AGR]),
             Type=(?P<type>.+),
             Description="(?P<desc>.*)"
             >''', re.VERBOSE)

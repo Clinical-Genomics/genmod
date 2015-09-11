@@ -39,9 +39,44 @@ from genmod.annotate_variants import annotate_thousand_g
                 is_flag=True,
                 help='Increase output verbosity.'
 )
-@click.option('--thousand_g_file',
+@click.option('--cadd_file', 
+                    type=click.Path(exists=True), 
+                    help="""Specify the path to a bgzipped cadd file (with index) with variant scores."""
+)
+@click.option('--cadd_1000g',
+                    type=click.Path(exists=True), 
+                    help="""Specify the path to a bgzipped cadd file (with index) with variant scores 
+                            for all 1000g variants."""
+)
+@click.option('--cadd_exac',
+                    type=click.Path(exists=True), 
+                    help="""Specify the path to a bgzipped cadd file (with index) with variant scores 
+                            for all ExAC variants."""
+)
+@click.option('--cadd_esp',
+                    type=click.Path(exists=True), 
+                    help="""Specify the path to a bgzipped cadd file (with index) with variant scores 
+                            for all ESP6500 variants."""
+)
+@click.option('--cadd_indels',
+                    type=click.Path(exists=True), 
+                    help="""Specify the path to a bgzipped cadd file (with index) with variant scores 
+                            for all CADD InDel variants."""
+)
+@click.option('--thousand_g',
                     type=click.Path(exists=True), 
                     help="""Specify the path to a bgzipped vcf file (with index) with 1000g variants"""
+)
+@click.option('--exac',
+                    type=click.Path(exists=True), 
+                    help="""Specify the path to a bgzipped vcf file (with index) with exac variants."""
+)
+@click.option('-a' ,'--annotation_dir',
+                    type=click.Path(exists=True),
+                    default=pkg_resources.resource_filename('genmod', 'annotations'),
+                    help="""Specify the path to the directory where the annotation 
+                    databases are. 
+                    Default is the gene pred files that comes with the distribution."""
 )
 @click.option('-o', '--outfile', 
                     type=click.File('w'),

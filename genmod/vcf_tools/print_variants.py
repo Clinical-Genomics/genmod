@@ -20,9 +20,27 @@ from __future__ import print_function
 from codecs import open
 
 
+def print_variant_dict(variant, header_line, outfile=None):
+    """Print a variant dictionary
+    
+        Prints a variant dictionary to a file or stdout
+        
+        Args:
+            variant (dict): A variant dictionary
+            header_line (list): A list with the header columns
+            outfile (FileHandle): A file handle
+        
+    """
+    print_line = [variant.get(entry, '.') for entry in header_line]
+    
+    if outfile:
+        outfile.write('\t'.join(print_line) + '\n')
+    else:
+        print('\t'.join(print_line))
+    
 def print_variant(variant_line, outfile=None, mode='vcf', silent=False):
     """
-    Print the variants.
+    Print a variant line.
     
     If a result file is provided the variante will be appended to the file, 
     otherwise they are printed to stdout.

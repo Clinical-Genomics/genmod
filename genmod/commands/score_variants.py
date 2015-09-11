@@ -19,14 +19,13 @@ import logging
 
 from codecs import open
 from datetime import datetime
-
-# import extract_vcf
+from validate import ValidateError
 
 from ped_parser import FamilyParser
 from vcf_parser import VCFParser
 
-from genmod.vcf_tools import add_metadata
-from genmod.score_variants import ConfigParser
+from genmod.vcf_tools import (add_metadata, print_variant_dict, add_vcf_info)
+from genmod.score_variants import (ConfigParser, score_variant)
 
 from genmod import __version__
 
@@ -70,6 +69,11 @@ def score(family_file, variant_file, family_type,
     The specific scores should be defined in a config file, see examples on 
     github.
     """
+    from genmod import logger as root_logger
+    from genmod.log import init_log, LEVELS
+    loglevel = LEVELS.get(min(verbose,2), "WARNING")
+    init_log(root_logger, loglevel=loglevel)
+    
     logger = logging.getLogger(__name__)
     logger = logging.getLogger("genmod.commands.score")
     
@@ -80,7 +84,15 @@ def score(family_file, variant_file, family_type,
         logger.warning("Please provide a score config file.")
         sys.exit(1)
     
-    config_parser = ConfigParser(score_config)
+    logger.debug("Parsing config file")
+    try:
+        config_parser = ConfigParser(score_config)
+    except ValidateError as e:
+        logger.error("Something wrong in plugin file, please see log")
+        logger.info("Exiting")
+        sys.exit(1)
+
+    logger.debug("Config parsed succesfully")
     
     if variant_file == '-':
         variant_parser = VCFParser(
@@ -92,6 +104,7 @@ def score(family_file, variant_file, family_type,
             )
     
     head = variant_parser.metadata
+    header_line = head.header
     
     add_metadata(
         head,
@@ -102,9 +115,15 @@ def score(family_file, variant_file, family_type,
         description="Combined rank score for the variant in this family."'GeneticModels'
     )
     
+    for variant in variant_parser:
+        rank_score = score_variant(variant, config_parser)
+        variant = add_vcf_info(
+            keyword = 'RankScore', 
+            variant_dict=variant,
+            annotation=rank_score)
+        
+        print_variant_dict(variant, header_line)
+    
 
 if __name__ == '__main__':
-    from genmod import logger
-    from genmod.log import init_log
-    init_log(logger, loglevel="INFO")
     score()

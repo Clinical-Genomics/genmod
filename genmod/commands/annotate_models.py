@@ -33,9 +33,8 @@ from genmod import (__version__)
 
 from genmod.utils import (get_batches, VariantPrinter, check_individuals)
 from genmod.annotate_models import (VariantAnnotator)
-from genmod.vcf_tools import (add_vcf_info, add_version_header, 
-add_genetic_models_header, add_model_score_header, add_compounds_header,
-print_headers, sort_variants, print_variant, HeaderParser)
+from genmod.vcf_tools import (add_metadata, print_headers, sort_variants, 
+print_variant)
 
 @click.command()
 @click.argument('variant_file', 
@@ -160,19 +159,45 @@ def annotate_models(variant_file, family_file, family_type, vep,
     start_time_analysis = datetime.now()
     
     logger.info("Adding genmod version to vcf header")
-    add_version_header(
-        head,
-        command_line_string=' '.join(argument_list)
-    )
+    head.add_version_tracking(
+                    'genmod',
+                    __version__,
+                    datetime.now().strftime("%Y-%m-%d %H:%M"),
+                    command_line_string=' '.join(argument_list)
+                )
+    
     logger.debug("Version added")
     logger.info("Adding genetic models to vcf header")
-    add_genetic_models_header(head)
+    add_metadata(
+        head,
+        'info',
+        'GeneticModels',
+        annotation_number='.',
+        entry_type='String',
+        description="':'-separated list of genetic models for this variant."
+    )
     logger.debug("Genetic models added")
     logger.info("Adding model score to vcf header")
-    add_model_score_header(head)
+    add_metadata(
+        head,
+        'info',
+        'ModelScore',
+        annotation_number='1',
+        entry_type='Integer',
+        description="PHRED score for genotype models."
+    )
     logger.debug("Model score added")
     logger.info("Adding Compounds to vcf header")
-    add_compounds_header(head)
+    add_metadata(
+        head,
+        'info',
+        'Compounds',
+        annotation_number='.',
+        entry_type='String',
+        description=("List of compound pairs for this variant."
+        "The list is splitted on ',' family id is separated with compounds"
+        "with ':'. Compounds are separated with '|'.")
+    )
     logger.debug("Compounds added")
     
     try:

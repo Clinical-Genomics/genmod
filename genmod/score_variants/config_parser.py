@@ -126,6 +126,9 @@ class ConfigParser(configobj.ConfigObj):
                     else:
                         self.logger.error("{0} have an undefined category {1}".format(
                             plugin, category))
+                        self.logger.info("Please add specifications for category {0}".format(
+                            category
+                        ))
                         raise ValidateError("Plugins must have a category"\
                                         " defined in 'Categories' section")
                 else:
@@ -186,6 +189,11 @@ class ConfigParser(configobj.ConfigObj):
             else:
                 if raw_info['score'] == 'eq':
                     score_function.set_equal()
+                elif raw_info.get('value'):
+                    score_function.add_value(
+                        value = raw_info['value'],
+                        score = raw_info['score']
+                    )
                 else:
                     lower_bound = float(raw_info['lower'])
                     upper_bound = float(raw_info['upper'])
@@ -214,7 +222,8 @@ class ConfigParser(configobj.ConfigObj):
         
         for key in plugin_info:
             try:
-                string_info.append(dict(plugin_info[key]))
+                if key != 'not_reported':
+                    string_info.append(dict(plugin_info[key]))
             except ValueError:
                 pass
         
@@ -224,6 +233,7 @@ class ConfigParser(configobj.ConfigObj):
             try:
                 string = raw_info['string']
             except KeyError:
+                
                 raise ValidateError("String information has to have a 'string'")
             try:
                 priority = raw_info['priority']
