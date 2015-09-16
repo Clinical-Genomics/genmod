@@ -31,12 +31,13 @@ def check_vep_annotation(variant):
                         annotation.add(vep_annotation.get('SYMBOL', ''))
     return annotation
 
-def get_annotation(variant, vep=False):
+def get_annotation(variant, annotation_key="Annotation", vep=False):
     """
     Return the features that a variant belongs to.
     
     Arguments: 
         variant (dict): A variant dictionary
+        annotation_key (str): The name of the info field to search
         vep (bool): If variants are annotated with vep
         
     Returns: 
@@ -52,9 +53,9 @@ def get_annotation(variant, vep=False):
     if vep:
         logger.debug("Using vep annotation.")
         annotation = check_vep_annotation(variant)
-        
-    if variant.get('info_dict', {}).get('Annotation', None):
-        annotation = set(variant['info_dict']['Annotation'])
+    
+    elif variant.get('info_dict', {}).get(annotation_key, None):
+        annotation = set(variant['info_dict'][annotation_key].split(','))
     
     logger.debug("Annotations found for {0}: {1}".format(
         variant_id, ','.join(annotation)
@@ -86,7 +87,7 @@ def check_exonic(variant, vep=False):
                         exonic = True
     
     elif "Exonic" in variant['info_dict']:
-                exonic = True
+        exonic = True
         
     return exonic
             

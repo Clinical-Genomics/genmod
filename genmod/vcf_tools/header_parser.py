@@ -82,12 +82,15 @@ class HeaderParser(object):
     def parse_meta_data(self, line):
         """Parse a vcf metadataline"""
         line = line.rstrip()
+        self.logger.debug("Parsing metadata line:{0}".format(line))
         line_info = line[2:].split('=')
         match = False
         
         if line_info[0] == 'fileformat':
+            self.logger.debug("Parsing fileformat")
             try:
                 self.fileformat = line_info[1]
+                self.logger.debug("Found fileformat {0}".format(self.fileformat))
             except IndexError:
                 raise SyntaxError("fileformat must have a value")
         

@@ -58,34 +58,30 @@ class VariantPrinter(Process):
         while True:
             
             
-            # A task is a dictionary with variants where variant_id is key and
-            # a variant dict is value
-            self.logger.debug(('{0} fetching next variant batch'.format(proc_name)))
-            next_result = self.task_queue.get()
+            # A task is a variant dictionary
+            self.logger.debug(('{0} fetching next variant'.format(proc_name)))
+            variant = self.task_queue.get()
             
             if self.task_queue.full():
                 self.logger.warning('Variant queue full')
             
-            
-            if next_result is None:
+            if variant is None:
                 self.logger.info('All variants printed.')
                 if self.outfile:
                     f.close()
                 break
             
-            for variant_id in next_result:
-                self.logger.debug("Printing variant {0}".format(variant_id))
-                variant = next_result[variant_id]
+            self.logger.debug("Printing variant {0}".format(variant['variant_id']))
                 
-                priority = get_chromosome_priority(variant['CHROM'])
-                
-                print_line = [priority] + [variant.get(entry, '.') 
+            priority = get_chromosome_priority(variant['CHROM'])
+            
+            print_line = [priority] + [variant.get(entry, '.') 
                             for entry in self.header]
                 
-                if self.outfile:
-                    f.write('\t'.join(print_line) + '\n')
-                else:
-                    print('\t'.join(print_line))
+            if self.outfile:
+                f.write('\t'.join(print_line) + '\n')
+            else:
+                print('\t'.join(print_line))
         
         return
 

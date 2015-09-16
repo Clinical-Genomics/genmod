@@ -27,19 +27,18 @@ from tempfile import mkdtemp, TemporaryFile, NamedTemporaryFile
 
 
 from ped_parser import FamilyParser
-from vcf_parser import VCFParser
 
 from genmod import (__version__)
 
 from genmod.utils import (get_batches, VariantPrinter, check_individuals)
 from genmod.annotate_models import (VariantAnnotator)
 from genmod.vcf_tools import (add_metadata, print_headers, sort_variants, 
-print_variant)
+print_variant, HeaderParser)
 
 @click.command()
 @click.argument('variant_file', 
                     nargs=1, 
-                    type=click.Path(exists=True),
+                    type=click.File('r'),
                     metavar='<vcf_file> or -'
 )
 @click.option('-f', '--family_file',
@@ -93,7 +92,7 @@ def annotate_models(variant_file, family_file, family_type, vep,
     The analysis is family based so each family that are specified in the family
     file and exists in the variant file will get it's own annotation.
     """
-    logger = logging.getLogger(__name__)
+    # logger = logging.getLogger(__name__)
     # For testing only:
     logger = logging.getLogger("genmod.commands.annotate")
     
@@ -125,23 +124,20 @@ def annotate_models(variant_file, family_file, family_type, vep,
                     ','.join(list(family_parser.individuals.keys()))))
     
     
-    logger.debug("Setting up a variant parser")
-    if variant_file == '-':
-        variant_parser = VCFParser(
-            fsock = sys.stdin,
-            split_variants=split_variants,
-            check_info=False
-            )
-    else:
-        variant_parser = VCFParser(
-            infile = variant_file,
-            split_variants=split_variants,
-            check_info=False
-            )
-    logger.debug("Variant parser setup")
+    head = HeaderParser()
     
-                
-    head = variant_parser.metadata
+    for line in variant_file:
+        line = line.rstrip()
+        if line.startswith('#'):
+            if line.startswith('##'):
+                head.parse_meta_data(line)
+            else:
+                head.parse_header_line(line)
+        else:
+            break
+    
+    variant_file.seek(0)
+        
     
     if "GeneticModels" in head.info_dict:
         logger.warning("Genetic models are already annotated according to vcf"\
@@ -149,21 +145,12 @@ def annotate_models(variant_file, family_file, family_type, vep,
         logger.info("Exiting...")
         sys.exit(1)
     
-    vcf_individuals = variant_parser.individuals
-    logger.debug("Individuals found in vcf file: {}".format(', '.join(vcf_individuals)))
-    
-    
-    if vep:
-        logger.info("Using VEP annotation")
-        
-    start_time_analysis = datetime.now()
-    
     logger.info("Adding genmod version to vcf header")
     head.add_version_tracking(
-                    'genmod',
-                    __version__,
-                    datetime.now().strftime("%Y-%m-%d %H:%M"),
-                    command_line_string=' '.join(argument_list)
+                    info_id='genmod',
+                    version=__version__,
+                    date=datetime.now().strftime("%Y-%m-%d %H:%M"),
+                    command_line=' '.join(argument_list)
                 )
     
     logger.debug("Version added")
@@ -200,6 +187,14 @@ def annotate_models(variant_file, family_file, family_type, vep,
     )
     logger.debug("Compounds added")
     
+    vcf_individuals = head.individuals
+    logger.debug("Individuals found in vcf file: {}".format(', '.join(vcf_individuals)))
+    
+    if vep:
+        logger.info("Using VEP annotation")
+
+    start_time_analysis = datetime.now()
+    
     try:
         check_individuals(family_parser.individuals, vcf_individuals)
     except IOError as e:
@@ -214,7 +209,6 @@ def annotate_models(variant_file, family_file, family_type, vep,
     
     logger.info("Individuals used in analysis: {0}".format(
         ', '.join(analysis_individuals)))
-    
     
     ###################################################################
     ### The task queue is where all jobs(in this case batches that  ###
@@ -263,7 +257,7 @@ def annotate_models(variant_file, family_file, family_type, vep,
     variant_printer = VariantPrinter(
             task_queue=results,
             head=head,
-            mode='chromosome', 
+            mode='chromosome',
             outfile = temp_file.name
     )
     logger.info('Starting the variant printer process')
@@ -274,8 +268,10 @@ def annotate_models(variant_file, family_file, family_type, vep,
     # This process parses the original vcf and create batches to put in the variant queue:
     logger.info('Start parsing the variants')
     chromosome_list = get_batches(
-                                variant_parser,
-                                variant_queue
+                                variants = variant_file,
+                                batch_queue = variant_queue,
+                                header = head,
+                                vep = vep
                             )
     
     logger.debug("Put stop signs in the variant queue")
@@ -309,8 +305,8 @@ def annotate_models(variant_file, family_file, family_type, vep,
     
 
 if __name__ == '__main__':
-    from genmod import logger
+    from genmod import logger as root_logger
     from genmod.log import init_log
-    init_log(logger, loglevel="INFO")
+    init_log(root_logger, loglevel="INFO")
     
     annotate_models()

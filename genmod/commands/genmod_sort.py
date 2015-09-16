@@ -14,14 +14,14 @@ from __future__ import print_function
 import sys
 import os
 import click
-
+import logging
 
 from codecs import open
-from tempfile import TemporaryFile
+from tempfile import NamedTemporaryFile
 
 # from genmod import (sort_variants, print_headers)
 from genmod.vcf_tools import (print_variant_for_sorting, sort_variants, 
-                          print_variant, HeaderParser, print_headers)
+get_info_dict, print_variant, HeaderParser, print_headers)
 
 
 
@@ -38,15 +38,15 @@ from genmod.vcf_tools import (print_variant_for_sorting, sort_variants,
 @click.option('-f', '--family_id', 
                     help='Specify the family id for sorting.'
 )
-@click.option('-v', '--verbose', 
+@click.option('-s', '--silent',
                 is_flag=True,
-                help='Increase output verbosity.'
+                help='Do not print the variants.'
 )
-def sort(variant_file, outfile, family_id, verbose):
+def sort(variant_file, outfile, family_id, silent):
     """
-    Sort a VCF file based on rank score.\n
+    Sort a VCF file based on rank score.
     """    
-    
+    logger = logging.getLogger(__name__)
     head = HeaderParser()
 
     # Create a temporary variant file for sorting
@@ -62,17 +62,28 @@ def sort(variant_file, outfile, family_id, verbose):
     
     # Print the variants with rank score in first column
     for line in variant_file:
+        line = line.rstrip()
         if line.startswith('#'):
             if line.startswith('##'):
                 head.parse_meta_data(line)
             else:
                 head.parse_header_line(line)
         else:
+            info_string = line.split()[7]
+            info_dict = get_info_dict(info_string)
+            priority = '0'
+            
+            for family_entry in info_dict.get('RankScore', '').split(','):
+                splitted_entry = family_entry.split(':')
+                family = splitted_entry[0]
+                priority = splitted_entry[-1]
+            
             print_variant_for_sorting(
-                variant_line = line, 
+                variant_line=line, 
+                priority=priority,
                 outfile = temp_file_handle,
-                family_id = family_id
             )
+    
     temp_file_handle.close()
     
     # Sort the variants based on rank score
@@ -82,15 +93,20 @@ def sort(variant_file, outfile, family_id, verbose):
     )
     
     # Print the headers
-    print_headers(head, outfile)
+    print_headers(
+        head = head, 
+        outfile = outfile, 
+        silent=silent
+    )
     
     # Print the variants
     with open(temp_file.name, mode='r', encoding='utf-8', errors='replace') as f:
         for variant_line in f:
             print_variant(
-                variant_line = variant_line,
-                outfile = outfile,
-                mode = 'modified'
+                variant_line = variant_line, 
+                outfile = outfile, 
+                mode = 'modified',
+                silent=False
                 )
     
     logger.info("Removing temp file")

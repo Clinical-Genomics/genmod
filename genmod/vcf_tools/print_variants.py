@@ -20,7 +20,7 @@ from __future__ import print_function
 from codecs import open
 
 
-def print_variant_dict(variant, header_line, outfile=None):
+def print_variant_dict(variant, header_line, outfile=None, silent=False):
     """Print a variant dictionary
     
         Prints a variant dictionary to a file or stdout
@@ -36,7 +36,8 @@ def print_variant_dict(variant, header_line, outfile=None):
     if outfile:
         outfile.write('\t'.join(print_line) + '\n')
     else:
-        print('\t'.join(print_line))
+        if not silent:
+            print('\t'.join(print_line))
     
 def print_variant(variant_line, outfile=None, mode='vcf', silent=False):
     """
@@ -71,7 +72,7 @@ def print_variant(variant_line, outfile=None, mode='vcf', silent=False):
                 print('\t'.join(splitted_line))
     return
 
-def print_variant_for_sorting(variant_line, priority, outfile, family_id=None):
+def print_variant_for_sorting(variant_line, priority, outfile):
     """
     Print the variants for sorting
     
@@ -81,7 +82,7 @@ def print_variant_for_sorting(variant_line, priority, outfile, family_id=None):
         outfile (file_handle): A filehandle to the temporary variant file
         family_id (str): The family Id for sorting on rank score
     """
-    variant_line = variant_line.split("\t")
+    variant_line = variant_line.rstrip().split("\t")
     
-    outfile.write("{0}\t{1}".format(priority, '\t'.join(variant_line)))
+    outfile.write("{0}\t{1}\n".format(priority, '\t'.join(variant_line)))
                     

@@ -21,36 +21,27 @@ from codecs import open
 from datetime import datetime
 from validate import ValidateError
 
-from ped_parser import FamilyParser
-from vcf_parser import VCFParser
-
-from genmod.vcf_tools import (add_metadata, print_variant_dict, add_vcf_info)
-from genmod.score_variants import (ConfigParser, score_variant)
+from genmod.vcf_tools import (add_metadata, print_variant_dict, add_vcf_info,
+print_headers, HeaderParser, get_variant_dict, get_info_dict)
+from genmod.score_variants import (ConfigParser, score_variant, check_plugins)
 
 from genmod import __version__
 
 @click.command()
 @click.argument('variant_file',
                 nargs=1,
-                type=click.Path(),
+                type=click.File('r'),
                 metavar='<vcf_file> or -'
 )
-@click.option('-f', '--family_file',
-                nargs=1, 
-                type=click.File('r'),
-                metavar='<ped_file>'
-)
-@click.option('-t' ,'--family_type', 
-                type=click.Choice(['ped', 'alt', 'cmms', 'mip']), 
-                default='ped',
-                help='If the analysis use one of the known setups, please specify which one.'
+@click.option('-f', '--family_id',
+                default='1', 
 )
 @click.option('-s', '--silent',
                 is_flag=True,
                 help='Do not print the variants.'
 )
 @click.option('-o', '--outfile',
-                type=click.Path(exists=False),
+                type=click.File('w'),
                 help='Specify the path to a file where results should be stored.'
 )
 @click.option('-c', '--score_config',
@@ -61,21 +52,20 @@ from genmod import __version__
               count=True,
               help='Increase output verbosity. If -vv all scores will be printed'
 )
-
-def score(family_file, variant_file, family_type,
-          score_config, silent, outfile, verbose):
+def score(variant_file, family_id, score_config, silent, outfile, verbose):
     """
     Score variants in a vcf file using Weighted Sum Model.
+    
     The specific scores should be defined in a config file, see examples on 
     github.
     """
-    from genmod import logger as root_logger
-    from genmod.log import init_log, LEVELS
-    loglevel = LEVELS.get(min(verbose,2), "WARNING")
-    init_log(root_logger, loglevel=loglevel)
+    # from genmod import logger as root_logger
+    # from genmod.log import init_log, LEVELS
+    # loglevel = LEVELS.get(min(verbose,2), "WARNING")
+    # init_log(root_logger, loglevel=loglevel)
     
     logger = logging.getLogger(__name__)
-    logger = logging.getLogger("genmod.commands.score")
+    # logger = logging.getLogger("genmod.commands.score")
     
     logger.info('Running GENMOD score, version: {0}'.format(__version__))
     
@@ -85,6 +75,7 @@ def score(family_file, variant_file, family_type,
         sys.exit(1)
     
     logger.debug("Parsing config file")
+    
     try:
         config_parser = ConfigParser(score_config)
     except ValidateError as e:
@@ -93,37 +84,68 @@ def score(family_file, variant_file, family_type,
         sys.exit(1)
 
     logger.debug("Config parsed succesfully")
+
+    logger.info("Initializing a Header Parser")
+    head = HeaderParser()
+
+    for line in variant_file:
+        line = line.rstrip()
+        if line.startswith('#'):
+            if line.startswith('##'):
+                head.parse_meta_data(line)
+            else:
+                head.parse_header_line(line)
+        else:
+            break
     
-    if variant_file == '-':
-        variant_parser = VCFParser(
-            fsock = sys.stdin, 
-            )
-    else:
-        variant_parser = VCFParser(
-            infile = variant_file, 
-            )
-    
-    head = variant_parser.metadata
+    variant_file.seek(0)
     header_line = head.header
     
     add_metadata(
         head,
         'info',
         'RankScore',
-        annotation_number='1', 
-        entry_type='Integer', 
-        description="Combined rank score for the variant in this family."'GeneticModels'
+        annotation_number='1',
+        entry_type='Integer',
+        description="The rank score for this variant."
     )
-    
-    for variant in variant_parser:
-        rank_score = score_variant(variant, config_parser)
-        variant = add_vcf_info(
-            keyword = 'RankScore', 
-            variant_dict=variant,
-            annotation=rank_score)
+    print_headers(
+        head=head,
+        outfile=outfile,
+        silent=silent
+    )
+    start_scoring = datetime.now()
+    last_twenty = datetime.now()
+    nr_of_variants = 1
+
+    for line in variant_file:
+        if not line.startswith('#'):
+            variant = get_variant_dict(line, header_line)
+            variant['info_dict'] = get_info_dict(variant['INFO'])
+
+            rank_score = score_variant(variant, config_parser)
+            
+            variant = add_vcf_info(
+                keyword = 'RankScore',
+                variant_dict=variant,
+                annotation="{0}:{1}".format(family_id, rank_score))
+
+            print_variant_dict(
+                variant=variant,
+                header_line=header_line,
+                outfile=outfile,
+                silent=silent)
+
+            nr_of_variants += 1
+
+            if nr_of_variants % 20000 == 0:
+                logger.info("{0} variants scored.".format(nr_of_variants))
+                logger.info("Last 20000 took {0} to score.".format(datetime.now()-last_twenty))
+                last_twenty = datetime.now()
+
+    logger.info("Variants scored. Number of variants: {0}".format(nr_of_variants))
+    logger.info("Time to score variants: {0}".format(datetime.now()-start_scoring))
         
-        print_variant_dict(variant, header_line)
-    
 
 if __name__ == '__main__':
     score()

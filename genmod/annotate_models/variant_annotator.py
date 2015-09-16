@@ -23,6 +23,7 @@ from multiprocessing import Process
 from math import log10
 
 from genmod.utils import check_exonic
+from genmod.vcf_tools import get_genotypes
 from . import (get_haploblocks, check_genetic_models, get_model_score, 
 make_print_version)
                 
@@ -99,6 +100,11 @@ class VariantAnnotator(Process):
                 
             # We are now going to check the genetic models for the variants in
             # the batch
+            
+            for variant_id in variant_batch:
+                variant = variant_batch[variant_id]
+                variant['genotypes'] = get_genotypes(variant, self.individuals)
+            
             if len(variant_batch) > 1:
                 #If the variant are phased we want to find out which 
                 #haploblocks they belong to for compounds
@@ -113,6 +119,7 @@ class VariantAnnotator(Process):
                 for variant_id in variant_batch:
                     self.logger.debug("Check compound candidates")
                     variant = variant_batch[variant_id]
+                    
                     variant['compound_candidate'] = False
                     
                     if self.whole_gene:
@@ -123,7 +130,6 @@ class VariantAnnotator(Process):
                             variant['compound_candidate'] = True
                             self.logger.debug("Set compound_candidate to True")
                     
-                    variant_batch[variant_id] = variant
 
             # Check the genetic models for all variants in the batch
             check_genetic_models(
@@ -131,20 +137,17 @@ class VariantAnnotator(Process):
                 families = self.families,
                 phased = self.phased,
                 strict = self.strict,
-            )
+                )
 
-            # Now we want to make versions of the variants that are ready for printing.
+            # # Now we want to make versions of the variants that are ready for printing.
             for variant_id in variant_batch:
                 variant = make_print_version(
                     variant=variant_batch[variant_id],
                     families=self.families
                 )
-
-                variant_batch[variant_id] = variant
-
-
-            self.logger.debug("Putting batch in results_queue")
-            self.results_queue.put(variant_batch)
+                self.logger.debug("Putting variant in results_queue")
+                self.results_queue.put(variant)
+                
             self.task_queue.task_done()
         
         return

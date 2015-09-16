@@ -11,8 +11,6 @@ Copyright (c) 2015 __MoonsoInc__. All rights reserved.
 
 from __future__ import print_function
 
-from codecs import open
-
 def print_headers(head, outfile=None, silent=False):
     """
     Print the vcf headers.
