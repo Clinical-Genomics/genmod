@@ -101,6 +101,13 @@ def score(variant_file, family_id, score_config, silent, outfile, verbose):
     variant_file.seek(0)
     header_line = head.header
     
+    if "RankScore" in head.info_dict:
+        logger.warning("Variants already scored according to VCF header")
+        logger.info("Please check VCF file")
+        logger.info("Exiting...")
+        sys.exit(1)
+    
+    
     add_metadata(
         head,
         'info',

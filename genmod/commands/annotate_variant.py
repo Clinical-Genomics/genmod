@@ -14,21 +14,26 @@ Copyright (c) 2015 __MoonsoInc__. All rights reserved.
 from __future__ import (print_function)
 
 import sys
+import os
 import logging
 import pkg_resources
 
 import click
 import tabix
 
+from multiprocessing import JoinableQueue, Manager, cpu_count
 from codecs import open
+from tempfile import NamedTemporaryFile
+from datetime import datetime
 
 from genmod import __version__
 # from genmod.annotate_regions import load_annotations, check_overlap
-from genmod.vcf_tools import (HeaderParser, add_vcf_info, add_metadata, print_headers,
-                              print_variant)
+from genmod.vcf_tools import (HeaderParser, add_vcf_info, add_metadata, 
+print_headers, print_variant, sort_variants)
 
-from genmod.annotate_variants import annotate_thousand_g
-from genmod.annotate_regions import get_genes, check_exonic
+from genmod.annotate_variants import VariantAnnotator
+from genmod.annotate_regions import (get_genes, check_exonic, load_annotations)
+from genmod.utils import VariantPrinter
 
 @click.command()
 @click.argument('variant_file',
@@ -87,8 +92,17 @@ from genmod.annotate_regions import get_genes, check_exonic
                 is_flag=True,
                 help='Do not print the variants.'
 )
+@click.option('--cadd_raw', 
+                    is_flag=True,
+                    help="""If the raw cadd scores should be annotated."""
+)
+@click.option('-p', '--processes', 
+                default=min(4, cpu_count()),
+                help='Define how many processes that should be use for annotation.'
+)
 def annotate(variant_file, annotate_regions, cadd_file, cadd_1000g, 
-cadd_exac, cadd_esp, cadd_indels, thousand_g, exac, annotation_dir, outfile, silent):
+cadd_exac, cadd_esp, cadd_indels, thousand_g, exac, annotation_dir, 
+outfile, silent, cadd_raw, processes):
     """
     Annotate vcf variants.
     
@@ -101,7 +115,12 @@ cadd_exac, cadd_esp, cadd_indels, thousand_g, exac, annotation_dir, outfile, sil
     logger = logging.getLogger("genmod.commands.annotate_variants")
     
     logger.info("Running genmod annotate_variant version {0}".format(__version__))
-
+    
+    start_time_analysis = datetime.now()
+    
+    annotator_arguments = {}
+    annotator_arguments['cadd_raw'] = cadd_raw
+    
     logger.info("Initializing a Header Parser")
     head = HeaderParser()
     
@@ -116,9 +135,14 @@ cadd_exac, cadd_esp, cadd_indels, thousand_g, exac, annotation_dir, outfile, sil
         else:
             break
     
+    header_line = head.header
+    annotator_arguments['header_line'] = header_line
+    
     if annotate_regions:
         logger.info("Loading annotations")
         gene_trees, exon_trees = load_annotations(annotation_dir)
+        annotator_arguments['gene_trees'] = gene_trees
+        annotator_arguments['exon_trees'] = exon_trees
         
         add_metadata(
             head,
@@ -139,149 +163,215 @@ cadd_exac, cadd_esp, cadd_indels, thousand_g, exac, annotation_dir, outfile, sil
         
     variant_file.seek(0)
     
+    if exac:
+        annotator_arguments['exac'] = exac
+        add_metadata(
+            head,
+            'info',
+            'ExACAF',
+            annotation_number='A',
+            entry_type='Float',
+            description="Frequency in the ExAC database."
+        )
+        
+    if thousand_g:
+        annotator_arguments['thousand_g'] = thousand_g
+        logger.debug("Adding vcf metadata for 1000G_freq")
+        add_metadata(
+            head,
+            'info',
+            '1000GAF',
+            annotation_number='A',
+            entry_type='Float',
+            description="Frequency in the 1000G database."
+        )
+    
     any_cadd_file = False
 
-    if exac:
-        logger.debug("Opening EXaC frequency file with tabix open")
-        exac_handle = tabix.open(exac)
-        logger.debug("EXaC frequency file opened")
-    
-    if thousand_g:
-        logger.debug("Opening 1000G frequency file with tabix open")
-        thousand_g_handle = tabix.open(thousand_g)
-        logger.debug("1000G frequency file opened")
-
     if cadd_file:
-        logger.debug("Opening CADD file with tabix open")
-        cadd_handle = tabix.open(cadd_file)
+        annotator_arguments['cadd_file'] = cadd_file
         any_cadd_file = True
-        logger.debug("CADD file opened")
 
     if cadd_1000g:
-        logger.debug("Opening CADD 1000G file with tabix open")
-        cadd_thousand_g_handle = tabix.open(cadd_1000g)
+        annotator_arguments['cadd_1000g'] = cadd_1000g
         any_cadd_file = True
-        logger.debug("CADD 1000G file opened")
 
     if cadd_exac:
-        logger.debug("Opening CADD EXaC file with tabix open")
-        cadd_exac_handle = tabix.open(cadd_exac)
+        annotator_arguments['cadd_exac'] = cadd_exac
         any_cadd_file = True
-        logger.debug("CADD EXaC file opened")
 
     if cadd_esp:
-        logger.debug("Opening CADD ESP file with tabix open")
-        cadd_esp_handle = tabix.open(cadd_esp)
+        annotator_arguments['cadd_ESP'] = cadd_esp
         any_cadd_file = True
-        logger.debug("CADD ESP file opened")
 
     if cadd_indels:
-        logger.debug("Opening CADD INDELS file with tabix open")
-        cadd_indels_handle = tabix.open(cadd_indels)
+        annotator_arguments['cadd_InDels'] = cadd_indels
         any_cadd_file = True
-        logger.debug("CADD INDELS file opened")
+    
+    if any_cadd_file:
+        add_metadata(
+            head,
+            'info',
+            'CADD',
+            annotation_number='A',
+            entry_type='Float',
+            description="The CADD relative score for this alternative."
+        )
+        if cadd_raw:
+            annotator_arguments['cadd_raw'] = True
+            logger.debug("Adding vcf metadata for CADD raw score")
+            add_metadata(
+                head,
+                'info',
+                'CADD_raw',
+                annotation_number='A',
+                entry_type='Float',
+                description="The CADD raw score(s) for this alternative(s)."
+            )
+    
+    ###################################################################
+    ### The task queue is where all jobs(in this case batches that  ###
+    ### represents variants in a region) is put. The consumers will ###
+    ### then pick their jobs from this queue.                       ###
+    ###################################################################
+
+    logger.debug("Setting up a JoinableQueue for storing variant batches")
+    variant_queue = JoinableQueue(maxsize=1000)
+    logger.debug("Setting up a Queue for storing results from workers")
+    results = Manager().Queue()
+    
+    num_annotators = processes
+    #Adapt the number of processes to the machine that run the analysis
+    if any_cadd_file:
+        # We need more power when annotating cadd scores:
+        # But if flag is used that overrides
+        if num_annotators == min(4, cpu_count()):
+            num_annotators = min(8, cpu_count())
+
+    logger.info('Number of CPU:s {}'.format(cpu_count()))
+    logger.info('Number of model checkers: {}'.format(num_annotators))
+
+    # We use a temp file to store the processed variants
+    logger.debug("Build a tempfile for printing the variants")
+    temp_file = NamedTemporaryFile(delete=False)
+    temp_file.close()
+
+    # These are the workers that do the heavy part of the analysis
+    logger.info('Seting up the workers')
+    annotators = [
+        VariantAnnotator(
+            variant_queue, 
+            results, 
+            **annotator_arguments
+        )
+        for i in range(num_annotators)
+    ]
+
+    logger.info('Starting the workers')
+    for worker in annotators:
+        logger.debug('Starting worker {0}'.format(worker))
+        worker.start()
+
+    # This process prints the variants to temporary files
+    logger.info('Seting up the variant printer')
+    var_printer = VariantPrinter(
+                    task_queue = results, 
+                    head = head, 
+                    mode='chromosome', 
+                    outfile = temp_file.name
+                    )
+    
+    logger.info('Starting the variant printer process')
+    var_printer.start()
+
+    start_time_variant_parsing = datetime.now()
+
+    # This process parses the original vcf and create batches to put in the variant queue:
+    logger.info('Start parsing the variants')
     
     for line in variant_file:
         line = line.rstrip()
         
         if not line.startswith('#'):
-            splitted_line = line.split()
-            chrom = variant_line[0].strip('chr')
-            position = int(variant_line[1])
-            ref = splitted_line[3]
-            alternatives = splitted_line[4]
-            
-            longest_alt = max([
-                len(alt) for alt in alternatives.split(',')])
-            
-            if annotate_regions:
-                if check_exonic(
-                    chrom = chrom, 
-                    start = position, 
-                    stop = (position+longest_alt)-1, 
-                    exon_trees = exon_trees):
-                    line = add_vcf_info(
-                        keyword = 'Exonic', 
-                        variant_line=line, 
-                        annotation=None
-                    )
-                
-                genes = get_genes(
-                    chrom = chrom, 
-                    start = position, 
-                    stop = (position+longest_alt)-1, 
-                    gene_trees = gene_trees
-                )
-                if genes:
-                    line = add_vcf_info(
-                        keyword = "Annotation",
-                        variant_line = line,
-                        annotation = ','.join(gene_features)
-                    )
+            variant_queue.put(line)
+    
+    logger.info('Put stop signs in the variant queue')
+    
+    for i in range(num_annotators):
+        variant_queue.put(None)
+
+    variant_queue.join()
+    results.put(None)
+    var_printer.join()
+
+    logger.info("Start sorting the variants")
+    sort_variants(temp_file.name, mode='chromosome')
+
+    logger.info("Print the headers")
+    print_headers(head, outfile, silent)
+
+    with open(temp_file.name, 'r', encoding='utf-8') as f:
+        for line in f:
+            print_variant(
+                variant_line=line,
+                outfile=outfile,
+                mode='modified',
+                silent=silent
+            )
+
+    logger.info("Removing temp file")
+    os.remove(temp_file.name)
+    logger.debug("Temp file removed")
+
+    logger.info('Time for whole analyis: {0}'.format(
+        str(datetime.now() - start_time_analysis)))
+    
+    # for line in variant_file:
+    #     line = line.rstrip()
+    #
+    #     if not line.startswith('#'):
+    #         splitted_line = line.split()
+    #         chrom = splitted_line[0].strip('chr')
+    #         position = int(splitted_line[1])
+    #         ref = splitted_line[3]
+    #         alternatives = splitted_line[4]
+    #
+    #         longest_alt = max([
+    #             len(alt) for alt in alternatives.split(',')])
+    #
+    #         if annotate_regions:
+    #             if check_exonic(
+    #                 chrom = chrom,
+    #                 start = position,
+    #                 stop = (position+longest_alt)-1,
+    #                 exon_trees = exon_trees):
+    #                 line = add_vcf_info(
+    #                     keyword = 'Exonic',
+    #                     variant_line=line,
+    #                     annotation=None
+    #                 )
+    #
+    #             genes = get_genes(
+    #                 chrom = chrom,
+    #                 start = position,
+    #                 stop = (position+longest_alt)-1,
+    #                 gene_trees = gene_trees
+    #             )
+    #             if genes:
+    #                 line = add_vcf_info(
+    #                     keyword = "Annotation",
+    #                     variant_line = line,
+    #                     annotation = ','.join(genes)
+    #                 )
                     
                 
             # annotated_line = annotate_thousand_g(
             #     variant_line = line,
             #     thousand_g = thousand_g_handle
             # )
-            print(line)
-    #         if not headers_done:
-    #             add_annotation_header(head)
-    #             add_metadata(
-    #                 head,
-    #                 'info',
-    #                 'Exonic',
-    #                 annotation_number='0',
-    #                 entry_type='Flag',
-    #                 description='Indicates if the variant is exonic.'
-    #             )
-    #             logger.info("Printing vcf header")
-    #             print_headers(head, outfile)
-    #
-    #             headers_done = True
-    #
-    #         gene_features = None
-    #         exon_features = None
-    #
-    #         variant_line = line.rstrip().split('\t')
-    #
-    #         chrom = variant_line[0].strip('chr')
-    #         position = int(variant_line[1])
-    #         longest_alt = max([
-    #             len(alt) for alt in variant_line[4].split(',')])
-    #         variant_interval = [position, (position + longest_alt-1)]
-    #
-    #         try:
-    #             gene_tree = gene_trees[chrom]
-    #             gene_features = check_overlap(variant_interval, gene_tree)
-    #         except KeyError:
-    #             logger.warning("Chromosome {0} is not in annotation file".format(chrom))
-    #
-    #         try:
-    #             exon_tree = exon_trees[chrom]
-    #             exon_features = check_overlap(variant_interval, exon_tree)
-    #         except KeyError:
-    #             logger.warning("Chromosome {0} is not in annotation file".format(chrom))
-    #
-    #         if gene_features:
-    #             line = add_vcf_info(
-    #                 variant_line = line,
-    #                 keyword = keyword,
-    #                 annotation = ','.join(gene_features)
-    #             )
-    #         if exon_features:
-    #             line = add_vcf_info(
-    #                 variant_line = line,
-    #                 keyword = "Exonic"
-    #             )
-    #
-    #         print_variant(
-    #             variant_line = line,
-    #             outfile = outfile
-    #         )
 
 if __name__ == '__main__':
     from genmod.log import init_log
     from genmod import logger
     init_log(logger, loglevel="INFO")
-    annotate_variants()
+    annotate()

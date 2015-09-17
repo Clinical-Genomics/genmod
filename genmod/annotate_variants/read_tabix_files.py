@@ -45,70 +45,33 @@ def get_frequency(tabix_reader, chrom, start, alt):
     tabix_key = int(start)
     try:
         for record in tabix_reader.query(chrom, tabix_key-1, tabix_key):
-            i = 0
             #We can get multiple rows so need to check each one
             #We also need to check each one of the alternatives per row
-            for alternative in record[4].split(','):
+            for i,alternative in enumerate(record[4].split(',')):
                 if alternative == alt:
                     for info in record[7].split(';'):
                         info = info.split('=')
                         if info[0] == 'AF':
                             frequencies = info[-1].split(',')
                             return frequencies[i]
-                i += 1
     except TypeError:            
         for record in tabix_reader.query(str(chrom), tabix_key-1, tabix_key):
-            i = 0
             #We can get multiple rows so need to check each one
             #We also need to check each one of the alternatives per row
-            for alternative in record[4].split(','):
+            for i, alternative in enumerate(record[4].split(',')):
                 if alternative == alt:
                     for info in record[7].split(';'):
                         info = info.split('=')
                         if info[0] == 'AF':
                             frequencies = info[-1].split(',')
                             return frequencies[i]
-                i += 1
     except:
         pass
     
     return freq
 
 
-def annotate_frequency(variant, thousand_g, exac):
-    """
-    Add frequencies to the variant if they are present.
-    
-    Arguments:
-        variant (dict): A variant dictionary
-        thousand_g (tabix file handle)
-        exac (tabix file handle)
-
-    """
-    #Check 1000G frequency:
-    thousand_g_freq = None
-    exac_freq = None
-    if thousand_g:
-        thousand_g_freq = get_frequency(
-                                        thousand_g, 
-                                        variant['CHROM'], 
-                                        variant['POS'],
-                                        variant['ALT'].split(',')[0]
-                                        )
-        if thousand_g_freq:
-            variant['1000G_freq'] = thousand_g_freq
-    if exac:
-        exac_freq = get_frequency(
-                                    exac, 
-                                    variant['CHROM'], 
-                                    variant['POS'],
-                                    variant['ALT'].split(',')[0]
-                                )
-        if exac_freq:
-            variant['ExAC_freq'] = exac_freq
-    return variant
-
-def get_cadd_scores(tabix_reader, chrom, start, alt=None):
+def get_cadd_scores(tabix_reader, chrom, start, alt):
     """
     Return the record from a cadd file.
     
@@ -116,7 +79,7 @@ def get_cadd_scores(tabix_reader, chrom, start, alt=None):
         tabix_reader (Tabix.reader): A Tabix object
         chrom (str): The chromosome of the position
         start (str): The start position of the variant
-        alt (str): The alternative sequence
+        alternatives (str): The alternative sequence
     
     Returns:
         cadd_scores (dict): The cadd scores for this position
@@ -134,7 +97,6 @@ def get_cadd_scores(tabix_reader, chrom, start, alt=None):
                 #We need to send both cadd values
                 cadd_scores['cadd_raw'] = record[-2]
                 cadd_scores['cadd_phred'] = record[-1]
-    
     except TypeError:
         for record in tabix_reader.query(str(chrom), cadd_key-1, cadd_key):
             record = record.split('\t')

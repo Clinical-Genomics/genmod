@@ -23,6 +23,7 @@ from tempfile import NamedTemporaryFile
 from genmod.vcf_tools import (print_variant_for_sorting, sort_variants, 
 get_info_dict, print_variant, HeaderParser, print_headers)
 
+from genmod.utils import (get_chromosome_priority, get_rank_score)
 
 
 @click.command()
@@ -42,7 +43,11 @@ get_info_dict, print_variant, HeaderParser, print_headers)
                 is_flag=True,
                 help='Do not print the variants.'
 )
-def sort(variant_file, outfile, family_id, silent):
+@click.option('-p', '--position',
+                is_flag=True,
+                help='If variants should be sorted by position.'
+)
+def sort(variant_file, outfile, family_id, silent, position):
     """
     Sort a VCF file based on rank score.
     """    
@@ -69,14 +74,13 @@ def sort(variant_file, outfile, family_id, silent):
             else:
                 head.parse_header_line(line)
         else:
-            info_string = line.split()[7]
-            info_dict = get_info_dict(info_string)
             priority = '0'
             
-            for family_entry in info_dict.get('RankScore', '').split(','):
-                splitted_entry = family_entry.split(':')
-                family = splitted_entry[0]
-                priority = splitted_entry[-1]
+            if position:
+                chrom = line.split()[0]
+                priority = get_chromosome_priority(chrom)
+            else:
+                priority = get_rank_score(line)
             
             print_variant_for_sorting(
                 variant_line=line, 
@@ -86,10 +90,13 @@ def sort(variant_file, outfile, family_id, silent):
     
     temp_file_handle.close()
     
+    sort_mode = 'rank'
+    if position:
+        sort_mode = 'chromosome'
     # Sort the variants based on rank score
     sort_variants(
         infile = temp_file.name, 
-        mode='rank'
+        mode=sort_mode
     )
     
     # Print the headers

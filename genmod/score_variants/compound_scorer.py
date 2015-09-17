@@ -57,6 +57,12 @@ class CompoundScorer(Process):
 
         self.logger.debug("Setting up individuals")
         self.individuals = individuals
+        
+        if len(self.individuals) == 1:
+            self.models = ['AR_comp', 'AR_comp_dn', 'AD', 'AD_dn']
+        else:
+            self.models = ['AR_comp', 'AR_comp_dn']
+            
 
     def run(self):
         """Run the consuming"""
@@ -78,6 +84,14 @@ class CompoundScorer(Process):
             compound_scores = {}
             # We are now going to score the compounds
             for variant_id in variant_batch:
+                # If the variants only follow AR_comp (and AD for single individual families)
+                # We want to pennalise the score if the compounds have low scores
+                correct_score = True
+                for family in variant['info_dict'].get('RankScore', '').split(','):
+                    for model in family.split(':')[-1].split('|'):
+                        if model not in self.models:
+                            correct_score = False
+                
                 variant = variant_batch[variant_id]
                 
                 current_rank_score_entry = variant['info_dict'].get('RankScore', None)
@@ -88,9 +102,7 @@ class CompoundScorer(Process):
                         current_family_id = current_family_rank_score[0]
                         current_rank_score = float(current_family_rank_score[-1])
                 
-                print("Current rank score: {0}".format(current_rank_score))
-                
-                raw_compounds = variant['info_dict']['Compounds']
+                raw_compounds = variant['info_dict'].get('Compounds', None)
                 
                 new_compound_list = []
                 only_low = True
@@ -105,7 +117,12 @@ class CompoundScorer(Process):
                         if compound in compound_scores:
                             compound_rank_score = compound_scores[compound]
                         else:
-                            compound_rank_score_entry = variant_batch[compound]['info_dict'].get('RankScore', None)
+                            try:
+                                compound_rank_score_entry = variant_batch[compound]['info_dict'].get('RankScore', None)
+                            except KeyError as e:
+                                logger.error("The compounds have been annotated with wrong annotation set")
+                                raise e
+                            
                             if compound_rank_score_entry:
                                 for family_score in compound_rank_score_entry.split(','):
                                     family_score = family_score.split(':')
@@ -121,8 +138,9 @@ class CompoundScorer(Process):
                         
                 new_compound_string = "{0}:{1}".format(current_family_id, '|'.join(new_compound_list))
                 
-                if only_low:
-                    current_rank_score -= 6
+                if correct_score:
+                    if only_low:
+                        current_rank_score -= 6
                 
                 new_rank_score_string = "{0}:{1}".format(current_family_id, current_rank_score)
                 
@@ -142,6 +160,7 @@ class CompoundScorer(Process):
                 )
                 self.logger.debug("Putting variant in results_queue")
                 self.results_queue.put(variant)
+            
             self.task_queue.task_done()
         
         return
