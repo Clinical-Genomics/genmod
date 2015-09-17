@@ -1,5 +1,5 @@
 try:
-    from setuptools import setup
+    from setuptools import setup, find_packages
 except ImportError:
     from distutils.core import setup
 import pkg_resources
@@ -16,7 +16,7 @@ except (IOError, ImportError, RuntimeError):
 #     long_description = file.read()
 
 setup(name='genmod',
-    version='2.1.6',
+    version='3.0',
     description='Annotate genetic inheritance models in variant files',
     author = 'Mans Magnusson',
     author_email = 'mans.magnusson@scilifelab.se',
@@ -27,27 +27,35 @@ setup(name='genmod',
         'vcf_parser >= 1.5.2',
         'pytabix',
         'pytest',
-        'interval_tree',
+        'interval_tree >= 0.3.2',
         'click',
-        'configparser',
-        'configobj'
+        'configobj',
+        'intervaltree',
+        'extract_vcf'
     ],
-    packages = [
-        'genmod',
-        'genmod/commands',
-        'genmod/utils',
-        'genmod/errors',
-        'genmod/models',
-    ],
+    packages=find_packages(exclude=('tests*', 'docs', 'examples', 'configs')),
+    
+    # packages = [
+    #     'genmod',
+    #     'genmod/commands',
+    #     'genmod/variant_annotation',
+    #     'genmod/annotate_regions',
+    #     'genmod/utils',
+    #     'genmod/errors',
+    #     'genmod/annotate_models'
+    #     'genmod/annotate_models/models',
+    #     'genmod/vcf_tools',
+    # ],
     package_data = {
         'genmod': ['annotations/*.db']
     },
-    scripts = [
-        'scripts/genmod'
-    ],
-    # entry_points= { "console_scripts" : [
-    #     "run_genmod = scripts.run_genmod:main",
-    # ]},
+    # scripts = [
+    #     'scripts/genmod'
+    # ],
+    entry_points= { "console_scripts" : [
+        "genmod = genmod.commands.run_genmod:cli",
+        ]
+    },
     keywords = ['inheritance', 'vcf', 'variants'],
     classifiers = [
         "Programming Language :: Python",

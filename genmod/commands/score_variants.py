@@ -5,7 +5,7 @@ score_variants.py
 
 Script for scoring genetic variants in VCF files.
 
-Created by Henrik Stranneheim and Måns Magnusson on 2015-01-08.
+Created by Måns Magnusson on 2015-09-03.
 Copyright (c) 2015 __MoonsoInc__. All rights reserved.
 """
 
@@ -13,214 +13,99 @@ from __future__ import print_function
 
 import sys
 import os
-import argparse
-import inspect
-import pkg_resources
 import click
 import logging
-import genmod
 
-from multiprocessing import JoinableQueue, Manager, cpu_count
-from codecs import open, getwriter
-from tempfile import NamedTemporaryFile
+
+from codecs import open
 from datetime import datetime
+from validate import ValidateError
 
-from pprint import pprint as pp
+from genmod.vcf_tools import (add_metadata, print_variant_dict, add_vcf_info,
+print_headers, HeaderParser, get_variant_dict, get_info_dict)
+from genmod.score_variants import (ConfigParser, score_variant)
 
-from genmod import (VariantScorer, VariantPrinter, get_batches, collectKeys, 
-                    load_annotations, add_metadata, warning, print_headers,
-                    sort_variants, print_variants)
-
-from ped_parser import FamilyParser
-from vcf_parser import VCFParser
-
-
-from genmod import __version__ as VERSION
-
-
-def check_plugin(config_file, variant_parser, verbose=False):
-    """
-    Collect keys from config_file and check vcf compatibility.
-    
-    Args:
-        config_file   (file) : plugin file
-        variant_parser (object) : vcf_parser object
-        verbose       (boolean, optional) : Enable informative print
-    
-    Returns:
-        dict:   Dictionary of alternatives
-    """
-    logger = logging.getLogger(__name__)
-    ## Collect supplied plugin
-    alt_dict, score_dict, value_dict, operation_dict = collectKeys(
-                                                            config_file,
-                                                            variant_parser,
-                                                            verbose
-                                                        )
-    logging.debug("Plugin file: " + config_file)
-    logging.debug("alt_dict:" + str(alt_dict))
-    logging.debug("score_dict: " + str(score_dict))
-    logging.debug("value_dict: " + str(value_dict))
-    logging.debug("operation_dict" + str(operation_dict))
-    
-    return alt_dict, score_dict, value_dict, operation_dict
-
-def get_genetic_models(family_file, family_type):
-    """
-    Return the genetic models found for the family(families).
-    
-    Args:
-        family_file (file): A file with family information 
-                            in ped or ped like format.
-    
-    Returns:
-        inheritance_models  : A set with the expected inheritance models
-        family_id   : A string that represents the family id
-    """
-    inheritance_models = set([])
-    my_family_parser = FamilyParser(family_file, family_type)
-    family_id = None
-    for family in my_family_parser.families:
-        family_id = family
-        for model in my_family_parser.families[family].models_of_inheritance:
-            if model not in ['NA', 'na', 'Na']:
-                inheritance_models.add(model)
-    # Stupid thing but for now when we only look at one family
-    return inheritance_models, family_id
-
+from genmod import __version__
 
 @click.command()
 @click.argument('variant_file',
                 nargs=1,
-                type=click.Path(),
+                type=click.File('r'),
                 metavar='<vcf_file> or -'
 )
-@click.option('-f', '--family_file',
-                nargs=1, 
-                type=click.File('r'),
-                metavar='<ped_file>'
-)
-@click.option('-t' ,'--family_type', 
-                type=click.Choice(['ped', 'alt', 'cmms', 'mip']), 
-                default='ped',
-                help='If the analysis use one of the known setups, please specify which one.'
-)
-@click.option('-a' ,'--annotation_dir', 
-                    type=click.Path(exists=True),
-                    default=pkg_resources.resource_filename('genmod', 'annotations'),
-                    help="""Specify the path to the directory where the annotation 
-                    databases are. 
-                    Default is the gene pred files that comes with the distribution."""
-)
-@click.option('--vep', 
-                    is_flag=True,
-                    help='If variants are annotated with the Variant Effect Predictor.'
+@click.option('-f', '--family_id',
+                default='1', 
 )
 @click.option('-s', '--silent',
                 is_flag=True,
                 help='Do not print the variants.'
 )
 @click.option('-o', '--outfile',
-                type=click.Path(exists=False),
+                type=click.File('w'),
                 help='Specify the path to a file where results should be stored.'
 )
-@click.option('-pi', '--plugin_file',
+@click.option('-c', '--score_config',
               type=click.Path(exists=True),
               help="The plug-in config file(.ini)"
-)
-@click.option('-p', '--processes', 
-                default=min(4, cpu_count()),
-                help='Define how many processes that should be use for annotation.'
 )
 @click.option('-v', '--verbose',
               count=True,
               help='Increase output verbosity. If -vv all scores will be printed'
 )
-
-def score(family_file, variant_file, family_type, annotation_dir, vep,
-                       plugin_file, processes, silent, outfile, verbose):
+def score(variant_file, family_id, score_config, silent, outfile, verbose):
     """
     Score variants in a vcf file using Weighted Sum Model.
-    The specific scores should be defined in a config file, see examples in 
-    genmod/configs
+    
+    The specific scores should be defined in a config file, see examples on 
+    github.
     """
-    from genmod.log import init_log, LEVELS
-    from genmod import logger as root_logger
-    loglevel = LEVELS.get(min(verbose,2), "WARNING")
-    init_log(root_logger, loglevel=loglevel)
+    # from genmod import logger as root_logger
+    # from genmod.log import init_log, LEVELS
+    # loglevel = LEVELS.get(min(verbose,2), "WARNING")
+    # init_log(root_logger, loglevel=loglevel)
     
     logger = logging.getLogger(__name__)
+    # logger = logging.getLogger("genmod.commands.score")
     
-    frame = inspect.currentframe()
-    args, _, _, values = inspect.getargvalues(frame)
-    argument_list = [i+'='+str(values[i]) for i in values if values[i] and 
-                            i != 'args' and i != 'frame' and i != 'parser']
+    logger.info('Running GENMOD score, version: {0}'.format(__version__))
     
-    start_time_analysis = datetime.now()
+    ## Check the score config:
+    if not score_config:
+        logger.warning("Please provide a score config file.")
+        sys.exit(1)
     
+    logger.debug("Parsing config file")
     
-    logger.info('Running GENMOD score, version: {0}'.format(VERSION))
+    try:
+        config_parser = ConfigParser(score_config)
+    except ValidateError as e:
+        logger.error("Something wrong in plugin file, please see log")
+        logger.info("Exiting")
+        sys.exit(1)
+
+    logger.debug("Config parsed succesfully")
+
+    logger.info("Initializing a Header Parser")
+    head = HeaderParser()
+
+    for line in variant_file:
+        line = line.rstrip()
+        if line.startswith('#'):
+            if line.startswith('##'):
+                head.parse_meta_data(line)
+            else:
+                head.parse_header_line(line)
+        else:
+            break
     
-    ## Start by parsing the pedigree file:
-    prefered_models = []
-    family_id = None
+    variant_file.seek(0)
+    header_line = head.header
     
-    if family_file:
-        prefered_models, family_id = get_genetic_models(
-                                                    family_file, 
-                                                    family_type
-                                                    )
-    else:
-        logger.critical("Please provide a family file")
-        sys.exit()
-    
-    logger.info('Prefered model found in family file:{0}'.format(prefered_models))
-    
-    if not plugin_file:
-        logger.critical("Please provide a plugin file")
-        sys.exit()
-    
-    ######### Read to the annotation data structures #########
-    
-    gene_trees = {}
-    exon_trees = {}
-    
-    # If the variants are already annotated we do not need to redo the annotation
-    if not vep:
-        gene_trees, exon_trees = load_annotations(annotation_dir, verbose)
-    else:
-        logger.info('Using VEP annotation')
-    
-    ## Check the variants:
-    
-    if variant_file == '-':
-        variant_parser = VCFParser(
-            fsock = sys.stdin, 
-            )
-    else:
-        variant_parser = VCFParser(
-            infile = variant_file, 
-            )
-    
-    head = variant_parser.metadata
-    
-    add_metadata(
-        head,
-        'version',    
-        'genmod_score', 
-        version=VERSION, 
-        command_line_string=' '.join(argument_list)
-    )
-    
-    add_metadata(
-        head,
-        'info',
-        'IndividualRankScore',
-        annotation_number='.', 
-        entry_type='String', 
-        description="Individual rank score for the variant in this family. "\
-        "This score is NOT corrected for compounds"
-    )
+    if "RankScore" in head.info_dict:
+        logger.warning("Variants already scored according to VCF header")
+        logger.info("Please check VCF file")
+        logger.info("Exiting...")
+        sys.exit(1)
     
     add_metadata(
         head,
@@ -228,123 +113,45 @@ def score(family_file, variant_file, family_type, annotation_dir, vep,
         'RankScore',
         annotation_number='.', 
         entry_type='String', 
-        description="Combined rank score for the variant in this family. "\
-        "This score is corrected for compounds"
+        description="The rank score for this variant in this family. "
     )
-    
-    alt_dict, score_dict, value_dict, operation_dict = check_plugin(
-                                                            plugin_file, 
-                                                            variant_parser, 
-                                                            verbose
-                                                            )
-    
-    ####################################################################
-    ### The variant queue is where all jobs(in this case batches that###
-    ### represents variants in a region) is put. The consumers will  ###
-    ### then pick their jobs from this queue.                        ###
-    ####################################################################
-    
-    variant_queue = JoinableQueue(maxsize=1000)
-    # The consumers will put their results in the results queue
-    results = Manager().Queue()
-    
-    
-    num_model_scorers = processes
-    
-    logger.info('Number of CPU:s {0}'.format(cpu_count()))
-    logger.info('Number of model scorers: {0}'.format(num_model_scorers))
-    
-    
-    temp_file = NamedTemporaryFile(delete=False)
-    temp_file.close()
-    
-    # We open a variant file to print the variants before sorting:
-    temporary_variant_file = open(
-                                temp_file.name, 
-                                mode='w', 
-                                encoding='utf-8', 
-                                errors='replace'
-                                )
-    
-    model_scorers = [
-                        VariantScorer(
-                            variant_queue,
-                            results,
-                            variant_parser.header,
-                            prefered_models,
-                            family_id,
-                            alt_dict, 
-                            score_dict, 
-                            value_dict,
-                            operation_dict, 
-                            verbose
-                        )
-                        for i in range(num_model_scorers)
-                    ]
-    
-    
-    for proc in model_scorers:
-        proc.start()
-    
-    # This process prints the variants to temporary files
-    var_printer = VariantPrinter(
-                        results,
-                        temporary_variant_file,
-                        head,
-                        mode='score',
-                        verbosity=verbose
-                    )
-    
-    var_printer.start()
-    
-    start_time_variant_parsing = datetime.now()
-    
-    logger.info('Start parsing the variants ... ')
-    
-    # get_batches put the variants in the queue and returns all chromosomes
-    # found among the variants
-    chromosome_list = get_batches(
-                        variant_parser, 
-                        variant_queue,
-                        individuals = [],
-                        gene_trees = gene_trees, 
-                        exon_trees = exon_trees, 
-                        phased = False, 
-                        vep = vep, 
-                        whole_genes = True, 
-                        verbosity = verbose
-                    )
-    
-    
-    # Put stop signs in the variant queue
-    for i in range(num_model_scorers):
-        variant_queue.put(None)
-    
-    variant_queue.join()
-    
-    results.put(None)
-    var_printer.join()
-    
-    temporary_variant_file.close()
-    
-    logger.info('Cromosomes found in variant file: {0}'.format(','.join(chromosome_list)))
-    logger.info('Variants scored!')
-    
-    
-    sort_variants(
-            infile=temp_file.name,
-            mode='rank',
-            verbose=verbose
+    print_headers(
+        head=head,
+        outfile=outfile,
+        silent=silent
     )
-    
-    print_headers(head, outfile, silent)
-    
-    print_variants(temp_file.name, outfile, mode='modified',  silent=silent)
-    
-    os.remove(temp_file.name)
-    
-    logger.info('Time for whole analyis: {0}'.format(str(datetime.now() - start_time_analysis)))
-    
-    
+    start_scoring = datetime.now()
+    last_twenty = datetime.now()
+    nr_of_variants = 1
+
+    for line in variant_file:
+        if not line.startswith('#'):
+            variant = get_variant_dict(line, header_line)
+            variant['info_dict'] = get_info_dict(variant['INFO'])
+
+            rank_score = score_variant(variant, config_parser)
+            
+            variant = add_vcf_info(
+                keyword = 'RankScore',
+                variant_dict=variant,
+                annotation="{0}:{1}".format(family_id, rank_score))
+
+            print_variant_dict(
+                variant=variant,
+                header_line=header_line,
+                outfile=outfile,
+                silent=silent)
+
+            nr_of_variants += 1
+
+            if nr_of_variants % 20000 == 0:
+                logger.info("{0} variants scored.".format(nr_of_variants))
+                logger.info("Last 20000 took {0} to score.".format(datetime.now()-last_twenty))
+                last_twenty = datetime.now()
+
+    logger.info("Variants scored. Number of variants: {0}".format(nr_of_variants))
+    logger.info("Time to score variants: {0}".format(datetime.now()-start_scoring))
+        
+
 if __name__ == '__main__':
     score()
