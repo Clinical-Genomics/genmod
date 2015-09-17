@@ -23,7 +23,7 @@ from validate import ValidateError
 
 from genmod.vcf_tools import (add_metadata, print_variant_dict, add_vcf_info,
 print_headers, HeaderParser, get_variant_dict, get_info_dict)
-from genmod.score_variants import (ConfigParser, score_variant, check_plugins)
+from genmod.score_variants import (ConfigParser, score_variant)
 
 from genmod import __version__
 

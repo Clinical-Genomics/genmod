@@ -29,8 +29,9 @@ setup(name='genmod',
         'pytest',
         'interval_tree >= 0.3.2',
         'click',
-        'configparser',
-        'configobj'
+        'configobj',
+        'intervaltree',
+        'extract_vcf'
     ],
     packages=find_packages(exclude=('tests*', 'docs', 'examples', 'configs')),
     
