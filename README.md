@@ -6,14 +6,14 @@
 
 
 **GENMOD** is a simple to use command line tool for annotating and analyzing genomic variations in the [VCF](http://samtools.github.io/hts-specs/VCFv4.1.pdf) file format.
-It can annotate genetic patterns of inheritance in vcf:s with single or multiple families of arbitrary size.
+**GENMOD** can annotate genetic patterns of inheritance in vcf:s with single or multiple families of arbitrary size.
 
 The tools in the genmod suite are:
 
-- **genmod annotate**, for annotating inheritance patterns, frequencies, cadd scores etc.
+- **genmod annotate**, for annotating regions, frequencies, cadd scores etc.
 - **genmod build_annotation**, for building new annotation sets from different sources
-- **genmod analyze**, do a basic analysis of the annotated variants in a vcf file
-- **genmod summarize**, to get some basic statistics of the annotated variants in a vcf file
+- **genmod models**, For annotating patterns of inheritance
+- **genmod sort**, To sort the variants of a vcf file
 
 ##Installation:##
 
@@ -28,6 +28,8 @@ or
 	python setup.py install
 
 
+
+# WARNING: Deprecated after version 2.6. This will be updated soon!! Please see command line help for now #
 
 ##USAGE:##
 
