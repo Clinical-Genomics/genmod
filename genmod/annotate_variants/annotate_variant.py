@@ -2,12 +2,19 @@ import logging
 
 from genmod.annotate_variants import get_frequency
 
-def annotate_frequency(chrom, position, alternatives, 
+def annotate_frequency(chrom, position, alternative, 
 tabix_handle=None):
+    """Return the frequency
+    
+        Args:
+            chrom (str): The chromosome
+            position (int): Start position for variant
+            alternative (str): The variant
+            tabix_handle (Tabix.Handle)
+        
+        Returns:
+            frequency (str): The frequency found
     """
-    Annotate a variant line with the given annotations
-    """
-    frequencies = []
     for alternative in alternatives.split(','):
         frequency = get_frequency(
             tabix_reader=tabix_handle, 

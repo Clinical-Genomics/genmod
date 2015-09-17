@@ -169,7 +169,7 @@ outfile, silent, cadd_raw, processes):
             head,
             'info',
             'ExACAF',
-            annotation_number='A',
+            annotation_number='1',
             entry_type='Float',
             description="Frequency in the ExAC database."
         )
@@ -181,7 +181,7 @@ outfile, silent, cadd_raw, processes):
             head,
             'info',
             '1000GAF',
-            annotation_number='A',
+            annotation_number='1',
             entry_type='Float',
             description="Frequency in the 1000G database."
         )
@@ -213,8 +213,8 @@ outfile, silent, cadd_raw, processes):
             head,
             'info',
             'CADD',
-            annotation_number='A',
-            entry_type='Float',
+            annotation_number='1',
+            entry_type='Integer',
             description="The CADD relative score for this alternative."
         )
         if cadd_raw:
@@ -224,7 +224,7 @@ outfile, silent, cadd_raw, processes):
                 head,
                 'info',
                 'CADD_raw',
-                annotation_number='A',
+                annotation_number='1',
                 entry_type='Float',
                 description="The CADD raw score(s) for this alternative(s)."
             )

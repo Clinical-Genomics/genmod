@@ -186,8 +186,8 @@ keyword, phased, strict, silent, processes, whole_gene, outfile):
         head,
         'info',
         'ModelScore',
-        annotation_number='1',
-        entry_type='Integer',
+        annotation_number='.',
+        entry_type='String',
         description="PHRED score for genotype models."
     )
     logger.debug("Model score added")

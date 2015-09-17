@@ -74,19 +74,22 @@ def compound(variant_file, silent, outfile, vep, processes):
                 head.parse_header_line(line)
         else:
             break
+
+    logger.info("Headers parsed")
     
     variant_file.seek(0)
+    
     header_line = head.header
     individuals = head.individuals
     
-    add_metadata(
-        head,
-        'info',
-        'CorrectedRankScore',
-        annotation_number='1',
-        entry_type='Integer',
-        description="The corrected rank score for this variant."
-    )
+    # add_metadata(
+    #     head,
+    #     'info',
+    #     'RankScore',
+    #     annotation_number='.',
+    #     entry_type='String',
+    #     description="The corrected rank score for this variant."
+    # )
     
     ###################################################################
     ### The task queue is where all jobs(in this case batches that  ###
@@ -149,7 +152,6 @@ def compound(variant_file, silent, outfile, vep, processes):
                                 results_queue=results
                             )
     
-    logger.debug("Put stop signs in the variant queue")
     logger.debug("Put stop signs in the variant queue")
     for i in range(num_scorers):
         variant_queue.put(None)
