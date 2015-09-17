@@ -13,30 +13,18 @@ from __future__ import print_function
 
 import sys
 import os
-<<<<<<< HEAD
-import logging
-
-import click
-
-=======
 import click
 import logging
->>>>>>> feature/fix_compounds_single
 
 from codecs import open
 from tempfile import NamedTemporaryFile
 
-<<<<<<< HEAD
-from genmod.utils import (print_variants, print_variant_for_sorting, 
-                          sort_variants)
-=======
-# from genmod import (sort_variants, print_headers)
+
 from genmod.vcf_tools import (print_variant_for_sorting, sort_variants, 
 get_info_dict, print_variant, HeaderParser, print_headers)
 
 from genmod.utils import (get_chromosome_priority, get_rank_score)
 
->>>>>>> feature/fix_compounds_single
 
 @click.command()
 @click.argument('variant_file', 
@@ -45,33 +33,6 @@ from genmod.utils import (get_chromosome_priority, get_rank_score)
                     metavar='<vcf_file> or -'
 )
 @click.option('-o', '--outfile', 
-<<<<<<< HEAD
-                    type=click.Path(exists=False),
-                    help='Specify the path to a file where results should be stored.'
-)
-@click.option('-f', '--family_id', 
-                    help="Specify the family id for sorting. If no family id "\
-                    "the first family found in annotation will be used."
-)
-@click.option('-v', '--verbose', 
-                count=True,
-                help='Increase output verbosity.'
-)
-def sort(variant_file, outfile, family_id, verbose):
-    """
-    Sort a VCF file based on rank score.\n
-    """
-    from genmod.log import init_log, LEVELS
-    from genmod import logger as root_logger 
-    loglevel = LEVELS.get(min(verbose,2), "WARNING")
-    init_log(root_logger, loglevel=loglevel)
-    
-    logger = logging.getLogger(__name__)
-    
-    #Save the variant lines for printing
-    header_lines = []
-    
-=======
                     type=click.File('w'),
                     help='Specify the path to a file where results should be stored.'
 )
@@ -93,7 +54,6 @@ def sort(variant_file, outfile, family_id, silent, position):
     logger = logging.getLogger(__name__)
     head = HeaderParser()
 
->>>>>>> feature/fix_compounds_single
     # Create a temporary variant file for sorting
     temp_file = NamedTemporaryFile(delete=False)
     temp_file.close()
@@ -109,42 +69,6 @@ def sort(variant_file, outfile, family_id, silent, position):
     for line in variant_file:
         line = line.rstrip()
         if line.startswith('#'):
-<<<<<<< HEAD
-            header_lines.append(line)
-        else:
-            print_variant_for_sorting(
-                variant_line = line, 
-                outfile = temp_file_handle,
-                family_id = family_id
-            )
-    # The tempfile includes the unsorted variants
-    temp_file_handle.close()
-    
-    # Sort the variants based on rank score
-    sort_variants(
-        infile = temp_file.name, 
-        mode='rank'
-    )
-    
-    # Print the headers
-    if outfile:
-        g = open(outfile, 'w', encoding='utf-8')
-    
-    for header in header_lines:
-        if outfile:
-            g.write(header + '\n')
-        else:
-            print(header)
-    if outfile:
-        g.close()
-    
-    # Print the variants
-    print_variants(
-        variant_file = temp_file.name,
-        outfile = outfile,
-        mode = 'modified'
-    )
-=======
             if line.startswith('##'):
                 head.parse_meta_data(line)
             else:
@@ -191,7 +115,6 @@ def sort(variant_file, outfile, family_id, silent, position):
                 mode = 'modified',
                 silent=False
                 )
->>>>>>> feature/fix_compounds_single
     
     logger.info("Removing temp file")
     os.remove(temp_file.name)
