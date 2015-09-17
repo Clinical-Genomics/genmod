@@ -51,21 +51,12 @@ from genmod import __version__
                     is_flag=True,
                     help='If variants are annotated with the Variant Effect Predictor.'
 )
-@click.option('-v', '--verbose',
-              count=True,
-              help='Increase output verbosity. If -vv all scores will be printed'
-)
-def score_compounds(variant_file, silent, outfile, vep, processes, verbose):
+def compound(variant_file, silent, outfile, vep, processes):
     """
     Score compound variants in a vcf file based on their rank score.
     """
-    # from genmod import logger as root_logger
-    # from genmod.log import init_log, LEVELS
-    # loglevel = LEVELS.get(min(verbose,2), "WARNING")
-    # init_log(root_logger, loglevel=loglevel)
     
     logger = logging.getLogger(__name__)
-    # logger = logging.getLogger("genmod.commands.score_compounds")
     
     logger.info('Running GENMOD score_compounds, version: {0}'.format(__version__))
     
@@ -190,4 +181,4 @@ def score_compounds(variant_file, silent, outfile, vep, processes, verbose):
     
 
 if __name__ == '__main__':
-    score_compounds()
+    compound()

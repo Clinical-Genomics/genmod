@@ -56,8 +56,12 @@ from genmod.annotate_regions import parse_annotations
                 is_flag=True,
                 help='Increase output verbosity.'
 )
-def build_annotation(annotation_file, annotation_type, outdir, splice_padding, verbose):
-    """Build a new annotation database."""
+def build(annotation_file, annotation_type, outdir, splice_padding, verbose):
+    """Build a new annotation database
+    
+        Build an annotation database from an annotation file.
+    
+    """
     logger = logging.getLogger(__name__)
     
     if not outdir:
@@ -93,4 +97,4 @@ def build_annotation(annotation_file, annotation_type, outdir, splice_padding, v
     
 
 if __name__ == '__main__':
-    build_annotation()
+    build()

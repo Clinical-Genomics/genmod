@@ -12,7 +12,8 @@ from genmod.vcf_tools import (get_variant_dict, get_variant_id,
 get_info_dict, get_vep_dict)
 
 
-def get_batches(variants, batch_queue, header, vep=False, compound_mode=False, results_queue=None):
+def get_batches(variants, batch_queue, header, vep=False, compound_mode=False, 
+results_queue=None, annotation_keyword = 'Annotation'):
     """
     Create variant batches based on their annotation and put them into the 
     batch queue.
@@ -89,7 +90,11 @@ def get_batches(variants, batch_queue, header, vep=False, compound_mode=False, r
 
             logger.debug("Update new chrom to {0}".format(new_chrom))
 
-            new_features = get_annotation(variant=variant, vep=vep)
+            new_features = get_annotation(
+                variant = variant, 
+                vep = vep,
+                annotation_key = annotation_keyword
+            )
             logger.debug("Adding {0} to variant {1}".format(
                 ', '.join(new_features), variant_id
             ))

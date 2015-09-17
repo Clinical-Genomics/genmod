@@ -28,11 +28,12 @@ from genmod.vcf_tools import (HeaderParser, add_vcf_info, add_metadata, print_he
                               print_variant)
 
 from genmod.annotate_variants import annotate_thousand_g
+from genmod.annotate_regions import get_genes, check_exonic
 
 @click.command()
 @click.argument('variant_file',
                     nargs=1,
-                    type=click.Path(exists=True),
+                    type=click.File('r'),
                     metavar='<vcf_file> or -'
 )
 @click.option('-r', '--annotate_regions', 
@@ -82,52 +83,148 @@ from genmod.annotate_variants import annotate_thousand_g
                     type=click.File('w'),
                     help='Specify the path to a file where results should be stored.'
 )
-def annotate_variants(variant_file, annotate_regions, thousand_g, outfile):
+@click.option('-s', '--silent',
+                is_flag=True,
+                help='Do not print the variants.'
+)
+def annotate(variant_file, annotate_regions, cadd_file, cadd_1000g, 
+cadd_exac, cadd_esp, cadd_indels, thousand_g, exac, annotation_dir, outfile, silent):
     """
     Annotate vcf variants.
+    
+    Annotate variants with a number of different sources.
+    Please use --help for more info.
     """
 
     logger = logging.getLogger(__name__)
     #For testing
     logger = logging.getLogger("genmod.commands.annotate_variants")
+    
     logger.info("Running genmod annotate_variant version {0}".format(__version__))
 
     logger.info("Initializing a Header Parser")
     head = HeaderParser()
     
-    with open(variant_file, 'r', encoding="utf-8") as f:
-        for line in f:
-            line = line.rstrip()
+    for line in variant_file:
+        line = line.rstrip()
 
-            if line.startswith('#'):
-                if line.startswith('##'):
-                    head.parse_meta_data(line)
-                else:
-                    head.parse_header_line(line)
+        if line.startswith('#'):
+            if line.startswith('##'):
+                head.parse_meta_data(line)
             else:
-                break
-    
-    logger.info("Loading annotations")
+                head.parse_header_line(line)
+        else:
+            break
     
     if annotate_regions:
+        logger.info("Loading annotations")
         gene_trees, exon_trees = load_annotations(annotation_dir)
+        
+        add_metadata(
+            head,
+            'info',
+            'Annotation',
+            annotation_number='.',
+            entry_type='String',
+            description='Annotates what feature(s) this variant belongs to.'
+        )
+        add_metadata(
+            head,
+            'info',
+            'Exonic',
+            annotation_number='0',
+            entry_type='Flag',
+            description='Indicates if the variant is exonic.'
+        )
+        
+    variant_file.seek(0)
+    
+    any_cadd_file = False
+
+    if exac:
+        logger.debug("Opening EXaC frequency file with tabix open")
+        exac_handle = tabix.open(exac)
+        logger.debug("EXaC frequency file opened")
     
     if thousand_g:
         logger.debug("Opening 1000G frequency file with tabix open")
         thousand_g_handle = tabix.open(thousand_g)
         logger.debug("1000G frequency file opened")
-    
-    with open(variant_file, 'r', encoding="utf-8") as f:
-        for line in f:
-            line = line.rstrip()
 
-            if not line.startswith('#'):
+    if cadd_file:
+        logger.debug("Opening CADD file with tabix open")
+        cadd_handle = tabix.open(cadd_file)
+        any_cadd_file = True
+        logger.debug("CADD file opened")
+
+    if cadd_1000g:
+        logger.debug("Opening CADD 1000G file with tabix open")
+        cadd_thousand_g_handle = tabix.open(cadd_1000g)
+        any_cadd_file = True
+        logger.debug("CADD 1000G file opened")
+
+    if cadd_exac:
+        logger.debug("Opening CADD EXaC file with tabix open")
+        cadd_exac_handle = tabix.open(cadd_exac)
+        any_cadd_file = True
+        logger.debug("CADD EXaC file opened")
+
+    if cadd_esp:
+        logger.debug("Opening CADD ESP file with tabix open")
+        cadd_esp_handle = tabix.open(cadd_esp)
+        any_cadd_file = True
+        logger.debug("CADD ESP file opened")
+
+    if cadd_indels:
+        logger.debug("Opening CADD INDELS file with tabix open")
+        cadd_indels_handle = tabix.open(cadd_indels)
+        any_cadd_file = True
+        logger.debug("CADD INDELS file opened")
     
-                annotated_line = annotate_thousand_g(
-                    variant_line = line,
-                    thousand_g = thousand_g_handle
+    for line in variant_file:
+        line = line.rstrip()
+        
+        if not line.startswith('#'):
+            splitted_line = line.split()
+            chrom = variant_line[0].strip('chr')
+            position = int(variant_line[1])
+            ref = splitted_line[3]
+            alternatives = splitted_line[4]
+            
+            longest_alt = max([
+                len(alt) for alt in alternatives.split(',')])
+            
+            if annotate_regions:
+                if check_exonic(
+                    chrom = chrom, 
+                    start = position, 
+                    stop = (position+longest_alt)-1, 
+                    exon_trees = exon_trees):
+                    line = add_vcf_info(
+                        keyword = 'Exonic', 
+                        variant_line=line, 
+                        annotation=None
+                    )
+                
+                genes = get_genes(
+                    chrom = chrom, 
+                    start = position, 
+                    stop = (position+longest_alt)-1, 
+                    gene_trees = gene_trees
                 )
-                print(annotated_line)
+                if genes:
+                    line = add_vcf_info(
+                        keyword = "Annotation",
+                        variant_line = line,
+                        annotation = ','.join(gene_features)
+                    )
+                    
+                
+            # annotated_line = annotate_thousand_g(
+            #     variant_line = line,
+            #     thousand_g = thousand_g_handle
+            # )
+            print(line)
     #         if not headers_done:
     #             add_annotation_header(head)
     #             add_metadata(

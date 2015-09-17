@@ -63,38 +63,37 @@ print_variant, HeaderParser)
                     is_flag=True,
                     help='If strict model annotations should be used(see documentation).'
 )
-@click.option('-split' ,'--split_variants', 
-                    is_flag=True,
-                    help='If the variants should be splitted.'
-)
 @click.option('-p', '--processes', 
                 default=min(4, cpu_count()),
                 help='Define how many processes that should be use for annotation.'
 )
-@click.option('--silent', 
+@click.option('--silent',
                     is_flag=True,
                     help='Do not print the variants.'
 )
-@click.option('-g' ,'--whole_gene', 
+@click.option('-w', '--whole_gene',
                     is_flag=True,
-                    help="""If compounds should be checked in the whole gene regions. 
-                    Not only exonic/splice sites."""
+                    help='If compounds should be checked over the whole gene.'
+)
+@click.option('-k' ,'--keyword', 
+                    default="Annotation",
+                    help="""What annotation keyword that should be used when 
+                    searching for features."""
 )
 @click.option('-o', '--outfile',
                     type=click.File('w'),
                     help='Specify the path to a file where results should be stored.'
 )
-def annotate_models(variant_file, family_file, family_type, vep,
-                    split_variants, phased, strict, silent, processes, 
-                    whole_gene, outfile):
+def models(variant_file, family_file, family_type, vep,
+keyword, phased, strict, silent, processes, whole_gene, outfile):
     """
-    Annotate variants with what genetic models that are followed in a VCF file.
+    Annotate genetic models for vcf variants. 
+    
+    Checks what patterns of inheritance that are followed in a VCF file.
     The analysis is family based so each family that are specified in the family
     file and exists in the variant file will get it's own annotation.
     """
-    # logger = logging.getLogger(__name__)
-    # For testing only:
-    logger = logging.getLogger("genmod.commands.annotate")
+    logger = logging.getLogger(__name__)
     
     ######### This is for logging the command line string #########
     frame = inspect.currentframe()
@@ -137,6 +136,23 @@ def annotate_models(variant_file, family_file, family_type, vep,
             break
     
     variant_file.seek(0)
+    
+    if vep:
+        if not "CSQ" in head.info_dict:
+            logger.warning("vep flag is used but there is no CSQ field specified in header")
+            logger.info("Please check VCF file")
+            logger.info("Exiting...")
+            sys.exit(1)
+        else:
+            logger.info("Using VEP annotation")
+    else:
+        if not keyword in head.info_dict:
+            logger.warning("Annotation key {0} could not be found in VCF header".format(keyword))
+            logger.info("Please check VCF file")
+            logger.info("Exiting...")
+            sys.exit(1)
+        else:
+            logger.info("Using {0} annotation".format(keyword))
         
     
     if "GeneticModels" in head.info_dict:
@@ -163,6 +179,7 @@ def annotate_models(variant_file, family_file, family_type, vep,
         entry_type='String',
         description="':'-separated list of genetic models for this variant."
     )
+    
     logger.debug("Genetic models added")
     logger.info("Adding model score to vcf header")
     add_metadata(
@@ -174,6 +191,7 @@ def annotate_models(variant_file, family_file, family_type, vep,
         description="PHRED score for genotype models."
     )
     logger.debug("Model score added")
+    
     logger.info("Adding Compounds to vcf header")
     add_metadata(
         head,
@@ -190,8 +208,6 @@ def annotate_models(variant_file, family_file, family_type, vep,
     vcf_individuals = head.individuals
     logger.debug("Individuals found in vcf file: {}".format(', '.join(vcf_individuals)))
     
-    if vep:
-        logger.info("Using VEP annotation")
 
     start_time_analysis = datetime.now()
     
@@ -271,7 +287,8 @@ def annotate_models(variant_file, family_file, family_type, vep,
                                 variants = variant_file,
                                 batch_queue = variant_queue,
                                 header = head,
-                                vep = vep
+                                vep = vep,
+                                annotation_keyword = keyword
                             )
     
     logger.debug("Put stop signs in the variant queue")
@@ -309,4 +326,4 @@ if __name__ == '__main__':
     from genmod.log import init_log
     init_log(root_logger, loglevel="INFO")
     
-    annotate_models()
+    models()
