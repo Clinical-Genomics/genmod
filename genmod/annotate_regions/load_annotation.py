@@ -27,8 +27,6 @@ def load_annotations(annotation_dir):
     """
     Load the annotations found in the indata path.
     These are pickled interval trees that are returned as dictionaries.
-<<<<<<< HEAD:genmod/utils/load_annotation.py
-=======
     
     Arguments:
         annotation_dir (str): Path to folder where the annotation trees are
@@ -36,20 +34,13 @@ def load_annotations(annotation_dir):
     Returns:
         gene_trees (dict): A dictionary with {<chr>: IntervalTree}
         exon_trees (dict): A dictionary with {<chr>: IntervalTree}
->>>>>>> feature/fix_compounds_single:genmod/annotate_regions/load_annotation.py
     """
     logger = logging.getLogger(__name__)
     gene_trees = {}
     exon_trees = {}
-<<<<<<< HEAD:genmod/utils/load_annotation.py
-    
-    logger.info('Reading annotations...')
-    
-=======
 
     logger.info('Reading annotations...')
 
->>>>>>> feature/fix_compounds_single:genmod/annotate_regions/load_annotation.py
     gene_db = os.path.join(annotation_dir, 'genes.db')
     logger.debug("Reading gene trees from {0}".format(gene_db))
 
@@ -64,20 +55,8 @@ def load_annotations(annotation_dir):
             exon_trees = pickle.load(g)
             logger.info("Exon trees loaded")
     except IOError as e:
-<<<<<<< HEAD:genmod/utils/load_annotation.py
-        if verbose:
-            logger.warning('No annotations found.')
-            logger.warning('You need to build annotations! See documentation.')
-            # It is possible to continue the analysis without annotation files
-        pass
-    
-    logger.info('Annotations used found in: {0}, {1}'.format(gene_db, exon_db))
-     
-    return gene_trees, exon_trees
-=======
         logger.warning("No annotations found. You need to build annotations!"\
                         " See documentation.")
         raise e
  
     return gene_trees, exon_trees
->>>>>>> feature/fix_compounds_single:genmod/annotate_regions/load_annotation.py
