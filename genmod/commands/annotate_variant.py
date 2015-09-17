@@ -285,7 +285,8 @@ outfile, silent, cadd_raw, processes):
     var_printer.start()
 
     start_time_variant_parsing = datetime.now()
-
+    start_time_twenty = datetime.now()
+    nr_of_lines = 0
     # This process parses the original vcf and create batches to put in the variant queue:
     logger.info('Start parsing the variants')
     
@@ -294,6 +295,14 @@ outfile, silent, cadd_raw, processes):
         
         if not line.startswith('#'):
             variant_queue.put(line)
+            
+            nr_of_lines += 1
+            
+            if nr_of_lines % 20000 == 0:
+                logger.info('{0} variants parsed'.format(nr_of_lines))
+                logger.info('Last 20000 took {0} to parse'.format(
+                    datetime.now()-start_time_twenty))
+                start_time_twenty = datetime.now()
     
     logger.info('Put stop signs in the variant queue')
     

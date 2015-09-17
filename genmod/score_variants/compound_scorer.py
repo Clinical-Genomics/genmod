@@ -86,13 +86,13 @@ class CompoundScorer(Process):
             for variant_id in variant_batch:
                 # If the variants only follow AR_comp (and AD for single individual families)
                 # We want to pennalise the score if the compounds have low scores
+                variant = variant_batch[variant_id]
                 correct_score = True
                 for family in variant['info_dict'].get('RankScore', '').split(','):
                     for model in family.split(':')[-1].split('|'):
                         if model not in self.models:
                             correct_score = False
                 
-                variant = variant_batch[variant_id]
                 
                 current_rank_score_entry = variant['info_dict'].get('RankScore', None)
                 if current_rank_score_entry:
