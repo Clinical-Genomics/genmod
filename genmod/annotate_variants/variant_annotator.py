@@ -24,7 +24,7 @@ from math import log10
 
 from genmod.vcf_tools import get_variant_dict, add_vcf_info
 from genmod.annotate_regions import (get_genes, check_exonic)
-from genmod.annotate_variants import annotate_frequency, get_cadd_scores
+from genmod.annotate_variants import get_frequency, get_cadd_scores
 
 # from . import (annotate_cadd_score, annotate_frequency, check_genetic_models)
 
@@ -142,20 +142,25 @@ class VariantAnnotator(Process):
             chrom = variant_dict['CHROM']
             position = int(variant_dict['POS'])
             ref = variant_dict['REF']
-            alternatives = variant_dict['ALT']
+            alternative = variant_dict['ALT']
 
             longest_alt = max([
-                len(alt) for alt in alternatives.split(',')])
+                len(alt) for alt in alternative.split(',')])
 
             if self.exon_trees:
-                if check_exonic( chrom = chrom, start = position,
-                    stop = (position+longest_alt)-1, exon_trees = self.exon_trees):
-
+                exonic = check_exonic(
+                    chrom = chrom, 
+                    start = position,
+                    stop = (position+longest_alt)-1, 
+                    exon_trees = self.exon_trees
+                )
+                if exonic:
                     variant_dict = add_vcf_info(
                             keyword = 'Exonic',
                             variant_dict=variant_dict,
                             annotation=None
                             )
+            
             if self.gene_trees:
                 genes = get_genes(
                     chrom = chrom,
@@ -171,95 +176,64 @@ class VariantAnnotator(Process):
                     )
             if self.thousand_g:
                 
-                frequencies = annotate_frequency(
+                frequency = get_frequency(
+                    tabix_reader = self.thousand_g,
                     chrom=chrom, 
-                    position=position, 
-                    alternatives=alternatives,
-                    tabix_handle=self.thousand_g, 
-                    
+                    start=position, 
+                    alt=alternative
                 )
-                for frequency in frequencies:
-                    if frequency != '0':    
-                        variant_dict = add_vcf_info(
-                            keyword = "1000GAF",
-                            variant_dict = variant_dict,
-                            annotation = ','.join(frequencies)
-                        )
+                if frequency:    
+                    variant_dict = add_vcf_info(
+                        keyword = "1000GAF",
+                        variant_dict = variant_dict,
+                        annotation = frequency
+                    )
 
             if self.exac:
                 
-                frequencies = annotate_frequency(
+                frequency = get_frequency(
+                    tabix_reader = self.exac,
                     chrom=chrom, 
-                    position=position, 
-                    alternatives=alternatives,
-                    tabix_handle=self.exac
-                    
+                    start=position, 
+                    alt=alternative
                 )
-                for frequency in frequencies:
-                    if frequency != '0':    
-                        variant_dict = add_vcf_info(
-                            keyword = "ExACAF",
-                            variant_dict = variant_dict,
-                            annotation = ','.join(frequencies)
-                        )
+                if frequency:    
+                    variant_dict = add_vcf_info(
+                        keyword = "ExACAF",
+                        variant_dict = variant_dict,
+                        annotation = frequency
+                    )
             if self.any_cadd_info:
-                cadd_phred = []
-                cadd_raw = []
-                for alternative in alternatives:
-                    cadd_found = False
-                    for cadd_handle in self.cadd_handles:
-                        cadd_scores = get_cadd_scores(
-                            tabix_reader=cadd_handle, 
-                            chrom=chrom, 
-                            start=position,
-                            alt=alternative 
-                        )                        
-                        if cadd_scores['cadd_phred']:
-                            cadd_found = True
-                            cadd_phred.append(cadd_scores['cadd_phred'])
-                            cadd_raw.append(cadd_scores['cadd_raw'])
-                            break
-                    if not cadd_found:
-                        cadd_phred.append('0')
-                        cadd_raw.append('0')
-                for cadd_score in cadd_phred:
-                    if cadd_score != '0':
-                        variant_dict = add_vcf_info(
-                            keyword = "CADD",
-                            variant_dict = variant_dict,
-                            annotation = ','.join(cadd_phred)
-                        )
                 
-                if self.cadd_raw:
-                    for cadd_score in cadd_raw:
-                        if cadd_score != '0':
-                            variant_dict = add_vcf_info(
-                                keyword = "CADD_raw",
-                                variant_dict = variant_dict,
-                                annotation = ','.join(cadd_raw)
-                            )
+                cadd_phred = None
+                cadd_raw = None
+                for cadd_handle in self.cadd_handles:
                     
-            #     annotated_line = annotate_thousand_g(
-            #         variant_line = line,
-            #         thousand_g = thousand_g_handle
-            #     )
-            # if self.any_cadd_info:
-            #     variant = annotate_cadd_score(
-            #         variant=variant,
-            #         cadd_raw=self.cadd_raw,
-            #         cadd_file=self.cadd_file,
-            #         cadd_1000g=self.cadd_1000g,
-            #         cadd_exac=self.cadd_exac,
-            #         cadd_ESP=self.cadd_ESP,
-            #         cadd_InDels=self.cadd_InDels
-            #         )
-            #
-            # if self.thousand_g or self.exac:
-            #     variant = annotate_frequency(
-            #         variant=variant,
-            #         thousand_g=self.thousand_g,
-            #         exac=self.exac
-            #         )
+                    cadd_scores = get_cadd_scores(
+                        tabix_reader=cadd_handle, 
+                        chrom=chrom, 
+                        start=position,
+                        alt=alternative 
+                    )                        
+                    if cadd_scores['cadd_phred']:
+                        cadd_phred = cadd_scores['cadd_phred']
+                        cadd_raw = cadd_scores['cadd_raw']
+                        break
+                    
+                if cadd_phred:
+                    variant_dict = add_vcf_info(
+                        keyword = "CADD",
+                        variant_dict = variant_dict,
+                        annotation = cadd_phred
+                    )
+                
+                if self.cadd_raw and cadd_raw:
+                    variant_dict = add_vcf_info(
+                        keyword = "CADD_raw",
+                        variant_dict = variant_dict,
+                        annotation = cadd_raw
+                    )
+                    
 
             self.results_queue.put(variant_dict)
             self.task_queue.task_done()
