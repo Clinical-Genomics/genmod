@@ -20,7 +20,6 @@ import logging
 from codecs import open
 from datetime import datetime
 from validate import ValidateError
->>>>>>> feature/fix_compounds_single
 
 from genmod.vcf_tools import (add_metadata, print_variant_dict, add_vcf_info,
 print_headers, HeaderParser, get_variant_dict, get_info_dict)
