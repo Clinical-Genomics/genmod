@@ -40,7 +40,7 @@ from genmod import __version__
                 help='Do not print the variants.'
 )
 @click.option('-o', '--outfile',
-                type=click.Path(exists=False),
+                type=click.File('w'),
                 help='Specify the path to a file where results should be stored.'
 )
 @click.option('-p', '--processes', 
