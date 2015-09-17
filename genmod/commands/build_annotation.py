@@ -65,19 +65,8 @@ def build(annotation_file, annotation_type, outdir, splice_padding, verbose):
     """
     logger = logging.getLogger(__name__)
     
-<<<<<<< HEAD
-    from genmod.log import init_log, LEVELS
-    from genmod import logger as root_logger
-    loglevel = LEVELS.get(min(verbose,2), "WARNING")
-    init_log(root_logger, loglevel=loglevel)
-    
-    logger = logging.getLogger(__name__)
-    
-    logger.info('Building new annotation databases from {0} into {1}.'.format(annotation_file, outdir))
-=======
     if not outdir:
         raise IOError("Please give a outdir with flag -o/--outdir")
->>>>>>> feature/fix_compounds_single
     
     logger.info("Building new annotation databases from {0} into {1}.".format(
         annotation_file, outdir))
