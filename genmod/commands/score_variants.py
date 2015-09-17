@@ -5,7 +5,7 @@ score_variants.py
 
 Script for scoring genetic variants in VCF files.
 
-Created by Henrik Stranneheim and Måns Magnusson on 2015-01-08.
+Created by Måns Magnusson on 2015-09-03.
 Copyright (c) 2015 __MoonsoInc__. All rights reserved.
 """
 
@@ -13,11 +13,9 @@ from __future__ import print_function
 
 import sys
 import os
-import argparse
-import inspect
-import pkg_resources
 import click
 import logging
+<<<<<<< HEAD
 import genmod
 
 from multiprocessing import JoinableQueue, Manager, cpu_count
@@ -64,83 +62,49 @@ def check_plugin(config_file, variant_parser, verbose=False):
     logging.debug("operation_dict" + str(operation_dict))
     
     return alt_dict, score_dict, value_dict, operation_dict
+=======
 
-def get_genetic_models(family_file, family_type):
-    """
-    Return the genetic models found for the family(families).
-    
-    Args:
-        family_file (file): A file with family information 
-                            in ped or ped like format.
-    
-    Returns:
-        inheritance_models  : A set with the expected inheritance models
-        family_id   : A string that represents the family id
-    """
-    inheritance_models = set([])
-    my_family_parser = FamilyParser(family_file, family_type)
-    family_id = None
-    for family in my_family_parser.families:
-        family_id = family
-        for model in my_family_parser.families[family].models_of_inheritance:
-            if model not in ['NA', 'na', 'Na']:
-                inheritance_models.add(model)
-    # Stupid thing but for now when we only look at one family
-    return inheritance_models, family_id
 
+from codecs import open
+from datetime import datetime
+from validate import ValidateError
+>>>>>>> feature/fix_compounds_single
+
+from genmod.vcf_tools import (add_metadata, print_variant_dict, add_vcf_info,
+print_headers, HeaderParser, get_variant_dict, get_info_dict)
+from genmod.score_variants import (ConfigParser, score_variant, check_plugins)
+
+from genmod import __version__
 
 @click.command()
 @click.argument('variant_file',
                 nargs=1,
-                type=click.Path(),
+                type=click.File('r'),
                 metavar='<vcf_file> or -'
 )
-@click.option('-f', '--family_file',
-                nargs=1, 
-                type=click.File('r'),
-                metavar='<ped_file>'
-)
-@click.option('-t' ,'--family_type', 
-                type=click.Choice(['ped', 'alt', 'cmms', 'mip']), 
-                default='ped',
-                help='If the analysis use one of the known setups, please specify which one.'
-)
-@click.option('-a' ,'--annotation_dir', 
-                    type=click.Path(exists=True),
-                    default=pkg_resources.resource_filename('genmod', 'annotations'),
-                    help="""Specify the path to the directory where the annotation 
-                    databases are. 
-                    Default is the gene pred files that comes with the distribution."""
-)
-@click.option('--vep', 
-                    is_flag=True,
-                    help='If variants are annotated with the Variant Effect Predictor.'
+@click.option('-f', '--family_id',
+                default='1', 
 )
 @click.option('-s', '--silent',
                 is_flag=True,
                 help='Do not print the variants.'
 )
 @click.option('-o', '--outfile',
-                type=click.Path(exists=False),
+                type=click.File('w'),
                 help='Specify the path to a file where results should be stored.'
 )
-@click.option('-pi', '--plugin_file',
+@click.option('-c', '--score_config',
               type=click.Path(exists=True),
               help="The plug-in config file(.ini)"
-)
-@click.option('-p', '--processes', 
-                default=min(4, cpu_count()),
-                help='Define how many processes that should be use for annotation.'
 )
 @click.option('-v', '--verbose',
               count=True,
               help='Increase output verbosity. If -vv all scores will be printed'
 )
-
-def score(family_file, variant_file, family_type, annotation_dir, vep,
-                       plugin_file, processes, silent, outfile, verbose):
+def score(variant_file, family_id, score_config, silent, outfile, verbose):
     """
     Score variants in a vcf file using Weighted Sum Model.
+<<<<<<< HEAD
     The specific scores should be defined in a config file, see examples in 
     genmod/configs
     """
@@ -179,20 +143,63 @@ def score(family_file, variant_file, family_type, annotation_dir, vep,
     if not plugin_file:
         logger.critical("Please provide a plugin file")
         sys.exit()
+=======
     
-    ######### Read to the annotation data structures #########
+    The specific scores should be defined in a config file, see examples on 
+    github.
+    """
+    # from genmod import logger as root_logger
+    # from genmod.log import init_log, LEVELS
+    # loglevel = LEVELS.get(min(verbose,2), "WARNING")
+    # init_log(root_logger, loglevel=loglevel)
     
-    gene_trees = {}
-    exon_trees = {}
+    logger = logging.getLogger(__name__)
+    # logger = logging.getLogger("genmod.commands.score")
     
+    logger.info('Running GENMOD score, version: {0}'.format(__version__))
+>>>>>>> feature/fix_compounds_single
+    
+    ## Check the score config:
+    if not score_config:
+        logger.warning("Please provide a score config file.")
+        sys.exit(1)
+    
+    logger.debug("Parsing config file")
+    
+<<<<<<< HEAD
     # If the variants are already annotated we do not need to redo the annotation
     if not vep:
         gene_trees, exon_trees = load_annotations(annotation_dir, verbose)
     else:
         logger.info('Using VEP annotation')
+=======
+    try:
+        config_parser = ConfigParser(score_config)
+    except ValidateError as e:
+        logger.error("Something wrong in plugin file, please see log")
+        logger.info("Exiting")
+        sys.exit(1)
+
+    logger.debug("Config parsed succesfully")
+
+    logger.info("Initializing a Header Parser")
+    head = HeaderParser()
+
+    for line in variant_file:
+        line = line.rstrip()
+        if line.startswith('#'):
+            if line.startswith('##'):
+                head.parse_meta_data(line)
+            else:
+                head.parse_header_line(line)
+        else:
+            break
+>>>>>>> feature/fix_compounds_single
     
-    ## Check the variants:
+    variant_file.seek(0)
+    header_line = head.header
     
+<<<<<<< HEAD
     if variant_file == '-':
         variant_parser = VCFParser(
             fsock = sys.stdin, 
@@ -201,16 +208,14 @@ def score(family_file, variant_file, family_type, annotation_dir, vep,
         variant_parser = VCFParser(
             infile = variant_file, 
             )
+=======
+    if "RankScore" in head.info_dict:
+        logger.warning("Variants already scored according to VCF header")
+        logger.info("Please check VCF file")
+        logger.info("Exiting...")
+        sys.exit(1)
+>>>>>>> feature/fix_compounds_single
     
-    head = variant_parser.metadata
-    
-    add_metadata(
-        head,
-        'version',    
-        'genmod_score', 
-        version=VERSION, 
-        command_line_string=' '.join(argument_list)
-    )
     
     add_metadata(
         head,
@@ -226,6 +231,7 @@ def score(family_file, variant_file, family_type, annotation_dir, vep,
         head,
         'info',
         'RankScore',
+<<<<<<< HEAD
         annotation_number='.', 
         entry_type='String', 
         description="Combined rank score for the variant in this family. "\
@@ -346,5 +352,49 @@ def score(family_file, variant_file, family_type, annotation_dir, vep,
     logger.info('Time for whole analyis: {0}'.format(str(datetime.now() - start_time_analysis)))
     
     
+=======
+        annotation_number='1',
+        entry_type='Integer',
+        description="The rank score for this variant."
+    )
+    print_headers(
+        head=head,
+        outfile=outfile,
+        silent=silent
+    )
+    start_scoring = datetime.now()
+    last_twenty = datetime.now()
+    nr_of_variants = 1
+
+    for line in variant_file:
+        if not line.startswith('#'):
+            variant = get_variant_dict(line, header_line)
+            variant['info_dict'] = get_info_dict(variant['INFO'])
+
+            rank_score = score_variant(variant, config_parser)
+            
+            variant = add_vcf_info(
+                keyword = 'RankScore',
+                variant_dict=variant,
+                annotation="{0}:{1}".format(family_id, rank_score))
+
+            print_variant_dict(
+                variant=variant,
+                header_line=header_line,
+                outfile=outfile,
+                silent=silent)
+
+            nr_of_variants += 1
+
+            if nr_of_variants % 20000 == 0:
+                logger.info("{0} variants scored.".format(nr_of_variants))
+                logger.info("Last 20000 took {0} to score.".format(datetime.now()-last_twenty))
+                last_twenty = datetime.now()
+
+    logger.info("Variants scored. Number of variants: {0}".format(nr_of_variants))
+    logger.info("Time to score variants: {0}".format(datetime.now()-start_scoring))
+        
+
+>>>>>>> feature/fix_compounds_single
 if __name__ == '__main__':
     score()

@@ -13,35 +13,26 @@ Copyright (c) 2013 __MyCompanyName__. All rights reserved.
 
 from __future__ import print_function
 
-import sys
-import os
-import argparse
+import collections
 
-class PairGenerator(object):
-    """Yeilds all unordered pairs from a list of objects as tuples, like (obj_1, obj_2)"""
-    def __init__(self, list_of_objects):
-        super(PairGenerator, self).__init__()
-        if len(list_of_objects) < 2:
-            #TODO raise a proper exception here
-            raise SyntaxError('List must include at least 2 objects!. List: %s' % list_of_objects)
-        self.list_of_objects = list_of_objects
+def generate_pairs(objects):
+    """
+    Yields all unordered pairs as tuples from the list of objects
     
-    def generate_pairs(self):
-        """Yields all unordered pairs as tuples from the list of objects"""
-        for i in range(len(self.list_of_objects)-1):
-            for j in range(i+1, len(self.list_of_objects)):
-                yield (self.list_of_objects[i], self.list_of_objects[j])
+    Arguments:
+        list_of_objects (iterator):
+    """
+    if not isinstance(objects, collections.Iterable):
+        raise SyntaxError("objects has to be iterable. objects: {0}".format(
+            objects
+        ))
+    if len(objects) < 2:
+        #TODO raise a proper exception here
+        raise SyntaxError('List must include at least 2 objects!."\
+                        " objects: {0}'.format(objects))
+        
+    for i in range(len(objects)-1):
+        for j in range(i+1, len(objects)):
+            yield (objects[i], objects[j])
     
-
-def main():
-    parser = argparse.ArgumentParser(description="Generate all unordered pairs of a sequence.")
-    parser.add_argument('-seq','--sequence', nargs='+', default=['a', 'b', 'c', 'd'], help='A sequence of objects.')
-    args = parser.parse_args()
-    
-    for pairs in Pair_Generator(args.sequence).generate_pairs():
-        print(pairs)
-
-
-if __name__ == '__main__':
-    main()
 
