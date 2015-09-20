@@ -20,15 +20,17 @@ def check_vep_annotation(variant):
     
     annotation = set()
     # vep_info is a dictionary with genes as key and annotation as values
+    ##TODO use extract_vcf to get the annotation here
     
-    for allele in variant.get('vep_info',{}):
-        if allele != 'gene_ids':
-            for vep_annotation in variant['vep_info'][allele]:
-                for consequence in vep_annotation.get('Consequence', {}).split('&'):
-                    # These are the SO terms that indicate that the variant 
-                    # belongs to a gene
-                    if consequence in INTERESTING_SO_TERMS:
-                        annotation.add(vep_annotation.get('SYMBOL', ''))
+    vep_info = variant.get('vep_info',{})
+    
+    for allele in vep_info:
+        for vep_annotation in variant['vep_info'][allele]:
+            for consequence in vep_annotation.get('Consequence', {}).split('&'):
+                # These are the SO terms that indicate that the variant 
+                # belongs to a gene
+                if consequence in INTERESTING_SO_TERMS:
+                    annotation.add(vep_annotation.get('SYMBOL', ''))
     return annotation
 
 def get_annotation(variant, annotation_key="Annotation", vep=False):
@@ -44,6 +46,7 @@ def get_annotation(variant, annotation_key="Annotation", vep=False):
         annotations (set): A set with annotated features
     """
     logger = logging.getLogger(__name__)
+    ##TODO use extract_vcf to get the annotation here
     
     annotation = set()
     variant_id = variant.get('variant_id', '')
