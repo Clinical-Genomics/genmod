@@ -1,21 +1,19 @@
 from genmod.utils import get_batches
+from genmod.vcf_tools import HeaderParser
 from Queue import Queue
 
-def get_variant(chrom='1', pos='1', ref='A', alt='G', annotation=["ADK"]):
+HEADER = "CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO"
+
+def get_variant_line(chrom='1', pos='1', db_id='.', ref='A', alt='G', 
+qual='100', filt='PASS', info="Annotation=ADK;Exonic"):
     """
     Return a variant dictionary
     """
-    variant_id = '_'.join([chrom, pos, ref, alt])
-    variant = {
-        "CHROM":chrom,
-        "POS":pos,
-        "INFO":"Annotation={0}".format(annotation),
-        'info_dict':{
-            "Annotation":[region for region in annotation]
-        },
-        "variant_id": variant_id
-    }
-    return variant
+    variant_line = "{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\t".format(
+        chrom, pos, db_id, ref, alt, qual, filt, info
+    )
+    
+    return variant_line
 
 def test_get_batches_one():
     """
@@ -23,11 +21,14 @@ def test_get_batches_one():
     """
     batch_queue = Queue()
     variants = []
-    first_variant = get_variant()
+    first_variant = get_variant_line()
+    header = HeaderParser()
+    header.parse_header_line("#{0}".format(HEADER))
     
     variants.append(first_variant)
     
-    chromosomes = get_batches(variants, batch_queue)
+    chromosomes = get_batches(variants=variants, batch_queue=batch_queue, 
+    header=header)
     batch = batch_queue.get()
     
     assert chromosomes == ['1']
@@ -39,11 +40,15 @@ def test_get_batches_two():
     """
     batch_queue = Queue()
     variants = []
-    first_variant = get_variant()
-    second_variant = get_variant(pos="2")
+    first_variant = get_variant_line()
+    second_variant = get_variant_line(pos="2")
     variants.append(first_variant)
     variants.append(second_variant)
-    chromosomes = get_batches(variants, batch_queue)
+    header = HeaderParser()
+    header.parse_header_line("#{0}".format(HEADER))
+    
+    chromosomes = get_batches(variants=variants, batch_queue=batch_queue, 
+    header=header)
     batch = batch_queue.get()
     
     assert chromosomes == ['1']
@@ -56,11 +61,16 @@ def test_get_batches_two_regions():
     """
     batch_queue = Queue()
     variants = []
-    first_variant = get_variant()
-    second_variant = get_variant(pos="2", annotation=["DDD"])
+    first_variant = get_variant_line()
+    second_variant = get_variant_line(pos="2", info="Annotation=DDD;Exonic")
     variants.append(first_variant)
     variants.append(second_variant)
-    chromosomes = get_batches(variants, batch_queue)
+    
+    header = HeaderParser()
+    header.parse_header_line("#{0}".format(HEADER))
+    
+    chromosomes = get_batches(variants=variants, batch_queue=batch_queue, 
+    header=header)
     batch_1 = batch_queue.get()
     batch_queue.task_done()
     
@@ -78,13 +88,19 @@ def test_get_batches_no_regions():
     batch_queue = Queue()
     variants = []
     
-    first_variant = get_variant()
-    first_variant['info_dict'].pop('Annotation')
-    second_variant = get_variant(pos="2")
+    first_variant = get_variant_line(info="MQ")
+    
+    second_variant = get_variant_line(pos="2")
     
     variants.append(first_variant)
     variants.append(second_variant)
-    chromosomes = get_batches(variants, batch_queue)
+
+    header = HeaderParser()
+    header.parse_header_line("#{0}".format(HEADER))
+    
+    chromosomes = get_batches(variants=variants, batch_queue=batch_queue, 
+    header=header)
+    
     batch_1 = batch_queue.get()
     batch_queue.task_done()
     
@@ -102,12 +118,18 @@ def test_get_batches_new_chromosome():
     batch_queue = Queue()
     variants = []
     
-    first_variant = get_variant()
-    second_variant = get_variant(chrom="2")
+    first_variant = get_variant_line()
+    second_variant = get_variant_line(chrom="2")
     
     variants.append(first_variant)
     variants.append(second_variant)
-    chromosomes = get_batches(variants, batch_queue)
+    
+    header = HeaderParser()
+    header.parse_header_line("#{0}".format(HEADER))
+    
+    chromosomes = get_batches(variants=variants, batch_queue=batch_queue, 
+    header=header)
+    
     batch_1 = batch_queue.get()
     batch_queue.task_done()
     

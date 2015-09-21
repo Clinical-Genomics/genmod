@@ -44,7 +44,7 @@ results_queue=None, annotation_keyword = 'Annotation'):
     beginning = True
     logger.debug("Create first empty batch")
     # A batch is a ordered dictionary with variants
-    batch = {}
+    batch = OrderedDict()
     new_chrom = None
     current_chrom = None
     current_features = []
@@ -189,7 +189,7 @@ results_queue=None, annotation_keyword = 'Annotation'):
     ))
     
     logger.info("Number of variants in variant file: {0}".format(nr_of_variants))
-    logger.info("Number of batches created:{0}".format(nr_of_batches))
+    logger.info("Number of batches created: {0}".format(nr_of_batches))
     
     
     

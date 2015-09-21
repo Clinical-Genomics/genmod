@@ -17,6 +17,7 @@ import sys
 import os
 import logging
 import pkg_resources
+import itertools
 
 import click
 import tabix
@@ -45,29 +46,12 @@ from genmod.utils import VariantPrinter
                 is_flag=True,
                 help='Increase output verbosity.'
 )
-@click.option('--cadd_file', 
+@click.option('-c', '--cadd_file', 
+                    multiple = True,
                     type=click.Path(exists=True), 
-                    help="""Specify the path to a bgzipped cadd file (with index) with variant scores."""
-)
-@click.option('--cadd_1000g',
-                    type=click.Path(exists=True), 
-                    help="""Specify the path to a bgzipped cadd file (with index) with variant scores 
-                            for all 1000g variants."""
-)
-@click.option('--cadd_exac',
-                    type=click.Path(exists=True), 
-                    help="""Specify the path to a bgzipped cadd file (with index) with variant scores 
-                            for all ExAC variants."""
-)
-@click.option('--cadd_esp',
-                    type=click.Path(exists=True), 
-                    help="""Specify the path to a bgzipped cadd file (with index) with variant scores 
-                            for all ESP6500 variants."""
-)
-@click.option('--cadd_indels',
-                    type=click.Path(exists=True), 
-                    help="""Specify the path to a bgzipped cadd file (with index) with variant scores 
-                            for all CADD InDel variants."""
+                    help="Specify the path to a bgzipped cadd file"\
+                    " (with index) with variant scores. This command can be"\
+                    " used multiple times if multiple cadd files."
 )
 @click.option('--thousand_g',
                     type=click.Path(exists=True), 
@@ -100,9 +84,8 @@ from genmod.utils import VariantPrinter
                 default=min(4, cpu_count()),
                 help='Define how many processes that should be use for annotation.'
 )
-def annotate(variant_file, annotate_regions, cadd_file, cadd_1000g, 
-cadd_exac, cadd_esp, cadd_indels, thousand_g, exac, annotation_dir, 
-outfile, silent, cadd_raw, processes):
+def annotate(variant_file, annotate_regions, cadd_file, thousand_g, exac, 
+annotation_dir, outfile, silent, cadd_raw, processes):
     """
     Annotate vcf variants.
     
@@ -117,7 +100,6 @@ outfile, silent, cadd_raw, processes):
     logger.info("Running genmod annotate_variant version {0}".format(__version__))
     
     start_time_analysis = datetime.now()
-    
     annotator_arguments = {}
     annotator_arguments['cadd_raw'] = cadd_raw
     
@@ -134,6 +116,9 @@ outfile, silent, cadd_raw, processes):
                 head.parse_header_line(line)
         else:
             break
+    
+    #Add the first variant to the iterator
+    variant_file = itertools.chain([line], variant_file)
     
     header_line = head.header
     annotator_arguments['header_line'] = header_line
@@ -160,8 +145,7 @@ outfile, silent, cadd_raw, processes):
             entry_type='Flag',
             description='Indicates if the variant is exonic.'
         )
-        
-    variant_file.seek(0)
+    
     
     if exac:
         annotator_arguments['exac'] = exac
@@ -186,29 +170,11 @@ outfile, silent, cadd_raw, processes):
             description="Frequency in the 1000G database."
         )
     
-    any_cadd_file = False
+    if cadd_file:
+        annotator_arguments['cadd_files'] = cadd_file
+        any_cadd_file = True
 
     if cadd_file:
-        annotator_arguments['cadd_file'] = cadd_file
-        any_cadd_file = True
-
-    if cadd_1000g:
-        annotator_arguments['cadd_1000g'] = cadd_1000g
-        any_cadd_file = True
-
-    if cadd_exac:
-        annotator_arguments['cadd_exac'] = cadd_exac
-        any_cadd_file = True
-
-    if cadd_esp:
-        annotator_arguments['cadd_ESP'] = cadd_esp
-        any_cadd_file = True
-
-    if cadd_indels:
-        annotator_arguments['cadd_InDels'] = cadd_indels
-        any_cadd_file = True
-    
-    if any_cadd_file:
         add_metadata(
             head,
             'info',
@@ -242,7 +208,7 @@ outfile, silent, cadd_raw, processes):
     
     num_annotators = processes
     #Adapt the number of processes to the machine that run the analysis
-    if any_cadd_file:
+    if cadd_file:
         # We need more power when annotating cadd scores:
         # But if flag is used that overrides
         if num_annotators == min(4, cpu_count()):
@@ -251,13 +217,9 @@ outfile, silent, cadd_raw, processes):
     logger.info('Number of CPU:s {}'.format(cpu_count()))
     logger.info('Number of model checkers: {}'.format(num_annotators))
 
-    # We use a temp file to store the processed variants
-    logger.debug("Build a tempfile for printing the variants")
-    temp_file = NamedTemporaryFile(delete=False)
-    temp_file.close()
 
     # These are the workers that do the heavy part of the analysis
-    logger.info('Seting up the workers')
+    logger.info('Setting up the workers')
     annotators = [
         VariantAnnotator(
             variant_queue, 
@@ -271,15 +233,31 @@ outfile, silent, cadd_raw, processes):
     for worker in annotators:
         logger.debug('Starting worker {0}'.format(worker))
         worker.start()
-
+    
     # This process prints the variants to temporary files
-    logger.info('Seting up the variant printer')
-    var_printer = VariantPrinter(
-                    task_queue = results, 
-                    head = head, 
-                    mode='chromosome', 
-                    outfile = temp_file.name
-                    )
+    # If there is only one annotation process we can print the results as soon
+    # as they are done
+    logger.info('Setting up the variant printer')
+    if len(annotators) == 1:
+        print_headers(head, outfile, silent)
+        var_printer = VariantPrinter(
+                        task_queue = results, 
+                        head = head, 
+                        mode='normal', 
+                        outfile = outfile
+                        )
+    else:
+        # We use a temp file to store the processed variants
+        logger.debug("Build a tempfile for printing the variants")
+        temp_file = NamedTemporaryFile(delete=False)
+        temp_file.close()
+        
+        var_printer = VariantPrinter(
+                        task_queue = results, 
+                        head = head, 
+                        mode='chromosome', 
+                        outfile = temp_file.name
+                        )
     
     logger.info('Starting the variant printer process')
     var_printer.start()
@@ -312,72 +290,30 @@ outfile, silent, cadd_raw, processes):
     variant_queue.join()
     results.put(None)
     var_printer.join()
+    
+    if len(annotators) > 1:
+        logger.info("Start sorting the variants")
+        sort_variants(temp_file.name, mode='chromosome')
 
-    logger.info("Start sorting the variants")
-    sort_variants(temp_file.name, mode='chromosome')
+        logger.info("Print the headers")
+        print_headers(head, outfile, silent)
 
-    logger.info("Print the headers")
-    print_headers(head, outfile, silent)
+        with open(temp_file.name, 'r', encoding='utf-8') as f:
+            for line in f:
+                print_variant(
+                    variant_line=line,
+                    outfile=outfile,
+                    mode='modified',
+                    silent=silent
+                )
 
-    with open(temp_file.name, 'r', encoding='utf-8') as f:
-        for line in f:
-            print_variant(
-                variant_line=line,
-                outfile=outfile,
-                mode='modified',
-                silent=silent
-            )
-
-    logger.info("Removing temp file")
-    os.remove(temp_file.name)
-    logger.debug("Temp file removed")
+        logger.info("Removing temp file")
+        os.remove(temp_file.name)
+        logger.debug("Temp file removed")
 
     logger.info('Time for whole analyis: {0}'.format(
         str(datetime.now() - start_time_analysis)))
     
-    # for line in variant_file:
-    #     line = line.rstrip()
-    #
-    #     if not line.startswith('#'):
-    #         splitted_line = line.split()
-    #         chrom = splitted_line[0].strip('chr')
-    #         position = int(splitted_line[1])
-    #         ref = splitted_line[3]
-    #         alternatives = splitted_line[4]
-    #
-    #         longest_alt = max([
-    #             len(alt) for alt in alternatives.split(',')])
-    #
-    #         if annotate_regions:
-    #             if check_exonic(
-    #                 chrom = chrom,
-    #                 start = position,
-    #                 stop = (position+longest_alt)-1,
-    #                 exon_trees = exon_trees):
-    #                 line = add_vcf_info(
-    #                     keyword = 'Exonic',
-    #                     variant_line=line,
-    #                     annotation=None
-    #                 )
-    #
-    #             genes = get_genes(
-    #                 chrom = chrom,
-    #                 start = position,
-    #                 stop = (position+longest_alt)-1,
-    #                 gene_trees = gene_trees
-    #             )
-    #             if genes:
-    #                 line = add_vcf_info(
-    #                     keyword = "Annotation",
-    #                     variant_line = line,
-    #                     annotation = ','.join(genes)
-    #                 )
-                    
-                
-            # annotated_line = annotate_thousand_g(
-            #     variant_line = line,
-            #     thousand_g = thousand_g_handle
-            # )
 
 if __name__ == '__main__':
     from genmod.log import init_log

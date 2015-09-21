@@ -2,9 +2,11 @@ from tempfile import NamedTemporaryFile
 from multiprocessing import Manager
 from collections import OrderedDict
 
-from vcf_parser import VCFParser
-
 from genmod.utils import VariantPrinter
+from genmod.vcf_tools import (get_variant_dict, get_info_dict, 
+get_variant_id, HeaderParser)
+
+
 
 def setup_vcf_file():
     """
@@ -39,8 +41,7 @@ def test_variant_printer():
     """Test the variant printer"""
     vcf_file = setup_vcf_file()
     variant_queue = Manager().Queue()
-    variant_parser = VCFParser(infile=vcf_file)
-    header = variant_parser.metadata
+    head = HeaderParser()
     
     outfile = NamedTemporaryFile(mode='w+t', delete=False, suffix='.vcf')
     outfile.close()
@@ -48,7 +49,7 @@ def test_variant_printer():
     
     variant_printer = VariantPrinter(
         task_queue=variant_queue, 
-        head=header, 
+        head=head, 
         mode='chromosome', 
         outfile = outfile.name
     )
@@ -57,11 +58,24 @@ def test_variant_printer():
     
     batch = OrderedDict()
     
-    for variant in variant_parser:
-        variant_id = variant['variant_id']
-        batch[variant_id] = variant
+    for line in open(vcf_file):
+        line = line.rstrip()
+
+        if line.startswith('#'):
+            if line.startswith('##'):
+                head.parse_meta_data(line)
+            else:
+                head.parse_header_line(line)
+        else:
+            variant_dict = get_variant_dict(line, head.header)
+            print(variant_dict)
+            variant_id = get_variant_id(variant_dict)
+            variant_dict['variant_id'] = variant_id
+            variant_dict['info_dict'] = get_info_dict(variant_dict['INFO'])
     
-    variant_queue.put(batch)
+            variant_queue.put(variant_dict)
+            
+    
     variant_queue.put(None)
     
     variant_printer.join()

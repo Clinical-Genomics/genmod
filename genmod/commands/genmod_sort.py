@@ -82,18 +82,24 @@ def sort(variant_file, outfile, family_id, silent, position):
             else:
                 priority = get_rank_score(line)
             
-            print_variant_for_sorting(
+            print_variant(
                 variant_line=line, 
-                priority=priority,
-                outfile = temp_file_handle,
+                priority=priority, 
+                outfile=temp_file_handle
             )
+            # print_variant_for_sorting(
+            #     variant_line=line,
+            #     priority=priority,
+            #     outfile = temp_file_handle,
+            # )
     
     temp_file_handle.close()
     
     sort_mode = 'rank'
+    
     if position:
         sort_mode = 'chromosome'
-    # Sort the variants based on rank score
+    
     sort_variants(
         infile = temp_file.name, 
         mode=sort_mode
