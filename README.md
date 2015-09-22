@@ -33,7 +33,7 @@ or
 ## USAGE: ##
 
 <!-- TODO change documentation link -->
-*This is an overview, for more in depth documentation see [documentation](https://github.com/moonso/genmod)*
+*This is an overview, for more in depth documentation see [documentation](http://moonso.github.io/genmod/)*
 
 
 ### Example: ###
