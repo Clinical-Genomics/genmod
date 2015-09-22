@@ -74,7 +74,7 @@ class VariantPrinter(Process):
             if variant is None:
                 self.logger.info('All variants printed.')
                 if self.outfile:
-                    f.close()
+                    self.outfile.close()
                 break
             
             self.logger.debug("Printing variant {0}".format(variant.get('variant_id', 'unknown')))
