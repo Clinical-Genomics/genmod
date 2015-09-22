@@ -17,7 +17,7 @@ import click
 import logging
 
 from . import (build_command, sort_command, models_command, score_command,
-score_compounds_command, annotate_variant_command)
+score_compounds_command, annotate_variant_command, filter_command)
 # , sort, annotate, analyze, summarize_variants, score_variants)
 
 from genmod import __version__
@@ -76,6 +76,7 @@ cli.add_command(models_command)
 cli.add_command(score_command)
 cli.add_command(score_compounds_command)
 cli.add_command(annotate_variant_command)
+cli.add_command(filter_command)
 # run_genmod.add_command(annotate.annotate)
 # run_genmod.add_command(analyze.analyze)
 # run_genmod.add_command(summarize_variants.summarize)
