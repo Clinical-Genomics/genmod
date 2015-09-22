@@ -32,9 +32,12 @@ or
 
 ## USAGE: ##
 
-*This is an overview, for more in depth documentation see github wiki.*
+<!-- TODO change documentation link -->
+*This is an overview, for more in depth documentation see [documentation](https://github.com/moonso/genmod)*
+
 
 ### Example: ###
+
 
 The following command should work when installed successfully. The files are distributed with the package.
 
