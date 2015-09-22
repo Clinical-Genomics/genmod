@@ -15,6 +15,7 @@ The tools in the genmod suite are:
 - **genmod models**, For annotating patterns of inheritance
 - **genmod sort**, To sort the variants of a vcf file, either on rank score or position
 - **genmod score**, Score the variants of a vcf based on their annotation
+- **genmod filter**, Filter the variants of a vcf based on their annotation
 
 ##Installation:##
 
