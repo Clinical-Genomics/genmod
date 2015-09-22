@@ -57,8 +57,10 @@ def get_annotation(variant, annotation_key="Annotation", vep=False):
         logger.debug("Using vep annotation.")
         annotation = check_vep_annotation(variant)
     
-    elif variant.get('info_dict', {}).get(annotation_key, None):
-        annotation = set(variant['info_dict'][annotation_key].split(','))
+    else:
+        info_dict = variant.get('info_dict', {})
+        if info_dict.get(annotation_key, None):
+            annotation = set(info_dict[annotation_key].split(','))
     
     logger.debug("Annotations found for {0}: {1}".format(
         variant_id, ','.join(annotation)

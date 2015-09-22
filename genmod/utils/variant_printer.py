@@ -9,12 +9,13 @@ Created by Måns Magnusson on 2013-01-17.
 Copyright (c) 2013 __MyCompanyName__. All rights reserved.
 """
 
-from __future__ import (print_function, absolute_import)
+from __future__ import (print_function)
 
 from multiprocessing import Process
 from codecs import open
 
-from . import get_chromosome_priority
+from genmod.utils import get_chromosome_priority, get_rank_score
+from genmod.vcf_tools import print_variant
 
 import logging
 
@@ -22,7 +23,10 @@ class VariantPrinter(Process):
     """
     Print variants to a temporary file.
     
-    There are two modes that will be used when sorting the file.
+    There are three modes for printing a variant 
+    'chromosome' and 'score' are used the file is going to be sorted.
+    'normal' means that the variants are just printed.
+    
     'chromosome': In this case the priority order of the chromosome is printed
                     to the first position in the results file
     
@@ -38,13 +42,14 @@ class VariantPrinter(Process):
         outfile : File that all variants should be printed to
     
     """
-    def __init__(self, task_queue, head, mode='chromosome', outfile = None):
+    def __init__(self, task_queue, head, mode='chromosome', outfile = None, silent=False):
         Process.__init__(self)
         self.logger = logging.getLogger(__name__)
         self.task_queue = task_queue
         self.outfile = outfile
         self.header = head.header
         self.mode = mode
+        self.silent = silent
     
     def run(self):
         """Starts the printing"""
@@ -52,8 +57,9 @@ class VariantPrinter(Process):
         number_of_finished = 0
         proc_name = self.name
         self.logger.info(('{0}: starting'.format(proc_name)))
+        
         if self.outfile:
-            f = open(self.outfile, 'w', encoding="utf-8")
+            self.outfile = open(self.outfile, 'w', encoding="utf-8")
         
         while True:
             
@@ -68,20 +74,22 @@ class VariantPrinter(Process):
             if variant is None:
                 self.logger.info('All variants printed.')
                 if self.outfile:
-                    f.close()
+                    self.outfile.close()
                 break
             
             self.logger.debug("Printing variant {0}".format(variant.get('variant_id', 'unknown')))
-                
-            priority = get_chromosome_priority(variant['CHROM'])
             
-            print_line = [priority] + [variant.get(entry, '.') 
-                            for entry in self.header]
-                
-            if self.outfile:
-                f.write('\t'.join(print_line) + '\n')
-            else:
-                print('\t'.join(print_line))
+            priority = None
+            
+            if self.mode == 'chromosome': 
+                priority = get_chromosome_priority(variant['CHROM'])
+
+            elif self.mode == 'score': 
+                priority = get_rank_score(variant_dict=variant)
+            
+            
+            print_variant(variant_dict=variant, header_line=self.header, 
+            priority=priority, outfile=self.outfile, silent=self.silent)
         
         return
 

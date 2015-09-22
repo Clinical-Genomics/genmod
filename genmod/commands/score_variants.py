@@ -15,13 +15,13 @@ import sys
 import os
 import click
 import logging
-
+import itertools
 
 from codecs import open
 from datetime import datetime
 from validate import ValidateError
 
-from genmod.vcf_tools import (add_metadata, print_variant_dict, add_vcf_info,
+from genmod.vcf_tools import (add_metadata, print_variant, add_vcf_info,
 print_headers, HeaderParser, get_variant_dict, get_info_dict)
 from genmod.score_variants import (ConfigParser, score_variant)
 
@@ -48,11 +48,7 @@ from genmod import __version__
               type=click.Path(exists=True),
               help="The plug-in config file(.ini)"
 )
-@click.option('-v', '--verbose',
-              count=True,
-              help='Increase output verbosity. If -vv all scores will be printed'
-)
-def score(variant_file, family_id, score_config, silent, outfile, verbose):
+def score(variant_file, family_id, score_config, silent, outfile):
     """
     Score variants in a vcf file using Weighted Sum Model.
     
@@ -98,7 +94,8 @@ def score(variant_file, family_id, score_config, silent, outfile, verbose):
         else:
             break
     
-    variant_file.seek(0)
+    #Add the first variant to the iterator
+    variant_file = itertools.chain([line], variant_file)
     header_line = head.header
     
     if "RankScore" in head.info_dict:
@@ -134,13 +131,15 @@ def score(variant_file, family_id, score_config, silent, outfile, verbose):
             variant = add_vcf_info(
                 keyword = 'RankScore',
                 variant_dict=variant,
-                annotation="{0}:{1}".format(family_id, rank_score))
+                annotation="{0}:{1}".format(family_id, rank_score)
+            )
 
-            print_variant_dict(
-                variant=variant,
+            print_variant(
+                variant_dict=variant,
                 header_line=header_line,
                 outfile=outfile,
-                silent=silent)
+                silent=silent
+            )
 
             nr_of_variants += 1
 

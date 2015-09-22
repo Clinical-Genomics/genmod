@@ -15,7 +15,7 @@ import sys
 import os
 import click
 import logging
-
+import itertools
 
 from multiprocessing import JoinableQueue, Manager, cpu_count
 from codecs import open
@@ -77,7 +77,7 @@ def compound(variant_file, silent, outfile, vep, processes):
 
     logger.info("Headers parsed")
     
-    variant_file.seek(0)
+    variant_file = itertools.chain([line], variant_file)
     
     header_line = head.header
     individuals = head.individuals

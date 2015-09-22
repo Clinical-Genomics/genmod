@@ -10,14 +10,15 @@
 
 The tools in the genmod suite are:
 
+- **genmod build**, for building new annotation sets from different sources
 - **genmod annotate**, for annotating regions, frequencies, cadd scores etc.
-- **genmod build_annotation**, for building new annotation sets from different sources
 - **genmod models**, For annotating patterns of inheritance
-- **genmod sort**, To sort the variants of a vcf file
+- **genmod sort**, To sort the variants of a vcf file, either on rank score or position
+- **genmod score**, Score the variants of a vcf based on their annotation
 
 ##Installation:##
 
-**GENMOD** works with Python 2.7 and Python v3.2 and above
+**GENMOD** works with Python 2.7 and Python 3.2 and above
 
     pip install genmod
 
@@ -28,15 +29,115 @@ or
 	python setup.py install
 
 
+## USAGE: ##
 
-# WARNING: Deprecated after version 2.6. This will be updated soon!! Please see command line help for now #
+*This is an overview, for more in depth documentation see github wiki.*
 
-##USAGE:##
+### Example: ###
 
-###genmod annotate###
+The following command should work when installed successfully. The files are distributed with the package.
+
+```bash
+$ cat examples/test_vcf.vcf
+##fileformat=VCFv4.1
+##INFO=<ID=MQ,Number=1,Type=Float,Description="RMS Mapping Quality">
+##contig=<ID=1,length=249250621,assembly=b37>
+##reference=file:///humgen/gsa-hpprojects/GATK/bundle/current/b37/human_g1k_v37.fasta
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	father	mother	proband	father_2	mother_2	proband_2
+1	879537	.	T	C	100	PASS	MQ=1	GT:AD:GQ	0/1:10,10:60	0/1:10,10:60	1/1:10,10:60	0/0:10,10:60	0/1:10,10:60	1/1:10,10:60
+1	879541	.	G	A	100	PASS	MQ=1	GT:AD:GQ	./.	0/1:10,10:60	1/1:10,10:60	./.	0/1:10,10:60	0/1:10,10:60
+1	879595	.	C	T	100	PASS	MQ=1	GT:AD:GQ	0/1:10,10:60	0/0:10,10:60	1/1:10,10:60	0/1:10,10:60	0/0:10,10:60	0/1:10,10:60
+1	879676	.	G	A	100	PASS	MQ=1	GT:AD:GQ	0/1:10,10:60	1/1:10,10:60	1/1:10,10:60	0/1:10,10:60	0/1:10,10:60	0/1:10,10:60
+1	879911	.	G	A	100	PASS	MQ=1	GT:AD:GQ	0/1:10,10:60	0/0:10,10:60	0/1:10,10:60	0/1:10,10:60	0/0:10,10:60	0/1:10,10:60
+1	880012	.	A	G	100	PASS	MQ=1	GT:AD:GQ	0/0:10,10:60	0/1:10,10:60	0/1:10,10:60	0/0:10,10:60	0/1:10,10:60	0/1:10,10:60
+1	880086	.	T	C	100	PASS	MQ=1	GT:AD:GQ	0/0:10,10:60	0/0:10,10:60	0/1:10,10:60	0/0:10,10:60	0/0:10,10:60	0/1:10,10:60
+1	880199	.	G	A	100	PASS	MQ=1	GT:AD:GQ	0/0:10,10:60	0/0:10,10:60	0/1:10,10:60	0/0:10,10:60	0/0:10,10:60	0/1:10,10:60
+1	880217	.	T	G	100	PASS	MQ=1	GT:AD:GQ	0/0:10,10:60	0/0:10,10:60	0/1:10,10:60	0/0:10,10:60	0/0:10,10:60	0/1:10,10:60
+10	76154051	.	A	G	100	PASS	MQ=1	GT:AD:GQ	0/0:10,10:60	0/1:10,10:60	0/1:10,10:60	0/0:10,10:60	0/1:10,10:60	0/1:10,10:60
+10	76154073	.	T	G	100	PASS	MQ=1	GT:AD:GQ	0/0:10,10:60	0/0:10,10:60	0/1:10,10:60	0/0:10,10:60	0/0:10,10:60	0/1:10,10:60
+10	76154074	.	C	G	100	PASS	MQ=1	GT:AD:GQ	./.	0/1:10,10:60	0/1:10,10:60	0/1:10,10:60	0/1:10,10:60	0/1:10,10:60
+10	76154076	.	G	C	100	PASS	MQ=1	GT:AD:GQ	./.	0/0:10,10:60	0/1:10,10:60	./.	0/0:10,10:60	0/1:10,10:60
+X	302253	.	CCCTCCTGCCCCT	C	100	PASS	MQ=1	GT:AD:GQ	0/0:10,10:60	0/1:10,10:60	1/1:10,10:60	0/0:10,10:60	1/1:10,10:60	1/1:10,10:60
+MT	302253	.	CCCTCCTGCCCCT	C	100	PASS	MQ=1	GT:AD:GQ	0/0:10,10:60	0/1:10,10:60	1/1:10,10:60	0/0:10,10:60	1/1:10,10:60	1/1:10,10:60
+
+$ cat examples/test_vcf.vcf |\
+>genmod annotate - --annotate_regions |\ 
+>genmod models - --family_file examples/recessive_trio.ped > test_vcf_models_annotated.vcf
+
+$ cat test_vcf_models_annotated.vcf
+##fileformat=VCFv4.1
+##INFO=<ID=MQ,Number=1,Type=Float,Description="RMS Mapping Quality">
+##INFO=<ID=Annotation,Number=.,Type=String,Description="Annotates what feature(s) this variant belongs to.">
+##INFO=<ID=Exonic,Number=0,Type=Flag,Description="Indicates if the variant is exonic.">
+##INFO=<ID=GeneticModels,Number=.,Type=String,Description="':'-separated list of genetic models for this variant.">
+##INFO=<ID=ModelScore,Number=.,Type=String,Description="PHRED score for genotype models.">
+##INFO=<ID=Compounds,Number=.,Type=String,Description="List of compound pairs for this variant.The list is splitted on ',' family id is separated with compoundswith ':'. Compounds are separated with '|'.">
+##contig=<ID=1,length=249250621,assembly=b37>
+##reference=file:///humgen/gsa-hpprojects/GATK/bundle/current/b37/human_g1k_v37.fasta
+##Software=<ID=genmod,Version=3.0.1,Date="2015-09-22 08:40",CommandLineOptions="processes=4 keyword=Annotation family_type=ped family_file=<open file 'examples/recessive_trio.ped', mode 'r' at 0x102d3a780> variant_file=<_io.TextIOWrapper name='<stdin>' encoding='utf-8'> logger=<logging.Logger object at 0x102d64250>">
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	father	mother	proband	father_2	mother_2	proband_2
+1	879537	.	T	C	100	PASS	MQ=1;Exonic;Annotation=SAMD11;GeneticModels=1:AR_hom;ModelScore=1:55.0	GT:AD:GQ	0/1:10,10:60	0/1:10,10:60	1/1:10,10:60	0/0:10,10:60	0/1:10,10:60	1/1:10,10:60
+1	879541	.	G	A	100	PASS	MQ=1;Exonic;Annotation=SAMD11;GeneticModels=1:AR_hom_dn|AR_hom;ModelScore=1:57.0	GT:AD:GQ	./.	0/1:10,10:60	1/1:10,10:60	./.	0/1:10,10:60	0/1:10,10:60
+1	879595	.	C	T	100	PASS	MQ=1;Exonic;Annotation=NOC2L,SAMD11;GeneticModels=1:AR_hom_dn;ModelScore=1:55.0	GT:AD:GQ	0/1:10,10:60	0/0:10,10:60	1/1:10,10:60	0/1:10,10:60	0/0:10,10:60	0/1:10,10:60
+1	879676	.	G	A	100	PASS	MQ=1;Exonic;Annotation=NOC2L,SAMD11	GT:AD:GQ	0/1:10,10:60	1/1:10,10:60	1/1:10,10:60	0/1:10,10:60	0/1:10,10:60	0/1:10,10:60
+1	879911	.	G	A	100	PASS	MQ=1;Exonic;Annotation=NOC2L,SAMD11;Compounds=1:1_880086_T_C|1_880012_A_G;GeneticModels=1:AR_comp|AR_comp_dn;ModelScore=1:55.0	GT:AD:GQ	0/1:10,10:60	0/0:10,10:60	0/1:10,10:60	0/1:10,10:60	0/0:10,10:60	0/1:10,10:60
+1	880012	.	A	G	100	PASS	MQ=1;Exonic;Annotation=NOC2L;Compounds=1:1_879911_G_A|1_880086_T_C;GeneticModels=1:AR_comp|AR_comp_dn;ModelScore=1:55.0	GT:AD:GQ	0/0:10,10:60	0/1:10,10:60	0/1:10,10:60	0/0:10,10:60	0/1:10,10:60	0/1:10,10:60
+1	880086	.	T	C	100	PASS	MQ=1;Exonic;Annotation=NOC2L;Compounds=1:1_879911_G_A|1_880012_A_G;GeneticModels=1:AD_dn|AR_comp_dn;ModelScore=1:55.0	GT:AD:GQ	0/0:10,10:60	0/0:10,10:60	0/1:10,10:60	0/0:10,10:60	0/0:10,10:60	0/1:10,10:60
+1	880199	.	G	A	100	PASS	MQ=1;Annotation=NOC2L;GeneticModels=1:AD_dn;ModelScore=1:55.0	GT:AD:GQ	0/0:10,10:60	0/0:10,10:60	0/1:10,10:60	0/0:10,10:60	0/0:10,10:60	0/1:10,10:60
+1	880217	.	T	G	100	PASS	MQ=1;Annotation=NOC2L;GeneticModels=1:AD_dn;ModelScore=1:55.0	GT:AD:GQ	0/0:10,10:60	0/0:10,10:60	0/1:10,10:60	0/0:10,10:60	0/0:10,10:60	0/1:10,10:60
+10	76154051	.	A	G	100	PASS	MQ=1;Exonic;Annotation=ADK;Compounds=1:10_76154073_T_G;GeneticModels=1:AR_comp_dn;ModelScore=1:55.0	GT:AD:GQ	0/0:10,10:60	0/1:10,10:60	0/1:10,10:60	0/0:10,10:60	0/1:10,10:60	0/1:10,10:60
+10	76154073	.	T	G	100	PASS	MQ=1;Exonic;Annotation=ADK;Compounds=1:10_76154051_A_G;GeneticModels=1:AD_dn|AR_comp_dn;ModelScore=1:55.0	GT:AD:GQ	0/0:10,10:60	0/0:10,10:60	0/1:10,10:60	0/0:10,10:60	0/0:10,10:60	0/1:10,10:60
+10	76154074	.	C	G	100	PASS	MQ=1;Annotation=ADK	GT:AD:GQ	./.	0/1:10,10:60	0/1:10,10:60	0/1:10,10:60	0/1:10,10:60	0/1:10,10:60
+10	76154076	.	G	C	100	PASS	MQ=1;Annotation=ADK;GeneticModels=1:AD_dn|AD;ModelScore=1:57.0	GT:AD:GQ	./.	0/0:10,10:60	0/1:10,10:60	./.	0/0:10,10:60	0/1:10,10:60
+X	302253	.	CCCTCCTGCCCCT	C	100	PASS	MQ=1;Annotation=PPP2R3B;GeneticModels=1:XD|XR;ModelScore=1:55.0	GT:AD:GQ	0/0:10,10:60	0/1:10,10:60	1/1:10,10:60	0/0:10,10:60	1/1:10,10:60	1/1:10,10:60
+MT	302253	.	CCCTCCTGCCCCT	C	100	PASS	MQ=1;GeneticModels=1:AR_hom_dn;ModelScore=1:55.0	GT:AD:GQ	0/0:10,10:60	0/1:10,10:60	1/1:10,10:60	0/0:10,10:60	1/1:10,10:60	1/1:10,10:60
+```
+
+The basic idea with genmod is to make fast and easy analysis of vcf variants 
+for rare disease.
+It can still be interesting to use in other cases, such as annotating what 
+genetic regions the variants in a bacteria belongs to.
+**genmod** can annotate accurate patterns of inheritance in arbitrary sized families.
+The genetic models checked are the basic mendelian ones, these are:
+
+* Autsomal Recessive, denoted 'AR_hom'
+* Autsomal Recessive denovo, denoted 'AR\_hom\_dn'
+* Autsomal Dominant, 'AD'
+* Autsomal Dominant denovo, 'AD_dn'
+* Autosomal Compound Heterozygote, 'AR_comp'
+* X-linked dominant, 'XD'
+* X-linked dominant de novo, 'XD_dn'
+* X-linked Recessive, 'XR'
+* X-linked Recessive de novo, 'XR_dn'
+
+**genmod** is made for working on any type of annotated vcf.
+To get relevant Autosomal Compound Heterozygotes we need to know what genetic regions that the variants belong to.
+We can use annotations from the [Variant Effect Predictor](http://www.ensembl.org/info/docs/tools/vep/index.html) 
+or let **genmod** do the annotation.
+
+**genmod** comes with a prebuilt annotation data base that is made from the latest refSeq dataset. 
+We can also build new annotation sets with **genmod build**, please see wiki for mor info.
+
+(There are files for testing the following commands in genmod/examples)
+
+To annotate the variants with regions use
+
+```bash
+$genmod annotate <vcf_file> -r/--annotate_regions (-a/--annotation_dir)
+
+```
+
+Now the variants are ready to get their models annotated:
+
+```bash
+$genmod models <vcf_file> -f/--family_file <family.ped>
+
+```
+
+<!-- ###genmod annotate###
 
 
-    genmod annotate variant_file.vcf --family_file ped_file
+    genmod annotate variant_file.vcf
 
 This will print a new vcf to standard out with all variants annotated according to the statements below.
 All individuals described in the [ped](http://pngu.mgh.harvard.edu/~purcell/plink/data.shtml#ped) file must be present in the vcf file
@@ -103,9 +204,9 @@ All annotations will be present only if they have a value.
 
 - **GENMOD** can annotate the variants with 1000 genome frequencies. Use the flag `-kg/--thousand_g path/to/bgzipped/thousand_genomes.vcf.gz`
 - **GENMOD** also supports annotation of frequencies from the [ExAC](http://exac.broadinstitute.org/). Use the flag `--exac path/to/bgzipped/ExAC_file.vcf.gz`
-- Annotate with [CADD scores](http://cadd.gs.washington.edu/), use `-cadd/--cadd_file path/to/huge_cadd_file.tsv.gz`. 
-- There several cadd files with different variant sets to cover as much as possible. 
-	- One with all 1000 genomes positions (this one include some indels), if annotation with this one use `-c1kg/--cadd_1000_g path/to/CADD_1000g.txt.gz`. 
+- Annotate with [CADD scores](http://cadd.gs.washington.edu/), use `-cadd/--cadd_file path/to/huge_cadd_file.tsv.gz`.
+- There several cadd files with different variant sets to cover as much as possible.
+	- One with all 1000 genomes positions (this one include some indels), if annotation with this one use `-c1kg/--cadd_1000_g path/to/CADD_1000g.txt.gz`.
 	- One with all variants from the ESP6500 dataset. If annotation with this one use `--cadd_esp path/to/CADD_ESP.tsv.gz`.
 	- One with all variants from the ExAC dataset. If annotation with this one use `--cadd_exac path/to/CADD_ExAC.tsv.gz`.
 	- One with 12.3M InDels from the CADD resources. If annotation with this one use `--cadd_indels path/to/CADD_InDels.txt.gz`.
@@ -139,7 +240,7 @@ Run with:
 
 	genmod analyze path/to/file.vcf
 
-For more information do 
+For more information do
 
 	genmod analyze --help
 
@@ -203,7 +304,7 @@ For this model individuals can be carriers so healthy individuals can be heteroz
 
 ### Autosomal Compound Heterozygote ###
 
-This model includes pairs of exonic variants that are present within the same gene. 
+This model includes pairs of exonic variants that are present within the same gene.
 **The default behaviour of GENMOD is to look for compounds only in exonic/canonical splice sites**.
 The reason for this is that since some genes have huge intronic regions the data will be drowned in compound pairs.
 If the user wants all variants in genes checked use the flag -gene/--whole_gene.
@@ -212,8 +313,8 @@ If the user wants all variants in genes checked use the flag -gene/--whole_gene.
 	* Affected individuals have to be het. for both variants
 	* Healthy individuals can be het. for one of the variants but cannot have both variants
 	* Variant is considered _de novo_ if only one or no variant is found in the parents
-  	
-  
+
+
 2. Phased data:
 	* All affected individuals have to be het. for both variants **and** the variants has to be on two different alleles
 	* Healthy individuals can be heterozygous for one but cannot have both variants
@@ -222,7 +323,7 @@ If the user wants all variants in genes checked use the flag -gene/--whole_gene.
 
 ### X-Linked Dominant###
 
-These traits are inherited on the x-chromosome, of which men have one allele and women have two. 
+These traits are inherited on the x-chromosome, of which men have one allele and women have two.
 
 * Variant has to be on chromosome X
 * Affected individuals have to be het. or hom. alt.
@@ -230,7 +331,7 @@ These traits are inherited on the x-chromosome, of which men have one allele and
 * Healthy females can carry the variant (because of X inactivation)
 * If sex is male the variant is considered _de novo_ if mother is genotyped and does not carry the variant
 * If sex is female variant is considered _de novo_ if none of the parents carry the variant
-    
+
 
 ### X Linked Recessive ###
 
@@ -241,4 +342,4 @@ These traits are inherited on the x-chromosome, of which men have one allele and
 * Healthy males cannot carry the variant
 * If sex is male the variant is considered _de novo_ if mother is genotyped and does not carry the variant
 * If sex is female variant is considered _de novo_ if not both parents carry the variant
-
+ -->

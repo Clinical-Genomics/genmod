@@ -62,51 +62,20 @@ class VariantAnnotator(Process):
 
         ######### Annotation files #########
         # Cadd files #
-        self.cadd_file = kwargs.get('cadd_file', None)
-        self.logger.debug("Cadd file {0}".format(self.cadd_file))
-        self.cadd_1000g = kwargs.get('cadd_1000g', None)
-        self.logger.debug("Cadd 1000G file {0}".format(self.cadd_1000g))
-        self.cadd_exac = kwargs.get('cadd_exac', None)
-        self.logger.debug("Cadd exac file {0}".format(self.cadd_exac))
-        self.cadd_ESP = kwargs.get('cadd_ESP', None)
-        self.logger.debug("Cadd ESP file {0}".format(self.cadd_ESP))
-        self.cadd_InDels = kwargs.get('cadd_InDels', None)
-        self.logger.debug("Cadd InDels file {0}".format(self.cadd_InDels))
+        self.cadd_handles = []
+        for cadd_path in kwargs.get('cadd_files', []):
+            self.logger.debug("Opening cadd file {0} with tabix open".format(
+                cadd_path
+            ))
+            self.cadd_handles.append(tabix.open(cadd_path))
+            self.logger.debug("Cadd file opened")
+            
         # Frequency files #
         self.thousand_g = kwargs.get('thousand_g', None)
         self.logger.debug("1000G frequency file {0}".format(self.thousand_g))
         self.exac = kwargs.get('exac', None)
         self.logger.debug("Exac frequency file {0}".format(self.thousand_g))
         # self.dbNSFP = kwargs.get('dbNSFP', None)
-        self.any_cadd_info = False
-
-        # Setup file handles to the annotation files
-        self.cadd_handles = []
-        if self.cadd_file:
-            self.logger.debug("Opening cadd file with tabix open")
-            self.cadd_handles.append(tabix.open(self.cadd_file))
-            self.logger.debug("Cadd file opened")
-            self.any_cadd_info = True
-        if self.cadd_1000g:
-            self.logger.debug("Opening cadd 1000G file with tabix open")
-            self.cadd_handles.append(tabix.open(self.cadd_1000g))
-            self.logger.debug("Cadd 1000G file opened")
-            self.any_cadd_info = True
-        if self.cadd_exac:
-            self.logger.debug("Opening cadd exac file with tabix open")
-            self.cadd_handles.append(tabix.open(self.cadd_exac))
-            self.logger.debug("Cadd exac file opened")
-            self.any_cadd_info = True
-        if self.cadd_ESP:
-            self.logger.debug("Opening cadd ESP file with tabix open")
-            self.cadd_handles.append(tabix.open(self.cadd_ESP))
-            self.logger.debug("Cadd ESP file opened")
-            self.any_cadd_info = True
-        if self.cadd_InDels:
-            self.logger.debug("Opening cadd InDels file with tabix open")
-            self.cadd_handles.append(tabix.open(self.cadd_InDels))
-            self.logger.debug("Cadd InDels file opened")
-            self.any_cadd_info = True
         
         if self.thousand_g:
             self.logger.debug("Opening 1000G frequency file with tabix open")
@@ -118,7 +87,6 @@ class VariantAnnotator(Process):
             self.logger.debug("ExAC frequency file opened")
         # if self.dbNSFP:
         #     self.dbNSFP = tabix.open(self.exac)
-        self.logger.debug("Setting any cadd info to {0}".format(self.any_cadd_info))
 
     def run(self):
         """Run the consuming"""
@@ -203,7 +171,7 @@ class VariantAnnotator(Process):
                         variant_dict = variant_dict,
                         annotation = frequency
                     )
-            if self.any_cadd_info:
+            if self.cadd_handles:
                 
                 cadd_phred = None
                 cadd_raw = None
@@ -218,21 +186,20 @@ class VariantAnnotator(Process):
                     if cadd_scores['cadd_phred']:
                         cadd_phred = cadd_scores['cadd_phred']
                         cadd_raw = cadd_scores['cadd_raw']
+
+                        variant_dict = add_vcf_info(
+                            keyword = "CADD",
+                            variant_dict = variant_dict,
+                            annotation = cadd_phred
+                        )
+
+                        if self.cadd_raw and cadd_raw:
+                            variant_dict = add_vcf_info(
+                                keyword = "CADD_raw",
+                                variant_dict = variant_dict,
+                                annotation = cadd_raw
+                            )
                         break
-                    
-                if cadd_phred:
-                    variant_dict = add_vcf_info(
-                        keyword = "CADD",
-                        variant_dict = variant_dict,
-                        annotation = cadd_phred
-                    )
-                
-                if self.cadd_raw and cadd_raw:
-                    variant_dict = add_vcf_info(
-                        keyword = "CADD_raw",
-                        variant_dict = variant_dict,
-                        annotation = cadd_raw
-                    )
                     
 
             self.results_queue.put(variant_dict)

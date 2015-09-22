@@ -19,12 +19,12 @@ import click
 import inspect
 import logging
 import shutil
+import itertools
 
 from multiprocessing import JoinableQueue, Manager, cpu_count
 from codecs import open
 from datetime import datetime
 from tempfile import mkdtemp, TemporaryFile, NamedTemporaryFile
-
 
 from ped_parser import FamilyParser
 
@@ -135,7 +135,8 @@ keyword, phased, strict, silent, processes, whole_gene, outfile):
         else:
             break
     
-    variant_file.seek(0)
+    #Add the first variant to the iterator
+    variant_file = itertools.chain([line], variant_file)
     
     if vep:
         if not "CSQ" in head.info_dict:
@@ -242,11 +243,6 @@ keyword, phased, strict, silent, processes, whole_gene, outfile):
     logger.info('Number of CPU:s {}'.format(cpu_count()))
     logger.info('Number of model checkers: {}'.format(num_model_checkers))
 
-    # We use a temp file to store the processed variants
-    logger.debug("Build a tempfile for printing the variants")
-    temp_file = NamedTemporaryFile(delete=False)
-    temp_file.close()
-
 
     # These are the workers that do the heavy part of the analysis
     logger.info('Seting up the workers')
@@ -270,12 +266,27 @@ keyword, phased, strict, silent, processes, whole_gene, outfile):
 
     # This process prints the variants to temporary files
     logger.info('Seting up the variant printer')
-    variant_printer = VariantPrinter(
-            task_queue=results,
-            head=head,
-            mode='chromosome',
-            outfile = temp_file.name
-    )
+    if len(model_checkers) == 1:
+        print_headers(head=head, outfile=outfile, silent=silent)
+        variant_printer = VariantPrinter(
+                task_queue=results,
+                head=head,
+                mode='normal',
+                outfile = outfile
+        )
+    else:
+        # We use a temp file to store the processed variants
+        logger.debug("Build a tempfile for printing the variants")
+        temp_file = NamedTemporaryFile(delete=False)
+        temp_file.close()
+        
+        variant_printer = VariantPrinter(
+                task_queue=results,
+                head=head,
+                mode='chromosome',
+                outfile = temp_file.name
+        )
+    
     logger.info('Starting the variant printer process')
     variant_printer.start()
 
@@ -299,23 +310,23 @@ keyword, phased, strict, silent, processes, whole_gene, outfile):
     results.put(None)
     variant_printer.join()
     
-    
-    sort_variants(infile=temp_file.name, mode='chromosome')
+    if len(model_checkers) > 1:
+        sort_variants(infile=temp_file.name, mode='chromosome')
 
-    print_headers(head=head, outfile=outfile, silent=silent)
+        print_headers(head=head, outfile=outfile, silent=silent)
 
-    with open(temp_file.name, 'r', encoding='utf-8') as f:
-        for line in f:
-            print_variant(
-                variant_line=line,
-                outfile=outfile,
-                mode='modified',
-                silent=silent
-            )
+        with open(temp_file.name, 'r', encoding='utf-8') as f:
+            for line in f:
+                print_variant(
+                    variant_line=line,
+                    outfile=outfile,
+                    mode='modified',
+                    silent=silent
+                )
     
-    logger.debug("Removing temp file")
-    os.remove(temp_file.name)
-    logger.debug("Temp file removed")
+        logger.debug("Removing temp file")
+        os.remove(temp_file.name)
+        logger.debug("Temp file removed")
 
     logger.info('Time for whole analyis: {0}'.format(
         str(datetime.now() - start_time_analysis)))

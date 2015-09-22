@@ -39,7 +39,8 @@ def print_variant_dict(variant, header_line, outfile=None, silent=False):
         if not silent:
             print('\t'.join(print_line))
     
-def print_variant(variant_line, outfile=None, mode='vcf', silent=False):
+def print_variant(variant_line=None, variant_dict=None, header_line=None, 
+priority=None, outfile=None, mode='vcf', silent=False):
     """
     Print a variant line.
     
@@ -52,24 +53,37 @@ def print_variant(variant_line, outfile=None, mode='vcf', silent=False):
     that one.
     
     Args:
-        variants_file (str): A string with the path to a file
+        variant_line (str): A vcf formatted variant line
+        variant_dict (dict): A variant dictionary
+        header_line (list): A list with haeder columns
+        priority (str): the priority for this variant
         outfile (FileHandle): An opened file_handle
         mode (str): 'vcf' or 'modified'
         silent (bool): Bool. If nothing should be printed.
     
     """
     
-    if not variant_line.startswith('#'):
-        splitted_line = variant_line.rstrip().split('\t')
-        if mode == 'modified':
-            splitted_line = splitted_line[1:]
-            
-        if outfile:
-            outfile.write('\t'.join(splitted_line)+'\n')
+    if variant_dict:
+        if not header_line:
+            raise IOError("Print line needs a header_line when printing variant dict.")
         
-        else:
-            if not silent:
-                print('\t'.join(splitted_line))
+        print_line = [variant_dict.get(entry, '.') for entry in header_line]
+    else:
+        
+        print_line = variant_line.rstrip().split('\t')
+        
+    if mode == 'modified':
+        print_line = print_line[1:]
+    
+    elif priority:
+        print_line = [str(priority)] + print_line
+         
+    if outfile:
+        outfile.write('\t'.join(print_line)+'\n')
+    
+    else:
+        if not silent:
+            print('\t'.join(print_line))
     return
 
 def print_variant_for_sorting(variant_line, priority, outfile):

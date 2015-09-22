@@ -13,7 +13,7 @@ def get_variant(chrom='1', pos='1', ref='A', alt='G', annotation=["ADK"], exonic
         "POS":pos,
         "INFO":"Annotation={0}".format(annotation),
         'info_dict':{
-            "Annotation":[region for region in annotation],
+            "Annotation":','.join(annotation),
         },
         "variant_id": variant_id
     }
@@ -51,7 +51,7 @@ def test_empty():
         'ALT': 'A'
     }
     
-    assert get_annotation(variant, {}) == set()
+    assert get_annotation(variant) == set()
 
 def test_simple():
     """Test if get_annotation behave as suspected"""
