@@ -97,7 +97,6 @@ class ScoreFunction(object):
                 score (number): The score for this value
         """
         score = 0
-        print('du',value, type(value))
         
         if not value:
             self.logger.debug("No value found set score to not reported score")
@@ -128,8 +127,6 @@ class ScoreFunction(object):
                 score = value
             
             else:
-                print('hej',value, type(value))
-                print(self._value_dict)
                 if self._value_dict:
                     score = float(self._value_dict.get(str(value), 0))
                     self.logger.debug("Got score from value dict")
