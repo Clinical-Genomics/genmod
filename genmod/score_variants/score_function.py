@@ -63,7 +63,7 @@ class ScoreFunction(object):
         self.logger.debug("Adding string {0} with score {1} to string_dict".format(
             key, str(score))
         )
-        self._string_dict[key] = score
+        self._string_dict[key.lower()] = score
         return
 
     def add_value(self, value, score):
@@ -80,45 +80,62 @@ class ScoreFunction(object):
         self._value_dict[str(value)] = score
         return
         
-        
-        
     def get_score(self, value):
         """Take a value and return a score
             
-            If value is None we return the not_reported score
-            If value is not None but does not have a rule we return 0
-            If Score function is a string comparison we match the string
-            If value is a number (float or int):
-                if operator is equal we return the number
-                else return data of interval
+           - If value is None we return the not_reported score
+           - If value is NOT None but does not have a rule we return 0
+           - If Score function is a string comparison we match the string
+           - If value is a number (float or int):
+                - if operator is equal we return the number
+                - else return data of interval
+            
+            Args:
+                value (str): The value that we want to find the score for
+            
+            Return:
+                score (number): The score for this value
         """
         score = 0
+        
         if not value:
+            self.logger.debug("No value found set score to not reported score")
             score = self._not_reported_score
         
+        # Here we know there is a value 
         elif self.match_type == 'flag':
-            return self._reported_score
+            self.logger.debug("Flag found set score reported score")
+            score = self._reported_score
         
         elif self.match_type in ['string', 'char']:
-            score = self._string_dict.get(value, 0)
+            score = self._string_dict.get(value.lower(), 0)
         
+        # We know that match type must be any of integer or float
         else:
-            try:
-                value = float(value)
-            except ValueError:
-                raise ValueError("Value has to be a number")
-
+            if self.match_type == 'float':
+                try:
+                    value = float(value)
+                except ValueError:
+                    raise ValueError("Value has to be a number")
+            else:
+                try:
+                    value = int(value)
+                except ValueError:
+                    raise ValueError("Value has to be a number")
+            
             if self._equal:
                 score = value
             
-            elif self.match_type in ['integer', 'float']:
+            else:
                 if self._value_dict:
                     score = float(self._value_dict.get(str(value), 0))
+                    self.logger.debug("Got score from value dict")
                 else:
                     #There should only be one interval matching
                     ##TODO Check if intervals overlap
                     for interval in self._interval_tree[value]:
                         score = interval.data
+                        self.logger.debug("Got score from interval tree")
         
         return score
     
