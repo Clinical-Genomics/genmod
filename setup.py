@@ -24,14 +24,13 @@ setup(name='genmod',
     license = 'MIT License',
     install_requires=[
         'ped_parser >= 1.6.2',
-        'vcf_parser >= 1.5.2',
         'pytabix',
         'pytest',
         'interval_tree >= 0.3.2',
         'click',
         'configobj',
         'intervaltree',
-        'extract_vcf'
+        'extract_vcf >= 0.4.2'
     ],
     packages=find_packages(exclude=('tests*', 'docs', 'examples', 'configs')),
     

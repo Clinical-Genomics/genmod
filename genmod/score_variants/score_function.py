@@ -63,7 +63,7 @@ class ScoreFunction(object):
         self.logger.debug("Adding string {0} with score {1} to string_dict".format(
             key, str(score))
         )
-        self._string_dict[key] = score
+        self._string_dict[key.lower()] = score
         return
 
     def add_value(self, value, score):
@@ -80,17 +80,21 @@ class ScoreFunction(object):
         self._value_dict[str(value)] = score
         return
         
-        
-        
     def get_score(self, value):
         """Take a value and return a score
             
-            If value is None we return the not_reported score
-            If value is not None but does not have a rule we return 0
-            If Score function is a string comparison we match the string
-            If value is a number (float or int):
-                if operator is equal we return the number
-                else return data of interval
+           - If value is None we return the not_reported score
+           - If value is NOT None but does not have a rule we return 0
+           - If Score function is a string comparison we match the string
+           - If value is a number (float or int):
+                - if operator is equal we return the number
+                - else return data of interval
+            
+            Args:
+                value (str): The value that we want to find the score for
+            
+            Return:
+                score (number): The score for this value
         """
         score = 0
         if not value:
@@ -100,7 +104,7 @@ class ScoreFunction(object):
             return self._reported_score
         
         elif self.match_type in ['string', 'char']:
-            score = self._string_dict.get(value, 0)
+            score = self._string_dict.get(value.lower(), 0)
         
         else:
             try:
