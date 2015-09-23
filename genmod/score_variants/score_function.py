@@ -97,32 +97,48 @@ class ScoreFunction(object):
                 score (number): The score for this value
         """
         score = 0
+        print('du',value, type(value))
+        
         if not value:
+            self.logger.debug("No value found set score to not reported score")
             score = self._not_reported_score
         
+        # Here we know there is a value 
         elif self.match_type == 'flag':
-            return self._reported_score
+            self.logger.debug("Flag found set score reported score")
+            score = self._reported_score
         
         elif self.match_type in ['string', 'char']:
             score = self._string_dict.get(value.lower(), 0)
         
+        # We know that match type must be any of integer or float
         else:
-            try:
-                value = float(value)
-            except ValueError:
-                raise ValueError("Value has to be a number")
-
+            if self.match_type == 'float':
+                try:
+                    value = float(value)
+                except ValueError:
+                    raise ValueError("Value has to be a number")
+            else:
+                try:
+                    value = int(value)
+                except ValueError:
+                    raise ValueError("Value has to be a number")
+            
             if self._equal:
                 score = value
             
-            elif self.match_type in ['integer', 'float']:
+            else:
+                print('hej',value, type(value))
+                print(self._value_dict)
                 if self._value_dict:
                     score = float(self._value_dict.get(str(value), 0))
+                    self.logger.debug("Got score from value dict")
                 else:
                     #There should only be one interval matching
                     ##TODO Check if intervals overlap
                     for interval in self._interval_tree[value]:
                         score = interval.data
+                        self.logger.debug("Got score from interval tree")
         
         return score
     
