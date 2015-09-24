@@ -39,9 +39,9 @@ from extract_vcf import Plugin
                 help="Specify the info annotation to search for."\
                 " Default 1000GAF"
 )
-@click.option('-t', '--treshold',
+@click.option('-t', '--threshold',
                     default=0.05, 
-                    help="""Treshold for filter variants. Default 0.05"""
+                    help="""Threshold for filter variants. Default 0.05"""
 )
 @click.option('-d', '--discard',
                     is_flag=True, 
@@ -50,14 +50,18 @@ from extract_vcf import Plugin
 )
 @click.option('-g', '--greater',
                     is_flag=True, 
-                    help="If greater than treshold should be used instead of"\
-                    " less thatn treshold."
+                    help="If greater than threshold should be used instead of"\
+                    " less thatn threshold."
+)
+@click.option('-s', '--silent',
+                is_flag=True,
+                help='Do not print the variants.'
 )
 @click.option('-o', '--outfile', 
                     type=click.File('w'),
                     help="Specify the path to a file where results should be stored."
 )
-def filter(variant_file, annotation, treshold, discard, greater, outfile):
+def filter(variant_file, annotation, threshold, discard, greater, silent, outfile):
     """
     Filter vcf variants.
     
@@ -109,7 +113,7 @@ def filter(variant_file, annotation, treshold, discard, greater, outfile):
     logger.debug("Plugin=(field={0},info_key={1},separators={2},record_rule={3}"\
     ",data_type={4})".format('INFO', annotation, "','", 'min', 'float'))
     
-    print_headers(head)
+    print_headers(head=head, outfile=outfile, silent=silent)
     
     nr_of_variants = 0
     nr_of_passed_variants = 0
@@ -120,10 +124,10 @@ def filter(variant_file, annotation, treshold, discard, greater, outfile):
         logger.debug("Found value {0}".format(value))
         if value:
             if greater:
-                if value > treshold:
+                if value > threshold:
                     keep_variant = True
             else:
-                if value < treshold:
+                if value < threshold:
                     keep_variant = True
         else:
             if not discard:
@@ -132,7 +136,12 @@ def filter(variant_file, annotation, treshold, discard, greater, outfile):
         if keep_variant:
             logger.debug("Keeping variant")
             nr_of_passed_variants += 1
-            print_variant(variant_line=variant)
+            print_variant(
+                variant_line=variant, 
+                outfile=outfile, 
+                mode='vcf', 
+                silent=silent
+            )
         else:
             logger.debug("Discarding variant")
             
