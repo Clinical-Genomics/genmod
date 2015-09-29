@@ -63,8 +63,8 @@ def compound(variant_file, silent, outfile, vep, processes):
     start_time_analysis = datetime.now()
     logger.info("Initializing a Header Parser")
     head = HeaderParser()
-
-
+    
+    line = None
     for line in variant_file:
         line = line.rstrip()
         if line.startswith('#'):
@@ -77,19 +77,11 @@ def compound(variant_file, silent, outfile, vep, processes):
 
     logger.info("Headers parsed")
     
-    variant_file = itertools.chain([line], variant_file)
+    if line:
+        variant_file = itertools.chain([line], variant_file)
     
     header_line = head.header
     individuals = head.individuals
-    
-    # add_metadata(
-    #     head,
-    #     'info',
-    #     'RankScore',
-    #     annotation_number='.',
-    #     entry_type='String',
-    #     description="The corrected rank score for this variant."
-    # )
     
     ###################################################################
     ### The task queue is where all jobs(in this case batches that  ###
@@ -106,11 +98,6 @@ def compound(variant_file, silent, outfile, vep, processes):
     #Adapt the number of processes to the machine that run the analysis
     logger.info('Number of CPU:s {}'.format(cpu_count()))
     logger.info('Number of model checkers: {}'.format(num_scorers))
-
-    # We use a temp file to store the processed variants
-    logger.debug("Build a tempfile for printing the variants")
-    temp_file = NamedTemporaryFile(delete=False)
-    temp_file.close()
 
     # These are the workers that do the heavy part of the analysis
     logger.info('Seting up the workers')
@@ -130,12 +117,28 @@ def compound(variant_file, silent, outfile, vep, processes):
     
     # This process prints the variants to temporary files
     logger.info('Seting up the variant printer')
-    variant_printer = VariantPrinter(
-            task_queue=results,
-            head=head,
-            mode='chromosome',
-            outfile = temp_file.name
-    )
+    if len(compound_scorers) == 1:
+        print_headers(head=head, outfile=outfile, silent=silent)
+        variant_printer = VariantPrinter(
+                task_queue=results,
+                head=head,
+                mode='chromosome',
+                outfile = outfile
+        )
+    
+    else:
+        # We use a temp file to store the processed variants
+        logger.debug("Build a tempfile for printing the variants")
+        temp_file = NamedTemporaryFile(delete=False)
+        temp_file.close()
+        
+        variant_printer = VariantPrinter(
+                task_queue=results,
+                head=head,
+                mode='chromosome',
+                outfile = temp_file.name
+        )
+    
     logger.info('Starting the variant printer process')
     variant_printer.start()
 
@@ -160,23 +163,23 @@ def compound(variant_file, silent, outfile, vep, processes):
     results.put(None)
     variant_printer.join()
     
-    
-    sort_variants(infile=temp_file.name, mode='chromosome')
+    if len(compound_scorers) > 1:
+        sort_variants(infile=temp_file.name, mode='chromosome')
 
-    print_headers(head=head, outfile=outfile, silent=silent)
+        print_headers(head=head, outfile=outfile, silent=silent)
 
-    with open(temp_file.name, 'r', encoding='utf-8') as f:
-        for line in f:
-            print_variant(
-                variant_line=line,
-                outfile=outfile,
-                mode='modified',
-                silent=silent
-            )
-    
-    logger.debug("Removing temp file")
-    os.remove(temp_file.name)
-    logger.debug("Temp file removed")
+        with open(temp_file.name, 'r', encoding='utf-8') as f:
+            for line in f:
+                print_variant(
+                    variant_line=line,
+                    outfile=outfile,
+                    mode='modified',
+                    silent=silent
+                )
+        
+        logger.debug("Removing temp file")
+        os.remove(temp_file.name)
+        logger.debug("Temp file removed")
 
     logger.info('Time for whole analyis: {0}'.format(
         str(datetime.now() - start_time_analysis)))

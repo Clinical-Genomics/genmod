@@ -23,7 +23,7 @@ def score_variant(variant, config_parser):
         #We save all the scores for a category
         category_aggregate = config_parser.categories[category]['category_aggregation']
         category_scores = []
-        categery_score = None
+        category_score = None
         
         for plugin_name in config_parser.categories[category]['plugins']:
             logger.debug("Checking scores for plugin {0}".format(plugin_name))
@@ -34,29 +34,34 @@ def score_variant(variant, config_parser):
             score = score_function.get_score(value)
             logger.debug("Score is {0} for plugin {1}".format(score, plugin_name))
             category_scores.append(score)
+
+        if category_scores:
         
-        if category_aggregate == 'max' and category_scores:
-            logger.debug("Take the max score for category {0}".format(
-                category))
-            category_score = max(category_scores)
-            logger.debug("Max value is {0}".format(
-                category_score))
-        elif category_aggregate == 'min' and category_scores:
-            logger.debug("Take the min score for category {0}".format(
-                category))
-            category_score = min(category_scores)
-            logger.debug("Min value is {0}".format(
-                category_score))
-        elif category_aggregate == 'sum' and category_scores:
-            logger.debug("Take the sum of scores score for category {0}".format(
-                category))
-            category_score = sum(category_scores)
-            logger.debug("Sum of scores is {0}".format(
-                category_score))
-        
-        if category_score:
+            if category_aggregate == 'max' and category_scores:
+                logger.debug("Take the max score for category {0}".format(
+                    category))
+                category_score = max(category_scores)
+                logger.debug("Max value is {0}".format(
+                    category_score))
+            elif category_aggregate == 'min' and category_scores:
+                logger.debug("Take the min score for category {0}".format(
+                    category))
+                category_score = min(category_scores)
+                logger.debug("Min value is {0}".format(
+                    category_score))
+            elif category_aggregate == 'sum' and category_scores:
+                logger.debug("Take the sum of scores score for category {0}".format(
+                    category))
+                category_score = sum(category_scores)
+                logger.debug("Sum of scores is {0}".format(
+                    category_score))
+            
             logger.debug("Adding category score {0} to rank_score".format(category_score))
             rank_score += category_score
+            logger.debug("Updating rank score to {0}".format(rank_score))
+        else:
+            logger.debug("No scores found for category {0}".format(category))
+            
         
     # logger.debug("Rank score was found to be {0} for variant {1}".format(
     #     rank_score, variant.get('variant_id', 'unknown variant id')))

@@ -21,6 +21,8 @@ from codecs import open
 from datetime import datetime
 from validate import ValidateError
 
+from ped_parser import FamilyParser
+
 from genmod.vcf_tools import (add_metadata, print_variant, add_vcf_info,
 print_headers, HeaderParser, get_variant_dict, get_info_dict)
 from genmod.score_variants import (ConfigParser, score_variant)
@@ -33,8 +35,18 @@ from genmod import __version__
                 type=click.File('r'),
                 metavar='<vcf_file> or -'
 )
-@click.option('-f', '--family_id',
+@click.option('-i   ', '--family_id',
                 default='1', 
+)
+@click.option('-f', '--family_file',
+                    nargs=1, 
+                    type=click.File('r'),
+                    metavar='<ped_file>'
+)
+@click.option('-t' ,'--family_type', 
+                type=click.Choice(['ped', 'alt', 'cmms', 'mip']), 
+                default='ped',
+                help='If the analysis use one of the known setups, please specify which one.'
 )
 @click.option('-s', '--silent',
                 is_flag=True,
@@ -48,7 +60,8 @@ from genmod import __version__
               type=click.Path(exists=True),
               help="The plug-in config file(.ini)"
 )
-def score(variant_file, family_id, score_config, silent, outfile):
+def score(variant_file, family_id, family_file, family_type, score_config, 
+silent, outfile):
     """
     Score variants in a vcf file using Weighted Sum Model.
     
@@ -64,6 +77,17 @@ def score(variant_file, family_id, score_config, silent, outfile):
     # logger = logging.getLogger("genmod.commands.score")
     
     logger.info('Running GENMOD score, version: {0}'.format(__version__))
+    
+    logger.info("Checking family id")
+    
+    if family_file:
+        logger.info("Setting up a family parser")
+        family_parser = FamilyParser(family_file, family_type)
+        logger.debug("Family parser done")
+        family_id = list(family_parser.families.keys())[0]
+    
+    logger.info("Family used in analysis: {0}".format(family_id))
+    
     
     ## Check the score config:
     if not score_config:
@@ -110,7 +134,7 @@ def score(variant_file, family_id, score_config, silent, outfile):
         'RankScore',
         annotation_number='.', 
         entry_type='String', 
-        description="The rank score for this variant in this family. "
+        description="The rank score for this variant in this family. family_id:rank_score."
     )
     print_headers(
         head=head,

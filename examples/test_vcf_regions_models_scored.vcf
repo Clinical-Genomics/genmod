@@ -1,0 +1,29 @@
+##fileformat=VCFv4.1
+##INFO=<ID=MQ,Number=1,Type=Float,Description="RMS Mapping Quality">
+##INFO=<ID=Annotation,Number=.,Type=String,Description="Annotates what feature(s) this variant belongs to.">
+##INFO=<ID=Exonic,Number=0,Type=Flag,Description="Indicates if the variant is exonic.">
+##INFO=<ID=1000GAF,Number=1,Type=Float,Description="Frequency in the 1000G database.">
+##INFO=<ID=CADD,Number=1,Type=Integer,Description="The CADD relative score for this alternative.">
+##INFO=<ID=GeneticModels,Number=.,Type=String,Description="':'-separated list of genetic models for this variant.">
+##INFO=<ID=ModelScore,Number=.,Type=String,Description="PHRED score for genotype models.">
+##INFO=<ID=Compounds,Number=.,Type=String,Description="List of compound pairs for this variant.The list is splitted on ',' family id is separated with compoundswith ':'. Compounds are separated with '|'.">
+##INFO=<ID=RankScore,Number=.,Type=String,Description="The rank score for this variant in this family. family_id:rank_score.">
+##contig=<ID=1,length=249250621,assembly=b37>
+##reference=file:///humgen/gsa-hpprojects/GATK/bundle/current/b37/human_g1k_v37.fasta
+##Software=<ID=genmod,Version=3.2.6,Date="2015-09-29 14:40",CommandLineOptions="processes=4 keyword=Annotation family_type=ped family_file=<open file 'examples/recessive_trio.ped', mode 'r' at 0x1025308a0> outfile=<unopened file 'examples/test_vcf_regions_models.vcf' w> variant_file=<_io.TextIOWrapper name='<stdin>' encoding='utf-8'> logger=<logging.Logger object at 0x10256f210>">
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	father	mother	proband	father_2	mother_2	proband_2
+1	879537	.	T	C	100	PASS	MQ=1;Exonic;Annotation=SAMD11;1000GAF=0.000199681;CADD=1.248;GeneticModels=1:AR_hom;ModelScore=1:55.0;RankScore=1:8	GT:AD:GQ	0/1:10,10:60	0/1:10,10:60	1/1:10,10:60	0/0:10,10:60	0/1:10,10:60	1/1:10,10:60
+1	879541	.	G	A	100	PASS	MQ=1;Exonic;Annotation=SAMD11;1000GAF=0.000599042;CADD=4.003;GeneticModels=1:AR_hom_dn|AR_hom;ModelScore=1:57.0;RankScore=1:8	GT:AD:GQ	./.	0/1:10,10:60	1/1:10,10:60	./.	0/1:10,10:60	0/1:10,10:60
+1	879595	.	C	T	100	PASS	MQ=1;Exonic;Annotation=NOC2L,SAMD11;1000GAF=0.000399361;CADD=8.271;GeneticModels=1:AR_hom_dn;ModelScore=1:55.0;RankScore=1:8	GT:AD:GQ	0/1:10,10:60	0/0:10,10:60	1/1:10,10:60	0/1:10,10:60	0/0:10,10:60	0/1:10,10:60
+1	879676	.	G	A	100	PASS	MQ=1;Exonic;Annotation=NOC2L,SAMD11;1000GAF=0.885982;CADD=7.019;RankScore=1:-20	GT:AD:GQ	0/1:10,10:60	1/1:10,10:60	1/1:10,10:60	0/1:10,10:60	0/1:10,10:60	0/1:10,10:60
+1	879911	.	G	A	100	PASS	MQ=1;Exonic;Annotation=NOC2L,SAMD11;1000GAF=0.00998403;CADD=4.408;Compounds=1:1_880086_T_C|1_880012_A_G;GeneticModels=1:AR_comp|AR_comp_dn;ModelScore=1:55.0;RankScore=1:7	GT:AD:GQ	0/1:10,10:60	0/0:10,10:60	0/1:10,10:60	0/1:10,10:60	0/0:10,10:60	0/1:10,10:60
+1	880012	.	A	G	100	PASS	MQ=1;Exonic;Annotation=NOC2L;1000GAF=0.00119808;CADD=3.326;Compounds=1:1_879911_G_A|1_880086_T_C;GeneticModels=1:AR_comp|AR_comp_dn;ModelScore=1:55.0;RankScore=1:8	GT:AD:GQ	0/0:10,10:60	0/1:10,10:60	0/1:10,10:60	0/0:10,10:60	0/1:10,10:60	0/1:10,10:60
+1	880086	.	T	C	100	PASS	MQ=1;Exonic;Annotation=NOC2L;1000GAF=0.000399361;CADD=0.091;Compounds=1:1_879911_G_A|1_880012_A_G;GeneticModels=1:AD_dn|AR_comp_dn;ModelScore=1:55.0;RankScore=1:8	GT:AD:GQ	0/0:10,10:60	0/0:10,10:60	0/1:10,10:60	0/0:10,10:60	0/0:10,10:60	0/1:10,10:60
+1	880199	.	G	A	100	PASS	MQ=1;Annotation=NOC2L;CADD=3.450;GeneticModels=1:AD_dn;ModelScore=1:55.0;RankScore=1:9	GT:AD:GQ	0/0:10,10:60	0/0:10,10:60	0/1:10,10:60	0/0:10,10:60	0/0:10,10:60	0/1:10,10:60
+1	880217	.	T	G	100	PASS	MQ=1;Annotation=NOC2L;CADD=4.208;GeneticModels=1:AD_dn;ModelScore=1:55.0;RankScore=1:9	GT:AD:GQ	0/0:10,10:60	0/0:10,10:60	0/1:10,10:60	0/0:10,10:60	0/0:10,10:60	0/1:10,10:60
+10	76154051	.	A	G	100	PASS	MQ=1;Exonic;Annotation=ADK;1000GAF=0.000199681;CADD=9.261;Compounds=1:10_76154073_T_G;GeneticModels=1:AR_comp_dn;ModelScore=1:55.0;RankScore=1:8	GT:AD:GQ	0/0:10,10:60	0/1:10,10:60	0/1:10,10:60	0/0:10,10:60	0/1:10,10:60	0/1:10,10:60
+10	76154073	.	T	G	100	PASS	MQ=1;Exonic;Annotation=ADK;CADD=22.4;Compounds=1:10_76154051_A_G;GeneticModels=1:AD_dn|AR_comp_dn;ModelScore=1:55.0;RankScore=1:11	GT:AD:GQ	0/0:10,10:60	0/0:10,10:60	0/1:10,10:60	0/0:10,10:60	0/0:10,10:60	0/1:10,10:60
+10	76154074	.	C	G	100	PASS	MQ=1;Annotation=ADK;CADD=8.374;RankScore=1:-5	GT:AD:GQ	./.	0/1:10,10:60	0/1:10,10:60	0/1:10,10:60	0/1:10,10:60	0/1:10,10:60
+10	76154076	.	G	C	100	PASS	MQ=1;Annotation=ADK;CADD=11.65;GeneticModels=1:AD_dn|AD;ModelScore=1:57.0;RankScore=1:10	GT:AD:GQ	./.	0/0:10,10:60	0/1:10,10:60	./.	0/0:10,10:60	0/1:10,10:60
+X	302253	.	CCCTCCTGCCCCT	C	100	PASS	MQ=1;Annotation=PPP2R3B;1000GAF=0.04;CADD=7.567;GeneticModels=1:XD|XR;ModelScore=1:55.0;RankScore=1:-6	GT:AD:GQ	0/0:10,10:60	0/1:10,10:60	1/1:10,10:60	0/0:10,10:60	1/1:10,10:60	1/1:10,10:60
+MT	302253	.	CCCTCCTGCCCCT	C	100	PASS	MQ=1;GeneticModels=1:AR_hom_dn;ModelScore=1:55.0;RankScore=1:8	GT:AD:GQ	0/0:10,10:60	0/1:10,10:60	1/1:10,10:60	0/0:10,10:60	1/1:10,10:60	1/1:10,10:60
