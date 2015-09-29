@@ -57,7 +57,7 @@ class ScoreFunction(object):
         
             Args:
                 key (str): The string that should be matched
-                score (int,float): The score for the match
+                score (int): The score for the match
             
         """
         self.logger.debug("Adding string {0} with score {1} to string_dict".format(
@@ -71,7 +71,7 @@ class ScoreFunction(object):
         
             Args:
                 value (number): The number that should be matched
-                score (int,float): The score for the match
+                score (int): The score for the match
             
         """
         self.logger.debug("Adding value {0} with score {1} to value_dict".format(
@@ -136,6 +136,14 @@ class ScoreFunction(object):
                     for interval in self._interval_tree[value]:
                         score = interval.data
                         self.logger.debug("Got score from interval tree")
+        
+        # For now we only allow integers as score
+        ## TODO fix this ugly solution
+        try:
+            score = int(score)
+        except error as e:
+            score = int(float(score))
+            
         
         return score
     

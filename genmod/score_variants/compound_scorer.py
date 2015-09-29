@@ -19,7 +19,7 @@ import logging
 
 from multiprocessing import Process
 
-from genmod.vcf_tools import replace_vcf_info
+from genmod.vcf_tools import (replace_vcf_info, add_vcf_info)
 
 
 class CompoundScorer(Process):
@@ -88,19 +88,20 @@ class CompoundScorer(Process):
                 # We want to pennalise the score if the compounds have low scores
                 variant = variant_batch[variant_id]
                 correct_score = True
-                for family in variant['info_dict'].get('RankScore', '').split(','):
+                for family in variant['info_dict'].get('GeneticModels', '').split(','):
                     for model in family.split(':')[-1].split('|'):
                         if model not in self.models:
                             correct_score = False
                 
                 
                 current_rank_score_entry = variant['info_dict'].get('RankScore', None)
+                
                 if current_rank_score_entry:
                     # We need to loop through the families
                     for current_family_rank_score in current_rank_score_entry.split(','):
                         current_family_rank_score = current_family_rank_score.split(':')
                         current_family_id = current_family_rank_score[0]
-                        current_rank_score = float(current_family_rank_score[-1])
+                        current_rank_score = int(current_family_rank_score[-1])
                 
                 raw_compounds = variant['info_dict'].get('Compounds', None)
                 
@@ -127,7 +128,7 @@ class CompoundScorer(Process):
                                 for family_score in compound_rank_score_entry.split(','):
                                     family_score = family_score.split(':')
                                     compound_family_id = family_score[0]
-                                    compound_rank_score = float(family_score[-1])
+                                    compound_rank_score = int(family_score[-1])
                                     compound_scores[compound] = compound_rank_score
                                     if compound_rank_score > 10:
                                         only_low = False
@@ -138,14 +139,23 @@ class CompoundScorer(Process):
                         
                 new_compound_string = "{0}:{1}".format(current_family_id, '|'.join(new_compound_list))
                 
+                # This is the rank score string before it is corrected:
+                # current_rank_score_string = "{0}:{1}".format(current_family_id, current_rank_score)
+                
                 if correct_score:
                     if only_low:
                         current_rank_score -= 6
                 
                 new_rank_score_string = "{0}:{1}".format(current_family_id, current_rank_score)
-                
+
+                # variant['info_dict']['IndividualRankScore'] = current_rank_score_string
                 variant['info_dict']['RankScore'] = new_rank_score_string
                 variant['info_dict']['Compounds'] = new_compound_string
+                
+                # variant = add_vcf_info(
+                #     keyword = 'IndividualRankScore',
+                #     variant_dict=variant,
+                #     annotation=current_rank_score_string)
                 
                 variant = replace_vcf_info(
                     keyword = 'RankScore',
