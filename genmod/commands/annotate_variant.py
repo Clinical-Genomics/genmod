@@ -106,6 +106,7 @@ annotation_dir, outfile, silent, cadd_raw, processes):
     logger.info("Initializing a Header Parser")
     head = HeaderParser()
     
+    line = None
     for line in variant_file:
         line = line.rstrip()
 
@@ -118,7 +119,8 @@ annotation_dir, outfile, silent, cadd_raw, processes):
             break
     
     #Add the first variant to the iterator
-    variant_file = itertools.chain([line], variant_file)
+    if line:
+        variant_file = itertools.chain([line], variant_file)
     
     header_line = head.header
     annotator_arguments['header_line'] = header_line
@@ -148,6 +150,8 @@ annotation_dir, outfile, silent, cadd_raw, processes):
     
     
     if exac:
+        logger.info("Annotating ExAC frequencies")
+        logger.debug("Using ExAC file: {0}".format(exac))
         annotator_arguments['exac'] = exac
         add_metadata(
             head,
@@ -159,8 +163,9 @@ annotation_dir, outfile, silent, cadd_raw, processes):
         )
         
     if thousand_g:
+        logger.info("Annotating 1000G frequencies")
+        logger.debug("Using 1000G file: {0}".format(thousand_g))
         annotator_arguments['thousand_g'] = thousand_g
-        logger.debug("Adding vcf metadata for 1000G_freq")
         add_metadata(
             head,
             'info',
@@ -171,6 +176,8 @@ annotation_dir, outfile, silent, cadd_raw, processes):
         )
     
     if cadd_file:
+        logger.info("Annotating CADD scores")
+        logger.debug("Using CADD file(s): {0}".format(', '.join(cadd_file)))
         annotator_arguments['cadd_files'] = cadd_file
         any_cadd_file = True
 
