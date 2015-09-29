@@ -3,8 +3,6 @@
 
 ### Basic command ###
 
-
-
 ```bash
 
 $ genmod models --help
@@ -47,3 +45,14 @@ The ``genmod models`` command is used to annotate patterns of inheritance in vcf
 The individuals and families to be included in the analysis is specified in 
 the family file that is given with the ``-f/--family_file`` option.
  
+ 
+## Reduced Penetrance ##
+
+Some phenotypes are known to have reduced penetrance. This means that healthy 
+individuals can carry a heterozygous variant without being affected, while others
+that have the same variant are affected.
+When annotating inheritance patterns with **genmod** the user can provide a file 
+with one column and one gene id per row with the flag ```-r/--reduced_penetrance```.
+Genmod will then allow healthy carriers for variants that resides in these genes when
+ annotating the Autosomal Dominant inheritance pattern.
+

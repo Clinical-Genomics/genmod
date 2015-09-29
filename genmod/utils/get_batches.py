@@ -37,8 +37,6 @@ results_queue=None, annotation_keyword = 'Annotation'):
          Does not return but put the results in a queue
     """
     logger = logging.getLogger(__name__)
-    #For testing only:
-    logger = logging.getLogger("genmod.utils.get_batches")
     
     logger.debug("Set beginning to True")
     beginning = True
@@ -80,7 +78,7 @@ results_queue=None, annotation_keyword = 'Annotation'):
             
             if vep:
                 variant['vep_info'] = get_vep_dict(variant['info_dict']['CSQ'], vep_header)
-        # for variant in variants:
+            
             logger.debug("Checking variant {0}".format(variant_id))
 
             nr_of_variants += 1
