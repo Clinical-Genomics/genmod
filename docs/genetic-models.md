@@ -28,6 +28,8 @@ For this model individuals can be carriers so healthy individuals can be heteroz
 * Variant is considered _de novo_ if both parents are genotyped and do not carry the variant
 * The variants following this modell will be annotated with ``AD``or ``AD_dn``
 
+**Special Case:** If the variant belongs to a gene that have been annotated 
+with reduced penetrance we will allow healthy carriers. (i.e. healthy individuals can be heterozygotes)
 
 ### Autosomal Compound Heterozygote ###
 
