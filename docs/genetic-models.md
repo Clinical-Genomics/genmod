@@ -67,9 +67,9 @@ These traits are inherited on the x-chromosome, of which men have one allele and
 
 * Variant has to be on chromosome X
 * Affected males have to be het. or hom. alt. (het is theoretically not possible in males, but can occur due to Pseudo Autosomal Regions).
+* Healthy males cannot carry the variant
 * Affected females have to be hom. alt.
 * Healthy females cannot be hom. alt.
-* Healthy males cannot carry the variant
 * If sex is male the variant is considered _de novo_ if mother is genotyped and does not carry the variant
 * If sex is female variant is considered _de novo_ if not both parents carry the variant
 * The variants following this modell will be annotated with ``XR``or ``XR_dn``
