@@ -12,10 +12,11 @@ Copyright (c) 2013 __MyCompanyName__. All rights reserved.
 
 from __future__ import print_function
 
-import os
-import sys
+import logging
 
-def check_dominant(variant, family, strict):
+logger = logging.getLogger(__name__)
+
+def check_dominant(variant, family, strict=False):
     """
     Check if the variant follows the autosomal dominant (AD) pattern in 
     this family.
@@ -38,6 +39,10 @@ def check_dominant(variant, family, strict):
     No affection status:
         We can not tell if variant follows the model or not.
     
+    SPECIAL CASE:
+        If the variants is annotated with incomplete penetrance we allow healthy
+        individuals to be carriers (i.e. healthy individuals can be het.)
+    
     Args:
         variant: variant dictionary.
         family: A family object with the individuals
@@ -51,26 +56,31 @@ def check_dominant(variant, family, strict):
     for individual in family.individuals: 
         # Check in all individuals what genotypes that are in the trio based 
         # of the individual picked.
+        logger.debug("Checking autosomal dominant pattern for variant {0},"\
+        " individual: {1}".format(
+            variant.get('variant_id', None),
+            individual)
+        )
         individual_genotype = variant['genotypes'][individual]
         if strict:
             if not individual_genotype.genotyped:
                 return False
         # The case where the individual is healthy
         if family.individuals[individual].healthy:
+            logger.debug("Individual {0} is healthy".format(individual))
             if individual_genotype.has_variant:
-                return False
+                if variant.get('reduced_penetrance', False):
+                    if individual_genotype.homo_alt:
+                        return False
+                else:
+                    return False
         
         elif family.individuals[individual].affected:
+            logger.debug("Individual {0} is affected".format(individual))
             # The case when the individual is sick
             if individual_genotype.genotyped:
                 if not individual_genotype.heterozygote:
                     return False
     
     return True
-
-def main():
-    pass
-
-if __name__ == '__main__':
-    main()
 

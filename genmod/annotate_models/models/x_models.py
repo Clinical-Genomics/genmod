@@ -3,18 +3,18 @@
 """
 x_models.py
 
-Checks is the X linked models are followed.
+Functions to check if the X linked models are followed.
 
 Created by Måns Magnusson on 2013-02-12.
 Copyright (c) 2013 __MoonsoInc__. All rights reserved.
 """
 
 from __future__ import print_function
+import logging
 
-import os
-import sys
+logger = logging.getLogger(__name__)
 
-def check_X_recessive(variant, family, strict):
+def check_X_recessive(variant, family, strict=False):
     """
     Check if the variant follows the x linked heterozygous (XR) pattern of 
     inheritance in this family.
@@ -43,7 +43,7 @@ def check_X_recessive(variant, family, strict):
     
     Args:
         variant: variant dictionary.
-        family: A family object with the individuals
+        family: A Family object with the individuals
         strict: A boolean that tells if strict analyzis should be performed.
     
     Return:
@@ -82,7 +82,7 @@ def check_X_recessive(variant, family, strict):
                         return False
     return True
 
-def check_X_dominant(variant, family, strict):
+def check_X_dominant(variant, family, strict=False):
     """
     Check if the variant follows the x linked dominant (XD) pattern of 
     inheritance in this family.
@@ -144,10 +144,3 @@ def check_X_dominant(variant, family, strict):
                 if individual_genotype.homo_ref:
                     return False
     return True
-
-def main():
-    pass
-
-if __name__ == '__main__':
-    main()
-
