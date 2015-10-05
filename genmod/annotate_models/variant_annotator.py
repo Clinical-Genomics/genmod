@@ -35,7 +35,8 @@ class VariantAnnotator(Process):
     """
     
     def __init__(self, task_queue, results_queue, families, individuals, 
-                phased=False, strict=False, whole_gene=False, vep=False):
+                phased=False, strict=False, whole_gene=False, vep=False,
+                reduced_penetrance_genes = set()):
         """
         Initialize the VariantAnnotator
         
@@ -51,6 +52,8 @@ class VariantAnnotator(Process):
             phased (bool)
             strict (bool)
             whole_gene (bool)
+            vep (bool)
+            reduced_penetrance_genes (set): Set of reduced penetrance genes
         """
         Process.__init__(self)
         self.logger = logging.getLogger(__name__)
@@ -81,6 +84,7 @@ class VariantAnnotator(Process):
         self.logger.debug("Setting vep to {0}".format(self.vep))
         self.whole_gene = whole_gene
         self.logger.debug("Setting whole_gene to {0}".format(self.whole_gene))
+        self.reduced_penetrance = reduced_penetrance_genes
         
 
     def run(self):
@@ -104,6 +108,13 @@ class VariantAnnotator(Process):
             for variant_id in variant_batch:
                 variant = variant_batch[variant_id]
                 variant['genotypes'] = get_genotypes(variant, self.individuals)
+                
+                # Check if the variant is in a gene with reduced penetrance
+                if variant.get('annotation', set()).intersection(self.reduced_penetrance):
+                    self.logger.debug("Setting reduced_penetrance to True for"\
+                    " variant: {0}".format(variant_id))
+                    
+                    variant['reduced_penetrance'] = True
             
             if len(variant_batch) > 1:
                 #If the variant are phased we want to find out which 
