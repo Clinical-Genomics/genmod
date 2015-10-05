@@ -135,6 +135,7 @@ keyword, phased, strict, silent, processes, whole_gene, outfile):
     
     if not family_file:
         print("Please provide a family file with -f/--family_file")
+        logger.info("Exiting")
         sys.exit(1)
     
     logger.info("Setting up a family parser")
