@@ -32,11 +32,12 @@ def get_model_score(individuals, variant):
         gt_call = variant.get('genotypes', {}).get(individual, None)
         if gt_call:
             if gt_call.genotype_quality > 0:
-                genotype_scores.append(10**-(float(gt_call.genotype_quality)/10))
+                gq = min(gt_call.genotype_quality, 99)
+                genotype_scores.append(10**-(float(gq)/10))
     
     if len(genotype_scores) > 0:
         model_score = (
             round(-10*math.log10(1-functools.reduce(
                 operator.mul, [1-score for score in genotype_scores]))))
     
-    return model_score
+    return int(model_score)
