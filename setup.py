@@ -11,10 +11,6 @@ try:
 except (IOError, ImportError, RuntimeError):
     long_description = 'Tool for annotating patterns of genetic inheritance in Variant Call Format (VCF) files.'
 
-
-# with open('README.txt') as file:
-#     long_description = file.read()
-
 setup(name='genmod',
     version='3.2.7',
     description='Annotate genetic inheritance models in variant files',
@@ -32,25 +28,12 @@ setup(name='genmod',
         'intervaltree',
         'extract_vcf >= 0.4.2'
     ],
-    packages=find_packages(exclude=('tests*', 'docs', 'examples', 'configs')),
-    
-    # packages = [
-    #     'genmod',
-    #     'genmod/commands',
-    #     'genmod/variant_annotation',
-    #     'genmod/annotate_regions',
-    #     'genmod/utils',
-    #     'genmod/errors',
-    #     'genmod/annotate_models'
-    #     'genmod/annotate_models/models',
-    #     'genmod/vcf_tools',
-    # ],
+    packages=find_packages(
+        exclude=('tests*', 'docs', 'examples', 'configs')
+    ),
     package_data = {
         'genmod': ['annotations/*.db']
     },
-    # scripts = [
-    #     'scripts/genmod'
-    # ],
     entry_points= { "console_scripts" : [
         "genmod = genmod.commands.run_genmod:cli",
         ]

@@ -115,12 +115,23 @@ keyword, phased, strict, silent, processes, whole_gene, outfile):
     logger.debug("Arguments: {0}".format(', '.join(argument_list)))
     
     reduced_penetrance_genes = set()
+    nr_reduced_penetrance_genes = 0
     if reduced_penetrance:
+        logger.info("Found file with genes that have reduced penetrance")
         for line in reduced_penetrance:
             if not line.startswith('#'):
+                nr_reduced_penetrance_genes += 1
+                gene_id = line.rstrip().split()[0]
+                logger.debug("Adding gene {0} to reduced penetrance genes".format(
+                    gene_id
+                ))
                 reduced_penetrance_genes.add(
-                    line.rstrip().split()[0]
+                    gene_id
                 )
+    
+        logger.info("Found {0} genes with reduced penetrance".format(
+            nr_reduced_penetrance_genes))
+    
     
     if not family_file:
         print("Please provide a family file with -f/--family_file")
