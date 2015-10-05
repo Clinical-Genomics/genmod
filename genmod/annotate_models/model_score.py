@@ -40,4 +40,4 @@ def get_model_score(individuals, variant):
             round(-10*math.log10(1-functools.reduce(
                 operator.mul, [1-score for score in genotype_scores]))))
     
-    return model_score
+    return int(model_score)
