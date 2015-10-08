@@ -80,7 +80,7 @@ class Genotype(object):
         if self.genotype != './.':
             self.genotyped = True
             #Check allele status
-            if self.genotype == '0/0':
+            if self.genotype in ['0/0', './0', '0/.']:
                 self.homo_ref = True
             elif self.allele_1 == self.allele_2:
                 self.homo_alt = True

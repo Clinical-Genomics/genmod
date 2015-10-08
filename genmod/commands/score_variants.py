@@ -25,7 +25,8 @@ from ped_parser import FamilyParser
 
 from genmod.vcf_tools import (add_metadata, print_variant, add_vcf_info,
 print_headers, HeaderParser, get_variant_dict, get_info_dict)
-from genmod.score_variants import (ConfigParser, score_variant)
+
+from genmod.score_variants import (ConfigParser, get_category_score)
 
 from genmod import __version__
 
@@ -52,6 +53,11 @@ from genmod import __version__
                 is_flag=True,
                 help='Do not print the variants.'
 )
+@click.option('-r', '--rank_results',
+                is_flag=True,
+                help="Add a info field that shows how the different categories"\
+                " contribute to the rank score."
+)
 @click.option('-o', '--outfile',
                 type=click.File('w'),
                 help='Specify the path to a file where results should be stored.'
@@ -61,20 +67,15 @@ from genmod import __version__
               help="The plug-in config file(.ini)"
 )
 def score(variant_file, family_id, family_file, family_type, score_config, 
-silent, outfile):
+silent, rank_results, outfile):
     """
-    Score variants in a vcf file using Weighted Sum Model.
+    Score variants in a vcf file using a Weighted Sum Model.
     
     The specific scores should be defined in a config file, see examples on 
     github.
     """
-    # from genmod import logger as root_logger
-    # from genmod.log import init_log, LEVELS
-    # loglevel = LEVELS.get(min(verbose,2), "WARNING")
-    # init_log(root_logger, loglevel=loglevel)
     
     logger = logging.getLogger(__name__)
-    # logger = logging.getLogger("genmod.commands.score")
     
     logger.info('Running GENMOD score, version: {0}'.format(__version__))
     
@@ -92,6 +93,7 @@ silent, outfile):
     ## Check the score config:
     if not score_config:
         logger.warning("Please provide a score config file.")
+        logger.info("Exiting")
         sys.exit(1)
     
     logger.debug("Parsing config file")
@@ -102,12 +104,14 @@ silent, outfile):
         logger.error("Something wrong in plugin file, please see log")
         logger.info("Exiting")
         sys.exit(1)
+    
+    score_categories = list(config_parser.categories.keys())
 
     logger.debug("Config parsed succesfully")
 
     logger.info("Initializing a Header Parser")
     head = HeaderParser()
-
+    
     for line in variant_file:
         line = line.rstrip()
         if line.startswith('#'):
@@ -136,6 +140,17 @@ silent, outfile):
         entry_type='String', 
         description="The rank score for this variant in this family. family_id:rank_score."
     )
+    
+    if rank_results:
+        add_metadata(
+            head,
+            'info',
+            'RankResult',
+            annotation_number='.', 
+            entry_type='String', 
+            description= '|'.join(score_categories)
+        )
+        
     print_headers(
         head=head,
         outfile=outfile,
@@ -149,14 +164,32 @@ silent, outfile):
         if not line.startswith('#'):
             variant = get_variant_dict(line, header_line)
             variant['info_dict'] = get_info_dict(variant['INFO'])
-
-            rank_score = score_variant(variant, config_parser)
+            rank_score = 0
+            # This is for printing results to vcf:
+            category_scores = []
+            for category in score_categories:
+                category_score = get_category_score(variant, category, config_parser)
+                logger.debug("Adding category score {0} to rank_score".format(category_score))
+                
+                rank_score += category_score
+                logger.debug("Updating rank score to {0}".format(rank_score))
+                
+                category_scores.append(str(category_score))
+                
             
             variant = add_vcf_info(
                 keyword = 'RankScore',
                 variant_dict=variant,
                 annotation="{0}:{1}".format(family_id, rank_score)
             )
+            
+            if rank_results:
+                variant = add_vcf_info(
+                    keyword = 'RankResult',
+                    variant_dict=variant,
+                    annotation="|".join(category_scores)
+                )
+                
 
             print_variant(
                 variant_dict=variant,
