@@ -117,28 +117,19 @@ def compound(variant_file, silent, outfile, vep, processes):
     
     # This process prints the variants to temporary files
     logger.info('Seting up the variant printer')
-    if len(compound_scorers) == 1:
-        print_headers(head=head, outfile=outfile, silent=silent)
-        variant_printer = VariantPrinter(
-                task_queue=results,
-                head=head,
-                mode='chromosome',
-                outfile = outfile
-        )
     
-    else:
-        # We use a temp file to store the processed variants
-        logger.debug("Build a tempfile for printing the variants")
-        temp_file = NamedTemporaryFile(delete=False)
-        temp_file.close()
-        
-        variant_printer = VariantPrinter(
-                task_queue=results,
-                head=head,
-                mode='chromosome',
-                outfile = temp_file.name
-        )
-    
+    # We use a temp file to store the processed variants
+    logger.debug("Build a tempfile for printing the variants")
+    temp_file = NamedTemporaryFile(delete=False)
+    temp_file.close()
+
+    variant_printer = VariantPrinter(
+        task_queue=results,
+        head=head,
+        mode='chromosome',
+        outfile = temp_file.name
+    )
+
     logger.info('Starting the variant printer process')
     variant_printer.start()
 
@@ -163,23 +154,22 @@ def compound(variant_file, silent, outfile, vep, processes):
     results.put(None)
     variant_printer.join()
     
-    if len(compound_scorers) > 1:
-        sort_variants(infile=temp_file.name, mode='chromosome')
+    sort_variants(infile=temp_file.name, mode='chromosome')
+    
+    print_headers(head=head, outfile=outfile, silent=silent)
 
-        print_headers(head=head, outfile=outfile, silent=silent)
-
-        with open(temp_file.name, 'r', encoding='utf-8') as f:
-            for line in f:
-                print_variant(
-                    variant_line=line,
-                    outfile=outfile,
-                    mode='modified',
-                    silent=silent
-                )
-        
-        logger.debug("Removing temp file")
-        os.remove(temp_file.name)
-        logger.debug("Temp file removed")
+    with open(temp_file.name, 'r', encoding='utf-8') as f:
+        for line in f:
+            print_variant(
+                variant_line=line,
+                outfile=outfile,
+                mode='modified',
+                silent=silent
+            )
+    
+    logger.debug("Removing temp file")
+    os.remove(temp_file.name)
+    logger.debug("Temp file removed")
 
     logger.info('Time for whole analyis: {0}'.format(
         str(datetime.now() - start_time_analysis)))

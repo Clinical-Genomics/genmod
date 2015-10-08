@@ -21,6 +21,7 @@ from multiprocessing import Process
 
 from genmod.vcf_tools import (replace_vcf_info, add_vcf_info)
 
+logger = logging.getLogger(__name__)
 
 class CompoundScorer(Process):
     """
@@ -42,20 +43,19 @@ class CompoundScorer(Process):
             individuals (list)
         """
         Process.__init__(self)
-        self.logger = logging.getLogger(__name__)
         
         self.proc_name = self.name
         
-        self.logger.info("Setting up variant_annotator: {0}".format(
+        logger.info("Setting up variant_annotator: {0}".format(
             self.proc_name))
         
-        self.logger.debug("Setting up task queue")
+        logger.debug("Setting up task queue")
         self.task_queue = task_queue
         
-        self.logger.debug("Setting up results queue")
+        logger.debug("Setting up results queue")
         self.results_queue = results_queue
 
-        self.logger.debug("Setting up individuals")
+        logger.debug("Setting up individuals")
         self.individuals = individuals
         
         if len(self.individuals) == 1:
@@ -66,17 +66,17 @@ class CompoundScorer(Process):
 
     def run(self):
         """Run the consuming"""
-        self.logger.info('%s: Starting!' % self.proc_name)
+        logger.info('%s: Starting!' % self.proc_name)
         # Check if there are any batches in the queue
         while True:
             # A batch is a dictionary with varints on the form {variant_id:variant_dict}
-            self.logger.debug("Getting task from task_queue")
+            logger.debug("Getting task from task_queue")
             variant_batch = self.task_queue.get()
             
             if variant_batch is None:
-                self.logger.info('No more batches')
+                logger.info('No more batches')
                 self.task_queue.task_done()
-                self.logger.info('{0}: Exiting'.format(self.proc_name))
+                logger.info('{0}: Exiting'.format(self.proc_name))
                 break
             
             # We need to save the compound scores in a dict and group them by family
@@ -84,78 +84,100 @@ class CompoundScorer(Process):
             compound_scores = {}
             # We are now going to score the compounds
             for variant_id in variant_batch:
+                # First we store the scores for each variant in a dictionary
+                variant = variant_batch[variant_id]
+                current_rank_score_entry = variant['info_dict'].get('RankScore', None)
+                
+                if current_rank_score_entry:
+                    # We need to loop through the families
+                    # This entry looks like <family_id>:<rank_score>, <family_id>:<rank_score>
+                    for current_family_rank_score in current_rank_score_entry.split(','):
+                        current_family_rank_score = current_family_rank_score.split(':')
+                        
+                        #TODO check if correct family id
+                        # Right now we assume that there is only one family in the vcf
+                        family_id = current_family_rank_score[0]
+                        rank_score = int(current_family_rank_score[-1])
+                        
+                        compound_scores[variant_id] = rank_score
+            
+            for variant_id in variant_batch:
                 # If the variants only follow AR_comp (and AD for single individual families)
-                # We want to pennalise the score if the compounds have low scores
+                # we want to pennalise the score if the compounds have low scores
+                logger.debug("Scoring compound for variant {0}".format(variant_id))
                 variant = variant_batch[variant_id]
                 correct_score = True
+                # First we check if the rank score should be corrected:
                 for family in variant['info_dict'].get('GeneticModels', '').split(','):
                     for model in family.split(':')[-1].split('|'):
                         if model not in self.models:
                             correct_score = False
                 
+                logger.debug("Setting correct_score to {0}".format(correct_score))
                 
                 current_rank_score_entry = variant['info_dict'].get('RankScore', None)
                 
                 if current_rank_score_entry:
                     # We need to loop through the families
+                    # This entry looks like <family_id>:<rank_score>, <family_id>:<rank_score>
                     for current_family_rank_score in current_rank_score_entry.split(','):
                         current_family_rank_score = current_family_rank_score.split(':')
+                        
                         current_family_id = current_family_rank_score[0]
                         current_rank_score = int(current_family_rank_score[-1])
+                        
+                logger.debug("Current rank score is {0}".format(
+                    current_rank_score))
                 
                 raw_compounds = variant['info_dict'].get('Compounds', None)
                 
-                new_compound_list = []
+                scored_compound_list = []
                 only_low = True
                 
                 # We know that there are compounds since they are here
-                for family_compounds in raw_compounds.split(','):
-                    splitted_entry = family_compounds.split(':')
-                    # This is the id of the family compounds we are looking at
-                    campound_family_id = splitted_entry[0]
-                    # We loop over the compounds of this family:
-                    for compound in splitted_entry[-1].split('|'):
-                        if compound in compound_scores:
-                            compound_rank_score = compound_scores[compound]
-                        else:
-                            try:
-                                compound_rank_score_entry = variant_batch[compound]['info_dict'].get('RankScore', None)
-                            except KeyError as e:
-                                logger.error("The compounds have been annotated with wrong annotation set")
-                                raise e
-                            
-                            if compound_rank_score_entry:
-                                for family_score in compound_rank_score_entry.split(','):
-                                    family_score = family_score.split(':')
-                                    compound_family_id = family_score[0]
-                                    compound_rank_score = int(family_score[-1])
-                                    compound_scores[compound] = compound_rank_score
-                                    if compound_rank_score > 10:
-                                        only_low = False
-                                
-                        compound_score = current_rank_score + compound_rank_score
-                        new_compound = "{0}>{1}".format(compound, compound_score)
-                        new_compound_list.append(new_compound)
+                # One entry per family, splitted on ','
+                # family_id and compounds splitted with ':'
+                # list of compounds splitted on '|'
+                
+                #TODO Only checks first family now
+                family_compound_entry = raw_compounds.split(',')[0]
+                splitted_entry = family_compound_entry.split(':')
+                compound_family_id = splitted_entry[0]
+                compound_list = splitted_entry[-1].split('|')
+                
+                logger.debug("Checking compounds for family {0}".format(
+                    compound_family_id))
+                
+                for compound_id in compound_list:
+                    compound_rank_score = compound_scores[compound_id]
+                    if compound_rank_score > 9:
+                        only_low = False
+                    
+                logger.debug("Setting only_low to {0}".format(only_low))
+
+                if (correct_score and only_low):
+                    logger.debug("correcting rank score for {0}".format(
+                        variant_id))
+                    current_rank_score -= 6
+                    
+                for compound_id in compound_list:
+                    logger.debug("Checking compound {0}".format(compound_id))
+                    compound_rank_score = compound_scores[compound_id]
+                    # This is the combined score for current variant and 
+                    # its compound:
+                    compound_score = current_rank_score + compound_rank_score
+                    # This is the new compound
+                    new_compound = "{0}>{1}".format(compound_id, compound_score)
+                    scored_compound_list.append(new_compound)
                         
-                new_compound_string = "{0}:{1}".format(current_family_id, '|'.join(new_compound_list))
-                
-                # This is the rank score string before it is corrected:
-                # current_rank_score_string = "{0}:{1}".format(current_family_id, current_rank_score)
-                
-                if correct_score:
-                    if only_low:
-                        current_rank_score -= 6
+                new_compound_string = "{0}:{1}".format(
+                    compound_family_id, '|'.join(scored_compound_list))
                 
                 new_rank_score_string = "{0}:{1}".format(current_family_id, current_rank_score)
 
                 # variant['info_dict']['IndividualRankScore'] = current_rank_score_string
                 variant['info_dict']['RankScore'] = new_rank_score_string
                 variant['info_dict']['Compounds'] = new_compound_string
-                
-                # variant = add_vcf_info(
-                #     keyword = 'IndividualRankScore',
-                #     variant_dict=variant,
-                #     annotation=current_rank_score_string)
                 
                 variant = replace_vcf_info(
                     keyword = 'RankScore',
@@ -168,17 +190,9 @@ class CompoundScorer(Process):
                     annotation = new_compound_string, 
                     variant_dict=variant
                 )
-                self.logger.debug("Putting variant in results_queue")
+                logger.debug("Putting variant in results_queue")
                 self.results_queue.put(variant)
             
             self.task_queue.task_done()
         
         return
-        
-    
-
-def main():
-    pass
-
-if __name__ == '__main__':
-    main()
