@@ -107,7 +107,7 @@ class VariantAnnotator(Process):
                 header_line = self.header_line
             )
             
-            chrom = variant_dict['CHROM']
+            chrom = variant_dict['CHROM'].lstrip('chr')
             position = int(variant_dict['POS'])
             ref = variant_dict['REF']
             alternative = variant_dict['ALT']
