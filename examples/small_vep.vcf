@@ -12,6 +12,11 @@
 ##INFO=<ID=AF,Number=A,Type=Float,Description="Allele Frequency, for each ALT allele, in the same order as listed">
 ##INFO=<ID=AN,Number=1,Type=Integer,Description="Total number of alleles in called genotypes">
 ##INFO=<ID=CSQ,Number=.,Type=String,Description="Consequence type as predicted by VEP. Format: Allele|Gene|Feature|Feature_type|Consequence|cDNA_position|CDS_position|Protein_position|Amino_acids|Codons|Existing_variation|EXON|INTRON|DISTANCE|STRAND|SYMBOL|SYMBOL_SOURCE|SIFT|PolyPhen|HGVSc|HGVSp">
+##INFO=<ID=1000GAF,Number=1,Type=Float,Description="Frequency in the 1000G database.">
+##INFO=<ID=ExACAF,Number=1,Type=Float,Description="Frequency in the ExAC database.">
+##INFO=<ID=CADD,Number=1,Type=Integer,Description="The CADD relative score for this alternative.">
+##INFO=<ID=GeneticModels,Number=.,Type=String,Description="':'-separated list of genetic models for this variant.">
+##INFO=<ID=ModelScore,Number=.,Type=String,Description="PHRED score for genotype models.">
 ##INFO=<ID=DB,Number=0,Type=Flag,Description="dbSNP Membership">
 ##INFO=<ID=DP,Number=1,Type=Integer,Description="Approximate read depth; some reads may have been filtered">
 ##INFO=<ID=MQ,Number=1,Type=Float,Description="RMS Mapping Quality">

@@ -1,8 +1,14 @@
+import sys
 try:
     from setuptools import setup, find_packages
 except ImportError:
     from distutils.core import setup
 import pkg_resources
+
+# Shortcut for building/publishing to Pypi
+if sys.argv[-1] == 'publish':
+    os.system('python setup.py sdist bdist_wheel upload')
+    sys.exit()
 
 # For making things look nice on pypi:
 try:
@@ -12,7 +18,7 @@ except (IOError, ImportError, RuntimeError):
     long_description = 'Tool for annotating patterns of genetic inheritance in Variant Call Format (VCF) files.'
 
 setup(name='genmod',
-    version='3.3.6',
+    version='3.3.8',
     description='Annotate genetic inheritance models in variant files',
     author = 'Mans Magnusson',
     author_email = 'mans.magnusson@scilifelab.se',
