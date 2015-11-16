@@ -26,7 +26,8 @@ from ped_parser import FamilyParser
 from genmod.vcf_tools import (add_metadata, print_variant, add_vcf_info,
 print_headers, HeaderParser, get_variant_dict, get_info_dict)
 
-from genmod.score_variants import (ConfigParser, get_category_score)
+from genmod.score_variants import (ConfigParser, get_category_score, 
+check_plugins)
 
 from genmod import __version__
 
@@ -53,6 +54,10 @@ from genmod import __version__
                 is_flag=True,
                 help='Do not print the variants.'
 )
+@click.option('--skip_plugin_check',
+                is_flag=True,
+                help='If continue even if plugins does not exist in vcf.'
+)
 @click.option('-r', '--rank_results',
                 is_flag=True,
                 help="Add a info field that shows how the different categories"\
@@ -67,7 +72,7 @@ from genmod import __version__
               help="The plug-in config file(.ini)"
 )
 def score(variant_file, family_id, family_file, family_type, score_config, 
-silent, rank_results, outfile):
+silent, skip_plugin_check, rank_results, outfile):
     """
     Score variants in a vcf file using a Weighted Sum Model.
     
@@ -88,7 +93,6 @@ silent, rank_results, outfile):
         family_id = list(family_parser.families.keys())[0]
     
     logger.info("Family used in analysis: {0}".format(family_id))
-    
     
     ## Check the score config:
     if not score_config:
@@ -121,6 +125,15 @@ silent, rank_results, outfile):
                 head.parse_header_line(line)
         else:
             break
+    
+    logger.info("Check if all score plugins exist in vcf ...")
+    if not check_plugins(config_parser, head):
+        if not skip_plugin_check:
+            logger.error("All score plugins has to be defined in vcf header")
+            logger.info("Exiting")
+            sys.exit(1)
+    else:
+        logger.info("All plugins are defined in vcf")
     
     #Add the first variant to the iterator
     variant_file = itertools.chain([line], variant_file)
