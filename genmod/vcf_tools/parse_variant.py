@@ -60,7 +60,7 @@ def get_variant_id(variant_dict):
         variant_dict['ALT'],
     ])
 
-def get_vep_dict(vep_string, vep_header):
+def get_vep_dict(vep_string, vep_header, allele=None):
     """Make the vep annotation into a dictionary
     
         This dictionary will have the alleles as keys and a list of 
@@ -69,6 +69,7 @@ def get_vep_dict(vep_string, vep_header):
         Args:
             vep_list (string): A string with the CSQ annotation
             vep_header (list): A list with the vep header
+            allele (str): The allele that is annotated
         
         Return:
             vep_dict (dict): A vep dict as described above
@@ -77,7 +78,10 @@ def get_vep_dict(vep_string, vep_header):
     vep_dict = {}
     for vep_annotation in vep_string.split(','):
         inner_dict = dict(zip(vep_header, vep_annotation.split('|')))
-        allele = inner_dict['Allele']
+        #If allele is annotated by vep we use that allele
+        if 'Allele' in inner_dict:
+            allele = inner_dict['Allele']
+        
         if allele in vep_dict:
             vep_dict[allele].append(inner_dict)
         else:

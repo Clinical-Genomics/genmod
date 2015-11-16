@@ -77,7 +77,11 @@ results_queue=None, annotation_keyword = 'Annotation'):
                     add_variant = False
             
             if vep:
-                variant['vep_info'] = get_vep_dict(variant['info_dict']['CSQ'], vep_header)
+                variant['vep_info'] = get_vep_dict(
+                    vep_string=variant['info_dict']['CSQ'], 
+                    vep_header=vep_header,
+                    allele=variant['ALT'].split(',')[0]
+                    )
             
             logger.debug("Checking variant {0}".format(variant_id))
 
