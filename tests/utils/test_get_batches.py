@@ -81,6 +81,68 @@ def test_get_batches_two_regions():
     assert len(batch_1) == 1
     assert len(batch_2) == 1
 
+def test_get_batches_vep():
+    """
+    Test to get a batch
+    """
+    batch_queue = Queue()
+    variants = []
+    
+    first_variant = get_variant_line(info="MQ;CSQ=G|ADK")
+    
+    second_variant = get_variant_line(pos="2", info="MQ;CSQ=G|ADK")
+    
+    variants.append(first_variant)
+    variants.append(second_variant)
+
+    header = HeaderParser()
+    header.parse_header_line("#{0}".format(HEADER))
+    header.vep_columns = ['Allele', 'SYMBOL']
+    
+    chromosomes = get_batches(variants=variants, batch_queue=batch_queue, 
+                header=header)
+    
+    batch_1 = batch_queue.get()
+    batch_queue.task_done()
+    
+    batch_2 = batch_queue.get()
+    batch_queue.task_done()
+    
+    assert chromosomes == ['1']
+    assert len(batch_1) == 1
+    assert len(batch_2) == 1
+
+def test_get_batches_vep_no_allele():
+    """
+    Test to get a batch
+    """
+    batch_queue = Queue()
+    variants = []
+    
+    first_variant = get_variant_line(info="MQ;CSQ=ADK")
+    
+    second_variant = get_variant_line(pos="2", info="MQ;CSQ=ADK")
+    
+    variants.append(first_variant)
+    variants.append(second_variant)
+
+    header = HeaderParser()
+    header.parse_header_line("#{0}".format(HEADER))
+    header.vep_columns = ['SYMBOL']
+    
+    chromosomes = get_batches(variants=variants, batch_queue=batch_queue, 
+                header=header)
+    
+    batch_1 = batch_queue.get()
+    batch_queue.task_done()
+    
+    batch_2 = batch_queue.get()
+    batch_queue.task_done()
+    
+    assert chromosomes == ['1']
+    assert len(batch_1) == 1
+    assert len(batch_2) == 1
+
 def test_get_batches_no_regions():
     """
     Test to get a batch
