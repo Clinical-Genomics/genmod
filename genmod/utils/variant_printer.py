@@ -59,7 +59,8 @@ class VariantPrinter(Process):
         self.logger.info(('{0}: starting'.format(proc_name)))
         
         if self.outfile:
-            self.outfile = open(self.outfile, 'w', encoding="utf-8")
+            if isinstance(self.outfile, str):
+                self.outfile = open(self.outfile, 'w', encoding="utf-8")
         
         while True:
             
