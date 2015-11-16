@@ -89,7 +89,6 @@ silent, rank_results, outfile):
     
     logger.info("Family used in analysis: {0}".format(family_id))
     
-    
     ## Check the score config:
     if not score_config:
         logger.warning("Please provide a score config file.")
@@ -122,6 +121,11 @@ silent, rank_results, outfile):
         else:
             break
     
+    for plugin in score_config.plugins:
+        plugin_object = score_config.plugins[plugin]
+        print(plugin)
+    
+    sys.exit('Bye')
     #Add the first variant to the iterator
     variant_file = itertools.chain([line], variant_file)
     header_line = head.header
