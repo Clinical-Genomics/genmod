@@ -26,7 +26,7 @@ def check_plugins(config_parser, head):
                 logger.debug("INFO field {0} was found in vcf INFO.".format(
                     info_key))
             if info_key == 'CSQ':
-                csq_key = plugin.csq_key
+                csq_key = plugin_object.csq_key
                 if csq_key not in head.vep_columns:
                     logger.warning("CSQ field {0} is not in csq annotation."
                     " This field will not be scored.".format(csq_key))
