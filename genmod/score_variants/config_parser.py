@@ -304,17 +304,16 @@ class ConfigParser(configobj.ConfigObj):
                         try:
                             csq_key = vcf_section['csq_key']
                         except KeyError:
-                            pass
-                        try:
-                            csq_key = vcf_section['vep_key']
-                        except KeyError:
-                            raise ValidateError(
-                        "CSQ entrys has to refer to an csq field.\n"
-                        "Refer with keyword 'csq_key'\n"
-                        "csq_key is missing in section: {0}".format(
-                            plugin
+                            try:
+                                csq_key = vcf_section['vep_key']
+                            except KeyError:
+                                raise ValidateError(
+                                "CSQ entrys has to refer to an csq field.\n"
+                                "Refer with keyword 'csq_key'\n"
+                                "csq_key is missing in section: {0}".format(
+                                plugin
+                                )
                             )
-                        )
 
 
                 except KeyError:
