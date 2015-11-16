@@ -101,7 +101,7 @@ silent, rank_results, outfile):
     try:
         config_parser = ConfigParser(score_config)
     except ValidateError as e:
-        logger.error("Something wrong in plugin file, please see log")
+        logger.error(e.message)
         logger.info("Exiting")
         sys.exit(1)
     
