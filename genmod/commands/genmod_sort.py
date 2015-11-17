@@ -18,6 +18,7 @@ import logging
 
 from codecs import open
 from tempfile import NamedTemporaryFile
+from datetime import datetime
 
 
 from genmod.vcf_tools import (print_variant_for_sorting, sort_variants, 
@@ -57,7 +58,7 @@ def sort(variant_file, outfile, family_id, silent, position):
     head = HeaderParser()
 
     logger.info("Running GENMOD sort version {0}".format(__version__))
-
+    start = datetime.now()
     # Create a temporary variant file for sorting
     logger.debug("Creating temporary file for sorting")
     temp_file = NamedTemporaryFile(delete=False)
@@ -70,8 +71,9 @@ def sort(variant_file, outfile, family_id, silent, position):
                                 errors='replace'
                                 )
     logger.debug("Temp file created")
-    # Print the variants with rank score in first column
     logger.info("Printing variants to temp file")
+    nr_variants = 0
+    # Print the variants with rank score in first column
     for line in variant_file:
         line = line.rstrip()
         if line.startswith('#'):
@@ -80,6 +82,7 @@ def sort(variant_file, outfile, family_id, silent, position):
             else:
                 head.parse_header_line(line)
         else:
+            nr_variants += 1
             priority = '0'
             
             if position:
@@ -93,15 +96,11 @@ def sort(variant_file, outfile, family_id, silent, position):
                 priority=priority, 
                 outfile=temp_file_handle
             )
-            # print_variant_for_sorting(
-            #     variant_line=line,
-            #     priority=priority,
-            #     outfile = temp_file_handle,
-            # )
     
     temp_file_handle.close()
     
     logger.info("Variants printed to temp file")
+    logger.info("Nr or variants in VCF file: {0}".format(nr_variants))
     
     sort_mode = 'rank'
     
@@ -123,7 +122,7 @@ def sort(variant_file, outfile, family_id, silent, position):
     )
     logger.debug("Headers printed")
     
-    logger.debug("Printing variants")
+    logger.info("Printing variants")
     with open(temp_file.name, mode='r', encoding='utf-8', errors='replace') as f:
         for variant_line in f:
             print_variant(
@@ -132,11 +131,13 @@ def sort(variant_file, outfile, family_id, silent, position):
                 mode = 'modified',
                 silent=False
                 )
+    logger.debug("Variants printed")
     
     logger.info("Removing temp file")
     os.remove(temp_file.name)
     logger.debug("Temp file removed")
     
+    logger.info("Sorting done, time for sorting: {0}".format(datetime.now()-start))
 
 
 if __name__ == '__main__':
