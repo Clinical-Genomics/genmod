@@ -25,6 +25,7 @@ get_info_dict, print_variant, HeaderParser, print_headers)
 
 from genmod.utils import (get_chromosome_priority, get_rank_score)
 
+from genmod import __version__
 
 @click.command()
 @click.argument('variant_file', 
@@ -36,7 +37,8 @@ from genmod.utils import (get_chromosome_priority, get_rank_score)
                     type=click.File('w'),
                     help='Specify the path to a file where results should be stored.'
 )
-@click.option('-f', '--family_id', 
+@click.option('-f', '--family_id',
+                    type=str,
                     help='Specify the family id for sorting.'
 )
 @click.option('-s', '--silent',
@@ -54,7 +56,10 @@ def sort(variant_file, outfile, family_id, silent, position):
     logger = logging.getLogger(__name__)
     head = HeaderParser()
 
+    logger.info("Running GENMOD sort version {0}".format(__version__))
+
     # Create a temporary variant file for sorting
+    logger.debug("Creating temporary file for sorting")
     temp_file = NamedTemporaryFile(delete=False)
     temp_file.close()
     # Open the temp file with codecs
@@ -64,8 +69,9 @@ def sort(variant_file, outfile, family_id, silent, position):
                                 encoding='utf-8',
                                 errors='replace'
                                 )
-    
+    logger.debug("Temp file created")
     # Print the variants with rank score in first column
+    logger.info("Printing variants to temp file")
     for line in variant_file:
         line = line.rstrip()
         if line.startswith('#'):
@@ -95,24 +101,29 @@ def sort(variant_file, outfile, family_id, silent, position):
     
     temp_file_handle.close()
     
+    logger.info("Variants printed to temp file")
+    
     sort_mode = 'rank'
     
     if position:
         sort_mode = 'chromosome'
     
+    logger.info("Sorting variants")
     sort_variants(
         infile = temp_file.name, 
         mode=sort_mode
     )
-    
-    # Print the headers
+    logger.info("Variants sorted")
+
+    logger.debug("Printing headers")
     print_headers(
         head = head, 
         outfile = outfile, 
         silent=silent
     )
+    logger.debug("Headers printed")
     
-    # Print the variants
+    logger.debug("Printing variants")
     with open(temp_file.name, mode='r', encoding='utf-8', errors='replace') as f:
         for variant_line in f:
             print_variant(
