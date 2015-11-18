@@ -93,6 +93,7 @@ def add_vcf_info(keyword, variant_line=None, variant_dict=None, annotation=None)
     logger = logging.getLogger(__name__)
     
     if annotation:
+        annotation = str(annotation)
         new_info = '{0}={1}'.format(keyword, annotation)
     else:
         new_info = keyword
