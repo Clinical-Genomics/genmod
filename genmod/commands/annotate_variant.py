@@ -55,11 +55,18 @@ from genmod.utils import VariantPrinter
 )
 @click.option('--thousand_g',
                     type=click.Path(exists=True), 
-                    help="""Specify the path to a bgzipped vcf file (with index) with 1000g variants"""
+                    help="Specify the path to a bgzipped vcf file"\
+                            " (with index) with 1000g variants"
 )
 @click.option('--exac',
                     type=click.Path(exists=True), 
-                    help="""Specify the path to a bgzipped vcf file (with index) with exac variants."""
+                    help="Specify the path to a bgzipped vcf file"\
+                            " (with index) with exac variants."
+)
+@click.option('--spidex',
+                    type=click.Path(exists=True), 
+                    help="Specify the path to a bgzipped tsv file"\
+                            " (with index) with spidex information."
 )
 @click.option('-a' ,'--annotation_dir',
                     type=click.Path(exists=True),
@@ -85,7 +92,7 @@ from genmod.utils import VariantPrinter
                 help='Define how many processes that should be use for annotation.'
 )
 def annotate(variant_file, annotate_regions, cadd_file, thousand_g, exac, 
-annotation_dir, outfile, silent, cadd_raw, processes):
+spidex,annotation_dir, outfile, silent, cadd_raw, processes):
     """
     Annotate vcf variants.
     
@@ -174,6 +181,19 @@ annotation_dir, outfile, silent, cadd_raw, processes):
             entry_type='Float',
             description="Frequency in the 1000G database."
         )
+
+    if spidex:
+        logger.info("Annotating Spidex z scores")
+        logger.debug("Using Spidex file: {0}".format(spidex))
+        annotator_arguments['spidex'] = spidex
+        add_metadata(
+            head,
+            'info',
+            'SPIDEX',
+            annotation_number='1',
+            entry_type='Float',
+            description="Z score from the spidex database."
+        )
     
     if cadd_file:
         logger.info("Annotating CADD scores")
@@ -215,7 +235,7 @@ annotation_dir, outfile, silent, cadd_raw, processes):
     
     num_annotators = processes
     #Adapt the number of processes to the machine that run the analysis
-    if cadd_file:
+    if cadd_file or spidex:
         # We need more power when annotating cadd scores:
         # But if flag is used that overrides
         if num_annotators == min(4, cpu_count()):

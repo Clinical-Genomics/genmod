@@ -1,29 +1,8 @@
 import logging
 
-# def check_tabix_index(compressed_file, file_type='cadd', verbose=False):
-#     """
-#     Check if a compressed file have a tabix index, if not build one.
-#
-#     Args:
-#         compressed_file (str): Path to a file that is assumed to be compressed.
-#         file_type (str): The type of the file. ('cadd' or 'vcf')
-#         verbose (bool): Increase output verbosity
-#
-#     Returns:
-#         0 if everything went ok.
-#
-#     """
-#     if file_type == 'cadd':
-#         try:
-#             tabix_index(compressed_file, seq_col=0, start_col=1, end_col=1, meta_char='#')
-#         except IOError as e:
-#             pass
-#     elif file_type == 'vcf':
-#         try:
-#             tabix_index(compressed_file, preset='vcf')
-#         except IOError as e:
-#             pass
-#     return 0
+from tabix import TabixError
+
+logger = logging.getLogger(__name__)
 
 
 def get_frequency(tabix_reader, chrom, start, alt):
@@ -39,12 +18,15 @@ def get_frequency(tabix_reader, chrom, start, alt):
     Returns:
         freq (str): The frequency for this position
     """
-    logger = logging.getLogger(__name__)
     freq = None
     # CADD values are only for snps:
     tabix_key = int(start)
+    logger.debug("Looking for frequency in {0}".format(tabix_reader))
+    logger.debug("Looking for frequency with chr:{0}, pos:{1},"\
+        " alt:{2}".format(chrom, start, alt))
     try:
         for record in tabix_reader.query(chrom, tabix_key-1, tabix_key):
+            logger.debug("Found record: {0}".format('\t'.join(record)))
             #We can get multiple rows so need to check each one
             #We also need to check each one of the alternatives per row
             for i,alternative in enumerate(record[4].split(',')):
@@ -53,9 +35,10 @@ def get_frequency(tabix_reader, chrom, start, alt):
                         info = info.split('=')
                         if info[0] == 'AF':
                             frequencies = info[-1].split(',')
-                            return frequencies[i]
+                            freq = frequencies[i]
     except TypeError:            
         for record in tabix_reader.query(str(chrom), tabix_key-1, tabix_key):
+            logger.debug("Found record: {0}".format('\t'.join(record)))
             #We can get multiple rows so need to check each one
             #We also need to check each one of the alternatives per row
             for i, alternative in enumerate(record[4].split(',')):
@@ -64,11 +47,52 @@ def get_frequency(tabix_reader, chrom, start, alt):
                         info = info.split('=')
                         if info[0] == 'AF':
                             frequencies = info[-1].split(',')
-                            return frequencies[i]
+                            freq = frequencies[i]
+    except TabixError:
+        logger.warning("Chromosome {0} does not seem to exist in {1}".format(
+            chrom, tabix_reader))
     except:
         pass
     
+    logger.debug("Found frequency: {0}".format(freq))
     return freq
+
+
+def get_spidex_score(tabix_reader, chrom, start, alt):
+    """
+    Return the record from a spidex file.
+    
+    Arguments:
+        tabix_reader (Tabix.reader): A Tabix object
+        chrom (str): The chromosome of the position
+        start (str): The start position of the variant
+        alt (str): The alternative sequence
+    
+    Returns:
+        spidex_score float: The spidex z scores for this position
+    
+    """
+    logger.debug("Looking for spidex score in {0}".format(tabix_reader))
+    logger.debug("Looking for spidex score with chr:{0}, pos:{1},"\
+        " alt:{2}".format(chrom, start, alt))
+    
+    # CADD values are only for snps:
+    spidex_key = int(start)
+    spidex_score = None
+    try:
+        for record in tabix_reader.query(chrom, spidex_key-1, spidex_key):
+            logger.debug("Found record: {0}".format('\t'.join(record)))
+            if record[3] == alt:
+                #We need to send both cadd values
+                spidex_score = float(record[5])
+    
+    except TabixError:
+        logger.warning("Chromosome {0} does not seem to exist in {1}".format(
+            chrom, tabix_reader))
+    
+    logger.debug("Found spidex score: {0}".format(spidex_score))
+    
+    return spidex_score
 
 
 def get_cadd_scores(tabix_reader, chrom, start, alt):

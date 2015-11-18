@@ -24,7 +24,7 @@ from math import log10
 
 from genmod.vcf_tools import get_variant_dict, add_vcf_info
 from genmod.annotate_regions import (get_genes, check_exonic)
-from genmod.annotate_variants import get_frequency, get_cadd_scores
+from genmod.annotate_variants import (get_frequency, get_cadd_scores, get_spidex_score)
 
 # from . import (annotate_cadd_score, annotate_frequency, check_genetic_models)
 
@@ -57,6 +57,9 @@ class VariantAnnotator(Process):
         self.cadd_raw = kwargs.get('cadd_raw', None)
         self.logger.debug("Setting cadd raw to {0}".format(self.cadd_raw))
 
+        self.spidex = kwargs.get('spidex', None)
+        self.logger.debug("Setting spidex to {0}".format(self.spidex))
+
         self.exon_trees = kwargs.get('exon_trees', {})
         self.gene_trees = kwargs.get('gene_trees', {})
 
@@ -85,8 +88,10 @@ class VariantAnnotator(Process):
             self.logger.debug("Opening ExAC frequency file with tabix open")
             self.exac = tabix.open(self.exac)
             self.logger.debug("ExAC frequency file opened")
-        # if self.dbNSFP:
-        #     self.dbNSFP = tabix.open(self.exac)
+        if self.spidex:
+            self.logger.debug("Opening Spidex database with tabix open")
+            self.spidex = tabix.open(self.spidex)
+            self.logger.debug("Spidex file opened")
 
     def run(self):
         """Run the consuming"""
@@ -171,6 +176,20 @@ class VariantAnnotator(Process):
                         variant_dict = variant_dict,
                         annotation = frequency
                     )
+            if self.spidex:
+                spidex_score = get_spidex_score(
+                        tabix_reader=self.spidex, 
+                        chrom=chrom, 
+                        start=position, 
+                        alt=alternative
+                    )
+                if spidex_score:
+                    variant_dict = add_vcf_info(
+                        keyword = "SPIDEX",
+                        variant_dict = variant_dict,
+                        annotation = spidex_score
+                    )
+                
             if self.cadd_handles:
                 
                 cadd_phred = None
