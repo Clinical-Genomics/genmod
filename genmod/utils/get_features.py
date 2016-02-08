@@ -30,7 +30,7 @@ def check_vep_annotation(variant):
                 # These are the SO terms that indicate that the variant 
                 # belongs to a gene
                 if consequence in INTERESTING_SO_TERMS:
-                    annotation.add(vep_annotation.get('SYMBOL', ''))
+                    annotation.add(vep_annotation.get('Gene', ''))
     return annotation
 
 def get_annotation(variant, annotation_key="Annotation", vep=False):

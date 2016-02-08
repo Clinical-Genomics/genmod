@@ -20,7 +20,7 @@ except (IOError, ImportError, RuntimeError):
     long_description = 'Tool for annotating patterns of genetic inheritance in Variant Call Format (VCF) files.'
 
 setup(name='genmod',
-    version='3.4',
+    version='3.4.1',
     description='Annotate genetic inheritance models in variant files',
     author = 'Mans Magnusson',
     author_email = 'mans.magnusson@scilifelab.se',

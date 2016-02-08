@@ -31,6 +31,8 @@ INTERESTING_SO_TERMS = set(
                 u'intron_variant',
                 u'NMD_transcript_variant',
                 u'non_coding_transcript_variant',
+                u'upstream_gene_variant',
+                u'downstream_gene_variant',
             ]
 )
 

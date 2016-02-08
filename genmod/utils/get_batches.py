@@ -69,11 +69,8 @@ results_queue=None, annotation_keyword = 'Annotation'):
             variant['variant_id'] = variant_id
             variant['info_dict'] = get_info_dict(variant['INFO'])
             
-            if variant['info_dict'].get('Compounds'):
-                compound_variant = True
-            
             if compound_mode:
-                if not compound_variant:
+                if not variant['info_dict'].get('Compounds'):
                     add_variant = False
             
             if vep:
