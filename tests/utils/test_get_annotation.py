@@ -34,7 +34,7 @@ def get_vep_variant(chrom='1', pos='1', ref='A', alt='G', annotation="ADK"):
         "INFO":"Annotation={0}".format(annotation),
         'vep_info':{
             'A': [{
-                "SYMBOL": annotation,
+                "Gene": annotation,
                 "Consequence": 'transcript_ablation' 
             }]
         },

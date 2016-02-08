@@ -9,7 +9,7 @@ def test_get_none():
         'A':[
             {
                 'Consequence': 'Two&Different',
-                'SYMBOL': 'ADK'
+                'Gene': 'ADK'
             }
             ]
         }
@@ -27,12 +27,11 @@ def test_get_annotation():
         'A':[
             {
                 'Consequence': 'transcript_ablation&splice_donor_variant',
-                'SYMBOL': 'ADK'
+                'Gene': 'ADK'
             }
             ]
         }
     }
     
     # The result should be empty since the terms do not exist
-    assert check_vep_annotation(vep_variant) == set(
-        ['ADK'])
+    assert check_vep_annotation(vep_variant) == set(['ADK'])
