@@ -63,6 +63,10 @@ from genmod.utils import VariantPrinter
                     help="Specify the path to a bgzipped vcf file"\
                             " (with index) with exac variants."
 )
+@click.option('--max_af',
+                    is_flag=True,
+                    help="If the MAX AF should be annotated"
+)
 @click.option('--spidex',
                     type=click.Path(exists=True), 
                     help="Specify the path to a bgzipped tsv file"\
@@ -92,7 +96,7 @@ from genmod.utils import VariantPrinter
                 help='Define how many processes that should be use for annotation.'
 )
 def annotate(variant_file, annotate_regions, cadd_file, thousand_g, exac, 
-spidex,annotation_dir, outfile, silent, cadd_raw, processes):
+spidex,annotation_dir, outfile, silent, cadd_raw, max_af, processes):
     """
     Annotate vcf variants.
     
@@ -109,6 +113,7 @@ spidex,annotation_dir, outfile, silent, cadd_raw, processes):
     start_time_analysis = datetime.now()
     annotator_arguments = {}
     annotator_arguments['cadd_raw'] = cadd_raw
+    annotator_arguments['max_af'] = max_af
     
     logger.info("Initializing a Header Parser")
     head = HeaderParser()

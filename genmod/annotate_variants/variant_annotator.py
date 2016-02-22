@@ -24,7 +24,7 @@ from math import log10
 
 from genmod.vcf_tools import get_variant_dict, add_vcf_info
 from genmod.annotate_regions import (get_genes, check_exonic)
-from genmod.annotate_variants import (get_frequency, get_cadd_scores, get_spidex_score)
+from genmod.annotate_variants import (get_frequencies, get_cadd_scores, get_spidex_score)
 
 # from . import (annotate_cadd_score, annotate_frequency, check_genetic_models)
 
@@ -56,6 +56,9 @@ class VariantAnnotator(Process):
 
         self.cadd_raw = kwargs.get('cadd_raw', None)
         self.logger.debug("Setting cadd raw to {0}".format(self.cadd_raw))
+
+        self.max_af = kwargs.get('max_af', None)
+        self.logger.debug("Setting max_af to {0}".format(self.max_af))
 
         self.spidex = kwargs.get('spidex', None)
         self.logger.debug("Setting spidex to {0}".format(self.spidex))
@@ -149,33 +152,48 @@ class VariantAnnotator(Process):
                     )
             if self.thousand_g:
                 
-                frequency = get_frequency(
+                frequencies = get_frequencies(
                     tabix_reader = self.thousand_g,
                     chrom=chrom, 
                     start=position, 
                     alt=alternative
                 )
-                if frequency:    
+                if frequencies.get('AF'):    
                     variant_dict = add_vcf_info(
                         keyword = "1000GAF",
                         variant_dict = variant_dict,
-                        annotation = frequency
+                        annotation = frequencies['AF']
                     )
+                if self.max_af:
+                    if frequencies.get('MAX_AF'):
+                        variant_dict = add_vcf_info(
+                            keyword = "1000G_MAX_AF",
+                            variant_dict = variant_dict,
+                            annotation = frequencies['MAX_AF']
+                            )
 
             if self.exac:
                 
-                frequency = get_frequency(
+                frequencies = get_frequencies(
                     tabix_reader = self.exac,
                     chrom=chrom, 
                     start=position, 
                     alt=alternative
                 )
-                if frequency:    
+                if frequencies.get('AF'):    
                     variant_dict = add_vcf_info(
                         keyword = "ExACAF",
                         variant_dict = variant_dict,
                         annotation = frequency
                     )
+                if self.max_af:
+                    if frequencies.get('MAX_AF'):
+                        variant_dict = add_vcf_info(
+                            keyword = "ExAC_MAX_AF",
+                            variant_dict = variant_dict,
+                            annotation = frequency
+                        )
+
             if self.spidex:
                 spidex_score = get_spidex_score(
                         tabix_reader=self.spidex, 

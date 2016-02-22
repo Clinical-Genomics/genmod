@@ -5,9 +5,38 @@ from tabix import TabixError
 logger = logging.getLogger(__name__)
 
 
-def get_frequency(tabix_reader, chrom, start, alt):
+def get_tabix_records(tabix_reader, chrom, start):
+    """Get the tabix records for some given coordinates
+    
+    Args:
+        tabix_reader (Tabix.reader): A Tabix object
+        chrom (str): The chromosome of the position
+        start (str): The start position of the variant
+        alt (str): The alternative sequence
+    
+    Returns:
+        records (Iterable): The overlapping records found
     """
-    Return the frequency from a tabix indexed vcf file.
+    records = []
+    logger.debug("Looking for record in %s" % (tabix_reader))
+    logger.debug("Looking for records with chr:%s, pos:%s" % (chrom, start))
+    tabix_key = int(start)
+    try:
+        records = tabix_reader.query(chrom, tabix_key-1, tabix_key)
+    except TypeError:            
+        records = tabix_reader.query(str(chrom), tabix_key-1, tabix_key)
+    except TabixError:
+        logger.warning("Chromosome {0} does not seem to exist in {1}".format(
+            chrom, tabix_reader))
+    except:
+        pass
+    
+    return records
+    
+
+def get_frequencies(tabix_reader, chrom, start, alt):
+    """
+    Return the frequencies from a tabix indexed vcf file.
     
     Arguments:
         tabix_reader (Tabix.reader): A Tabix object
@@ -16,46 +45,25 @@ def get_frequency(tabix_reader, chrom, start, alt):
         alt (str): The alternative sequence
     
     Returns:
-        freq (str): The frequency for this position
+        frequencies (dict): A dictionary with relevant frequencies
     """
     freq = None
-    # CADD values are only for snps:
-    tabix_key = int(start)
-    logger.debug("Looking for frequency in {0}".format(tabix_reader))
-    logger.debug("Looking for frequency with chr:{0}, pos:{1},"\
-        " alt:{2}".format(chrom, start, alt))
-    try:
-        for record in tabix_reader.query(chrom, tabix_key-1, tabix_key):
-            logger.debug("Found record: {0}".format('\t'.join(record)))
-            #We can get multiple rows so need to check each one
-            #We also need to check each one of the alternatives per row
-            for i,alternative in enumerate(record[4].split(',')):
-                if alternative == alt:
-                    for info in record[7].split(';'):
-                        info = info.split('=')
-                        if info[0] == 'AF':
-                            frequencies = info[-1].split(',')
-                            freq = frequencies[i]
-    except TypeError:            
-        for record in tabix_reader.query(str(chrom), tabix_key-1, tabix_key):
-            logger.debug("Found record: {0}".format('\t'.join(record)))
-            #We can get multiple rows so need to check each one
-            #We also need to check each one of the alternatives per row
-            for i, alternative in enumerate(record[4].split(',')):
-                if alternative == alt:
-                    for info in record[7].split(';'):
-                        info = info.split('=')
-                        if info[0] == 'AF':
-                            frequencies = info[-1].split(',')
-                            freq = frequencies[i]
-    except TabixError:
-        logger.warning("Chromosome {0} does not seem to exist in {1}".format(
-            chrom, tabix_reader))
-    except:
-        pass
+    records = get_tabix_records(tabix_reader, chrom, start)
+
+    frequencies = {}
+    for record in records:
+        logger.debug("Found record: {0}".format('\t'.join(record)))
+        #We can get multiple rows so need to check each one
+        #We also need to check each one of the alternatives per row
+        for i,alternative in enumerate(record[4].split(',')):
+            if alternative == alt:
+                for info in record[7].split(';'):
+                    info = info.split('=')
+                    if info[0] in ['AF', 'MAX_AF']:
+                        freqs = info[-1].split(',')
+                        frequencies[info[0]] = freqs[i]
     
-    logger.debug("Found frequency: {0}".format(freq))
-    return freq
+    return frequencies
 
 
 def get_spidex_score(tabix_reader, chrom, start, alt):
