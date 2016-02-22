@@ -80,23 +80,13 @@ def get_spidex_score(tabix_reader, chrom, start, alt):
         spidex_score float: The spidex z scores for this position
     
     """
-    logger.debug("Looking for spidex score in {0}".format(tabix_reader))
-    logger.debug("Looking for spidex score with chr:{0}, pos:{1},"\
-        " alt:{2}".format(chrom, start, alt))
-    
-    # CADD values are only for snps:
-    spidex_key = int(start)
+    records = get_tabix_records(tabix_reader, chrom, start)
     spidex_score = None
-    try:
-        for record in tabix_reader.query(chrom, spidex_key-1, spidex_key):
-            logger.debug("Found record: {0}".format('\t'.join(record)))
-            if record[3] == alt:
-                #We need to send both cadd values
-                spidex_score = float(record[5])
     
-    except TabixError:
-        logger.warning("Chromosome {0} does not seem to exist in {1}".format(
-            chrom, tabix_reader))
+    for record in records:
+        if record[3] == alt:
+            #We need to send both cadd values
+            spidex_score = float(record[5])
     
     logger.debug("Found spidex score: {0}".format(spidex_score))
     
@@ -121,23 +111,13 @@ def get_cadd_scores(tabix_reader, chrom, start, alt):
             'cadd_raw': None,
             'cadd_phred': None,
         }
+    records = get_tabix_records(tabix_reader, chrom, start)    
     # CADD values are only for snps:
-    cadd_key = int(start)
-    try:
-        for record in tabix_reader.query(chrom, cadd_key-1, cadd_key):
-            if record[3] == alt:
-                #We need to send both cadd values
-                cadd_scores['cadd_raw'] = record[-2]
-                cadd_scores['cadd_phred'] = record[-1]
-    except TypeError:
-        for record in tabix_reader.query(str(chrom), cadd_key-1, cadd_key):
-            record = record.split('\t')
-            if record[3] == alt:
-                #We need to send both cadd values
-                cadd_scores['cadd_raw'] = record[-2]
-                cadd_scores['cadd_phred'] = record[-1]
-    except:
-        pass
+    for record in records:
+        if record[3] == alt:
+            #We need to send both cadd values
+            cadd_scores['cadd_raw'] = record[-2]
+            cadd_scores['cadd_phred'] = record[-1]
     
     return cadd_scores
 
