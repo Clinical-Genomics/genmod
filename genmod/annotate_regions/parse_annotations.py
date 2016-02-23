@@ -68,6 +68,7 @@ from genmod.utils import is_number
 
 from interval_tree import interval_tree
 
+logger = logging.getLogger(__name__)
 
 def parse_annotations(infile, annotation_type, zipped = False, 
                     splice_padding = 2):
@@ -85,8 +86,6 @@ def parse_annotations(infile, annotation_type, zipped = False,
                               (These are the canonical splice regions)
     """
     
-    logger = logging.getLogger(__name__)
-    logger = logging.getLogger("genmod.annotate_regions.parse_annotation")
     # A dictionary with {<chr>:<intervalTree>} 
     # the trees are intervals with genes
     logger.info("Initializing gene trees")
@@ -124,6 +123,7 @@ def parse_annotations(infile, annotation_type, zipped = False,
     
     elif annotation_type == 'ccds':
         genes,exons = ccds_parser(annotation_handle, splice_padding)
+        
     
     elif annotation_type == 'bed':
         genes,exons = bed_parser(annotation_handle, splice_padding)
@@ -162,7 +162,6 @@ def parse_annotations(infile, annotation_type, zipped = False,
     #Build one interval tree for each chromosome:
             
     nr_of_genes = 0
-    
     
     for chrom in genes:
         nr_of_genes += len(genes[chrom])
@@ -246,7 +245,9 @@ def ccds_parser(ccds_file_handle, splice_padding=2):
     exons = {}
     
     for line in ccds_file_handle:
+        
         if not line.startswith('#') and len(line) > 1:
+            
             line = line.split('\t')
             chrom = line[0].lstrip('chr')
             transcript_id = line[1]
@@ -282,7 +283,6 @@ def ccds_parser(ccds_file_handle, splice_padding=2):
                             exon_stop + splice_padding, 
                             exon_id
                         ]
-    
     return genes, exons
 
 
@@ -482,7 +482,7 @@ def bed_parser(bed_file_handle, splice_padding=2):
 
 def gtf_parser(gtf_file_handle, splice_padding=2):
    """
-   Parse a file in the bed format.
+   Parse a file in the gtf format.
    
    Arguments:
        gtf_file_handle (file_handle): An opened file in gtf file format
