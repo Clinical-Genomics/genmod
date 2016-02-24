@@ -1,0 +1,9 @@
+ped_parser >= 1.6.2
+pytabix
+pytest
+interval_tree >= 0.3.3
+click
+configobj
+intervaltree
+extract_vcf >= 0.4.2
+vcftoolbox > 1.3
