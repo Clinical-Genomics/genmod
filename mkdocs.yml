@@ -11,10 +11,9 @@ pages:
 - Commands:
     - Annotating Variants: commands/annotate-variants.md
     - Annotate Genetic Models: commands/annotate-models.md
-    - Score Variants: commands/score-variants.md
-    - Score Compounds: commands/score-compounds.md
     - Filter Variants: commands/filter-variants.md
     - Sort Variants: commands/sort-variants.md
+    - Build References: commands/build-annotation.md
 
 dev_addr: "0.0.0.0:4000"
 theme: mkdocs
