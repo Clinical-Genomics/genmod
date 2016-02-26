@@ -226,6 +226,24 @@ spidex,annotation_dir, outfile, silent, cadd_raw, max_af, processes):
                 entry_type='Float',
                 description="The CADD raw score(s) for this alternative(s)."
             )
+
+    if max_af:
+        add_metadata(
+            head,
+            'info',
+            '1000G_MAX_AF',
+            annotation_number='1',
+            entry_type='Float',
+            description="The max af for thousand genomes populations."
+        )
+        add_metadata(
+            head,
+            'info',
+            'ExAC_MAX_AF',
+            annotation_number='1',
+            entry_type='Float',
+            description="The max af for ExAC populations."
+        )
     
     ###################################################################
     ### The task queue is where all jobs(in this case batches that  ###
