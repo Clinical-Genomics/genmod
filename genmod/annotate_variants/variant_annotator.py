@@ -24,7 +24,8 @@ from math import log10
 
 from genmod.vcf_tools import get_variant_dict, add_vcf_info
 from genmod.annotate_regions import (get_genes, check_exonic)
-from genmod.annotate_variants import (get_frequencies, get_cadd_scores, get_spidex_score)
+from genmod.annotate_variants import (get_frequencies, get_cadd_scores, 
+get_spidex_score, get_cosmic)
 
 # from . import (annotate_cadd_score, annotate_frequency, check_genetic_models)
 
@@ -63,6 +64,9 @@ class VariantAnnotator(Process):
         self.spidex = kwargs.get('spidex', None)
         self.logger.debug("Setting spidex to {0}".format(self.spidex))
 
+        self.cosmic = kwargs.get('cosmic', None)
+        self.logger.debug("Setting cosmic to {0}".format(self.spidex))
+
         self.exon_trees = kwargs.get('exon_trees', {})
         self.gene_trees = kwargs.get('gene_trees', {})
 
@@ -95,6 +99,10 @@ class VariantAnnotator(Process):
             self.logger.debug("Opening Spidex database with tabix open")
             self.spidex = tabix.open(self.spidex)
             self.logger.debug("Spidex file opened")
+        if self.cosmic:
+            self.logger.debug("Opening COSMIC database with tabix open")
+            self.cosmic = tabix.open(self.cosmic)
+            self.logger.debug("COSMIC file opened")
 
     def run(self):
         """Run the consuming"""
@@ -206,6 +214,19 @@ class VariantAnnotator(Process):
                         keyword = "SPIDEX",
                         variant_dict = variant_dict,
                         annotation = spidex_score
+                    )
+
+            if self.cosmic:
+                in_cosmic = get_cosmic(
+                        tabix_reader=self.cosmic, 
+                        chrom=chrom, 
+                        start=position, 
+                        alt=alternative
+                    )
+                if in_cosmic:
+                    variant_dict = add_vcf_info(
+                        keyword = "COSMIC",
+                        variant_dict = variant_dict,
                     )
                 
             if self.cadd_handles:

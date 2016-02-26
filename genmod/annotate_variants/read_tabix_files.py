@@ -92,6 +92,34 @@ def get_spidex_score(tabix_reader, chrom, start, alt):
     
     return spidex_score
 
+def get_cosmic(tabix_reader, chrom, start, alt):
+    """
+    Return if record exists in cosmic database.
+    
+    Arguments:
+        tabix_reader (Tabix.reader): A Tabix object
+        chrom (str): The chromosome of the position
+        start (str): The start position of the variant
+        alt (str): The alternative sequence
+    
+    Returns:
+        in_cosmic (bool): If variant is in COSMIC
+    
+    """
+    records = get_tabix_records(tabix_reader, chrom, start)
+    in_cosmic = False
+    
+    for record in records:
+        if record[4] == alt:
+            #We need to send both cadd values
+            in_cosmic = True
+    if in_cosmic:
+        logger.debug("Variant was found in COSMIC")
+    else:
+        logger.debug("Variant was not found in COSMIC")
+
+    return in_cosmic
+
 
 def get_cadd_scores(tabix_reader, chrom, start, alt):
     """

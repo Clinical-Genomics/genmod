@@ -63,6 +63,11 @@ from genmod.utils import VariantPrinter
                     help="Specify the path to a bgzipped vcf file"\
                             " (with index) with exac variants."
 )
+@click.option('--cosmic',
+                    type=click.Path(exists=True), 
+                    help="Specify the path to a bgzipped vcf file"\
+                            " (with index) with COSMIC variants."
+)
 @click.option('--max_af',
                     is_flag=True,
                     help="If the MAX AF should be annotated"
@@ -96,7 +101,7 @@ from genmod.utils import VariantPrinter
                 help='Define how many processes that should be use for annotation.'
 )
 def annotate(variant_file, annotate_regions, cadd_file, thousand_g, exac, 
-spidex,annotation_dir, outfile, silent, cadd_raw, max_af, processes):
+spidex,annotation_dir, outfile, silent, cadd_raw, cosmic, max_af, processes):
     """
     Annotate vcf variants.
     
@@ -112,8 +117,6 @@ spidex,annotation_dir, outfile, silent, cadd_raw, max_af, processes):
     
     start_time_analysis = datetime.now()
     annotator_arguments = {}
-    annotator_arguments['cadd_raw'] = cadd_raw
-    annotator_arguments['max_af'] = max_af
     
     logger.info("Initializing a Header Parser")
     head = HeaderParser()
@@ -216,7 +219,7 @@ spidex,annotation_dir, outfile, silent, cadd_raw, max_af, processes):
             description="The CADD relative score for this alternative."
         )
         if cadd_raw:
-            annotator_arguments['cadd_raw'] = True
+            annotator_arguments['cadd_raw'] = cadd_raw
             logger.debug("Adding vcf metadata for CADD raw score")
             add_metadata(
                 head,
@@ -228,6 +231,7 @@ spidex,annotation_dir, outfile, silent, cadd_raw, max_af, processes):
             )
 
     if max_af:
+        annotator_arguments['max_af'] = max_af
         add_metadata(
             head,
             'info',
@@ -243,6 +247,19 @@ spidex,annotation_dir, outfile, silent, cadd_raw, max_af, processes):
             annotation_number='1',
             entry_type='Float',
             description="The max af for ExAC populations."
+        )
+
+    if cosmic:
+        logger.info("Annotating if variant is in COSMIC")
+        logger.debug("Using COSMOC file: {0}".format(cosmic))
+        annotator_arguments['cosmic'] = cosmic
+        add_metadata(
+            head,
+            'info',
+            'COSMIC',
+            annotation_number='0',
+            entry_type='Flag',
+            description="If variant is in COSMIC database."
         )
     
     ###################################################################
