@@ -46,19 +46,21 @@ def get_variant_id(variant_dict):
     
         The variant id is a string made of CHROM_POS_REF_ALT
         
+        The alt field for svs needs some massage to work downstream.
+        
         Args:
             variant_dict (dict): A variant dictionary
         
         Returns:
             variant_id (str)
     """
-    
-    return '_'.join([
-        variant_dict['CHROM'],
-        variant_dict['POS'],
-        variant_dict['REF'],
-        variant_dict['ALT'],
-    ])
+    chrom = variant_dict['CHROM']
+    pos = variant_dict['POS']
+    ref = variant_dict['REF']
+    #There are several symbols in structural variant calls that make
+    #things hard. We will strip those symbols
+    alt = variant_dict['ALT'].translate(None, "<>[]:")
+    return '_'.join([chrom,pos,ref,alt])
 
 def get_vep_dict(vep_string, vep_header, allele=None):
     """Make the vep annotation into a dictionary

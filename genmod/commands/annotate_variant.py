@@ -36,6 +36,8 @@ from genmod.annotate_variants import VariantAnnotator
 from genmod.annotate_regions import (get_genes, check_exonic, load_annotations)
 from genmod.utils import VariantPrinter
 
+logger = logging.getLogger(__name__)
+
 @click.command()
 @click.argument('variant_file',
                     nargs=1,
@@ -109,10 +111,6 @@ spidex,annotation_dir, outfile, silent, cadd_raw, cosmic, max_af, processes):
     Please use --help for more info.
     """
 
-    logger = logging.getLogger(__name__)
-    #For testing
-    logger = logging.getLogger("genmod.commands.annotate_variants")
-    
     logger.info("Running genmod annotate_variant version {0}".format(__version__))
     
     start_time_analysis = datetime.now()
@@ -162,8 +160,7 @@ spidex,annotation_dir, outfile, silent, cadd_raw, cosmic, max_af, processes):
             entry_type='Flag',
             description='Indicates if the variant is exonic.'
         )
-    
-    
+
     if exac:
         logger.info("Annotating ExAC frequencies")
         logger.debug("Using ExAC file: {0}".format(exac))
@@ -209,7 +206,6 @@ spidex,annotation_dir, outfile, silent, cadd_raw, cosmic, max_af, processes):
         annotator_arguments['cadd_files'] = cadd_file
         any_cadd_file = True
 
-    if cadd_file:
         add_metadata(
             head,
             'info',
@@ -272,7 +268,7 @@ spidex,annotation_dir, outfile, silent, cadd_raw, cosmic, max_af, processes):
     variant_queue = JoinableQueue(maxsize=1000)
     logger.debug("Setting up a Queue for storing results from workers")
     results = Manager().Queue()
-    
+
     num_annotators = processes
     #Adapt the number of processes to the machine that run the analysis
     if cadd_file or spidex:
@@ -300,7 +296,7 @@ spidex,annotation_dir, outfile, silent, cadd_raw, cosmic, max_af, processes):
     for worker in annotators:
         logger.debug('Starting worker {0}'.format(worker))
         worker.start()
-    
+
     # This process prints the variants to temporary files
     # If there is only one annotation process we can print the results as soon
     # as they are done
@@ -357,7 +353,7 @@ spidex,annotation_dir, outfile, silent, cadd_raw, cosmic, max_af, processes):
     variant_queue.join()
     results.put(None)
     var_printer.join()
-    
+
     if len(annotators) > 1:
         logger.info("Start sorting the variants")
         sort_variants(temp_file.name, mode='chromosome')
