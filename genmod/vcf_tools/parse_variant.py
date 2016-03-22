@@ -1,5 +1,5 @@
 """Parse a variant line in different ways"""
-
+import string
 import logging
 
 logging = logging.getLogger(__name__)
@@ -59,7 +59,8 @@ def get_variant_id(variant_dict):
     ref = variant_dict['REF']
     #There are several symbols in structural variant calls that make
     #things hard. We will strip those symbols
-    alt = variant_dict['ALT'].translate(None, "<>[]:")
+    bad_chars = "<>[]:"
+    alt = variant_dict['ALT'].translate(string.maketrans('','',), bad_chars)
     return '_'.join([chrom,pos,ref,alt])
 
 def get_vep_dict(vep_string, vep_header, allele=None):
