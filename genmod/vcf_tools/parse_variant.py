@@ -60,7 +60,7 @@ def get_variant_id(variant_dict):
     #There are several symbols in structural variant calls that make
     #things hard. We will strip those symbols
     bad_chars = "<>[]:"
-    alt = variant_dict['ALT'].translate(string.maketrans('','',), bad_chars)
+    alt = ''.join(c for c in variant_dict['ALT'] if c not in bad_chars)
     return '_'.join([chrom,pos,ref,alt])
 
 def get_vep_dict(vep_string, vep_header, allele=None):
