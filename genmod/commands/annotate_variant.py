@@ -228,22 +228,24 @@ spidex,annotation_dir, outfile, silent, cadd_raw, cosmic, max_af, processes):
 
     if max_af:
         annotator_arguments['max_af'] = max_af
-        add_metadata(
-            head,
-            'info',
-            '1000G_MAX_AF',
-            annotation_number='1',
-            entry_type='Float',
-            description="The max af for thousand genomes populations."
-        )
-        add_metadata(
-            head,
-            'info',
-            'ExAC_MAX_AF',
-            annotation_number='1',
-            entry_type='Float',
-            description="The max af for ExAC populations."
-        )
+        if thousand_g:
+            add_metadata(
+                head,
+                'info',
+                '1000G_MAX_AF',
+                annotation_number='1',
+                entry_type='Float',
+                description="The max af for thousand genomes populations."
+            )
+        if exac:
+            add_metadata(
+                head,
+                'info',
+                'ExAC_MAX_AF',
+                annotation_number='1',
+                entry_type='Float',
+                description="The max af for ExAC populations."
+            )
 
     if cosmic:
         logger.info("Annotating if variant is in COSMIC")
