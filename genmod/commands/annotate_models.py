@@ -134,15 +134,34 @@ keyword, phased, strict, silent, processes, whole_gene, outfile):
     
     
     if not family_file:
-        print("Please provide a family file with -f/--family_file")
+        logger.warning("Please provide a family file with -f/--family_file")
         logger.info("Exiting")
         sys.exit(1)
     
     logger.info("Setting up a family parser")
     family_parser = FamilyParser(family_file, family_type)
     logger.debug("Family parser done")
+    
+    families = {}
+    logger.info("Check if the familys have any affected")
+    for family_id in family_parser.families:
+        found_affected = False
+        family_obj = family_parser.families[family_id]
+        for ind_id in family_obj.individuals:
+            ind_obj = family_obj.individuals[ind_id]
+            if ind_obj.affected:
+                found_affected = True
+        
+        if found_affected:
+            families[family_id] = family_obj
+        else:
+            logger.warning("No affected individuals found for family {0}."\
+                           " Skipping family.".format(family_id))
+    
+    if not families:
+        logger.warning("Please provide at least one family with affected individuals")
+        sys.exit(0)
     # The individuals in the ped file must be present in the variant file:
-    families = family_parser.families
     logger.info("Families used in analysis: {0}".format(
                     ','.join(list(families.keys()))))
     logger.info("Individuals included in analysis: {0}".format(
