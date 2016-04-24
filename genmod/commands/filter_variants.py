@@ -22,18 +22,19 @@ import click
 from codecs import open
 from datetime import datetime
 
+from extract_vcf import Plugin
+
 from genmod import __version__
 
 from genmod.vcf_tools import (HeaderParser, get_variant_dict, get_info_dict,
 print_variant, print_headers)
-from extract_vcf import Plugin
+
+from .utils import (variant_file, silent, outfile)
+
+logger = logging.getLogger(__name__)
 
 @click.command()
-@click.argument('variant_file',
-                    nargs=1,
-                    type=click.File('r'),
-                    metavar="<vcf_file> or -"
-)
+@variant_file
 @click.option('-a', '--annotation', 
                 default='1000GAF',
                 help="Specify the info annotation to search for."\
@@ -53,25 +54,14 @@ from extract_vcf import Plugin
                     help="If greater than threshold should be used instead of"\
                     " less thatn threshold."
 )
-@click.option('-s', '--silent',
-                is_flag=True,
-                help='Do not print the variants.'
-)
-@click.option('-o', '--outfile', 
-                    type=click.File('w'),
-                    help="Specify the path to a file where results should be stored."
-)
+@silent
+@outfile
 def filter(variant_file, annotation, threshold, discard, greater, silent, outfile):
     """
     Filter vcf variants.
     
     Filter variants based on their annotation
     """
-
-    logger = logging.getLogger(__name__)
-    #For testing
-    logger = logging.getLogger("genmod.commands.filter")
-    
     logger.info("Running genmod filter version {0}".format(__version__))
     
     start_time_analysis = datetime.now()

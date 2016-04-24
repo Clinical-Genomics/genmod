@@ -31,29 +31,16 @@ check_plugins)
 
 from genmod import __version__
 
+from .utils import (variant_file, family_file, family_type, silent, outfile)
+
 @click.command()
-@click.argument('variant_file',
-                nargs=1,
-                type=click.File('r'),
-                metavar='<vcf_file> or -'
-)
-@click.option('-i   ', '--family_id',
+@variant_file
+@click.option('-i', '--family_id',
                 default='1', 
 )
-@click.option('-f', '--family_file',
-                    nargs=1, 
-                    type=click.File('r'),
-                    metavar='<ped_file>'
-)
-@click.option('-t' ,'--family_type', 
-                type=click.Choice(['ped', 'alt', 'cmms', 'mip']), 
-                default='ped',
-                help='If the analysis use one of the known setups, please specify which one.'
-)
-@click.option('-s', '--silent',
-                is_flag=True,
-                help='Do not print the variants.'
-)
+@family_file
+@family_type
+@silent
 @click.option('--skip_plugin_check',
                 is_flag=True,
                 help='If continue even if plugins does not exist in vcf.'
@@ -63,10 +50,7 @@ from genmod import __version__
                 help="Add a info field that shows how the different categories"\
                 " contribute to the rank score."
 )
-@click.option('-o', '--outfile',
-                type=click.File('w'),
-                help='Specify the path to a file where results should be stored.'
-)
+@outfile
 @click.option('-c', '--score_config',
               type=click.Path(exists=True),
               help="The plug-in config file(.ini)"

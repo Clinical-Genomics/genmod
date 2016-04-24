@@ -49,6 +49,7 @@ from ped_parser import FamilyParser
 
 from genmod.vcf_tools import HeaderParser
 
+from .utils import (variant_file, family_file)
 
 def get_inheritance_models(variant, family_id, inheritance_keyword):
     """Return the genetic models found for this family in this variant"""
@@ -66,17 +67,8 @@ def get_inheritance_models(variant, family_id, inheritance_keyword):
 ###           This is for analyzing the variants       ###
 
 @click.command()
-@click.argument('variant_file',
-                    nargs=1,
-                    type=click.Path(exists=True),
-                    metavar='<vcf_file> or "-"'
-)
-@click.option('-f', '--family_file',
-                    nargs=1, 
-                    type=click.File('r'),
-                    metavar='<ped_file>'
-)
-
+@variant_file
+@family_file
 # @click.option('-c', '--config_file',
 #                     type=click.Path(exists=True),
 #                     help="""Specify the path to a config file."""

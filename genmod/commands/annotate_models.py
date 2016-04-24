@@ -24,7 +24,7 @@ import itertools
 from multiprocessing import JoinableQueue, Manager, cpu_count
 from codecs import open
 from datetime import datetime
-from tempfile import mkdtemp, TemporaryFile, NamedTemporaryFile
+from tempfile import NamedTemporaryFile
 
 from ped_parser import FamilyParser
 
@@ -35,22 +35,13 @@ from genmod.annotate_models import (VariantAnnotator)
 from genmod.vcf_tools import (add_metadata, print_headers, sort_variants, 
 print_variant, HeaderParser)
 
+from .utils import (temp_dir, silent, outfile, processes, variant_file, 
+                    family_file, family_type)
+
 @click.command()
-@click.argument('variant_file', 
-                    nargs=1, 
-                    type=click.File('r'),
-                    metavar='<vcf_file> or -'
-)
-@click.option('-f', '--family_file',
-                    nargs=1, 
-                    type=click.File('r'),
-                    metavar='<ped_file>'
-)
-@click.option('-t' ,'--family_type', 
-                type=click.Choice(['ped', 'alt', 'cmms', 'mip']), 
-                default='ped',
-                help='If the analysis use one of the known setups, please specify which one.'
-)
+@variant_file
+@family_file
+@family_type
 @click.option('-r', '--reduced_penetrance',
                     nargs=1, 
                     type=click.File('r'),
@@ -69,14 +60,8 @@ print_variant, HeaderParser)
                     is_flag=True,
                     help='If strict model annotations should be used(see documentation).'
 )
-@click.option('-p', '--processes', 
-                default=min(4, cpu_count()),
-                help='Define how many processes that should be use for annotation.'
-)
-@click.option('--silent',
-                    is_flag=True,
-                    help='Do not print the variants.'
-)
+@processes
+@silent
 @click.option('-w', '--whole_gene',
                     is_flag=True,
                     help='If compounds should be checked over the whole gene.'
@@ -86,12 +71,10 @@ print_variant, HeaderParser)
                     help="""What annotation keyword that should be used when 
                     searching for features."""
 )
-@click.option('-o', '--outfile',
-                    type=click.File('w'),
-                    help='Specify the path to a file where results should be stored.'
-)
+@outfile
+@temp_dir
 def models(variant_file, family_file, family_type, reduced_penetrance, vep,
-keyword, phased, strict, silent, processes, whole_gene, outfile):
+keyword, phased, strict, silent, processes, whole_gene, outfile, temp_dir):
     """
     Annotate genetic models for vcf variants. 
     
@@ -323,7 +306,10 @@ keyword, phased, strict, silent, processes, whole_gene, outfile):
     else:
         # We use a temp file to store the processed variants
         logger.debug("Build a tempfile for printing the variants")
-        temp_file = NamedTemporaryFile(delete=False)
+        if temp_dir:
+            temp_file = NamedTemporaryFile(delete=False, dir=temp_dir)
+        else:
+            temp_file = NamedTemporaryFile(delete=False)
         temp_file.close()
         
         variant_printer = VariantPrinter(

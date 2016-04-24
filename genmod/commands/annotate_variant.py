@@ -36,14 +36,12 @@ from genmod.annotate_variants import VariantAnnotator
 from genmod.annotate_regions import (get_genes, check_exonic, load_annotations)
 from genmod.utils import VariantPrinter
 
+from .utils import (outfile, silent, processes, temp_dir, variant_file)
+
 logger = logging.getLogger(__name__)
 
 @click.command()
-@click.argument('variant_file',
-                    nargs=1,
-                    type=click.File('r'),
-                    metavar='<vcf_file> or -'
-)
+@variant_file
 @click.option('-r', '--annotate_regions', 
                 is_flag=True,
                 help='Increase output verbosity.'
@@ -86,24 +84,17 @@ logger = logging.getLogger(__name__)
                     databases are. 
                     Default is the gene pred files that comes with the distribution."""
 )
-@click.option('-o', '--outfile', 
-                    type=click.File('w'),
-                    help='Specify the path to a file where results should be stored.'
-)
-@click.option('-s', '--silent',
-                is_flag=True,
-                help='Do not print the variants.'
-)
 @click.option('--cadd_raw', 
                     is_flag=True,
                     help="""If the raw cadd scores should be annotated."""
 )
-@click.option('-p', '--processes', 
-                default=min(4, cpu_count()),
-                help='Define how many processes that should be use for annotation.'
-)
+@processes
+@outfile
+@silent
+@temp_dir
 def annotate(variant_file, annotate_regions, cadd_file, thousand_g, exac, 
-spidex,annotation_dir, outfile, silent, cadd_raw, cosmic, max_af, processes):
+spidex,annotation_dir, outfile, silent, cadd_raw, cosmic, max_af, processes,
+temp_dir):
     """
     Annotate vcf variants.
     
@@ -314,7 +305,11 @@ spidex,annotation_dir, outfile, silent, cadd_raw, cosmic, max_af, processes):
     else:
         # We use a temp file to store the processed variants
         logger.debug("Build a tempfile for printing the variants")
-        temp_file = NamedTemporaryFile(delete=False)
+        if temp_dir:
+            temp_file = NamedTemporaryFile(delete=False, dir=temp_dir)
+        else:
+            temp_file = NamedTemporaryFile(delete=False)
+            
         temp_file.close()
         
         var_printer = VariantPrinter(

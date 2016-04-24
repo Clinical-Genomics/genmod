@@ -28,29 +28,22 @@ from genmod.utils import (get_chromosome_priority, get_rank_score)
 
 from genmod import __version__
 
+from .utils import (variant_file, outfile, silent, temp_dir)
+
 @click.command()
-@click.argument('variant_file', 
-                    nargs=1, 
-                    type=click.File('rb'),
-                    metavar='<vcf_file> or -'
-)
-@click.option('-o', '--outfile', 
-                    type=click.File('w'),
-                    help='Specify the path to a file where results should be stored.'
-)
+@variant_file
+@outfile
 @click.option('-f', '--family_id',
                     type=str,
                     help='Specify the family id for sorting.'
 )
-@click.option('-s', '--silent',
-                is_flag=True,
-                help='Do not print the variants.'
-)
+@silent
+@temp_dir
 @click.option('-p', '--position',
                 is_flag=True,
                 help='If variants should be sorted by position.'
 )
-def sort(variant_file, outfile, family_id, silent, position):
+def sort(variant_file, outfile, family_id, silent, position, temp_dir):
     """
     Sort a VCF file based on rank score.
     """    
@@ -61,7 +54,10 @@ def sort(variant_file, outfile, family_id, silent, position):
     start = datetime.now()
     # Create a temporary variant file for sorting
     logger.debug("Creating temporary file for sorting")
-    temp_file = NamedTemporaryFile(delete=False)
+    if temp_dir:
+        temp_file = NamedTemporaryFile(delete=False, dir=temp_dir)
+    else:
+        temp_file = NamedTemporaryFile(delete=False)
     temp_file.close()
     # Open the temp file with codecs
     temp_file_handle = open(
