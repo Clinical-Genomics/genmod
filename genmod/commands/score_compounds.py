@@ -29,35 +29,24 @@ from genmod.score_variants import CompoundScorer
 
 from genmod import __version__
 
+from .utils import (variant_file, silent, outfile, processes, temp_dir)
+
+logger = logging.getLogger(__name__)
+
 @click.command()
-@click.argument('variant_file',
-                nargs=1,
-                type=click.File('r'),
-                metavar='<vcf_file> or -'
-)
-@click.option('-s', '--silent',
-                is_flag=True,
-                help='Do not print the variants.'
-)
-@click.option('-o', '--outfile',
-                type=click.File('w'),
-                help='Specify the path to a file where results should be stored.'
-)
-@click.option('-p', '--processes', 
-                default=min(4, cpu_count()),
-                help='Define how many processes that should be use for annotation.'
-)
+@variant_file
+@silent
+@outfile
+@processes
+@temp_dir
 @click.option('--vep', 
                     is_flag=True,
                     help='If variants are annotated with the Variant Effect Predictor.'
 )
-def compound(variant_file, silent, outfile, vep, processes):
+def compound(variant_file, silent, outfile, vep, processes, temp_dir):
     """
     Score compound variants in a vcf file based on their rank score.
     """
-    
-    logger = logging.getLogger(__name__)
-    
     logger.info('Running GENMOD score_compounds, version: {0}'.format(__version__))
     
     start_time_analysis = datetime.now()
@@ -120,7 +109,10 @@ def compound(variant_file, silent, outfile, vep, processes):
     
     # We use a temp file to store the processed variants
     logger.debug("Build a tempfile for printing the variants")
-    temp_file = NamedTemporaryFile(delete=False)
+    if temp_dir:
+        temp_file = NamedTemporaryFile(delete=False, dir=temp_dir)
+    else:
+        temp_file = NamedTemporaryFile(delete=False)
     temp_file.close()
 
     variant_printer = VariantPrinter(
