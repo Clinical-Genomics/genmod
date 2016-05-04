@@ -58,6 +58,7 @@ def get_rank_score(variant_line=None, variant_dict=None, family_id=0):
     
         for info_annotation in variant_line[7].split(';'):
             info_annotation = info_annotation.split('=')
+            key = None
             if len(info_annotation) == 2:
                 key = info_annotation[0]
                 value = info_annotation[1]
