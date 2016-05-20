@@ -40,7 +40,7 @@ def print_variant_dict(variant, header_line, outfile=None, silent=False):
             print('\t'.join(print_line))
     
 def print_variant(variant_line=None, variant_dict=None, header_line=None, 
-priority=None, outfile=None, mode='vcf', silent=False):
+                  priority=None, outfile=None, mode='vcf', silent=False):
     """
     Print a variant line.
     
@@ -66,10 +66,9 @@ priority=None, outfile=None, mode='vcf', silent=False):
     if variant_dict:
         if not header_line:
             raise IOError("Print line needs a header_line when printing variant dict.")
-        
         print_line = [variant_dict.get(entry, '.') for entry in header_line]
+    
     else:
-        
         print_line = variant_line.rstrip().split('\t')
         
     if mode == 'modified':
@@ -77,13 +76,18 @@ priority=None, outfile=None, mode='vcf', silent=False):
     
     elif priority:
         print_line = [str(priority)] + print_line
-         
+    
+    print_string = '\t'.join(print_line)
+    
+    if not isinstance(print_string, unicode):
+        print_string = print_string.decode('utf-8')
+    
     if outfile:
-        outfile.write('\t'.join(print_line)+'\n')
+        outfile.write(print_string + '\n')
     
     else:
         if not silent:
-            print('\t'.join(print_line))
+            print(print_string)
     return
 
 def print_variant_for_sorting(variant_line, priority, outfile):

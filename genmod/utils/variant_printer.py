@@ -60,10 +60,9 @@ class VariantPrinter(Process):
         
         if self.outfile:
             if isinstance(self.outfile, str):
-                self.outfile = open(self.outfile, 'w', encoding="utf-8")
+                self.outfile = open(self.outfile, 'w+', encoding="utf-8-sig")
         
         while True:
-            
             
             # A task is a variant dictionary
             self.logger.debug(('{0} fetching next variant'.format(proc_name)))
@@ -90,7 +89,8 @@ class VariantPrinter(Process):
             
             
             print_variant(variant_dict=variant, header_line=self.header, 
-            priority=priority, outfile=self.outfile, silent=self.silent)
+                          priority=priority, outfile=self.outfile, 
+                          silent=self.silent)
         
         return
 
