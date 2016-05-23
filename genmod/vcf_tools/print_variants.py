@@ -17,8 +17,11 @@ Copyright (c) 2015 __MoonsoInc__. All rights reserved.
 
 from __future__ import print_function
 
-from codecs import open
+import codecs
+import locale
+import sys
 
+sys.stdout = codecs.getwriter(locale.getpreferredencoding())(sys.stdout) 
 
 def print_variant_dict(variant, header_line, outfile=None, silent=False):
     """Print a variant dictionary
