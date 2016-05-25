@@ -192,14 +192,14 @@ class VariantAnnotator(Process):
                     variant_dict = add_vcf_info(
                         keyword = "ExACAF",
                         variant_dict = variant_dict,
-                        annotation = frequency
+                        annotation = frequencies['AF']
                     )
                 if self.max_af:
                     if frequencies.get('MAX_AF'):
                         variant_dict = add_vcf_info(
                             keyword = "ExAC_MAX_AF",
                             variant_dict = variant_dict,
-                            annotation = frequency
+                            annotation = frequencies['MAX_AF']
                         )
 
             if self.spidex:
