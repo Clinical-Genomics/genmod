@@ -119,6 +119,7 @@ silent, skip_plugin_check, rank_results, outfile):
     else:
         logger.info("All plugins are defined in vcf")
     
+    csq_format = head.vep_columns
     #Add the first variant to the iterator
     variant_file = itertools.chain([line], variant_file)
     header_line = head.header
@@ -165,7 +166,12 @@ silent, skip_plugin_check, rank_results, outfile):
             # This is for printing results to vcf:
             category_scores = []
             for category in score_categories:
-                category_score = get_category_score(variant, category, config_parser)
+                category_score = get_category_score(
+                    variant=variant, 
+                    category=category, 
+                    config_parser=config_parser, 
+                    csq_format=csq_format
+                )
                 logger.debug("Adding category score {0} to rank_score".format(category_score))
                 
                 rank_score += category_score
