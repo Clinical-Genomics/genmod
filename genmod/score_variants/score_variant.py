@@ -7,7 +7,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-def get_plugin_score(variant, plugin_name, config_parser):
+def get_plugin_score(variant, plugin_name, config_parser, csq_format=None):
     """Return the score found for a plugin
     
         Args:
@@ -24,7 +24,7 @@ def get_plugin_score(variant, plugin_name, config_parser):
     # This is the score function for this plugin
     score_function = config_parser.score_functions[plugin_name]
     
-    value = plugin.get_value(variant_dict=variant)
+    value = plugin.get_value(variant_dict=variant, csq_format=csq_format)
     logger.debug("Found value {0} for plugin {1}".format(value, plugin_name))
     
     # Score is allways a number
@@ -33,7 +33,7 @@ def get_plugin_score(variant, plugin_name, config_parser):
     
     return score
 
-def get_category_score(variant, category, config_parser):
+def get_category_score(variant, category, config_parser, csq_format=None):
     """Return the score for a given category
     
         Args:
@@ -55,7 +55,8 @@ def get_category_score(variant, category, config_parser):
         category_scores.append(get_plugin_score(
             variant = variant, 
             plugin_name = plugin_name, 
-            config_parser = config_parser
+            config_parser = config_parser,
+            csq_format = csq_format
             )
         )
 
@@ -86,7 +87,7 @@ def get_category_score(variant, category, config_parser):
     return category_score
     
 
-def score_variant(variant, config_parser):
+def score_variant(variant, config_parser, csq_format=None):
     """Score a variant line
     
         Args:
@@ -103,7 +104,8 @@ def score_variant(variant, config_parser):
         category_score = get_category_score(
             variant = variant,
             category = category,
-            config_parser = config_parser
+            config_parser = config_parser,
+            csq_format = csq_format
         )
 
         logger.debug("Adding category score {0} to rank_score".format(category_score))
