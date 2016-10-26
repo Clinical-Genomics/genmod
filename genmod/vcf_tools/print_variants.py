@@ -79,12 +79,13 @@ def print_variant(variant_line=None, variant_dict=None, header_line=None,
     
     elif priority:
         print_line = [str(priority)] + print_line
-    
+
     print_string = '\t'.join(print_line)
     
+    # Only for python2
     if not isinstance(print_string, str):
-        print_string = print_string.decode('utf-8')
-    
+        print_string = print_string.encode('utf-8')
+
     if outfile:
         outfile.write(print_string + '\n')
     
