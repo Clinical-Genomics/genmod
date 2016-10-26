@@ -14,15 +14,15 @@ def get_chromosome_priority(chrom, chrom_dict={}):
     """
     priority = '0'
     
-    chrom = str(chrom).lstrip('chr')
+    chrom = chrom.lstrip('chr')
     
     if chrom_dict:
         priority = chrom_dict.get(chrom, '0')
     
     else:
         try:
-            if int(chrom) < '23':
-                priority = int(chrom)
+            if int(chrom) < 23:
+                priority = chrom
         except ValueError:
             if chrom == 'X':
                 priority = '23'
