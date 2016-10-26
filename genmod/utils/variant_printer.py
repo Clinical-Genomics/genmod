@@ -60,7 +60,7 @@ class VariantPrinter(Process):
         
         if self.outfile:
             if isinstance(self.outfile, str):
-                self.outfile = open(self.outfile, 'w+', encoding="utf-8-sig")
+                self.outfile = open(self.outfile, 'w+', encoding="utf-8")
         
         while True:
             

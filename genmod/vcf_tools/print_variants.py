@@ -78,7 +78,7 @@ def print_variant(variant_line=None, variant_dict=None, header_line=None,
         print_line = print_line[1:]
     
     elif priority:
-        print_line = [str(priority)] + print_line
+        print_line = [priority] + print_line
 
     print_string = '\t'.join(print_line)
     

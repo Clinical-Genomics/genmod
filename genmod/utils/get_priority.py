@@ -12,28 +12,28 @@ def get_chromosome_priority(chrom, chrom_dict={}):
     Return:
         priority (str): The priority for this chromosom
     """
-    priority = 0
+    priority = '0'
     
     chrom = str(chrom).lstrip('chr')
     
     if chrom_dict:
-        priority = chrom_dict.get(chrom, 0)
+        priority = chrom_dict.get(chrom, '0')
     
     else:
         try:
-            if int(chrom) < 23:
+            if int(chrom) < '23':
                 priority = int(chrom)
         except ValueError:
             if chrom == 'X':
-                priority = 23
+                priority = '23'
             elif chrom == 'Y':
-                priority = 24
+                priority = '24'
             elif chrom == 'MT':
-                priority = 25
+                priority = '25'
             else:
-                priority = 26
+                priority = '26'
     
-    return str(priority)
+    return priority
 
 def get_rank_score(variant_line=None, variant_dict=None, family_id=0):
     """
