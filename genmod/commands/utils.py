@@ -1,8 +1,12 @@
+import sys
+
+from codecs import (open, getreader)
+import gzip
 from multiprocessing import cpu_count
 import click
 
 variant_file = click.argument('variant_file', 
-    type=click.File('rb'),
+    type=click.Path(),
     metavar='<vcf_file> or -')
 
 outfile = click.option('-o', '--outfile', 
@@ -30,3 +34,20 @@ family_type = click.option('-t' ,'--family_type',
     default='ped',
     help='If the analysis use one of the known setups, please specify which one.'
 )
+
+
+def get_file_handle(path):
+    """Get a file handle"""
+    if path == '-':
+        if sys.version_info < (3,0):
+            sys.stdin = getreader('utf-8')(sys.stdin)
+        
+        file_handle = sys.stdin
+    
+    elif path.endswith('.gz'):
+        file_handle = gzip.open(path, 'r')
+    
+    else:
+        file_handle = open(path, 'r')
+    
+    return file_handle

@@ -29,7 +29,7 @@ from genmod import __version__
 from genmod.vcf_tools import (HeaderParser, get_variant_dict, get_info_dict,
 print_variant, print_headers)
 
-from .utils import (variant_file, silent, outfile)
+from .utils import (variant_file, silent, outfile, get_file_handle)
 
 logger = logging.getLogger(__name__)
 
@@ -63,7 +63,7 @@ def filter(variant_file, annotation, threshold, discard, greater, silent, outfil
     Filter variants based on their annotation
     """
     logger.info("Running genmod filter version {0}".format(__version__))
-    
+    variant_file = get_file_handle(variant_file)
     start_time_analysis = datetime.now()
     
     logger.info("Initializing a Header Parser")

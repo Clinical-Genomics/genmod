@@ -19,7 +19,7 @@ import logging
 from subprocess import call
 from datetime import datetime
 
-
+logger = logging.getLogger(__name__)
 
 def sort_variants(infile, mode='chromosome'):
     """
@@ -36,7 +36,6 @@ def sort_variants(infile, mode='chromosome'):
         0 if sorting was performed
         1 if variants where not sorted
     """
-    logger = logging.getLogger(__name__)
     command = [
             'sort',
             ]
@@ -58,7 +57,7 @@ def sort_variants(infile, mode='chromosome'):
     try:
         call(command)
     except OSError as e:
-        logger.warning("unix command sort does not seem to exist on your system...")
+        logger.warning("unix program 'sort' does not seem to exist on your system...")
         logger.warning("genmod needs unix sort to provide a sorted output.")
         logger.warning("Output VCF will not be sorted since genmod can not find"\
                         "unix sort")

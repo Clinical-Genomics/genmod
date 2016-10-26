@@ -31,7 +31,10 @@ check_plugins)
 
 from genmod import __version__
 
-from .utils import (variant_file, family_file, family_type, silent, outfile)
+from .utils import (variant_file, family_file, family_type, silent, outfile, get_file_handle)
+
+logger = logging.getLogger(__name__)
+
 
 @click.command()
 @variant_file
@@ -62,13 +65,12 @@ silent, skip_plugin_check, rank_results, outfile):
     
     The specific scores should be defined in a config file, see examples on 
     github.
-    """
-    
-    logger = logging.getLogger(__name__)
-    
+    """    
     logger.info('Running GENMOD score, version: {0}'.format(__version__))
     
     logger.info("Checking family id")
+    
+    variant_file = get_file_handle(variant_file)
     
     if family_file:
         logger.info("Setting up a family parser")

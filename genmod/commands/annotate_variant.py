@@ -36,7 +36,8 @@ from genmod.annotate_variants import VariantAnnotator
 from genmod.annotate_regions import (get_genes, check_exonic, load_annotations)
 from genmod.utils import VariantPrinter
 
-from .utils import (outfile, silent, processes, temp_dir, variant_file)
+from .utils import (outfile, silent, processes, temp_dir, variant_file, 
+                    get_file_handle)
 
 logger = logging.getLogger(__name__)
 
@@ -106,6 +107,8 @@ temp_dir):
     
     start_time_analysis = datetime.now()
     annotator_arguments = {}
+    
+    variant_file = get_file_handle(variant_file)
     
     logger.info("Initializing a Header Parser")
     head = HeaderParser()

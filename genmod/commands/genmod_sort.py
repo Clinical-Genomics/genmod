@@ -21,14 +21,16 @@ from tempfile import NamedTemporaryFile
 from datetime import datetime
 
 
-from genmod.vcf_tools import (print_variant_for_sorting, sort_variants, 
-get_info_dict, print_variant, HeaderParser, print_headers)
+from genmod.vcf_tools import (sort_variants, get_info_dict, print_variant, 
+                              HeaderParser, print_headers)
 
 from genmod.utils import (get_chromosome_priority, get_rank_score)
 
 from genmod import __version__
 
-from .utils import (variant_file, outfile, silent, temp_dir)
+from .utils import (variant_file, outfile, silent, temp_dir, get_file_handle)
+
+logger = logging.getLogger(__name__)
 
 @click.command()
 @variant_file
@@ -47,9 +49,8 @@ def sort(variant_file, outfile, family_id, silent, position, temp_dir):
     """
     Sort a VCF file based on rank score.
     """    
-    logger = logging.getLogger(__name__)
     head = HeaderParser()
-
+    variant_file = get_file_handle(variant_file)
     logger.info("Running GENMOD sort version {0}".format(__version__))
     start = datetime.now()
     # Create a temporary variant file for sorting

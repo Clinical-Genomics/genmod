@@ -29,7 +29,8 @@ from genmod.score_variants import CompoundScorer
 
 from genmod import __version__
 
-from .utils import (variant_file, silent, outfile, processes, temp_dir)
+from .utils import (variant_file, silent, outfile, processes, temp_dir, 
+                    get_file_handle)
 
 logger = logging.getLogger(__name__)
 
@@ -48,6 +49,8 @@ def compound(variant_file, silent, outfile, vep, processes, temp_dir):
     Score compound variants in a vcf file based on their rank score.
     """
     logger.info('Running GENMOD score_compounds, version: {0}'.format(__version__))
+    
+    variant_file = get_file_handle(variant_file)
     
     start_time_analysis = datetime.now()
     logger.info("Initializing a Header Parser")

@@ -1,6 +1,9 @@
 from genmod.utils import get_batches
 from genmod.vcf_tools import HeaderParser
-from Queue import Queue
+try:
+    from Queue import Queue
+except ImportError:
+    from queue import Queue
 
 HEADER = "CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO"
 

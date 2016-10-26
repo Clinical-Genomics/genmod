@@ -21,7 +21,7 @@ import codecs
 import locale
 import sys
 
-sys.stdout = codecs.getwriter(locale.getpreferredencoding())(sys.stdout) 
+# sys.stdout = codecs.getwriter(locale.getpreferredencoding())(sys.stdout) 
 
 def print_variant_dict(variant, header_line, outfile=None, silent=False):
     """Print a variant dictionary
@@ -82,7 +82,7 @@ def print_variant(variant_line=None, variant_dict=None, header_line=None,
     
     print_string = '\t'.join(print_line)
     
-    if not isinstance(print_string, unicode):
+    if not isinstance(print_string, str):
         print_string = print_string.decode('utf-8')
     
     if outfile:

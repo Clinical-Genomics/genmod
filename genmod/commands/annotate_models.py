@@ -36,7 +36,7 @@ from genmod.vcf_tools import (add_metadata, print_headers, sort_variants,
 print_variant, HeaderParser)
 
 from .utils import (temp_dir, silent, outfile, processes, variant_file, 
-                    family_file, family_type)
+                    family_file, family_type, get_file_handle)
 
 @click.command()
 @variant_file
@@ -92,6 +92,7 @@ keyword, phased, strict, silent, processes, whole_gene, outfile, temp_dir):
         i not in ['frame']
     ]
     
+    variant_file = get_file_handle(variant_file)
     ###########################################################################
     
     logger.info("Running GENMOD annotate version {0}".format(__version__))
