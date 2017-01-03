@@ -18,10 +18,11 @@ import pkg_resources
 import itertools
 
 import click
-import tabix
 
 from codecs import open
 from datetime import datetime
+
+from tabix import TabixError
 
 from genmod import __version__
 
@@ -31,8 +32,13 @@ from genmod.vcf_tools import (HeaderParser, add_vcf_info, add_metadata,
 from genmod.annotations import ensembl_path
 
 from genmod.annotate_regions.parse_annotations import (build_region_trees)
-from genmod.annotate_variants.add_annotations import (add_region, add_exac,
-    add_thousandg)
+from genmod.annotate_variants.add_annotations import (add_regions, add_exac, 
+    add_exac_max, add_thousandg, add_thousandg_max, add_spidex, add_cadd, 
+    add_cadd_raw, add_cosmic)
+
+from genmod.annotate_variants.read_tabix_files import (get_tabixhandle)
+from genmod.annotate_variants.annotate import annotate_variant
+
 from genmod.utils import VariantPrinter
 
 from genmod.commands.utils import (outfile, silent, processes, temp_dir, 
@@ -103,15 +109,15 @@ def annotate(context, variant_file, regions, region_file, cadd_file,
     logger.info("Running genmod annotate_variant version {0}".format(__version__))
     
     start_time_analysis = datetime.now()
-    annotator_arguments = {}
+    annotation_arguments = {}
     
-    variant_file = get_file_handle(variant_file)
+    variants = get_file_handle(variant_file)
     
     logger.info("Initializing a Header Parser")
     head = HeaderParser()
     
     line = None
-    for line in variant_file:
+    for line in variants:
         line = line.rstrip()
 
         if line.startswith('#'):
@@ -124,64 +130,71 @@ def annotate(context, variant_file, regions, region_file, cadd_file,
     
     #Add the first variant back to the iterator
     if line:
-        variant_file = itertools.chain([line], variant_file)
+        variants = itertools.chain([line], variants)
     
     header_line = head.header
-    annotator_arguments['header_line'] = header_line
+    annotation_arguments['header_line'] = header_line
     
-    if regions:
-        logger.info("Loading annotations")
-        logger.info("Use annotations file: {0}".format(region_file))
-        add_regions(head)
-        with open(region_file, 'r') as f:
-            logger.debug("Adding region trees to arguments")
-            annotator_arguments['region_trees'] = build_region_trees(f, padding=4000)
-
-    if exac:
-        logger.info("Annotating ExAC frequencies")
-        logger.debug("Using ExAC file: {0}".format(exac))
-        add_exac(head)
-        annotator_arguments['exac'] = exac
-
-    if thousand_g:
-        logger.info("Annotating 1000G frequencies")
-        logger.debug("Using 1000G file: {0}".format(thousand_g))
-        add_thousandg(head)
-        annotator_arguments['thousand_g'] = thousand_g
-
-    if spidex:
-        logger.info("Annotating Spidex z scores")
-        logger.debug("Using Spidex file: {0}".format(spidex))
-        add_spidex(head)
-        annotator_arguments['spidex'] = spidex
-
-    if cadd_file:
-        logger.info("Annotating CADD scores")
-        logger.debug("Using CADD file(s): {0}".format(', '.join(cadd_file)))
-        add_cadd(head)
-        annotator_arguments['cadd_files'] = cadd_file
-        any_cadd_file = True
-
-        if cadd_raw:
-            annotator_arguments['cadd_raw'] = cadd_raw
-            add_cadd_raw(head)
-
-    if max_af:
-        annotator_arguments['max_af'] = max_af
-        if thousand_g:
-            add_thousandg_max(head)
+    try:
+        if regions:
+            logger.info("Loading annotations")
+            logger.info("Use annotations file: {0}".format(region_file))
+            add_regions(head)
+            with open(region_file, 'r') as f:
+                logger.debug("Adding region trees to arguments")
+                annotation_arguments['region_trees'] = build_region_trees(f, padding=4000)
+        
         if exac:
-            add_exac_max(head)
-
-    if cosmic:
-        logger.info("Annotating if variant is in COSMIC")
-        logger.debug("Using COSMIC file: {0}".format(cosmic))
-        annotator_arguments['cosmic'] = cosmic
-        add_cosmic(head)
+            logger.info("Annotating ExAC frequencies")
+            logger.debug("Using ExAC file: {0}".format(exac))
+            annotation_arguments['exac'] = get_tabixhandle(exac)
+            add_exac(head)
+        
+        if thousand_g:
+            logger.info("Annotating 1000G frequencies")
+            logger.debug("Using 1000G file: {0}".format(thousand_g))
+            annotation_arguments['thousand_g'] = get_tabixhandle(thousand_g)
+            add_thousandg(head)
+        
+        if spidex:
+            logger.info("Annotating Spidex z scores")
+            logger.debug("Using Spidex file: {0}".format(spidex))
+            annotation_arguments['spidex'] = get_tabixhandle(spidex)
+            add_spidex(head)
+        
+        if cadd_file:
+            logger.info("Annotating CADD scores")
+            logger.debug("Using CADD file(s): {0}".format(', '.join(cadd_file)))
+            annotation_arguments['cadd_files'] = [get_tabixhandle(cadd) for cadd in cadd_file]
+            
+            add_cadd(head)
+        
+            if cadd_raw:
+                annotation_arguments['cadd_raw'] = cadd_raw
+                add_cadd_raw(head)
+        
+        if max_af:
+            annotation_arguments['max_af'] = max_af
+            if thousand_g:
+                add_thousandg_max(head)
+            if exac:
+                add_exac_max(head)
+        
+        if cosmic:
+            logger.info("Annotating if variant is in COSMIC")
+            logger.debug("Using COSMIC file: {0}".format(cosmic))
+            annotation_arguments['cosmic'] = get_tabixhandle(cosmic)
+            add_cosmic(head)
+    except TabixError as err:
+        logger.warning(err)
+        context.abort()
     
     print_headers(head, outfile, silent)
     
-    annotate_variants()
+    for variant in variants:
+        print(annotate_variant(variant, annotation_arguments))
+        
+    # annotate_variants(variants, annotation_arguments)
     # ###################################################################
     # ### The task queue is where all jobs(in this case batches that  ###
     # ### represents variants in a region) is put. The consumers will ###

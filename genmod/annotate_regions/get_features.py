@@ -9,14 +9,11 @@ Created by Måns Magnusson on 2015-09-16.
 Copyright (c) 2015 __MoonsoInc__. All rights reserved.
 """
 
-from __future__ import print_function
-
-import os
 import logging
 
 from genmod.annotate_regions import check_overlap
 
-
+logger = logging.getLogger(__name__)
 
 def check_exonic(chrom, start, stop, exon_trees):
     """
@@ -31,10 +28,7 @@ def check_exonic(chrom, start, stop, exon_trees):
     Returns:
         bool : If the variant overlapps any exons
     """
-    logger = logging.getLogger(__name__)
-    
     variant_interval = [start, stop]
-    
     exon_features = None
     
     try:
@@ -48,6 +42,27 @@ def check_exonic(chrom, start, stop, exon_trees):
     
     return False
 
+def get_region(chrom, start, end, region_trees):
+    """Check if a position overlapps any regions
+    
+    Arguments:
+       chrom (str): The chromosome
+       start (int): The start position for the feature
+       end (int): The stop position for the feature
+       region_trees (dict): A dictionary with chromosomes as keys and interval trees as values
+    
+    Returns:
+        regions (set): The regions that the variant ovelapps
+    """
+    regions = set()
+    if chrom in region_trees:
+        tree = region_trees[chrom]
+        result = tree[start:end]
+        for interval in result:
+            regions.add(interval.data)
+    return regions
+    
+    
 
 def get_genes(chrom, start, stop, gene_trees):
     """Check if variant overlapps genes
@@ -61,7 +76,6 @@ def get_genes(chrom, start, stop, gene_trees):
     Returns:
         gene_features (set): The genes that the variant ovelapps
     """
-    logger = logging.getLogger(__name__)
     
     variant_interval = [start, stop]
     gene_features = set()

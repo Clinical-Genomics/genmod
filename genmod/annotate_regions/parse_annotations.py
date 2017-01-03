@@ -59,11 +59,11 @@ def build_region_trees(bed_lines, padding):
         start = region['start']
         stop = region['stop']
         symbol = region['symbol']
-        
+
         if chrom not in region_trees:
             region_trees[chrom] = IntervalTree()
-        
-        region_trees[chrom].add(get_interval(start, stop, symbol))
+
+        region_trees[chrom].add(Interval(start, stop, symbol))
 
     return region_trees
 
@@ -79,30 +79,35 @@ def bed_parser(bed_lines, padding=4000):
     
     Yields:
         region(dict): 
-    {
-        'chrom': str,
-        'start': int,
-        'stop': int,
-        'symbol': str
-    }
+                    {
+                        'chrom': str,
+                        'start': int,
+                        'stop': int,
+                        'symbol': str
+                    }
     """
     genes = {}
     for index, line in enumerate(bed_lines):
         if not line.startswith('#') and len(line) > 1:
-            line = line.split()
+            line = line.rstrip().split()
             feature_id = str(index)
             # Get the coordinates for the region:
             chrom = line[0].lstrip('chr')
-            feature_start = int(line[1])
-            feature_stop = int(line[2])
+            if chrom == 'MT':
+                feature_start = int(line[1])
+                feature_stop = int(line[2])
+            else:
+                feature_start = max(int(line[1]) - padding, 0)
+                feature_stop = int(line[2])
+                
             # Get the feature id
             if len(line) > 3:
                 feature_id = line [3]
             
             region = {
                 'chrom': chrom,
-                'start': feature_start - padding,
-                'stop': feature_stop + padding,
+                'start': feature_start,
+                'stop': feature_stop,
                 'symbol': feature_id
             }
             

@@ -32,12 +32,21 @@ def test_query_region_trees():
     assert len(result) == 1
     for interval in result:
         assert interval.data == 'RNY3P4'
+
+    result = interval_tree[100:100]
+    #Intervals without lenght does not match anythin
+    assert len(result) == 0
         
     result = interval_tree[250:600]
     for interval in result:
         assert interval.data == 'LINC00362'
+    
+    # Test none overlapping
+    result = interval_tree[10000:11000]
+    assert not result
+    assert isinstance(result, set)
 
 
-def test_build_all(ensembl_file):
-    with open(ensembl_file, 'r') as ensembl_handle:
-        region_trees = build_region_trees(ensembl_handle, padding=4000)
+# def test_build_all(ensembl_file):
+#     with open(ensembl_file, 'r') as ensembl_handle:
+#         region_trees = build_region_trees(ensembl_handle, padding=4000)
