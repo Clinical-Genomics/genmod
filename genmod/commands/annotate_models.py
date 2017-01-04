@@ -263,7 +263,10 @@ keyword, phased, strict, silent, processes, whole_gene, outfile, temp_dir):
     ###################################################################
 
     logger.debug("Setting up a JoinableQueue for storing variant batches")
-    variant_queue = JoinableQueue(maxsize=1000)
+    # One batch consists of all variants from one or several overlapping genes
+    # there can be a significant amount of variants in a batch for whole genome
+    # data...
+    variant_queue = JoinableQueue(maxsize=100)
     logger.debug("Setting up a Queue for storing results from workers")
     results = Manager().Queue()
 
