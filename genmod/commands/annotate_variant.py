@@ -11,8 +11,6 @@ Created by Måns Magnusson on 2015-08-25.
 Copyright (c) 2015 __MoonsoInc__. All rights reserved.
 """
 
-from __future__ import (print_function)
-
 import logging
 import pkg_resources
 import itertools
@@ -26,8 +24,7 @@ from tabix import TabixError
 
 from genmod import __version__
 
-from genmod.vcf_tools import (HeaderParser, add_vcf_info, add_metadata, 
-                 print_headers, print_variant, sort_variants)
+from genmod.vcf_tools import (HeaderParser, print_headers, print_variant)
 
 from genmod.annotations import ensembl_path
 
@@ -39,9 +36,7 @@ from genmod.annotate_variants.add_annotations import (add_regions, add_exac,
 from genmod.annotate_variants.read_tabix_files import (get_tabixhandle)
 from genmod.annotate_variants.annotate import annotate_variant
 
-from genmod.utils import VariantPrinter
-
-from genmod.commands.utils import (outfile, silent, processes, temp_dir, 
+from genmod.commands.utils import (outfile, silent, temp_dir, 
                                    variant_file, get_file_handle)
 
 logger = logging.getLogger(__name__)
@@ -192,128 +187,9 @@ def annotate(context, variant_file, regions, region_file, cadd_file,
     print_headers(head, outfile, silent)
     
     for variant in variants:
-        print(annotate_variant(variant, annotation_arguments))
+        print_variant(
+            variant_line = annotate_variant(variant, annotation_arguments),
+            outfile = outfile,
+            silent = silent
+        )
         
-    # annotate_variants(variants, annotation_arguments)
-    # ###################################################################
-    # ### The task queue is where all jobs(in this case batches that  ###
-    # ### represents variants in a region) is put. The consumers will ###
-    # ### then pick their jobs from this queue.                       ###
-    # ###################################################################
-    #
-    # logger.debug("Setting up a JoinableQueue for storing variant batches")
-    # variant_queue = JoinableQueue(maxsize=1000)
-    # logger.debug("Setting up a Queue for storing results from workers")
-    # results = Manager().Queue()
-    #
-    # num_annotators = processes
-    # #Adapt the number of processes to the machine that run the analysis
-    # if cadd_file or spidex:
-    #     # We need more power when annotating cadd scores:
-    #     # But if flag is used that overrides
-    #     if num_annotators == min(4, cpu_count()):
-    #         num_annotators = min(8, cpu_count())
-    #
-    # logger.info('Number of CPU:s {}'.format(cpu_count()))
-    # logger.info('Number of model checkers: {}'.format(num_annotators))
-    #
-    #
-    # # These are the workers that do the heavy part of the analysis
-    # logger.info('Setting up the workers')
-    # annotators = [
-    #     VariantAnnotator(
-    #         variant_queue,
-    #         results,
-    #         **annotator_arguments
-    #     )
-    #     for i in range(num_annotators)
-    # ]
-    #
-    # logger.info('Starting the workers')
-    # for worker in annotators:
-    #     logger.debug('Starting worker {0}'.format(worker))
-    #     worker.start()
-    #
-    # # This process prints the variants to temporary files
-    # # If there is only one annotation process we can print the results as soon
-    # # as they are done
-    # logger.info('Setting up the variant printer')
-    # if len(annotators) == 1:
-    #     print_headers(head, outfile, silent)
-    #     var_printer = VariantPrinter(
-    #                     task_queue = results,
-    #                     head = head,
-    #                     mode='normal',
-    #                     outfile = outfile
-    #                     )
-    # else:
-    #     # We use a temp file to store the processed variants
-    #     logger.debug("Build a tempfile for printing the variants")
-    #     if temp_dir:
-    #         temp_file = NamedTemporaryFile(delete=False, dir=temp_dir)
-    #     else:
-    #         temp_file = NamedTemporaryFile(delete=False)
-    #
-    #     temp_file.close()
-    #
-    #     var_printer = VariantPrinter(
-    #                     task_queue = results,
-    #                     head = head,
-    #                     mode='chromosome',
-    #                     outfile = temp_file.name
-    #                     )
-    #
-    # logger.info('Starting the variant printer process')
-    # var_printer.start()
-    #
-    # start_time_variant_parsing = datetime.now()
-    # start_time_twenty = datetime.now()
-    # nr_of_lines = 0
-    # # This process parses the original vcf and create batches to put in the variant queue:
-    # logger.info('Start parsing the variants')
-    #
-    # for line in variant_file:
-    #     line = line.rstrip()
-    #
-    #     if not line.startswith('#'):
-    #         variant_queue.put(line)
-    #
-    #         nr_of_lines += 1
-    #
-    #         if nr_of_lines % 20000 == 0:
-    #             logger.info('{0} variants parsed'.format(nr_of_lines))
-    #             logger.info('Last 20000 took {0} to parse'.format(
-    #                 datetime.now()-start_time_twenty))
-    #             start_time_twenty = datetime.now()
-    #
-    # logger.info('Put stop signs in the variant queue')
-    #
-    # for i in range(num_annotators):
-    #     variant_queue.put(None)
-    #
-    # variant_queue.join()
-    # results.put(None)
-    # var_printer.join()
-    #
-    # if len(annotators) > 1:
-    #     logger.info("Start sorting the variants")
-    #     sort_variants(temp_file.name, mode='chromosome')
-    #
-    #     logger.info("Print the headers")
-    #     print_headers(head, outfile, silent)
-    #
-    #     with open(temp_file.name, 'r', encoding='utf-8') as f:
-    #         for line in f:
-    #             print_variant(
-    #                 variant_line=line,
-    #                 outfile=outfile,
-    #                 mode='modified',
-    #                 silent=silent
-    #             )
-    #
-    #     logger.info("Removing temp file")
-    #     os.remove(temp_file.name)
-    #     logger.debug("Temp file removed")
-    #
-    # logger.info('Time for whole analyis: {0}'.format(
-    #     str(datetime.now() - start_time_analysis)))

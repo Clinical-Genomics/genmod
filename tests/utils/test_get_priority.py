@@ -27,5 +27,5 @@ def test_get_chr_prority():
 
 def test_get_custom_prority():
     """docstring for test_get_chr_prority"""
-    assert get_chromosome_priority(chrom='AHA_1', chrom_dict={'AHA_1':2, 'AHA_2':3}) == '2'
+    assert get_chromosome_priority(chrom='AHA_1', chrom_dict={'AHA_1':2, 'AHA_2':3}) == 2
     
