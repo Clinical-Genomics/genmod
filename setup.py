@@ -40,7 +40,7 @@ setup(name='genmod',
         exclude=('tests*', 'docs', 'examples', 'configs')
     ),
     package_data = {
-        'genmod': ['annotations/*.db']
+        'genmod': ['annotations/*.txt']
     },
     entry_points= { "console_scripts" : [
         "genmod = genmod.commands.base:cli",

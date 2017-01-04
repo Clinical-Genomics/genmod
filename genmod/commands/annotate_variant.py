@@ -47,19 +47,20 @@ logger = logging.getLogger(__name__)
                 is_flag=True,
                 help='Annotate what regions a variant belongs to (eg. genes).'
 )
-@click.option('--region-file', 
+@click.option('--region-file','--region_file', 
                 default=ensembl_path,
+                type=click.Path(exists=True),
                 show_default=True,
                 help='Choose a bed file with regions that should be used.'
 )
-@click.option('-c', '--cadd-file', 
+@click.option('-c', '--cadd-file', '--cadd_file', 
                     multiple = True,
                     type=click.Path(exists=True), 
                     help="Specify the path to a bgzipped cadd file"\
                     " (with index) with variant scores. This command can be"\
                     " used multiple times if multiple cadd files."
 )
-@click.option('--thousand-g',
+@click.option('--thousand-g', '--thousand_g',
                     type=click.Path(exists=True), 
                     help="Specify the path to a bgzipped vcf file"\
                             " (with index) with 1000g variants"
@@ -74,7 +75,7 @@ logger = logging.getLogger(__name__)
                     help="Specify the path to a bgzipped vcf file"\
                             " (with index) with COSMIC variants."
 )
-@click.option('--max-af',
+@click.option('--max-af', '--max_af',
                     is_flag=True,
                     help="If the MAX AF should be annotated"
 )
@@ -83,7 +84,7 @@ logger = logging.getLogger(__name__)
                     help="Specify the path to a bgzipped tsv file"\
                             " (with index) with spidex information."
 )
-@click.option('--cadd-raw', 
+@click.option('--cadd-raw', '--cadd_raw',
                     is_flag=True,
                     help="""If the raw cadd scores should be annotated."""
 )
