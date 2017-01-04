@@ -43,7 +43,7 @@ setup(name='genmod',
         'genmod': ['annotations/*.db']
     },
     entry_points= { "console_scripts" : [
-        "genmod = genmod.commands.run_genmod:cli",
+        "genmod = genmod.commands.base:cli",
         ]
     },
     keywords = ['inheritance', 'vcf', 'variants'],

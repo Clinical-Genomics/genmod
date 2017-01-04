@@ -1,4 +1,4 @@
-from genmod.commands import annotate_variant_command
+from genmod.commands.base import cli
 from click.testing import CliRunner
 
 VCF_FILE = "tests/fixtures/test_vcf_regions.vcf"
@@ -15,7 +15,8 @@ def test_genmod_annotate_features():
     """docstring for test_genmod_annotate_models"""
     runner = CliRunner()
     result = runner.invoke(
-        annotate_variant_command, [
+        cli, [
+            'annotate',
             VCF_FILE,
             '-r'
         ])
@@ -26,9 +27,10 @@ def test_genmod_annotate_thousand_g():
     """docstring for test_genmod_annotate_models"""
     runner = CliRunner()
     result = runner.invoke(
-        annotate_variant_command, [
+        cli, [
+            'annotate',
             VCF_FILE,
-            '--thousand_g',
+            '--thousand-g',
             THOUSAND_G_FILE
         ])
     
@@ -38,9 +40,10 @@ def test_genmod_annotate_cadd():
     """docstring for test_genmod_annotate_models"""
     runner = CliRunner()
     result = runner.invoke(
-        annotate_variant_command, [
+        cli, [
+            'annotate',
             VCF_FILE,
-            '--cadd_file',
+            '--cadd-file',
             CADD_FILE
         ])
     
@@ -50,11 +53,12 @@ def test_genmod_annotate_multiple_cadd():
     """docstring for test_genmod_annotate_models"""
     runner = CliRunner()
     result = runner.invoke(
-        annotate_variant_command, [
+        cli, [
+           'annotate',
             VCF_FILE,
-            '--cadd_file',
+            '--cadd-file',
             CADD_FILE,
-            '--cadd_file',
+            '--cadd-file',
             CADD_1000G_FILE
             
         ])
