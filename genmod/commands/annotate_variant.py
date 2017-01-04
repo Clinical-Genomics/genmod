@@ -43,7 +43,7 @@ logger = logging.getLogger(__name__)
 
 @click.command('annotate', short_help="Annotate vcf variants")
 @variant_file
-@click.option('-r', '--regions', 
+@click.option('-r', '--regions', '--annotate_regions','--annotate-regions', 
                 is_flag=True,
                 help='Annotate what regions a variant belongs to (eg. genes).'
 )
@@ -92,7 +92,7 @@ logger = logging.getLogger(__name__)
 @silent
 @temp_dir
 @click.pass_context
-def annotate(context, variant_file, regions, region_file, cadd_file, 
+def annotate(context, variant_file, annotate_regions, region_file, cadd_file, 
              thousand_g, exac, spidex, outfile, silent, cadd_raw, cosmic, 
              max_af, temp_dir):
     """
@@ -101,7 +101,7 @@ def annotate(context, variant_file, regions, region_file, cadd_file,
     Annotate variants with a number of different sources.
     Please use --help for more info.
     """
-
+    regions = annotate_regions
     logger.info("Running genmod annotate_variant version {0}".format(__version__))
     
     start_time_analysis = datetime.now()
