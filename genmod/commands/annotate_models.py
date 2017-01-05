@@ -38,11 +38,13 @@ print_variant, HeaderParser)
 from .utils import (temp_dir, silent, outfile, processes, variant_file, 
                     family_file, family_type, get_file_handle)
 
-@click.command()
+logger = logging.getLogger(__name__)
+
+@click.command('models', short_help="Annotate inheritance")
 @variant_file
 @family_file
 @family_type
-@click.option('-r', '--reduced_penetrance',
+@click.option('-r', '--reduced_penetrance','--reduced-penetrance',
                     nargs=1, 
                     type=click.File('r'),
                     metavar='<tsv_file>',
@@ -73,8 +75,10 @@ from .utils import (temp_dir, silent, outfile, processes, variant_file,
 )
 @outfile
 @temp_dir
-def models(variant_file, family_file, family_type, reduced_penetrance, vep,
-keyword, phased, strict, silent, processes, whole_gene, outfile, temp_dir):
+@click.pass_context
+def models(context, variant_file, family_file, family_type, reduced_penetrance,
+           vep, keyword, phased, strict, silent, processes, whole_gene, outfile,
+           temp_dir):
     """
     Annotate genetic models for vcf variants. 
     
@@ -82,7 +86,6 @@ keyword, phased, strict, silent, processes, whole_gene, outfile, temp_dir):
     The analysis is family based so each family that are specified in the family
     file and exists in the variant file will get it's own annotation.
     """
-    logger = logging.getLogger(__name__)
     
     ######### This is for logging the command line string #########
     frame = inspect.currentframe()
@@ -95,7 +98,7 @@ keyword, phased, strict, silent, processes, whole_gene, outfile, temp_dir):
     variant_file = get_file_handle(variant_file)
     ###########################################################################
     
-    logger.info("Running GENMOD annotate version {0}".format(__version__))
+    logger.info("Running GENMOD annotate models version {0}".format(__version__))
     logger.debug("Arguments: {0}".format(', '.join(argument_list)))
     
     reduced_penetrance_genes = set()
@@ -119,8 +122,7 @@ keyword, phased, strict, silent, processes, whole_gene, outfile, temp_dir):
     
     if not family_file:
         logger.warning("Please provide a family file with -f/--family_file")
-        logger.info("Exiting")
-        sys.exit(1)
+        context.abort()
     
     logger.info("Setting up a family parser")
     family_parser = FamilyParser(family_file, family_type)
@@ -144,7 +146,7 @@ keyword, phased, strict, silent, processes, whole_gene, outfile, temp_dir):
     
     if not families:
         logger.warning("Please provide at least one family with affected individuals")
-        sys.exit(0)
+        context.abort()
     # The individuals in the ped file must be present in the variant file:
     logger.info("Families used in analysis: {0}".format(
                     ','.join(list(families.keys()))))
@@ -171,16 +173,14 @@ keyword, phased, strict, silent, processes, whole_gene, outfile, temp_dir):
         if not "CSQ" in head.info_dict:
             logger.warning("vep flag is used but there is no CSQ field specified in header")
             logger.info("Please check VCF file")
-            logger.info("Exiting...")
-            sys.exit(1)
+            context.abort()
         else:
             logger.info("Using VEP annotation")
     else:
         if not keyword in head.info_dict:
             logger.warning("Annotation key {0} could not be found in VCF header".format(keyword))
             logger.info("Please check VCF file")
-            logger.info("Exiting...")
-            sys.exit(1)
+            context.abort()
         else:
             logger.info("Using {0} annotation".format(keyword))
         
@@ -188,8 +188,7 @@ keyword, phased, strict, silent, processes, whole_gene, outfile, temp_dir):
     if "GeneticModels" in head.info_dict:
         logger.warning("Genetic models are already annotated according to vcf"\
         " header.")
-        logger.info("Exiting...")
-        sys.exit(1)
+        context.abort()
     
     logger.info("Adding genmod version to vcf header")
     head.add_version_tracking(
@@ -238,9 +237,6 @@ keyword, phased, strict, silent, processes, whole_gene, outfile, temp_dir):
     vcf_individuals = head.individuals
     logger.debug("Individuals found in vcf file: {}".format(', '.join(vcf_individuals)))
     
-
-    start_time_analysis = datetime.now()
-    
     try:
         check_individuals(family_parser.individuals, vcf_individuals)
     except IOError as e:
@@ -248,8 +244,10 @@ keyword, phased, strict, silent, processes, whole_gene, outfile, temp_dir):
         logger.info("Individuals in PED file: {0}".format(
                         ', '.join(family_parser.individuals)))
         logger.info("Individuals in VCF file: {0}".format(', '.join(vcf_individuals)))
-        logger.info("Exiting...")
-        sys.exit(1)
+        
+        context.abort()
+
+    start_time_analysis = datetime.now()
 
     analysis_individuals = list(family_parser.individuals.keys())
     
@@ -278,99 +276,100 @@ keyword, phased, strict, silent, processes, whole_gene, outfile, temp_dir):
 
     # These are the workers that do the heavy part of the analysis
     logger.info('Seting up the workers')
-    model_checkers = [
-        VariantAnnotator(
-            task_queue=variant_queue,
-            results_queue=results,
-            families=families,
-            individuals=analysis_individuals,
-            phased=phased,
-            strict=strict,
-            whole_gene=whole_gene,
-            vep=vep,
-            reduced_penetrance_genes = reduced_penetrance_genes
-        )
-        for i in range(num_model_checkers)
-    ]
-    logger.info('Starting the workers')
-    for worker in model_checkers:
-        logger.debug('Starting worker {0}'.format(worker))
-        worker.start()
-
-    # This process prints the variants to temporary files
-    logger.info('Seting up the variant printer')
-    if len(model_checkers) == 1:
-        print_headers(head=head, outfile=outfile, silent=silent)
-        variant_printer = VariantPrinter(
-                task_queue=results,
-                head=head,
-                mode='normal',
-                outfile = outfile
-        )
-    else:
-        # We use a temp file to store the processed variants
-        logger.debug("Build a tempfile for printing the variants")
-        if temp_dir:
-            temp_file = NamedTemporaryFile(delete=False, dir=temp_dir)
-        else:
-            temp_file = NamedTemporaryFile(delete=False)
-        temp_file.close()
+    try:
+        model_checkers = [
+            VariantAnnotator(
+                task_queue=variant_queue,
+                results_queue=results,
+                families=families,
+                individuals=analysis_individuals,
+                phased=phased,
+                strict=strict,
+                whole_gene=whole_gene,
+                vep=vep,
+                reduced_penetrance_genes = reduced_penetrance_genes
+            )
+            for i in range(num_model_checkers)
+        ]
+        logger.info('Starting the workers')
+        for worker in model_checkers:
+            logger.debug('Starting worker {0}'.format(worker))
+            worker.start()
         
-        variant_printer = VariantPrinter(
-                task_queue=results,
-                head=head,
-                mode='chromosome',
-                outfile = temp_file.name
-        )
-    
-    logger.info('Starting the variant printer process')
-    variant_printer.start()
+        # This process prints the variants to temporary files
+        logger.info('Seting up the variant printer')
+        if len(model_checkers) == 1:
+            print_headers(head=head, outfile=outfile, silent=silent)
+            variant_printer = VariantPrinter(
+                    task_queue=results,
+                    head=head,
+                    mode='normal',
+                    outfile = outfile
+            )
+        else:
+            # We use a temp file to store the processed variants
+            logger.debug("Build a tempfile for printing the variants")
+            if temp_dir:
+                temp_file = NamedTemporaryFile(delete=False, dir=temp_dir)
+            else:
+                temp_file = NamedTemporaryFile(delete=False)
+            temp_file.close()
+            
+            variant_printer = VariantPrinter(
+                    task_queue=results,
+                    head=head,
+                    mode='chromosome',
+                    outfile = temp_file.name
+            )
+        
+        logger.info('Starting the variant printer process')
+        variant_printer.start()
+        
+        start_time_variant_parsing = datetime.now()
+        
+        # This process parses the original vcf and create batches to put in the variant queue:
+        logger.info('Start parsing the variants')
+        chromosome_list = get_batches(
+                                    variants = variant_file,
+                                    batch_queue = variant_queue,
+                                    header = head,
+                                    vep = vep,
+                                    annotation_keyword = keyword
+                                )
+        
+        logger.debug("Put stop signs in the variant queue")
+        for i in range(num_model_checkers):
+            variant_queue.put(None)
+        
+        variant_queue.join()
+        results.put(None)
+        variant_printer.join()
+        
+        if len(model_checkers) > 1:
+            sort_variants(infile=temp_file.name, mode='chromosome')
 
-    start_time_variant_parsing = datetime.now()
-    
-    # This process parses the original vcf and create batches to put in the variant queue:
-    logger.info('Start parsing the variants')
-    chromosome_list = get_batches(
-                                variants = variant_file,
-                                batch_queue = variant_queue,
-                                header = head,
-                                vep = vep,
-                                annotation_keyword = keyword
-                            )
-    
-    logger.debug("Put stop signs in the variant queue")
-    for i in range(num_model_checkers):
-        variant_queue.put(None)
-    
-    variant_queue.join()
-    results.put(None)
-    variant_printer.join()
-    
-    if len(model_checkers) > 1:
-        sort_variants(infile=temp_file.name, mode='chromosome')
+            print_headers(head=head, outfile=outfile, silent=silent)
 
-        print_headers(head=head, outfile=outfile, silent=silent)
-
-        with open(temp_file.name, 'r', encoding='utf-8') as f:
-            for line in f:
-                print_variant(
-                    variant_line=line,
-                    outfile=outfile,
-                    mode='modified',
-                    silent=silent
-                )
-    
-        logger.debug("Removing temp file")
-        os.remove(temp_file.name)
-        logger.debug("Temp file removed")
+            with open(temp_file.name, 'r', encoding='utf-8') as f:
+                for line in f:
+                    print_variant(
+                        variant_line=line,
+                        outfile=outfile,
+                        mode='modified',
+                        silent=silent
+                    )
+        
+    except Exception as err:
+        logger.warning(err)
+        for worker in model_checkers:
+            worker.terminate()
+            variant_printer.terminate()
+        context.abort()
+    finally:
+        if len(model_checkers) > 1:
+            logger.info("Removing temp file")
+            os.remove(temp_file.name)
+            logger.debug("Temp file removed")
 
     logger.info('Time for whole analyis: {0}'.format(
         str(datetime.now() - start_time_analysis)))
-    
-
-if __name__ == '__main__':
-    from genmod import logger as root_logger
-    from genmod.log import init_log
-    init_log(root_logger, loglevel="INFO")
-    
-    models()
