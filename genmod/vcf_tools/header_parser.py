@@ -42,7 +42,7 @@ class HeaderParser(object):
                             'form' : ['ID', 'Number', 'Type', 'Description'], 
                             'filt' : ['ID', 'Description'],
                             'alt' : ['ID', 'Description'],
-                            'contig' : ['ID', 'length']}
+                            'contig' : ['ID']}
         self.fileformat = None
         self.filedate = None
         self.reference = None
@@ -63,8 +63,6 @@ class HeaderParser(object):
             >''', re.VERBOSE)
         self.contig_pattern = re.compile(r'''\#\#contig=<
             ID=(?P<id>[^,]+),
-            .*
-            length=(?P<length>-?\d+)
             .*
             >''', re.VERBOSE)
         self.format_pattern = re.compile(r'''\#\#FORMAT=<
@@ -136,10 +134,9 @@ class HeaderParser(object):
         elif line_info[0] == 'contig':
             match = self.contig_pattern.match(line)
             if not match:
-                print()
                 raise SyntaxError("One of the contig lines is malformed: {0}".format(line))
             
-            matches = [match.group('id'), match.group('length')]
+            matches = [match.group('id')]
             self.contig_lines.append(dict(
                 list(zip(self.header_keys['contig'],matches)))
             )
