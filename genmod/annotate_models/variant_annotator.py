@@ -20,9 +20,7 @@ import logging
 
 from pprint import pprint as pp
 from multiprocessing import Process
-from math import log10
 
-from genmod.utils import check_exonic
 from genmod.vcf_tools import get_genotypes
 from . import (get_haploblocks, check_genetic_models, get_model_score, 
 make_print_version)
@@ -35,7 +33,7 @@ class VariantAnnotator(Process):
     """
     
     def __init__(self, task_queue, results_queue, families, individuals, 
-                phased=False, strict=False, whole_gene=False, vep=False,
+                phased=False, strict=False, vep=False,
                 reduced_penetrance_genes = set()):
         """
         Initialize the VariantAnnotator
@@ -51,7 +49,6 @@ class VariantAnnotator(Process):
             individuals (list)
             phased (bool)
             strict (bool)
-            whole_gene (bool)
             vep (bool)
             reduced_penetrance_genes (set): Set of reduced penetrance genes
         """
@@ -82,8 +79,6 @@ class VariantAnnotator(Process):
         self.logger.debug("Setting strict to {0}".format(self.strict))
         self.vep = vep
         self.logger.debug("Setting vep to {0}".format(self.vep))
-        self.whole_gene = whole_gene
-        self.logger.debug("Setting whole_gene to {0}".format(self.whole_gene))
         self.reduced_penetrance = reduced_penetrance_genes
         
 
@@ -133,13 +128,9 @@ class VariantAnnotator(Process):
                     
                     variant['compound_candidate'] = False
                     
-                    if self.whole_gene:
-                        if variant['annotation']:
-                            variant['compound_candidate'] = True
-                            self.logger.debug("Set compound_candidate to True")
-                    elif check_exonic(variant, self.vep):
-                            variant['compound_candidate'] = True
-                            self.logger.debug("Set compound_candidate to True")
+                    if variant['annotation']:
+                        variant['compound_candidate'] = True
+                        self.logger.debug("Set compound_candidate to True")
                     
 
             # Check the genetic models for all variants in the batch
@@ -162,11 +153,3 @@ class VariantAnnotator(Process):
             self.task_queue.task_done()
         
         return
-        
-    
-
-def main():
-    pass
-
-if __name__ == '__main__':
-    main()
