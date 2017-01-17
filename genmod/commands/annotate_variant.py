@@ -26,7 +26,7 @@ from genmod import __version__
 
 from genmod.vcf_tools import (HeaderParser, print_headers, print_variant)
 
-from genmod.annotations import ensembl_path
+from genmod.annotations import (ensembl_path_37, ensembl_path_38)
 
 from genmod.annotate_regions.parse_annotations import (build_region_trees)
 from genmod.annotate_variants.add_annotations import (add_regions, add_exac, 
@@ -48,10 +48,15 @@ logger = logging.getLogger(__name__)
                 help='Annotate what regions a variant belongs to (eg. genes).'
 )
 @click.option('--region-file','--region_file', 
-                default=ensembl_path,
                 type=click.Path(exists=True),
                 show_default=True,
                 help='Choose a bed file with regions that should be used.'
+)
+@click.option('--genome-build','-b',
+                type=click.Choice(['37','38']),
+                default='37',
+                show_default=True,
+                help='Choose what genome build to use.'
 )
 @click.option('-c', '--cadd-file', '--cadd_file', 
                     multiple = True,
@@ -94,7 +99,7 @@ logger = logging.getLogger(__name__)
 @click.pass_context
 def annotate(context, variant_file, annotate_regions, region_file, cadd_file, 
              thousand_g, exac, spidex, outfile, silent, cadd_raw, cosmic, 
-             max_af, temp_dir):
+             max_af, temp_dir, genome_build):
     """
     Annotate vcf variants.
     
@@ -103,6 +108,12 @@ def annotate(context, variant_file, annotate_regions, region_file, cadd_file,
     """
     regions = annotate_regions
     logger.info("Running genmod annotate_variant version {0}".format(__version__))
+    
+    if not region_file:
+        if genome_build == '37':
+            region_file = ensembl_path_37
+        elif genome_build == '38':
+            region_file = ensembl_path_38
     
     start_time_analysis = datetime.now()
     annotation_arguments = {}
@@ -136,9 +147,9 @@ def annotate(context, variant_file, annotate_regions, region_file, cadd_file,
             logger.info("Loading annotations")
             logger.info("Use annotations file: {0}".format(region_file))
             add_regions(head)
-            with open(region_file, 'r') as f:
-                logger.debug("Adding region trees to arguments")
-                annotation_arguments['region_trees'] = build_region_trees(f, padding=4000)
+            regions_handle = get_file_handle(region_file)
+            logger.debug("Adding region trees to arguments")
+            annotation_arguments['region_trees'] = build_region_trees(regions_handle, padding=4000)
         
         if exac:
             logger.info("Annotating ExAC frequencies")

@@ -64,10 +64,6 @@ logger = logging.getLogger(__name__)
 )
 @processes
 @silent
-@click.option('-w', '--whole_gene',
-                    is_flag=True,
-                    help='If compounds should be checked over the whole gene.'
-)
 @click.option('-k' ,'--keyword', 
                     default="Annotation",
                     help="""What annotation keyword that should be used when 
@@ -77,7 +73,7 @@ logger = logging.getLogger(__name__)
 @temp_dir
 @click.pass_context
 def models(context, variant_file, family_file, family_type, reduced_penetrance,
-           vep, keyword, phased, strict, silent, processes, whole_gene, outfile,
+           vep, keyword, phased, strict, silent, processes, outfile,
            temp_dir):
     """
     Annotate genetic models for vcf variants. 
@@ -285,7 +281,6 @@ def models(context, variant_file, family_file, family_type, reduced_penetrance,
                 individuals=analysis_individuals,
                 phased=phased,
                 strict=strict,
-                whole_gene=whole_gene,
                 vep=vep,
                 reduced_penetrance_genes = reduced_penetrance_genes
             )

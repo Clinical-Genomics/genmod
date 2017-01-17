@@ -7,7 +7,7 @@ from collections import OrderedDict
 
 from genmod.utils import get_annotation    
 from genmod.vcf_tools import (get_variant_dict, get_variant_id, 
-get_info_dict, get_vep_dict)
+                              get_info_dict, get_vep_dict)
 
 
 def get_batches(variants, batch_queue, header, vep=False, compound_mode=False, 

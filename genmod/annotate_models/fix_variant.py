@@ -22,28 +22,30 @@ def make_print_version(variant, families):
     # Here we store the compound strings that should be added to the variant:
     family_compound_strings = []
 
+    genetic_models = variant.get('inheritance_models', {})
+
     # We need to check if compounds have already been annotated.
     if 'Compounds' not in variant['info_dict']:
-    
+        
         for family_id in compounds:
-            compound_string = ''
-            compound_set = compounds[family_id]
-            #We do not want reference to itself as a compound:
-            compound_set.discard(variant_id)
-            # If there are any compounds for the family:
-            if compounds[family_id]:
-                compound_string = '|'.join(compound_set)
-                family_compound_strings.append(':'.join([family_id, compound_string]))
-
-            if len(family_compound_strings) > 0:
-                vcf_info.append('Compounds=' + ','.join(family_compound_strings))
+            if (genetic_models[family_id].get('AR_comp') or genetic_models[family_id].get('AR_comp_dn')):
+                compound_string = ''
+                compound_set = compounds[family_id]
+                #We do not want reference to itself as a compound:
+                compound_set.discard(variant_id)
+                # If there are any compounds for the family:
+                if compounds[family_id]:
+                    compound_string = '|'.join(compound_set)
+                    family_compound_strings.append(':'.join([family_id, compound_string]))
+                
+                if len(family_compound_strings) > 0:
+                    vcf_info.append('Compounds=' + ','.join(family_compound_strings))
     
     # Check if any genetic models are followed
     if 'GeneticModels' not in variant['info_dict']:
         # Here we store the compound strings that should be added to the variant:
         family_model_strings = []
         model_scores = {}
-        genetic_models = variant.get('inheritance_models', {})
         for family_id in genetic_models:
             model_string = ''
             model_list = []

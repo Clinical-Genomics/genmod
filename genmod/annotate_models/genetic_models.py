@@ -152,7 +152,8 @@ def check_genetic_models(variant_batch, families, phased = False,
                                 'X_recessive', 
                                 individual_id, 
                                 family, 
-                                variant
+                                variant,
+                                strict=strict
                             )
             
                 if check_X_dominant(variant, family, strict):
@@ -164,7 +165,8 @@ def check_genetic_models(variant_batch, families, phased = False,
                                 'X_dominant', 
                                 individual_id, 
                                 family, 
-                                variant
+                                variant,
+                                strict=strict
                             )
             # If variant is not on X:
             else:
@@ -178,7 +180,8 @@ def check_genetic_models(variant_batch, families, phased = False,
                                 'dominant', 
                                 individual_id, 
                                 family, 
-                                variant
+                                variant,
+                                strict=strict
                             )
                 
                 # Check the recessive model:
@@ -191,7 +194,8 @@ def check_genetic_models(variant_batch, families, phased = False,
                                 'recessive', 
                                 individual_id, 
                                 family, 
-                                variant
+                                variant,
+                                strict=strict
                             )
             
         # Now check the compound models:
@@ -214,14 +218,28 @@ def check_genetic_models(variant_batch, families, phased = False,
                         for individual_id in individuals:
                             individual = individuals[individual_id]
                             if individual.has_parents:
-                                check_parents('compound', individual_id, family, variant_1, variant_2)
+                                check_parents(
+                                    model='compound', 
+                                    individual_id=individual_id, 
+                                    family=family, 
+                                    variant=variant_1, 
+                                    variant_2=variant_2,
+                                    strict=strict
+                                )
                                 parents_found = True
                         if not parents_found:
                             variant_1['inheritance_models'][family_id]['AR_comp'] = True
                             variant_2['inheritance_models'][family_id]['AR_comp'] = True
-                                
-                        variant_1['compounds'][family_id].add(pair[1])
-                        variant_2['compounds'][family_id].add(pair[0])
+                        
+                        if (variant_1['inheritance_models'][family_id]['AR_comp'] or 
+                            variant_1['inheritance_models'][family_id]['AR_comp_dn']):
+                            
+                            variant_1['compounds'][family_id].add(pair[1])
+
+                        if (variant_2['inheritance_models'][family_id]['AR_comp'] or 
+                            variant_2['inheritance_models'][family_id]['AR_comp_dn']):
+                            
+                            variant_2['compounds'][family_id].add(pair[0])
     return
 
 def check_compound_candidate(variant, family, strict):
@@ -298,7 +316,7 @@ def check_compound_candidate(variant, family, strict):
 
 
 def check_parents(model, individual_id, family, variant, variant_2={}, 
-                    strict = False):
+                  strict = False):
     """
     Check if information in the parents can tell us if model is 
     de novo or not. 
@@ -411,11 +429,11 @@ def check_parents(model, individual_id, family, variant, variant_2={},
                 variant['inheritance_models'][family_id]['XD_dn'] = True
     
     elif model == 'compound':
-        
+
         mother_genotype_2 = None
         father_genotype_2 = None
         parent_genotypes_2 = []
-        
+
         if mother_id != '0':
             mother_genotype_2 = variant_2['genotypes'][mother_id]
             parent_genotypes_2.append(mother_genotype_2)
@@ -424,11 +442,13 @@ def check_parents(model, individual_id, family, variant, variant_2={},
             parent_genotypes_2.append(father_genotype_2)
         # One of the variants must come from father and one from mother
         if (len(parent_genotypes) == 2 and len(parent_genotypes_2) == 2):
+            
             # If both parents are genotyped and one of them are homozygote reference for both variants
             # the pair will be considered AR compound de novo
+            
             if ((mother_genotype.genotyped and mother_genotype_2.genotyped) and
                 father_genotype.genotyped and father_genotype_2.genotyped):
-                
+
                 # if not both parents have one of the variants it is de novo
                 if not ((mother_genotype.has_variant or mother_genotype_2.has_variant) and 
                         (father_genotype.has_variant or father_genotype_2.has_variant)):
@@ -440,56 +460,10 @@ def check_parents(model, individual_id, family, variant, variant_2={},
                     variant['inheritance_models'][family_id]['AR_comp'] = True
                     variant_2['inheritance_models'][family_id]['AR_comp'] = True
             
-        elif not strict:
-            variant['inheritance_models'][family_id]['AR_comp_dn'] = True
-            variant_2['inheritance_models'][family_id]['AR_comp_dn'] = True
-            variant['inheritance_models'][family_id]['AR_comp'] = True
-            variant_2['inheritance_models'][family_id]['AR_comp'] = True
+            elif not strict:
+                variant['inheritance_models'][family_id]['AR_comp_dn'] = True
+                variant_2['inheritance_models'][family_id]['AR_comp_dn'] = True
+                variant['inheritance_models'][family_id]['AR_comp'] = True
+                variant_2['inheritance_models'][family_id]['AR_comp'] = True
             
     return
-            
-        
-
-def main():
-    from ped_parser import family, individual
-    from interval_tree import interval_tree
-    from vcf_parser import genotype
-    
-    duo_family = family.Family(family_id = '1')
-    sick_son = individual.Individual(ind='1', family='1',mother='3', father='0', sex=1, phenotype=2)
-    healthy_mother = individual.Individual(ind='3', family='1',mother='0', father='0', sex=2, phenotype=1)
-    duo_family.add_individual(sick_son)
-    duo_family.add_individual(healthy_mother)
-    
-    pp(duo_family.individuals)
-    intervals = {ind_id:interval_tree.IntervalTree([[1,100, '1']], 1, 100) for ind_id in duo_family.individuals}
-
-    pp(intervals)
-    
-    #Setup two variants with autosomal recessive compound pattern
-    recessive_comp_simple_1 = {'CHROM':'1', 'POS':'5', 'ALT':'A', 'REF':'C', 'ID':'rs2230749',
-                             '1':'0|1', '3':'0|0'}
-    genotypes = {'1':genotype.Genotype('0|1'), '3':genotype.Genotype('0|0')}
-    recessive_comp_simple_1['genotypes'] = genotypes
-    
-    recessive_comp_simple_2 = {'CHROM':'1', 'POS':'10', 'ALT':'C', 'REF':'T', 'ID':'.', 
-                            '1':'1|0', '3':'0|1'}
-    genotypes = {'1':genotype.Genotype('1|0'), '3':genotype.Genotype('0|1')}
-    recessive_comp_simple_2['genotypes'] = genotypes
-    
-    
-    batch = {'ABC':{'1_5_A_C':recessive_comp_simple_1, '1_10_C_T':recessive_comp_simple_2}}
-    batch['haploblocks'] = intervals
-    
-    check_genetic_models(batch, duo_family, phased=True)
-    for gene in batch:
-        # pp(batch[gene])
-        for variant in batch[gene]:
-            pp(batch[gene][variant])
-            for ind in batch[gene][variant]['genotypes']:
-                print(ind, batch[gene][variant]['genotypes'][ind].__dict__)
-    
-
-if __name__ == '__main__':
-    main()
-
