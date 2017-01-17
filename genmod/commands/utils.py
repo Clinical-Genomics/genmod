@@ -45,7 +45,7 @@ def get_file_handle(path):
         file_handle = sys.stdin
     
     elif path.endswith('.gz'):
-        file_handle = gzip.open(path, 'r')
+        file_handle = getreader('utf-8')(gzip.open(path, 'r'), errors='replace')
     
     else:
         file_handle = open(path, 'r')
