@@ -3,7 +3,7 @@ import pytest
 import tabix
 from tempfile import NamedTemporaryFile
 
-from genmod.annotations import ensembl_path
+from genmod.annotations import ensembl_path_37 as ensembl_path
 
 from genmod.vcf_tools.header_parser import HeaderParser
 

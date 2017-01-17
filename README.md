@@ -11,7 +11,6 @@
 
 The tools in the genmod suite are:
 
-- **genmod build**, for building new annotation sets from different sources
 - **genmod annotate**, for annotating regions, frequencies, cadd scores etc.
 - **genmod models**, For annotating patterns of inheritance
 - **genmod sort**, To sort the variants of a vcf file, either on rank score or position
@@ -66,7 +65,7 @@ X	302253	.	CCCTCCTGCCCCT	C	100	PASS	MQ=1	GT:AD:GQ	0/0:10,10:60	0/1:10,10:60	1/1:
 MT	302253	.	CCCTCCTGCCCCT	C	100	PASS	MQ=1	GT:AD:GQ	0/0:10,10:60	0/1:10,10:60	1/1:10,10:60	0/0:10,10:60	1/1:10,10:60	1/1:10,10:60
 
 $ cat examples/test_vcf.vcf |\
->genmod annotate - --annotate_regions |\ 
+>genmod annotate - --regions |\ 
 >genmod models - --family_file examples/recessive_trio.ped > test_vcf_models_annotated.vcf
 
 $ cat test_vcf_models_annotated.vcf
@@ -120,15 +119,16 @@ To get relevant Autosomal Compound Heterozygotes we need to know what genetic re
 We can use annotations from the [Variant Effect Predictor](http://www.ensembl.org/info/docs/tools/vep/index.html) 
 or let **genmod** do the annotation.
 
-**genmod** comes with a prebuilt annotation data base that is made from the latest refSeq dataset. 
-We can also build new annotation sets with **genmod build**, please see wiki for mor info.
+**genmod** comes annotation set that is made from ensemble.
+It is possible to use the 37 or 38 build, see `genmod annotate --help` 
+Any annotation in the bed format can be used.
 
 (There are files for testing the following commands in genmod/examples)
 
-To annotate the variants with regions use
+To annotate the variants with user defined regions use
 
 ```bash
-$genmod annotate <vcf_file> -r/--annotate_regions (-a/--annotation_dir)
+$genmod annotate <vcf_file> -r/--regions --region-file path_to_regions.bed
 
 ```
 

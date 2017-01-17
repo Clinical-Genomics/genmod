@@ -36,7 +36,7 @@ from .utils import (variant_file, family_file, family_type, silent, outfile, get
 logger = logging.getLogger(__name__)
 
 
-@click.command()
+@click.command('score', short_help="Score variants")
 @variant_file
 @click.option('-i', '--family_id',
                 default='1', 
@@ -58,7 +58,8 @@ logger = logging.getLogger(__name__)
               type=click.Path(exists=True),
               help="The plug-in config file(.ini)"
 )
-def score(variant_file, family_id, family_file, family_type, score_config, 
+@click.pass_context
+def score(context, variant_file, family_id, family_file, family_type, score_config, 
 silent, skip_plugin_check, rank_results, outfile):
     """
     Score variants in a vcf file using a Weighted Sum Model.
@@ -83,8 +84,7 @@ silent, skip_plugin_check, rank_results, outfile):
     ## Check the score config:
     if not score_config:
         logger.warning("Please provide a score config file.")
-        logger.info("Exiting")
-        sys.exit(1)
+        context.abort()
     
     logger.debug("Parsing config file")
     
@@ -92,8 +92,7 @@ silent, skip_plugin_check, rank_results, outfile):
         config_parser = ConfigParser(score_config)
     except ValidateError as e:
         logger.error(e.message)
-        logger.info("Exiting")
-        sys.exit(1)
+        context.abort()
     
     score_categories = list(config_parser.categories.keys())
 
@@ -116,8 +115,7 @@ silent, skip_plugin_check, rank_results, outfile):
     if not check_plugins(config_parser, head):
         if not skip_plugin_check:
             logger.error("All score plugins has to be defined in vcf header")
-            logger.info("Exiting")
-            sys.exit(1)
+            context.abort()
     else:
         logger.info("All plugins are defined in vcf")
     
@@ -129,8 +127,7 @@ silent, skip_plugin_check, rank_results, outfile):
     if "RankScore" in head.info_dict:
         logger.warning("Variants already scored according to VCF header")
         logger.info("Please check VCF file")
-        logger.info("Exiting...")
-        sys.exit(1)
+        context.abort()
     
     add_metadata(
         head,
@@ -212,7 +209,3 @@ silent, skip_plugin_check, rank_results, outfile):
 
     logger.info("Variants scored. Number of variants: {0}".format(nr_of_variants))
     logger.info("Time to score variants: {0}".format(datetime.now()-start_scoring))
-        
-
-if __name__ == '__main__':
-    score()

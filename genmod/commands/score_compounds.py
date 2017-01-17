@@ -34,7 +34,7 @@ from .utils import (variant_file, silent, outfile, processes, temp_dir,
 
 logger = logging.getLogger(__name__)
 
-@click.command()
+@click.command('compound', short_help="Score compounds")
 @variant_file
 @silent
 @outfile
@@ -44,7 +44,8 @@ logger = logging.getLogger(__name__)
                     is_flag=True,
                     help='If variants are annotated with the Variant Effect Predictor.'
 )
-def compound(variant_file, silent, outfile, vep, processes, temp_dir):
+@click.pass_context
+def compound(context, variant_file, silent, outfile, vep, processes, temp_dir):
     """
     Score compound variants in a vcf file based on their rank score.
     """
@@ -140,11 +141,11 @@ def compound(variant_file, silent, outfile, vep, processes, temp_dir):
                                 compound_mode = True,
                                 results_queue=results
                             )
-    
+
     logger.debug("Put stop signs in the variant queue")
     for i in range(num_scorers):
         variant_queue.put(None)
-    
+
     variant_queue.join()
     results.put(None)
     variant_printer.join()

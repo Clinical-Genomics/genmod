@@ -66,33 +66,3 @@ def get_annotation(variant, annotation_key="Annotation", vep=False):
         variant_id, ','.join(annotation)
     ))
     return annotation
-
-def check_exonic(variant, vep=False):
-    """
-    Check if the variant is in a exonic region
-    
-    Arguments:
-        variant (dict): A variant dictionary
-        vep (bool):If the variant is annotated with vep
-        
-    Returns:
-        exonic (bool): If the variant is in an exonic region
-    """
-    #If the variant is annotated with vep we look at the consequence terms
-    # to see if they are exonic
-    exonic = False
-    
-    if vep:
-        for allele in variant.get('vep_info',{}):
-            for vep_annotation in variant['vep_info'][allele]:
-                for consequence in vep_annotation.get('Consequence', {}).split('&'):
-                    # These are the SO terms that indicate that the variant 
-                    # belongs to a exon
-                    if consequence in EXONIC_SO_TERMS:
-                        exonic = True
-    
-    elif "Exonic" in variant['info_dict']:
-        exonic = True
-        
-    return exonic
-            

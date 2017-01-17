@@ -1,9 +1,9 @@
-from genmod.utils import (get_annotation, check_exonic)
+from genmod.utils import (get_annotation)
 
 import pkg_resources
 import pytest
 
-def get_variant(chrom='1', pos='1', ref='A', alt='G', annotation=["ADK"], exonic=True):
+def get_variant(chrom='1', pos='1', ref='A', alt='G', annotation=["ADK"]):
     """
     Return a variant dictionary
     """
@@ -17,9 +17,6 @@ def get_variant(chrom='1', pos='1', ref='A', alt='G', annotation=["ADK"], exonic
         },
         "variant_id": variant_id
     }
-    
-    if exonic:
-        variant['info_dict']["Exonic"] = []
 
     return variant
 
@@ -68,13 +65,3 @@ def test_get_vep_region():
     variant = get_vep_variant()
     assert get_annotation(variant, vep=True) == set(["ADK"])
 
-def test_get_exonic():
-    """docstring for test_get_exonic"""
-    variant = get_variant()
-    assert check_exonic(variant) == True
-
-def test_get_exonic_vep():
-    """docstring for test_get_exonic"""
-    variant = get_vep_variant()
-    assert check_exonic(variant, vep=True) == True
-    
