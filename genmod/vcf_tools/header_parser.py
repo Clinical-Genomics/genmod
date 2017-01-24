@@ -62,7 +62,7 @@ class HeaderParser(object):
             Description="(?P<desc>[^"]*)"
             >''', re.VERBOSE)
         self.contig_pattern = re.compile(r'''\#\#contig=<
-            ID=(?P<id>[^,]+),
+            ID=(?P<id>[^,]+)
             .*
             >''', re.VERBOSE)
         self.format_pattern = re.compile(r'''\#\#FORMAT=<
