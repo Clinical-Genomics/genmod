@@ -108,7 +108,7 @@ class CompoundScorer(Process):
                 raw_compounds = variant['info_dict'].get('Compounds', None)
                 
                 if raw_compounds:
-                    logger.debug("Scoring compound for variant {0}".format(variant_id))
+                    logger.debug("Scoring compound for variant %s" % variant_id)
                     variant = variant_batch[variant_id]
                     #Variable to see if we should correct the rank score
                     correct_score = True
@@ -147,7 +147,6 @@ class CompoundScorer(Process):
                         compound_rank_score = rank_scores[compound_id]
                         if compound_rank_score > 9:
                             only_low = False
-                        
                     logger.debug("Setting only_low to {0}".format(only_low))
                     
                     if (correct_score and only_low):

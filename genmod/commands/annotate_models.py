@@ -62,6 +62,10 @@ logger = logging.getLogger(__name__)
                     is_flag=True,
                     help='If strict model annotations should be used(see documentation).'
 )
+@click.option('-w' ,'--whole_gene','--whole-gene', 
+                    is_flag=True,
+                    help='If compounds should be checked for all variants in a gene. DEPRECATED'
+)
 @processes
 @silent
 @click.option('-k' ,'--keyword', 
@@ -74,7 +78,7 @@ logger = logging.getLogger(__name__)
 @click.pass_context
 def models(context, variant_file, family_file, family_type, reduced_penetrance,
            vep, keyword, phased, strict, silent, processes, outfile,
-           temp_dir):
+           temp_dir, whole_gene):
     """
     Annotate genetic models for vcf variants. 
     
@@ -358,7 +362,7 @@ def models(context, variant_file, family_file, family_type, reduced_penetrance,
         logger.warning(err)
         for worker in model_checkers:
             worker.terminate()
-            variant_printer.terminate()
+        variant_printer.terminate()
         context.abort()
     finally:
         if len(model_checkers) > 1:

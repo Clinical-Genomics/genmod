@@ -75,7 +75,7 @@ def compound(context, variant_file, silent, outfile, vep, processes, temp_dir):
     
     header_line = head.header
     individuals = head.individuals
-    
+
     ###################################################################
     ### The task queue is where all jobs(in this case batches that  ###
     ### represents variants in a region) is put. The consumers will ###
@@ -103,73 +103,75 @@ def compound(context, variant_file, silent, outfile, vep, processes, temp_dir):
         for i in range(num_scorers)
     ]
     
-    logger.info('Starting the workers')
-    for worker in compound_scorers:
-        logger.debug('Starting worker {0}'.format(worker))
-        worker.start()
+    try:
+        logger.info('Starting the workers')
+        for worker in compound_scorers:
+            logger.debug('Starting worker {0}'.format(worker))
+            worker.start()
+        
+        # This process prints the variants to temporary files
+        logger.info('Seting up the variant printer')
+        
+        # We use a temp file to store the processed variants
+        logger.debug("Build a tempfile for printing the variants")
+        if temp_dir:
+            temp_file = NamedTemporaryFile(delete=False, dir=temp_dir)
+        else:
+            temp_file = NamedTemporaryFile(delete=False)
+        temp_file.close()
+        
+        variant_printer = VariantPrinter(
+            task_queue=results,
+            head=head,
+            mode='chromosome',
+            outfile = temp_file.name
+        )
+        
+        logger.info('Starting the variant printer process')
+        variant_printer.start()
+        
+        start_time_variant_parsing = datetime.now()
+        
+        # This process parses the original vcf and create batches to put in the variant queue:
+        chromosome_list = get_batches(
+                                    variants = variant_file,
+                                    batch_queue = variant_queue,
+                                    header = head,
+                                    vep = vep,
+                                    results_queue=results
+                                )
+        
+        logger.debug("Put stop signs in the variant queue")
+        for i in range(num_scorers):
+            variant_queue.put(None)
+        
+        variant_queue.join()
+        results.put(None)
+        variant_printer.join()
+        
+        sort_variants(infile=temp_file.name, mode='chromosome')
+        
+        print_headers(head=head, outfile=outfile, silent=silent)
+        
+        with open(temp_file.name, 'r', encoding='utf-8') as f:
+            for line in f:
+                print_variant(
+                    variant_line=line,
+                    outfile=outfile,
+                    mode='modified',
+                    silent=silent
+                )
+    except Exception as e:
+        logger.warning(e)
+        for worker in compound_scorers:
+            worker.terminate()
+        variant_printer.terminate()
+        context.abort()
+    finally:
+        logger.info("Removing temp file")
+        os.remove(temp_file.name)
+        logger.debug("Temp file removed")
     
-    # This process prints the variants to temporary files
-    logger.info('Seting up the variant printer')
-    
-    # We use a temp file to store the processed variants
-    logger.debug("Build a tempfile for printing the variants")
-    if temp_dir:
-        temp_file = NamedTemporaryFile(delete=False, dir=temp_dir)
-    else:
-        temp_file = NamedTemporaryFile(delete=False)
-    temp_file.close()
-
-    variant_printer = VariantPrinter(
-        task_queue=results,
-        head=head,
-        mode='chromosome',
-        outfile = temp_file.name
-    )
-
-    logger.info('Starting the variant printer process')
-    variant_printer.start()
-
-    start_time_variant_parsing = datetime.now()
-    
-    # This process parses the original vcf and create batches to put in the variant queue:
-    logger.info('Start parsing the variants')
-    chromosome_list = get_batches(
-                                variants = variant_file,
-                                batch_queue = variant_queue,
-                                header = head,
-                                vep = vep,
-                                compound_mode = True,
-                                results_queue=results
-                            )
-
-    logger.debug("Put stop signs in the variant queue")
-    for i in range(num_scorers):
-        variant_queue.put(None)
-
-    variant_queue.join()
-    results.put(None)
-    variant_printer.join()
-    
-    sort_variants(infile=temp_file.name, mode='chromosome')
-    
-    print_headers(head=head, outfile=outfile, silent=silent)
-
-    with open(temp_file.name, 'r', encoding='utf-8') as f:
-        for line in f:
-            print_variant(
-                variant_line=line,
-                outfile=outfile,
-                mode='modified',
-                silent=silent
-            )
-    
-    logger.debug("Removing temp file")
-    os.remove(temp_file.name)
-    logger.debug("Temp file removed")
 
     logger.info('Time for whole analyis: {0}'.format(
         str(datetime.now() - start_time_analysis)))
-    
-
-if __name__ == '__main__':
-    compound()
