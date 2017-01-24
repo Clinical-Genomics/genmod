@@ -1,6 +1,5 @@
 from genmod.utils import (get_annotation)
 
-import pkg_resources
 import pytest
 
 def get_variant(chrom='1', pos='1', ref='A', alt='G', annotation=["ADK"]):

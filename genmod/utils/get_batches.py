@@ -10,17 +10,21 @@ from genmod.vcf_tools import (get_variant_dict, get_variant_id,
                               get_info_dict, get_vep_dict)
 
 
-def get_batches(variants, batch_queue, header, vep=False, compound_mode=False, 
-                results_queue=None, annotation_keyword = 'Annotation'):
+logger = logging.getLogger(__name__)
+
+def get_batches(variants, batch_queue, header, vep=False, results_queue=None, 
+                annotation_keyword = 'Annotation'):
     """
     Create variant batches based on their annotation and put them into the 
     batch queue.
 
-    Variants are given a new 'annotation' field in the variant dictionary and 
-    also a 'exonic' field.
+    Variant batches are are dictionaries with variant_id as key and 
+    variant_dict as value.
+
     get_batches will then use the annotation to search for sequences of variants
     with overlapping annotations. These are collected into one batch and gets
     put into a queue.
+    
     Variants that are in between features will be in their own batch.
 
     Arguments:
@@ -34,7 +38,6 @@ def get_batches(variants, batch_queue, header, vep=False, compound_mode=False,
     Returns:
          Does not return but put the results in a queue
     """
-    logger = logging.getLogger(__name__)
 
     logger.debug("Set beginning to True")
     beginning = True
@@ -43,7 +46,7 @@ def get_batches(variants, batch_queue, header, vep=False, compound_mode=False,
     batch = OrderedDict()
     new_chrom = None
     current_chrom = None
-    current_features = []
+    current_features = set()
     chromosomes = []
 
     start_parsing_time = datetime.now()
@@ -59,18 +62,12 @@ def get_batches(variants, batch_queue, header, vep=False, compound_mode=False,
     
     for line in variants:
         if not line.startswith('#'):
-            compound_variant = False
-            add_variant = True
             
             variant = get_variant_dict(line, header_line)
             variant_id = get_variant_id(variant)
             variant['variant_id'] = variant_id
             variant['info_dict'] = get_info_dict(variant['INFO'])
-            
-            if compound_mode:
-                if not variant['info_dict'].get('Compounds'):
-                    add_variant = False
-            
+
             if vep:
                 variant['vep_info'] = get_vep_dict(
                     vep_string=variant['info_dict']['CSQ'], 
@@ -108,11 +105,8 @@ def get_batches(variants, batch_queue, header, vep=False, compound_mode=False,
                 logger.debug("First variant.")
                 current_features = new_features
 
-                if add_variant:
-                    logger.debug("Adding {0} to variant batch".format(variant_id))
-                    batch[variant_id] = variant
-                else:
-                    results_queue.put(variant)
+                logger.debug("Adding %s to variant batch" % variant_id)
+                batch[variant_id] = variant
 
                 logger.debug("Updating current chrom to {0}".format(new_chrom))
                 current_chrom = new_chrom
@@ -127,14 +121,13 @@ def get_batches(variants, batch_queue, header, vep=False, compound_mode=False,
                 # If we should put the batch in the queue:
                 logger.debug("Updating send to True") 
                 send = True
-
+                
                 # Check if the variant ovelapps any features
                 if len(new_features) != 0:
                     # Check if the features overlap the previous variants features
                     if new_features.intersection(current_features):
                         logger.debug("Set send to False since variant features overlap") 
                         send = False
-
                 # If we are at a new chromosome we finish the current batch:
                 if new_chrom != current_chrom:
                     if current_chrom not in chromosomes:
@@ -160,12 +153,9 @@ def get_batches(variants, batch_queue, header, vep=False, compound_mode=False,
                     batch = {}
                 else:
                     current_features = current_features.union(new_features)
-
-                if add_variant:
-                    logger.debug("Adding variant {0} to batch".format(variant_id)) 
-                    batch[variant_id] = variant
-                else:
-                    results_queue.put(variant)
+                
+                # Add variant to batch
+                batch[variant_id] = variant
 
     if current_chrom not in chromosomes:
         logger.debug("Adding chr {0} to chromosomes".format(current_chrom))

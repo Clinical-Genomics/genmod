@@ -24,7 +24,9 @@ def annotate_variant(variant, annotation_arguments):
     
     ## TODO this needs to be handeled different for SV:s
     start = pos
-    end = pos + max(len(ref), len(alt))
+    # This is a construct so that there will not be inconsistent genetic regions
+    end = pos + 1
+    # end = pos + max(len(ref), len(alt))
     
     #Check which annotations that are available
     regions = None
