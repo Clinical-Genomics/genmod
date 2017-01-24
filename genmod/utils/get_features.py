@@ -4,6 +4,8 @@ import logging
 
 from genmod.utils import INTERESTING_SO_TERMS, EXONIC_SO_TERMS
 
+logger = logging.getLogger(__name__)
+
 def check_vep_annotation(variant):
     """
     Return a set with the genes that vep has annotated this variant with.
@@ -45,7 +47,6 @@ def get_annotation(variant, annotation_key="Annotation", vep=False):
     Returns: 
         annotations (set): A set with annotated features
     """
-    logger = logging.getLogger(__name__)
     ##TODO use extract_vcf to get the annotation here
     
     annotation = set()

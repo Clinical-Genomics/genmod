@@ -88,7 +88,7 @@ def get_batches(variants, batch_queue, header, vep=False, compound_mode=False,
             logger.debug("Update new chrom to {0}".format(new_chrom))
 
             new_features = get_annotation(
-                variant = variant, 
+                variant = variant,
                 vep = vep,
                 annotation_key = annotation_keyword
             )
