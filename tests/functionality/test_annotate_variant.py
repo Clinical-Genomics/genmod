@@ -23,6 +23,20 @@ def test_genmod_annotate_features():
 
     assert result.exit_code == 0
 
+def test_genmod_annotate_features_38():
+    """Test to annotate variants with the GRCh38 build"""
+    runner = CliRunner()
+    result = runner.invoke(
+        cli, [
+            'annotate',
+            VCF_FILE,
+            '-r',
+            '-b',
+            '38'
+        ])
+
+    assert result.exit_code == 0
+
 def test_genmod_annotate_thousand_g():
     """docstring for test_genmod_annotate_models"""
     runner = CliRunner()
