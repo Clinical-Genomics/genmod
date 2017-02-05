@@ -5,6 +5,7 @@ ANNOTATED_VCF_FILE = "tests/fixtures/test_vcf_annotated.vcf"
 VCF_FILE = "tests/fixtures/test_vcf_regions.vcf"
 FAMILY_FILE = "tests/fixtures/recessive_trio.ped"
 BAD_FAMILY_FILE = "tests/fixtures/annotate_models/one_ind.ped"
+EMPTY_VCF_FILE = "tests/fixtures/empty.vcf"
 
 from genmod import logger
 from genmod.log import init_log
@@ -24,6 +25,19 @@ def test_genmod_annotate_models():
     runner = CliRunner()
     result = runner.invoke(models_command, [
         VCF_FILE, 
+        '-f',
+        FAMILY_FILE 
+        ]
+    )
+    
+    print(result.output)
+    assert result.exit_code == 0
+
+def test_genmod_annotate_models_empty_vcf():
+    """docstring for test_genmod_annotate_models"""
+    runner = CliRunner()
+    result = runner.invoke(models_command, [
+        EMPTY_VCF_FILE, 
         '-f',
         FAMILY_FILE 
         ]

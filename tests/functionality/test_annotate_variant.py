@@ -2,6 +2,7 @@ from genmod.commands.base import cli
 from click.testing import CliRunner
 
 VCF_FILE = "tests/fixtures/test_vcf_regions.vcf"
+EMPTY_VCF_FILE = "tests/fixtures/empty.vcf"
 THOUSAND_G_FILE = "tests/fixtures/annotate_variant/small_1000G.vcf.gz"
 CADD_FILE = "tests/fixtures/annotate_variant/small_CADD.tsv.gz"
 CADD_1000G_FILE = "tests/fixtures/annotate_variant/small_1000G_CADD.tsv.gz"
@@ -18,6 +19,18 @@ def test_genmod_annotate_features():
         cli, [
             'annotate',
             VCF_FILE,
+            '-r'
+        ])
+
+    assert result.exit_code == 0
+
+def test_genmod_annotate_features_empty_vcf():
+    """docstring for test_genmod_annotate_models"""
+    runner = CliRunner()
+    result = runner.invoke(
+        cli, [
+            'annotate',
+            EMPTY_VCF_FILE,
             '-r'
         ])
 

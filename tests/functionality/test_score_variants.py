@@ -3,6 +3,7 @@ from click.testing import CliRunner
 
 ANNOTATED_VCF_FILE = "tests/fixtures/test_vcf_annotated.vcf"
 VCF_FILE = "tests/fixtures/test_vcf_regions.vcf"
+EMPTY_VCF_FILE = "tests/fixtures/test_vcf_annotated_empty.vcf"
 SCORED_VCF = "tests/fixtures/test_vcf_annotated_scored.vcf"
 SCORE_CONFIG = "tests/fixtures/score_variants/genmod_example.ini"
 BAD_FAMILY_FILE = "tests/fixtures/annotate_models/one_ind.ped"
@@ -25,6 +26,19 @@ def test_genmod_score():
     runner = CliRunner()
     result = runner.invoke(score_command, [
         ANNOTATED_VCF_FILE,
+        '-c',
+        SCORE_CONFIG
+        ]
+    )
+
+    print(result.output)
+    assert result.exit_code == 0
+
+def test_genmod_score_empty_vcf():
+    """docstring for test_genmod_annotate_models"""
+    runner = CliRunner()
+    result = runner.invoke(score_command, [
+        EMPTY_VCF_FILE,
         '-c',
         SCORE_CONFIG
         ]

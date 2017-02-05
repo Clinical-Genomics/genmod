@@ -1,0 +1,12 @@
+##fileformat=VCFv4.1
+##INFO=<ID=GeneticModels,Number=.,Type=String,Description="':'-separated list of genetic models for this variant.">
+##INFO=<ID=ModelScore,Number=1,Type=Integer,Description="PHRED score for genotype models.">
+##INFO=<ID=Compounds,Number=.,Type=String,Description="List of compound pairs for this variant.The list is splitted on ',' family id is separated with compoundswith ':'. Compounds are separated with '|'.">
+##INFO=<ID=Annotation,Number=.,Type=String,Description="Annotates what feature(s) this variant belongs to.">
+##INFO=<ID=CADD,Number=A,Type=Float,Description="The CADD relative score for this alternative.">
+##INFO=<ID=1000GAF,Number=A,Type=Float,Description="Frequency in the 1000G database.">
+##INFO=<ID=CLNSIG,Number=A,Type=String,Description="Variant Clinical Significance, 0 - Uncertain significance, 1 - not provided, 2 - Benign, 3 - Likely benign, 4 - Likely pathogenic, 5 - Pathogenic, 6 - drug response, 7 - histocompatibility, 255 - other">
+##contig=<ID=1,length=249250621,assembly=b37>
+##reference=file:///humgen/gsa-hpprojects/GATK/bundle/current/b37/human_g1k_v37.fasta
+##Software=<ID=genmod,Version=2.0.5,Date="2015-02-16 09:46",CommandLineOptions="family_file=examples/recessive_trio.ped thousand_g=examples/small_1000G.vcf.gz annotation_dir=/Users/manmag/Projects/genmod/genmod/annotations processes=4 outfile=examples/test_vcf_annotated.vcf cadd_file=examples/small_CADD.tsv.gz variant_file=- family_type=ped">
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	father	mother	proband	father_2	mother_2	proband_2

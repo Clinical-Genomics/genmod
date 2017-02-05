@@ -11,6 +11,7 @@ Created by Måns Magnusson on 2015-08-25.
 Copyright (c) 2015 __MoonsoInc__. All rights reserved.
 """
 
+import sys
 import logging
 import pkg_resources
 import itertools
@@ -136,8 +137,12 @@ def annotate(context, variant_file, annotate_regions, region_file, cadd_file,
             break
     
     #Add the first variant back to the iterator
-    if line:
+    # If the vcf has no variants the last line will be a header
+    if not line.startswith('#'):
         variants = itertools.chain([line], variants)
+    else:
+        print_headers(head, outfile, silent)
+        sys.exit(0)
     
     header_line = head.header
     annotation_arguments['header_line'] = header_line

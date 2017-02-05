@@ -70,9 +70,12 @@ def compound(context, variant_file, silent, outfile, vep, processes, temp_dir):
 
     logger.info("Headers parsed")
     
-    if line:
+    if not line.startswith('#'):
         variant_file = itertools.chain([line], variant_file)
-    
+    else:
+        print_headers(head=head, outfile=outfile, silent=silent)
+        sys.exit(0)
+
     header_line = head.header
     individuals = head.individuals
 
