@@ -11,6 +11,7 @@ Created by Måns Magnusson on 2015-08-25.
 Copyright (c) 2015 __MoonsoInc__. All rights reserved.
 """
 
+import sys
 import logging
 import pkg_resources
 import itertools
@@ -141,7 +142,7 @@ def annotate(context, variant_file, annotate_regions, region_file, cadd_file,
         variants = itertools.chain([line], variants)
     else:
         print_headers(head, outfile, silent)
-        context.abort()
+        sys.exit(0)
     
     header_line = head.header
     annotation_arguments['header_line'] = header_line

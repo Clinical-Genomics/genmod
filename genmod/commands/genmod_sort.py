@@ -101,6 +101,16 @@ def sort(variant_file, outfile, family_id, silent, position, temp_dir):
     
     sort_mode = 'rank'
     
+    if nr_variants == 0:
+        logger.debug("Printing headers")
+        print_headers(
+            head = head, 
+            outfile = outfile, 
+            silent=silent
+        )
+        sys.exit(0)
+        
+    
     if position:
         sort_mode = 'chromosome'
     

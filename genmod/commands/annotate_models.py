@@ -171,7 +171,7 @@ def models(context, variant_file, family_file, family_type, reduced_penetrance,
         variant_file = itertools.chain([line], variant_file)
     else:
         print_headers(head=head, outfile=outfile, silent=silent)
-        context.abort()
+        sys.exit(0)
     
     if vep:
         if not "CSQ" in head.info_dict:

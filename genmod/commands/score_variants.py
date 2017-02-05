@@ -125,7 +125,7 @@ silent, skip_plugin_check, rank_results, outfile):
         variant_file = itertools.chain([line], variant_file)
     else:
         print_headers(head=head, outfile=outfile, silent=silent)
-        context.abort()
+        sys.exit(0)
     
     header_line = head.header
     
