@@ -1,0 +1,5 @@
+##fileformat=VCFv4.1
+##INFO=<ID=MQ,Number=1,Type=Float,Description="RMS Mapping Quality">
+##contig=<ID=1,length=249250621,assembly=b37>
+##reference=file:///humgen/gsa-hpprojects/GATK/bundle/current/b37/human_g1k_v37.fasta
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	father	mother	proband	father_2	mother_2	proband_2

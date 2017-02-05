@@ -167,7 +167,11 @@ def models(context, variant_file, family_file, family_type, reduced_penetrance,
             break
     
     #Add the first variant to the iterator
-    variant_file = itertools.chain([line], variant_file)
+    if not line.startswith('#'):
+        variant_file = itertools.chain([line], variant_file)
+    else:
+        print_headers(head=head, outfile=outfile, silent=silent)
+        context.abort()
     
     if vep:
         if not "CSQ" in head.info_dict:

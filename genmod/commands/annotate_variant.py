@@ -136,8 +136,12 @@ def annotate(context, variant_file, annotate_regions, region_file, cadd_file,
             break
     
     #Add the first variant back to the iterator
-    if line:
+    # If the vcf has no variants the last line will be a header
+    if not line.startswith('#'):
         variants = itertools.chain([line], variants)
+    else:
+        print_headers(head, outfile, silent)
+        context.abort()
     
     header_line = head.header
     annotation_arguments['header_line'] = header_line

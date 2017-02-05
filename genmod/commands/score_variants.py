@@ -121,7 +121,12 @@ silent, skip_plugin_check, rank_results, outfile):
     
     csq_format = head.vep_columns
     #Add the first variant to the iterator
-    variant_file = itertools.chain([line], variant_file)
+    if not line.startswith('#'):
+        variant_file = itertools.chain([line], variant_file)
+    else:
+        print_headers(head=head, outfile=outfile, silent=silent)
+        context.abort()
+    
     header_line = head.header
     
     if "RankScore" in head.info_dict:
