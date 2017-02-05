@@ -37,14 +37,17 @@ def get_tabix_records(tabix_reader, chrom, start):
     tabix_key = int(start)
     try:
         records = tabix_reader.query(chrom, tabix_key-1, tabix_key)
-    except TypeError:            
+    except TypeError:
         records = tabix_reader.query(str(chrom), tabix_key-1, tabix_key)
     except TabixError:
-        logger.info("Chromosome {0} does not seem to exist in {1}".format(
-            chrom, tabix_reader))
+        try:
+            records = tabix_reader.query('chr'+chrom, tabix_key-1, tabix_key)
+        except TabixError: 
+            logger.info("Chromosome {0} does not seem to exist in {1}".format(
+                        chrom, tabix_reader))
     except:
         pass
-    
+
     return records
 
 def get_frequencies(tabix_reader, chrom, start, alt):

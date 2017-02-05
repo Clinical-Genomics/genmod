@@ -8,6 +8,7 @@ from genmod.annotations import ensembl_path_37 as ensembl_path
 from genmod.vcf_tools.header_parser import HeaderParser
 
 thousandg_path = "tests/fixtures/annotate_variant/small_1000G_maxAF.vcf.gz"
+thousandg_chr_path = "tests/fixtures/annotate_variant/small_1000G_chr.vcf.gz"
 vcf = "tests/fixtures/test_vcf.vcf"
 
 @pytest.fixture(scope='function')
@@ -16,9 +17,20 @@ def thousand_g_path(request):
     return thousandg_path
 
 @pytest.fixture(scope='function')
+def thousand_g_chr_path(request):
+    """Return the path to a bgzipped 1000G file"""
+    return thousandg_chr_path
+
+@pytest.fixture(scope='function')
 def thousand_g_handle(request, thousand_g_path):
     """Return a tabix handle with a 1000G file"""
     thousand_g = tabix.open(thousand_g_path)
+    return thousand_g
+
+@pytest.fixture(scope='function')
+def thousand_g_chr_handle(request, thousand_g_chr_path):
+    """Return a tabix handle with a 1000G file"""
+    thousand_g = tabix.open(thousand_g_chr_path)
     return thousand_g
 
 @pytest.fixture(scope='function')
