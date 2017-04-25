@@ -125,7 +125,11 @@ def models(context, variant_file, family_file, family_type, reduced_penetrance,
         context.abort()
     
     logger.info("Setting up a family parser")
-    family_parser = FamilyParser(family_file, family_type)
+    try:
+        family_parser = FamilyParser(family_file, family_type)
+    except Exception as err:
+        logger.error(err)
+        context.abort()
     logger.debug("Family parser done")
     
     families = {}

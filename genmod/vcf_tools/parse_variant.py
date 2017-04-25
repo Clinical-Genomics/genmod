@@ -91,3 +91,45 @@ def get_vep_dict(vep_string, vep_header, allele=None):
             vep_dict[allele] = [inner_dict]
     
     return vep_dict
+
+def get_genetic_models(info_dict):
+    """Return a list och genetic models per family found
+    
+    Args:
+        info_dict(dict): A dictionary with the vcf info
+    
+    Returns:
+        genetic_models(dict): A dictionary with family ids as keys and list of 
+                              genetic models value
+    """
+    genetic_models = {}
+    model_info = info_dict.get('GeneticModels')
+    if model_info:
+        for family_info in model_info.split(','):
+            splitted_entry = family_info.split(':')
+            family_id = splitted_entry[0]
+            models_found = splitted_entry[1].split('|')
+            genetic_models[family_id] = models_found
+    
+    return genetic_models
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    
