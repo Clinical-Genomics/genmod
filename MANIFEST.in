@@ -1,3 +1,5 @@
 recursive-include examples *.ped *.vcf *.gz *.tbi
-recursive-include genmod/annotations *
+recursive-include genmod/annotations *.gz
 recursive-include genmod/configs *.ini
+recursive-exclude * __pycache__
+recursive-exclude * *.py[co]
