@@ -66,6 +66,8 @@ import sys
 import logging
 from datetime import datetime
 
+from pprint import pprint as pp
+
 from .models import (check_dominant, check_recessive, check_compounds, 
 check_X_recessive, check_X_dominant)
 
@@ -440,6 +442,7 @@ def check_parents(model, individual_id, family, variant, variant_2={},
         if father_id != '0':
             father_genotype_2 = variant_2['genotypes'][father_id]
             parent_genotypes_2.append(father_genotype_2)
+        
         # One of the variants must come from father and one from mother
         if (len(parent_genotypes) == 2 and len(parent_genotypes_2) == 2):
             
@@ -460,10 +463,10 @@ def check_parents(model, individual_id, family, variant, variant_2={},
                     variant['inheritance_models'][family_id]['AR_comp'] = True
                     variant_2['inheritance_models'][family_id]['AR_comp'] = True
             
-            elif not strict:
-                variant['inheritance_models'][family_id]['AR_comp_dn'] = True
-                variant_2['inheritance_models'][family_id]['AR_comp_dn'] = True
-                variant['inheritance_models'][family_id]['AR_comp'] = True
-                variant_2['inheritance_models'][family_id]['AR_comp'] = True
+        elif not strict:
+            variant['inheritance_models'][family_id]['AR_comp_dn'] = True
+            variant_2['inheritance_models'][family_id]['AR_comp_dn'] = True
+            variant['inheritance_models'][family_id]['AR_comp'] = True
+            variant_2['inheritance_models'][family_id]['AR_comp'] = True
             
     return
