@@ -2,7 +2,7 @@
 
 
 
-[![DOI](https://zenodo.org/badge/5735/moonso/genmod.png)](http://dx.doi.org/10.5281/zenodo.11424)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3841142.svg)](https://doi.org/10.5281/zenodo.3841142)
 [![Build Status](https://travis-ci.org/moonso/vcf_parser.svg)](https://travis-ci.org/moonso/genmod)
 
 
