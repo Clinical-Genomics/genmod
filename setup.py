@@ -31,7 +31,7 @@ setup(name='genmod',
         'pytabix',
         'pytest',
         'interval_tree >= 0.3.2',
-        'click < 7',
+        'click',
         'configobj',
         'intervaltree',
         'extract_vcf >= 0.4.2'
