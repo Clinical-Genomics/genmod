@@ -84,6 +84,10 @@ In this case the vep annotations will be used to determine if a compound pair is
 
 ### strict ###
 
+Only annotate that a genetic model is followed if there is "proof", which means that the variants are called in all individuals.
+
+
+### phased ###
 This flag tell genmod that the variant calls are phased. This will make it possible for more accurate compound checks.
 For all autosomal chromosomes humans have two copies. If two variants resides on the same copy there will still be one copy that should produce "healthy" transcripts. 
 
