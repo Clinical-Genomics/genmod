@@ -10,14 +10,14 @@ Try to use the following format:
 
 ## [x.x.x]
 
-### Changed
-- Adds support for escaped characters in FORMAT description header strings
-
 ### Fixed
 ### Changed
 ### Added
 
 ## [3.7.4]
+
+### Changed
+- Adds support for escaped characters in FORMAT description header strings
 
 ### Fixed
 - Documentation about cli options `strict` and `phased`
