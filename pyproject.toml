@@ -4,6 +4,7 @@ version = "3.7.4"
 description = "Tool for annotating patterns of genetic inheritance in Variant Call Format (VCF) files"
 authors = ["moonso <mans.magnusson@scilifelab.se>"]
 license = "MIT"
+include = ["CHANGELOG.md", "examples/*", "genmod/annotations/*.gz", "genmod/annotations/*.gz", "genmod/configs/*.ini"]
 
 [tool.poetry.dependencies]
 python = "^3.6"
