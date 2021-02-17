@@ -10,6 +10,9 @@ Try to use the following format:
 
 ## [x.x.x]
 
+### Changed
+- Adds support for escaped characters in FORMAT description header strings
+
 ### Fixed
 ### Changed
 ### Added
