@@ -59,8 +59,8 @@ class HeaderParser(object):
             >''', re.VERBOSE)
         self.filter_pattern = re.compile(r'''\#\#FILTER=<
             ID=(?P<id>[^,]+),
-            Description="(?P<desc>[^"]*)"
-            >''', re.VERBOSE)
+            Description="(?P<desc>.+">$)
+            ''', re.VERBOSE)
         self.contig_pattern = re.compile(r'''\#\#contig=<
             ID=(?P<id>[^,]+)
             .*
