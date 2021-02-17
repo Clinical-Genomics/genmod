@@ -4,7 +4,29 @@ version = "3.7.4"
 description = "Tool for annotating patterns of genetic inheritance in Variant Call Format (VCF) files"
 authors = ["moonso <mans.magnusson@scilifelab.se>"]
 license = "MIT"
-include = ["CHANGELOG.md", "examples/*", "genmod/annotations/*.gz", "genmod/annotations/*.gz", "genmod/configs/*.ini"]
+include = [
+    "LICENSE",
+    "CHANGELOG.md",
+    "examples/*",
+    "genmod/annotations/*.gz",
+    "genmod/annotations/*.gz",
+    "genmod/configs/*.ini"
+]
+readme = "README.md"
+homepage = "https://github.com/moonso/genmod"
+repository = "https://github.com/moonso/genmod"
+keywords = ['inheritance', 'vcf', 'variants']
+classifiers = [
+        "Programming Language :: Python",
+        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.6",
+        "License :: OSI Approved :: MIT License",
+        "Development Status :: 5 - Production/Stable",
+        "Operating System :: MacOS :: MacOS X",
+        "Operating System :: Unix",
+        "Intended Audience :: Science/Research",
+        "Topic :: Scientific/Engineering :: Bio-Informatics",
+    ]
 
 [tool.poetry.dependencies]
 python = "^3.6"
