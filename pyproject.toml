@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "genmod"
-version = "3.7.4"
+version = "3.7.5"
 description = "Tool for annotating patterns of genetic inheritance in Variant Call Format (VCF) files"
 authors = ["moonso <mans.magnusson@scilifelab.se>"]
 license = "MIT"
@@ -39,7 +39,7 @@ intervaltree = "^3.1.0"
 extract_vcf = "^0.5"
 
 [tool.poetry.scripts]
-genmod = "genmod.commands_base:cli"
+genmod = "genmod.commands.base:cli"
 
 [tool.black]
 line-length = 100
