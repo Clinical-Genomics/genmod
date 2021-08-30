@@ -1,0 +1,16 @@
+cff-version: 1.2.0
+message: If you use this software, please cite it using these metadata.
+title: genmod
+abstract: Tool for annotating patterns of genetic inheritance in Variant Call Format (VCF) files.
+authors:
+  - family-names: Magnusson
+    given-names: Måns
+    orcid: "https:// https://orcid.org/0000-0002-0001-1047"
+version: 3.7.3
+date-released: "2018-11-15"
+identifiers:
+  - description: Updates click dependency
+    type: doi
+    value: "10.5281/zenodo.3841142"
+license: MIT Licence
+repository-code: "https://github.com/moonso/genmod"
