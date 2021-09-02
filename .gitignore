@@ -9,6 +9,7 @@
 /things
 /venv
 /.idea
+/site
 *.pyc
 .DS_Store
 *.egg-info

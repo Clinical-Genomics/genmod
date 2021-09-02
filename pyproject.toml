@@ -1,0 +1,52 @@
+[tool.poetry]
+name = "genmod"
+version = "3.7.5"
+description = "Tool for annotating patterns of genetic inheritance in Variant Call Format (VCF) files"
+authors = ["moonso <mans.magnusson@scilifelab.se>"]
+license = "MIT"
+include = [
+    "LICENSE",
+    "CHANGELOG.md",
+    "examples/*",
+    "genmod/annotations/*.gz",
+    "genmod/annotations/*.gz",
+    "genmod/configs/*.ini"
+]
+readme = "README.md"
+homepage = "https://github.com/moonso/genmod"
+repository = "https://github.com/moonso/genmod"
+keywords = ['inheritance', 'vcf', 'variants']
+classifiers = [
+        "Programming Language :: Python",
+        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.6",
+        "License :: OSI Approved :: MIT License",
+        "Development Status :: 5 - Production/Stable",
+        "Operating System :: MacOS :: MacOS X",
+        "Operating System :: Unix",
+        "Intended Audience :: Science/Research",
+        "Topic :: Scientific/Engineering :: Bio-Informatics",
+    ]
+
+[tool.poetry.dependencies]
+python = "^3.6"
+ped_parser = "^1.6.6"
+pytabix = "^0.1"
+interval_tree = "^0.3.4"
+click = "^7.1.2"
+configobj = "^5.0.6"
+intervaltree = "^3.1.0"
+extract_vcf = "^0.5"
+
+[tool.poetry.scripts]
+genmod = "genmod.commands.base:cli"
+
+[tool.black]
+line-length = 100
+
+[tool.poetry.dev-dependencies]
+pytest = "^6.2.2"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
