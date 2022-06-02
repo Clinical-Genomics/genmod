@@ -8,6 +8,12 @@ Please add a new candidate release at the top after changing the latest one. Fee
 
 Try to use the following format:
 
+## [3.7.4]
+
+### Fixed
+
+- The optional fields Source and Version are allowed in the VCF header
+
 ## [x.x.x]
 
 ### Changed
