@@ -56,6 +56,8 @@ class HeaderParser(object):
             Number=(?P<number>-?\d+|\.|[AGR]),
             Type=(?P<type>Integer|Float|Flag|Character|String),
             Description="(?P<desc>[^"]*)"
+            (?:,Source="(?P<source>[^"]+)")?
+            (?:,Version="(?P<version>[^"]+)")?
             >''', re.VERBOSE)
         self.filter_pattern = re.compile(r'''\#\#FILTER=<
             ID=(?P<id>[^,]+),
@@ -99,7 +101,8 @@ class HeaderParser(object):
             
             matches = [
                 match.group('id'), match.group('number'), 
-                match.group('type'), match.group('desc')
+                match.group('type'), match.group('desc'),
+                match.group('source'), match.group('version')
             ]
             
             # extra_info is a dictionary to check the metadata about the INFO values:
