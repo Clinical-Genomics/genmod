@@ -10,6 +10,7 @@ RUN pip3 install -r /genmod/requirements.txt
 COPY . /genmod
 
 ENV PYTHONPATH=/genmod
+ENV GENMOD_DOCKER_TEST=1
 
 WORKDIR /genmod
 
