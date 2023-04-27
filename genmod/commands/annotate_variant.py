@@ -44,7 +44,7 @@ logger = logging.getLogger(__name__)
 
 @click.command('annotate', short_help="Annotate vcf variants")
 @variant_file
-@click.option('-r', '--regions', '--annotate_regions','--annotate-regions', 
+@click.option('-r', '--annotate_regions','--annotate-regions', '--regions',
                 is_flag=True,
                 help='Annotate what regions a variant belongs to (eg. genes).'
 )
