@@ -65,7 +65,7 @@ X	302253	.	CCCTCCTGCCCCT	C	100	PASS	MQ=1	GT:AD:GQ	0/0:10,10:60	0/1:10,10:60	1/1:
 MT	302253	.	CCCTCCTGCCCCT	C	100	PASS	MQ=1	GT:AD:GQ	0/0:10,10:60	0/1:10,10:60	1/1:10,10:60	0/0:10,10:60	1/1:10,10:60	1/1:10,10:60
 
 $ cat examples/test_vcf.vcf |\
->genmod annotate - --regions |\ 
+>genmod annotate - --annotate-regions |\
 >genmod models - --family_file examples/recessive_trio.ped > test_vcf_models_annotated.vcf
 
 $ cat test_vcf_models_annotated.vcf
@@ -128,7 +128,7 @@ Any annotation in the bed format can be used.
 To annotate the variants with user defined regions use
 
 ```bash
-$genmod annotate <vcf_file> -r/--regions --region-file path_to_regions.bed
+$genmod annotate <vcf_file> -r/--annotate-regions --region-file path_to_regions.bed
 
 ```
 
