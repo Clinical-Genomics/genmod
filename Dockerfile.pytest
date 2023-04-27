@@ -1,0 +1,16 @@
+# Dockerfile to run genmod pytest suite
+FROM python:3.7@sha256:741bcc4e5900df61be4d3c1061ec1623074b50cce1a72269ffa87b9457406392
+
+RUN mkdir -p /genmod
+
+COPY requirements.txt /genmod/
+
+RUN pip3 install -r /genmod/requirements.txt
+
+COPY . /genmod
+
+ENV PYTHONPATH=/genmod
+
+WORKDIR /genmod
+
+ENTRYPOINT ["pytest"]
