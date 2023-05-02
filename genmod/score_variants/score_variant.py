@@ -85,31 +85,4 @@ def get_category_score(variant, category, config_parser, csq_format=None):
         logger.debug("No scores found for category {0}".format(category))
     
     return category_score
-    
 
-def score_variant(variant, config_parser, csq_format=None):
-    """Score a variant line
-    
-        Args:
-            variant (dict): A variant dictionary
-            config_parser (ConfigParser): A config parser object with score functions
-        Returns:
-            rank_score (float): The rank score for this variant
-    """
-    
-    rank_score = 0
-    
-    for category in config_parser.categories:
-        logger.debug("Checking scores for category {0}".format(category))
-        category_score = get_category_score(
-            variant = variant,
-            category = category,
-            config_parser = config_parser,
-            csq_format = csq_format
-        )
-
-        logger.debug("Adding category score {0} to rank_score".format(category_score))
-        rank_score += category_score
-        logger.debug("Updating rank score to {0}".format(rank_score))
-
-    return rank_score
