@@ -1,5 +1,5 @@
 import logging
-
+from genmod.score_variants import RANK_SCORE_TYPE_NAMES
 
 def get_chromosome_priority(chrom, chrom_dict={}):
     """
@@ -35,7 +35,7 @@ def get_chromosome_priority(chrom, chrom_dict={}):
     
     return priority
 
-def get_rank_score(variant_line=None, variant_dict=None, family_id=0):
+def get_rank_score(variant_line=None, variant_dict=None, family_id=0, rank_score_type: str = 'RankScore'):
     """
     Return the rank score priority for a certain family.
     
@@ -45,10 +45,14 @@ def get_rank_score(variant_line=None, variant_dict=None, family_id=0):
         variant_line (str): A vcf variant line
         variant_dict (dict): A variant dictionary
         family_id (str): A family id
+        rank_score_type(str): Return rank score based on raw or normalized format
+        See the genmod.score_variants.rank_score_variant_definitions for more info.
     
     Return:
         rank_score (str): The rank score for this variant
     """
+    if rank_score_type not in RANK_SCORE_TYPE_NAMES:
+        raise ValueError('Unknown rank_score_type', rank_score_type)
     
     rank_score = -100
     raw_entry = None
@@ -62,12 +66,12 @@ def get_rank_score(variant_line=None, variant_dict=None, family_id=0):
             if len(info_annotation) == 2:
                 key = info_annotation[0]
                 value = info_annotation[1]
-            if key == "RankScore":
+            if key == rank_score_type:
                 raw_entry = value
                 break
     
     elif variant_dict:
-        raw_entry = variant_dict['info_dict'].get('RankScore')
+        raw_entry: str = variant_dict['info_dict'].get(rank_score_type)
     
     if raw_entry:
         for family_annotation in raw_entry.split(','):

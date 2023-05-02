@@ -79,6 +79,13 @@ def compound(context, variant_file, silent, outfile, vep, processes, temp_dir):
     header_line = head.header
     individuals = head.individuals
 
+    add_metadata(head,
+                 'info',
+                 'CompoundsNormalized',
+                 annotation_number='.',
+                 entry_type='String',
+                 description='Rank score as provided by compound analysis, based on RankScoreNormalized. family_id:rank_score')
+
     ###################################################################
     ### The task queue is where all jobs(in this case batches that  ###
     ### represents variants in a region) is put. The consumers will ###
