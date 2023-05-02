@@ -27,7 +27,7 @@ from genmod.vcf_tools import (add_metadata, print_variant, add_vcf_info,
 print_headers, HeaderParser, get_variant_dict, get_info_dict)
 
 from genmod.score_variants import (ConfigParser, get_category_score, 
-check_plugins)
+check_plugins, as_normalized_max_min, RANK_SCORE_TYPES)
 
 from genmod import __version__
 
@@ -133,14 +133,22 @@ silent, skip_plugin_check, rank_results, outfile):
         logger.warning("Variants already scored according to VCF header")
         logger.info("Please check VCF file")
         context.abort()
-    
+
+    for rank_score_type, rank_score_description in RANK_SCORE_TYPES.items():
+        add_metadata(head,
+                     'info',
+                     rank_score_type,
+                     annotation_number='.',
+                     entry_type='String',
+                     description=rank_score_description)
+
     add_metadata(
         head,
         'info',
-        'RankScore',
-        annotation_number='.', 
-        entry_type='String', 
-        description="The rank score for this variant in this family. family_id:rank_score."
+        'RankScoreMinMax',
+        annotation_number='.',
+        entry_type='String',
+        description="The rank score MIN-MAX bounds. family_id:min:max."
     )
     
     if rank_results:
@@ -169,25 +177,45 @@ silent, skip_plugin_check, rank_results, outfile):
             rank_score = 0
             # This is for printing results to vcf:
             category_scores = []
+            # Keep track for per-category min max scores for normalization purposes
+            category_scores_max: float = 0.0
+            category_scores_min: float = 0.0
             for category in score_categories:
-                category_score = get_category_score(
+                category_score, category_score_min, category_score_max = get_category_score(
                     variant=variant, 
                     category=category, 
                     config_parser=config_parser, 
                     csq_format=csq_format
                 )
                 logger.debug("Adding category score {0} to rank_score".format(category_score))
-                
                 rank_score += category_score
                 logger.debug("Updating rank score to {0}".format(rank_score))
+                category_scores_min += category_score_min
+                category_scores_max += category_score_max
                 
                 category_scores.append(str(category_score))
                 
-            
+            # Normalize ranks score (across all categories)
+            rank_score_normalized: float = as_normalized_max_min(score=float(rank_score),
+                                                                 min_score_value=category_scores_min,
+                                                                 max_score_value=category_scores_max)
+
             variant = add_vcf_info(
                 keyword = 'RankScore',
                 variant_dict=variant,
                 annotation="{0}:{1}".format(family_id, rank_score)
+            )
+
+            variant: dict = add_vcf_info(
+                keyword = 'RankScoreNormalized',
+                variant_dict=variant,
+                annotation="{0}:{1}".format(family_id, rank_score_normalized)
+            )
+
+            variant: dict = add_vcf_info(
+                keyword = 'RankScoreMinMax',
+                variant_dict=variant,
+                annotation="{0}:{1}:{2}".format(family_id, category_scores_min, category_scores_max)
             )
             
             if rank_results:
