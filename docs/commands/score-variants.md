@@ -14,3 +14,6 @@ i. e `CategorySumMin = SUM(CategoryMin_n) for 0...n categories`.
 The same applies to `CategorySumMax = SUM(CategoryMax_n) for 0...n categories`.
 
 Refer to `score_variants.py::score()` method for implementation details.
+
+Additionally, also read in the `score-compounds.md` on compound scoring step that affects
+final rank score values.

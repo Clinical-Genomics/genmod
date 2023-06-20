@@ -23,6 +23,7 @@ from genmod.vcf_tools import (replace_vcf_info, add_vcf_info)
 
 from genmod.score_variants.score_variant import as_normalized_max_min, MIN_SCORE_NORMALIZED, MAX_SCORE_NORMALIZED
 from genmod.score_variants.rank_score_variant_definitions import RANK_SCORE_TYPE_NAMES
+from genmod.score_variants.cap_rank_score_to_min_bound import cap_rank_score_to_min_bound
 
 logger = logging.getLogger(__name__)
 
@@ -249,6 +250,12 @@ class CompoundScorer(Process):
                                                                               min_rank_score_value=variant_rankscore_normalization_bounds[variant_id][0],
                                                                               max_rank_score_value=variant_rankscore_normalization_bounds[variant_id][1]
                                                                               )
+                            # In case the current_rank_score falls outside normalization bounds after modification,
+                            # cap it to within the MIN normalization bound.
+                            current_rank_score = cap_rank_score_to_min_bound(rank_score_type=rank_score_type,
+                                                                             rank_score=current_rank_score,
+                                                                             min_rank_score_value=variant_rankscore_normalization_bounds[variant_id][0]
+                                                                             )
 
                         for compound_id in compound_list:
                             logger.debug("Checking compound {0}".format(compound_id))
