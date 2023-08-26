@@ -21,7 +21,7 @@ import logging
 import shutil
 import itertools
 
-from multiprocessing import JoinableQueue, Manager, cpu_count
+from multiprocessing import JoinableQueue, Manager, cpu_count, util
 from codecs import open
 from datetime import datetime
 from tempfile import NamedTemporaryFile
@@ -39,6 +39,7 @@ from .utils import (temp_dir, silent, outfile, processes, variant_file,
                     family_file, family_type, get_file_handle)
 
 logger = logging.getLogger(__name__)
+util.abstract_sockets_supported = False
 
 @click.command('models', short_help="Annotate inheritance")
 @variant_file
