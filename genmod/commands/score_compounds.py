@@ -17,7 +17,7 @@ import click
 import logging
 import itertools
 
-from multiprocessing import JoinableQueue, Manager, cpu_count
+from multiprocessing import JoinableQueue, Manager, cpu_count, util
 from codecs import open
 from datetime import datetime
 from tempfile import NamedTemporaryFile
@@ -33,6 +33,7 @@ from .utils import (variant_file, silent, outfile, processes, temp_dir,
                     get_file_handle)
 
 logger = logging.getLogger(__name__)
+util.abstract_sockets_supported = False
 
 @click.command('compound', short_help="Score compounds")
 @variant_file

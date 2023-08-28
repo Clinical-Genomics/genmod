@@ -8,6 +8,11 @@ Please add a new candidate release at the top after changing the latest one. Fee
 
 Try to use the following format:
 
+## [3.7.4]
+
+### Fixed
+- OSError crashes due to socket address conflicts when using containers
+
 ## [x.x.x]
 
 ### Changed
