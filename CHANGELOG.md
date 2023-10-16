@@ -8,6 +8,9 @@ Please add a new candidate release at the top after changing the latest one. Fee
 
 Try to use the following format:
 
+## [3.8.0]
+- Rank score normalisation
+
 ## [3.7.4]
 
 ### Fixed
