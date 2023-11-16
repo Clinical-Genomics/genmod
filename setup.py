@@ -27,14 +27,15 @@ setup(name='genmod',
     url = 'http://github.com/moonso/genmod',
     license = 'MIT License',
     install_requires=[
-        'ped_parser >= 1.6.2',
-        'pytabix',
-        'pytest',
-        'interval_tree >= 0.3.2',
-        'click < 7',
-        'configobj',
-        'intervaltree',
-        'extract_vcf >= 0.4.2'
+        'ped_parser >= 1.6.6',
+        'pytabix >= 0.1',
+        'pytest >= 7.3.1',
+        'interval_tree >= 0.3.4',
+        'click >= 8.1.3',
+        'configobj >= 5.0.8',
+        'intervaltree >= 3.1.0',
+        'extract_vcf >= 0.5',
+        'vcftoolbox >= 1.5.1'
     ],
     packages=find_packages(
         exclude=('tests*', 'docs', 'examples', 'configs')
