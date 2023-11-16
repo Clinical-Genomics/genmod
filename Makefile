@@ -9,10 +9,10 @@ docker-build:
 	$(DOCKER) build -t genmod/test --force-rm=true --rm=true -f Dockerfile.pytest .
 
 test: docker-build
-	$(DOCKER) run -it -l genmod-test genmod/test -v
+	$(DOCKER) run -i -l genmod-test genmod/test -v
 
 test_%: docker-build
-	$(DOCKER) run -it -l genmod-test genmod/test -v -k $@
+	$(DOCKER) run -i -l genmod-test genmod/test -v -k $@
 
 test_dist: docker-build
 	$(DOCKER) run -i -l genmod-test --entrypoint=bash genmod/test -c \
