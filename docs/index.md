@@ -23,7 +23,7 @@ whole exome data and whole genome data.
 
 ## Installation ##
 
-**GENMOD** works with Python 2.7 and Python 3.2 and above
+**GENMOD**
 
     pip install genmod
 
