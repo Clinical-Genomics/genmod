@@ -194,7 +194,9 @@ silent, skip_plugin_check, rank_results, outfile):
                 category_scores_max += category_score_max
                 
                 category_scores.append(str(category_score))
-                
+
+            rank_score = float(rank_score)  # Export rank score as float type
+
             # Normalize ranks score (across all categories)
             rank_score_normalized: float = as_normalized_max_min(score=float(rank_score),
                                                                  min_score_value=category_scores_min,

@@ -270,6 +270,7 @@ class CompoundScorer(Process):
                         new_compound_string = "{0}:{1}".format(
                             compound_family_id, '|'.join(scored_compound_list))
 
+                        current_rank_score = float(current_rank_score)  # Export rank score as float type
                         new_rank_score_string = "{0}:{1}".format(compound_family_id, current_rank_score)
 
                         # variant['info_dict']['IndividualRankScore'] = current_rank_score_string
