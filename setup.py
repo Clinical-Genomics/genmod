@@ -7,11 +7,6 @@ except ImportError:
     from distutils.core import setup
 import pkg_resources
 
-# Shortcut for building/publishing to Pypi
-if sys.argv[-1] == 'publish':
-    os.system('python setup.py sdist bdist_wheel upload')
-    sys.exit()
-
 # For making things look nice on pypi:
 try:
     import pypandoc
