@@ -26,7 +26,6 @@ setup(name='genmod',
     author_email = 'mans.magnusson@scilifelab.se',
     url = 'http://github.com/moonso/genmod',
     license = 'MIT License',
-    python_requires="~=3.8.0",
     install_requires=[
         'ped_parser >= 1.6.6',
         'pytabix >= 0.1',
