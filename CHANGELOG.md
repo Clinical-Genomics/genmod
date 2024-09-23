@@ -8,6 +8,11 @@ Please add a new candidate release at the top after changing the latest one. Fee
 
 Try to use the following format:
 
+## [3.8.3]
+
+- Fixed unstable compounds order in models output ([#134](https://github.com/Clinical-Genomics/genmod/pull/134)))
+- Added `six` to requirements.txt and setup.py ([#134](https://github.com/Clinical-Genomics/genmod/pull/134)))
+
 ## [3.8.0]
 - Rank score normalisation
 
