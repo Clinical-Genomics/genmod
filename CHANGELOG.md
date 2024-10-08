@@ -8,6 +8,9 @@ Please add a new candidate release at the top after changing the latest one. Fee
 
 Try to use the following format:
 
+## [unreleased]
+- Fixed wrong models when chromosome X was named `chrX` and not `X` 
+
 ## [3.8.3]
 
 - Fixed unstable compounds order in models output ([#134](https://github.com/Clinical-Genomics/genmod/pull/134)))

@@ -1,58 +1,19 @@
 import pytest
 from tempfile import NamedTemporaryFile
-from typing import Dict, Union
 from click.testing import CliRunner
 
 from genmod.commands import score_command, score_compounds_command
-from genmod.vcf_tools import HeaderParser, get_variant_dict, get_info_dict
+from test_utils import generate_variants_from_file 
 
 ANNOTATED_VCF_FILE = "tests/fixtures/test_vcf_annotated.vcf"
 SCORE_CONFIG = "tests/fixtures/score_variants/genmod_example.ini"
-
-
-def _parse_variant_file(file_path: str) -> HeaderParser:
-    """
-    Parse VCF header fields
-    :param file_path: VCF to be read
-    :raises ValueError: in case file is empty
-    """
-    with open(file_path, 'r') as variant_file:
-        head = HeaderParser()
-        for line_index, line in enumerate(variant_file):
-            line = line.rstrip()
-            if line.startswith('#'):
-                if line.startswith('##'):
-                    head.parse_meta_data(line)
-                else:
-                    head.parse_header_line(line)
-            else:
-                break
-        if line_index == 0:
-            raise ValueError('Expected contents in file, got none')
-    return head
-
-
-def _generate_variants_from_file(file_path: str) -> Dict[str, Union[str, int, float]]:
-    """
-    Yield variants from VCF file.
-    :param file_path: VCF to be read
-    """
-    header = _parse_variant_file(file_path=file_path)
-    with open(file_path, 'r') as variant_file:
-        for line in variant_file:
-            if line.startswith('#'):
-                continue
-            variant: Dict[str, str] = get_variant_dict(line, header.header)
-            variant['info_dict'] = get_info_dict(variant['INFO'])
-            yield variant
-
 
 def _generate_rank_score_strings_from_file(file_path: str) -> str:
     """
     Yield rank score strings from VCF.
     :param file_path: VCF to be read
     """
-    for variant in _generate_variants_from_file(file_path=file_path):
+    for variant in generate_variants_from_file(file_path=file_path):
         rank_score_entry: str = variant['info_dict'].get('RankScore', '')
         for family_rank_score in rank_score_entry.split(','):
             family_rank_score = family_rank_score.split(':')
