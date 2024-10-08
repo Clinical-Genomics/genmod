@@ -2,7 +2,6 @@ from genmod.commands import models_command
 from tempfile import NamedTemporaryFile
 from typing import Dict, Union
 from click.testing import CliRunner
-from genmod.vcf_tools import HeaderParser, get_variant_dict, get_info_dict
 
 ANNOTATED_VCF_FILE = "tests/fixtures/test_vcf_annotated.vcf"
 VCF_FILE = "tests/fixtures/test_vcf_regions.vcf"
@@ -13,50 +12,16 @@ EMPTY_VCF_FILE = "tests/fixtures/empty.vcf"
 
 from genmod import logger
 from genmod.log import init_log
+from test_utils import generate_variants_from_file
+
 init_log(logger, loglevel="INFO")
-
-def _parse_variant_file(file_path: str) -> HeaderParser:
-    """
-    Parse VCF header fields
-    :param file_path: VCF to be read
-    :raises ValueError: in case file is empty
-    """
-    with open(file_path, 'r') as variant_file:
-        head = HeaderParser()
-        for line_index, line in enumerate(variant_file):
-            line = line.rstrip()
-            if line.startswith('#'):
-                if line.startswith('##'):
-                    head.parse_meta_data(line)
-                else:
-                    head.parse_header_line(line)
-            else:
-                break
-        if line_index == 0:
-            raise ValueError('Expected contents in file, got none')
-    return head
-
-
-def _generate_variants_from_file(file_path: str) -> Dict[str, Union[str, int, float]]:
-    """
-    Yield variants from VCF file.
-    :param file_path: VCF to be read
-    """
-    header = _parse_variant_file(file_path=file_path)
-    with open(file_path, 'r') as variant_file:
-        for line in variant_file:
-            if line.startswith('#'):
-                continue
-            variant: Dict[str, str] = get_variant_dict(line, header.header)
-            variant['info_dict'] = get_info_dict(variant['INFO'])
-            yield variant
 
 def _generate_genetic_models_string_from_file(file_path: str) -> str:
     """
     Yield genetic model string from VCF.
     :param file_path: VCF to be read
     """
-    for variant in _generate_variants_from_file(file_path=file_path):
+    for variant in generate_variants_from_file(file_path=file_path):
         genetic_models_entry: str = variant['info_dict'].get('GeneticModels', '')
         for family_genetic_models in genetic_models_entry.split(','):
             family_genetic_models = family_genetic_models.split(':')
