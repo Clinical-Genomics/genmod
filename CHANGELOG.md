@@ -10,11 +10,12 @@ Try to use the following format:
 
 ## [unreleased]
 - Fixed wrong models when chromosome X was named `chrX` and not `X` 
+- Added GitHub Actions workflows for automatic publishing to PyPI on release, and keep a changelog reminder ([#136](https://github.com/Clinical-Genomics/genmod/pull/136))
 
 ## [3.8.3]
 
-- Fixed unstable compounds order in models output ([#134](https://github.com/Clinical-Genomics/genmod/pull/134)))
-- Added `six` to requirements.txt and setup.py ([#134](https://github.com/Clinical-Genomics/genmod/pull/134)))
+- Fixed unstable compounds order in models output ([#134](https://github.com/Clinical-Genomics/genmod/pull/134))
+- Added `six` to requirements.txt and setup.py ([#134](https://github.com/Clinical-Genomics/genmod/pull/134))
 
 ## [3.8.0]
 - Rank score normalisation
