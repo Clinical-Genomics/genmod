@@ -20,7 +20,7 @@ except (IOError, ImportError, RuntimeError):
     long_description = 'Tool for annotating patterns of genetic inheritance in Variant Call Format (VCF) files.'
 
 setup(name='genmod',
-    version='3.8.2',
+    version='3.8.3',
     description='Annotate genetic inheritance models in variant files',
     author = 'Mans Magnusson',
     author_email = 'mans.magnusson@scilifelab.se',
@@ -36,7 +36,8 @@ setup(name='genmod',
         'configobj >= 5.0.8',
         'intervaltree >= 3.1.0',
         'extract_vcf >= 0.5',
-        'vcftoolbox >= 1.5.1'
+        'vcftoolbox >= 1.5.1',
+        'six >= 1.16.0',
     ],
     packages=find_packages(
         exclude=('tests*', 'docs', 'examples', 'configs')

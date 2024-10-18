@@ -270,6 +270,8 @@ class CompoundScorer(Process):
                             new_compound = "{0}>{1}".format(compound_id, compound_score)
                             scored_compound_list.append(new_compound)
 
+                        # Sort compound variants lexicographically
+                        scored_compound_list.sort()
                         new_compound_string = "{0}:{1}".format(
                             compound_family_id, '|'.join(scored_compound_list))
 
