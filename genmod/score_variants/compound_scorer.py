@@ -150,12 +150,6 @@ class CompoundScorer(Process):
         return variant_rankscore_normalization_bounds
 
     def run(self):
-
-
-        # THRESHOLD = 9
-        # PENALTY = 20
-
-
         """Run the consuming"""
         logger.info('%s: Starting!' % self.proc_name)
         # Check if there are any batches in the queue
@@ -190,11 +184,6 @@ class CompoundScorer(Process):
 
                         #TODO check if correct family id
                         # Right now we assume that there is only one family in the vcf
-
-                        # print("INSIDE ")
-                        # print(family_rank_score)
-                        if family_rank_score[0] == '':
-                            continue
 
                         family_id = family_rank_score[0]
                         rank_score = float(family_rank_score[-1])
@@ -254,10 +243,6 @@ class CompoundScorer(Process):
 
                             compound_rank_score = rank_scores[rank_score_type][compound_id]
 
-                            if variant['POS'] == "46602462":
-                                print(f"Compound: {compound_id} score: {compound_rank_score}")
-
-
 
                             if compound_rank_score > get_rank_score(rank_score_type=rank_score_type,
                                                                     threshold=self.threshold,
@@ -265,15 +250,9 @@ class CompoundScorer(Process):
                                                                     max_rank_score_value=variant_rankscore_normalization_bounds[variant_id][1]
                                                                     ):
                                 only_low = False
-                                if variant['POS'] == "46602462":
-                                    print(f"Hit something")
                         logger.debug("Setting only_low to {0}".format(only_low))
 
                         if (correct_score and only_low):
-
-                            if variant['POS'] == "46602462":
-                                print(f"Aha, didn't hit anything, penalizing")
-
 
                             logger.debug("correcting rank score for {0}".format(
                                 variant_id))
@@ -309,8 +288,6 @@ class CompoundScorer(Process):
                         variant['info_dict'][f'{rank_score_type}'] = new_rank_score_string
                         variant['info_dict'][f'Compounds{rank_score_type.strip("RankScore")}'] = new_compound_string
 
-                        if variant['POS'] == "46602462":
-                            print("Point 1")
                             # print(variant["info_dict"])
                             # raise ValueError(variant)
                         # import sys
@@ -336,9 +313,6 @@ class CompoundScorer(Process):
                             variant_dict=variant
                         )
 
-                    if variant['POS'] == "46602462":
-                        print("Point 2")
-                        # print(variant["info_dict"])
                 logger.debug("Putting variant in results_queue")
 
                 self.results_queue.put(variant)

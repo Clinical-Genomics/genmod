@@ -54,8 +54,6 @@ def compound(context, variant_file, silent, outfile, vep, threshold: int, penalt
     """
     logger.info('Running GENMOD score_compounds, version: {0}'.format(__version__))
     
-    print("Inside compounds")
-
     variant_file = get_file_handle(variant_file)
     
     start_time_analysis = datetime.now()
@@ -75,7 +73,6 @@ def compound(context, variant_file, silent, outfile, vep, threshold: int, penalt
 
     logger.info("Headers parsed")
     
-
     if not line.startswith('#'):
         variant_file = itertools.chain([line], variant_file)
     else:
@@ -158,8 +155,6 @@ def compound(context, variant_file, silent, outfile, vep, threshold: int, penalt
                                     vep = vep,
                                     results_queue=results
                                 )
-
-
 
         logger.debug("Put stop signs in the variant queue")
         for i in range(num_scorers):
