@@ -45,13 +45,17 @@ util.abstract_sockets_supported = False
                     is_flag=True,
                     help='If variants are annotated with the Variant Effect Predictor.'
 )
+@click.option('--threshold', type=int, help="If no other variants below this threshold, the variant is penalized", default=9)
+@click.option('--penalty', type=int, help="If not together with other variant above the threshold defined by --threshold, this penalty is applied", default=6)
 @click.pass_context
-def compound(context, variant_file, silent, outfile, vep, processes, temp_dir):
+def compound(context, variant_file, silent, outfile, vep, threshold: int, penalty: int, processes, temp_dir):
     """
     Score compound variants in a vcf file based on their rank score.
     """
     logger.info('Running GENMOD score_compounds, version: {0}'.format(__version__))
     
+    print("Inside compounds")
+
     variant_file = get_file_handle(variant_file)
     
     start_time_analysis = datetime.now()
@@ -71,6 +75,7 @@ def compound(context, variant_file, silent, outfile, vep, processes, temp_dir):
 
     logger.info("Headers parsed")
     
+
     if not line.startswith('#'):
         variant_file = itertools.chain([line], variant_file)
     else:
@@ -110,6 +115,8 @@ def compound(context, variant_file, silent, outfile, vep, processes, temp_dir):
             task_queue=variant_queue,
             results_queue=results,
             individuals=individuals,
+            threshold=threshold,
+            penalty=penalty,
         )
         for i in range(num_scorers)
     ]
@@ -151,7 +158,9 @@ def compound(context, variant_file, silent, outfile, vep, processes, temp_dir):
                                     vep = vep,
                                     results_queue=results
                                 )
-        
+
+
+
         logger.debug("Put stop signs in the variant queue")
         for i in range(num_scorers):
             variant_queue.put(None)
