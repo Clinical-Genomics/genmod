@@ -45,8 +45,8 @@ util.abstract_sockets_supported = False
                     is_flag=True,
                     help='If variants are annotated with the Variant Effect Predictor.'
 )
-@click.option('--threshold', type=int, help="If no other variants below this threshold, the variant is penalized", default=9)
-@click.option('--penalty', type=int, help="If not together with other variant above the threshold defined by --threshold, this penalty is applied", default=6)
+@click.option('--threshold', type=int, help="Threshold for model-dependent penalty if no compounds with passing score", default=9)
+@click.option('--penalty', type=int, help="Penalty applied together with --threshold", default=6)
 @click.pass_context
 def compound(context, variant_file, silent, outfile, vep, threshold: int, penalty: int, processes, temp_dir):
     """
@@ -155,7 +155,7 @@ def compound(context, variant_file, silent, outfile, vep, threshold: int, penalt
                                     vep = vep,
                                     results_queue=results
                                 )
-
+        
         logger.debug("Put stop signs in the variant queue")
         for i in range(num_scorers):
             variant_queue.put(None)

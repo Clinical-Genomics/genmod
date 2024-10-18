@@ -184,7 +184,6 @@ class CompoundScorer(Process):
 
                         #TODO check if correct family id
                         # Right now we assume that there is only one family in the vcf
-
                         family_id = family_rank_score[0]
                         rank_score = float(family_rank_score[-1])
 
@@ -193,7 +192,7 @@ class CompoundScorer(Process):
             # Per variant, find rank score max min values used for normalization
             variant_rankscore_normalization_bounds: Dict[str, Tuple] = \
                 self._get_rankscore_normalization_bounds(variant_batch)
-
+            
             #We now have a dictionary with variant ids and rank scores, per rank_score_type
             for variant_id in variant_batch:
                 # If the variants only follow AR_comp (and AD for single individual families)
@@ -235,15 +234,9 @@ class CompoundScorer(Process):
                         logger.debug("Checking compounds for family {0}".format(
                             compound_family_id))
 
-
                         #Loop through compounds to check if they are only low scored
                         for compound_id in compound_list:
-
-
-
                             compound_rank_score = rank_scores[rank_score_type][compound_id]
-
-
                             if compound_rank_score > get_rank_score(rank_score_type=rank_score_type,
                                                                     threshold=self.threshold,
                                                                     min_rank_score_value=variant_rankscore_normalization_bounds[variant_id][0],
@@ -253,7 +246,6 @@ class CompoundScorer(Process):
                         logger.debug("Setting only_low to {0}".format(only_low))
 
                         if (correct_score and only_low):
-
                             logger.debug("correcting rank score for {0}".format(
                                 variant_id))
                             current_rank_score -= get_rank_score_as_magnitude(rank_score_type=rank_score_type,
@@ -288,10 +280,6 @@ class CompoundScorer(Process):
                         variant['info_dict'][f'{rank_score_type}'] = new_rank_score_string
                         variant['info_dict'][f'Compounds{rank_score_type.strip("RankScore")}'] = new_compound_string
 
-                            # print(variant["info_dict"])
-                            # raise ValueError(variant)
-                        # import sys
-
                         variant = replace_vcf_info(
                             keyword=f'{rank_score_type}',
                             annotation = new_rank_score_string,
@@ -312,7 +300,6 @@ class CompoundScorer(Process):
                             annotation=new_compound_string,
                             variant_dict=variant
                         )
-
                 logger.debug("Putting variant in results_queue")
 
                 self.results_queue.put(variant)
