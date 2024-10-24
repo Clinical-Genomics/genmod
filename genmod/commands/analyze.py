@@ -14,7 +14,6 @@ from __future__ import print_function
 import sys
 import os
 import click
-import inspect
 
 try:
     import cPickle as pickle
@@ -23,18 +22,10 @@ except:
 
 from codecs import open
 from datetime import datetime
-from tempfile import NamedTemporaryFile
-from pprint import pprint as pp
-from configobj import ConfigObj
-
-import pkg_resources
 
 from vcf_parser import VCFParser
 
-import genmod
-
 from genmod.utils import print_headers
-from genmod.errors import warning
 
 # This is an ad hoc solution to remove huge mostly uninteresting genes. 
 # Please modify this set for your own needs

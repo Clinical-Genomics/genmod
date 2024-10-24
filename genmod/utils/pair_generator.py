@@ -13,16 +13,20 @@ Copyright (c) 2013 __MyCompanyName__. All rights reserved.
 
 from __future__ import print_function
 
-import collections
+
+try:
+    from collections.abc import Iterable
+except AttributeError:
+    from collections import Iterable
 
 def generate_pairs(objects):
     """
     Yields all unordered pairs as tuples from the list of objects
-    
+	    
     Arguments:
         list_of_objects (iterator):
     """
-    if not isinstance(objects, collections.Iterable):
+    if not isinstance(objects, Iterable):
         raise SyntaxError("objects has to be iterable. objects: {0}".format(
             objects
         ))

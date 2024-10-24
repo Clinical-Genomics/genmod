@@ -1,3 +1,4 @@
+import io
 import sys
 import os
 
@@ -5,7 +6,33 @@ try:
     from setuptools import setup, find_packages
 except ImportError:
     from distutils.core import setup
-import pkg_resources
+
+here = os.path.join(os.path.abspath(os.path.dirname(__file__)))
+
+def parse_reqs(req_path = "./requirements.txt"):
+    """Recursively parse requirements from nested pip files."""
+    install_requires = []
+    with io.open(os.path.join(here, req_path), encoding="utf-8") as handle:
+        # remove comments and empty lines
+        lines = (line.strip() for line in handle if line.strip() and not line.startswith("#"))
+
+        for line in lines:
+            # check for nested requirements files
+            if line.startswith("-r"):
+                # recursively call this function
+                install_requires += parse_reqs(req_path=line[3:])
+            else:
+                # add the line as a new requirement
+                install_requires.append(line)
+
+    return install_requires
+
+about = {}
+with open(os.path.join(here, "genmod/__version__.py")) as f:
+    exec(f.read(), about)
+
+# What packages are required for this module to be executed?
+REQUIRED = parse_reqs()
 
 # Shortcut for building/publishing to Pypi
 if sys.argv[-1] == 'publish':
@@ -26,19 +53,7 @@ setup(name='genmod',
     author_email = 'mans.magnusson@scilifelab.se',
     url = 'http://github.com/Clinical-Genomics/genmod',
     license = 'MIT License',
-    python_requires="~=3.8.0",
-    install_requires=[
-        'ped_parser >= 1.6.6',
-        'pytabix >= 0.1',
-        'pytest >= 7.3.1',
-        'interval_tree >= 0.3.4',
-        'click >= 8.1.3',
-        'configobj >= 5.0.8',
-        'intervaltree >= 3.1.0',
-        'extract_vcf >= 0.5',
-        'vcftoolbox >= 1.5.1',
-        'six >= 1.16.0',
-    ],
+    install_requires=REQUIRED,
     packages=find_packages(
         exclude=('tests*', 'docs', 'examples', 'configs')
     ),
