@@ -12,6 +12,7 @@ Try to use the following format:
 - Fixed wrong models when chromosome X was named `chrX` and not `X` 
 - Added GitHub Actions workflows for automatic publishing to PyPI on release, and keep a changelog reminder ([#136](https://github.com/Clinical-Genomics/genmod/pull/136))
 - Optional user defined threshold and penalty for compound scoring
+- Update README with current github.io docs page
 
 ## [3.8.3]
 

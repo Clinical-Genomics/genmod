@@ -12,9 +12,9 @@ If the user want to build own annotations please use **genmod build_annotation**
 
 ##Annotate variants for Recessive Family##
 
-
+```
 	genmod annotate examples/test_vcf.vcf -f examples/recessive_trio.ped -o examples/test_vcf_recessive_annotated.vcf
-
+```
 The vcf file have a couple of variants made up so it will be easy to understand how the genetic inheritance patterns are annotated.
 
 With the basic command listed above the output should look like the variants in ```examples/test_vcf_recessive_annotated.vcf```
@@ -30,24 +30,24 @@ The following variants are to show how the ``-strict`` flag affects the analysis
 
 
 ##Annotate variants for Dominant Family##
-
+```
 	genmod annotate test_data/test_vcf.vcf -f test_data/dominant_trio.ped -o examples/test_vcf_dominant_annotated.vcf
-
+```
 We can now see how the conditions change when one of the parents are affected. For example the recessive pattern for the first variant is not followed since all affected needs to be homozygote alternative if the variant should follow the Autosomal Recessive pattern.
 
 
 ##Annotate variants for Multiple Families##
-
+```
 	genmod annotate test_data/test_vcf.vcf -f test_data/multi_family.ped -o examples/test_vcf_multi_annotated.vcf
-
+```
 We can now see how the conditions change when one of the parents are affected. For example the recessive pattern for the first variant is not followed since all affected needs to be homozygote alternative if the variant should follow the Autosomal Recessive pattern.
 
 
 ##Annotate variants with CADD scores and population frequencies##
 
 This is another example of how one can annotate with genmod:
-
+```
 	genmod annotate examples/test_vcf.vcf --cadd_file examples/small_CADD.tsv.gz --thousand_g examples/small_1000G.vcf.gz
+```
 
-
-Please post issues on http://github.com/moonso/genmod if any problems.
+Please post issues on http://github.com/Clinical-Genomics/genmod in case of any problems.
