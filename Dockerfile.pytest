@@ -1,5 +1,5 @@
 # Dockerfile to run genmod pytest suite
-FROM python:3.12
+FROM python:3.13
 
 RUN mkdir -p /genmod
 

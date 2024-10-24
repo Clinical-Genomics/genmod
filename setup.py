@@ -5,7 +5,10 @@ try:
     from setuptools import setup, find_packages
 except ImportError:
     from distutils.core import setup
-import pkg_resources
+
+about = {}
+with open(os.path.join(os.path.abspath(os.path.dirname(__file__)), "genmod", "__version__.py")) as f:
+    exec(f.read(), about)
 
 # Shortcut for building/publishing to Pypi
 if sys.argv[-1] == 'publish':
