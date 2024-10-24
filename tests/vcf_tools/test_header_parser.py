@@ -12,6 +12,41 @@ def test_parse_info():
     ## THEN assert it is added to the parser
     assert 'MQ' in head.info_dict
 
+def test_parse_info_with_source():
+    ## GIVEN a header object
+    head = HeaderParser()
+    assert 'MQ' not in head.info_dict
+    info_line = '##INFO=<ID=MQ,Number=1,Type=Float,Description="RMS Mapping Quality",Source="bwa">'
+    
+    ## WHEN parsing a correct info line
+    head.parse_meta_data(info_line)
+    
+    ## THEN assert it is added to the parser
+    assert 'MQ' in head.info_dict
+
+def test_parse_info_with_version():
+    ## GIVEN a header object
+    head = HeaderParser()
+    assert 'MQ' not in head.info_dict
+    info_line = '##INFO=<ID=MQ,Number=1,Type=Float,Description="RMS Mapping Quality",Version="1.0.0">'
+    
+    ## WHEN parsing a correct info line
+    head.parse_meta_data(info_line)
+    
+    ## THEN assert it is added to the parser
+    assert 'MQ' in head.info_dict
+
+def test_parse_info_with_source_and_version():
+    ## GIVEN a header object
+    head = HeaderParser()
+    assert 'MQ' not in head.info_dict
+    info_line = '##INFO=<ID=MQ,Number=1,Type=Float,Description="RMS Mapping Quality",Source="bwa",Version="1.0.0">'
+    
+    ## WHEN parsing a correct info line
+    head.parse_meta_data(info_line)
+    
+    ## THEN assert it is added to the parser
+    assert 'MQ' in head.info_dict
 
 def test_parse_contig():
     ## GIVEN a header object
