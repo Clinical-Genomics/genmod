@@ -7,10 +7,12 @@ try:
 except ImportError:
     from distutils.core import setup
 
-def parse_reqs(req_path="./requirements.txt"):
+here = os.path.join(os.path.abspath(os.path.dirname(__file__)))
+
+def parse_reqs(req_path = "requirements.txt"):
     """Recursively parse requirements from nested pip files."""
     install_requires = []
-    with io.open(os.path.join(os.path.abspath(os.path.dirname(__file__)), "requirements.txt"), encoding="utf-8") as handle:
+    with io.open(os.path.join(here, req_path), encoding="utf-8") as handle:
         # remove comments and empty lines
         lines = (line.strip() for line in handle if line.strip() and not line.startswith("#"))
 
@@ -19,7 +21,6 @@ def parse_reqs(req_path="./requirements.txt"):
             if line.startswith("-r"):
                 # recursively call this function
                 install_requires += parse_reqs(req_path=line[3:])
-
             else:
                 # add the line as a new requirement
                 install_requires.append(line)
@@ -27,7 +28,7 @@ def parse_reqs(req_path="./requirements.txt"):
     return install_requires
 
 about = {}
-with open(os.path.join(os.path.abspath(os.path.dirname(__file__)), "genmod", "__version__.py")) as f:
+with open(os.path.join(here, "genmod/__version__.py")) as f:
     exec(f.read(), about)
 
 # What packages are required for this module to be executed?
