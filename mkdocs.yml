@@ -3,7 +3,7 @@ site_name: genmod docs
 site_description: Project documentation with Markdown
 site_author: Måns Magnusson
 
-repo_url: https://github.com/moonso/genmod
+repo_url: https://github.com/Clinical-Genomics/genmod
 
 pages:
 - Home: index.md

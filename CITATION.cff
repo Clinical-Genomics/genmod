@@ -13,4 +13,4 @@ identifiers:
     type: doi
     value: "10.5281/zenodo.3841142"
 license: MIT Licence
-repository-code: "https://github.com/moonso/genmod"
+repository-code: "https://github.com/Clinical-Genomics/genmod"

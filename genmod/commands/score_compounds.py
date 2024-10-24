@@ -17,7 +17,7 @@ import click
 import logging
 import itertools
 
-from multiprocessing import JoinableQueue, Manager, cpu_count
+from multiprocessing import JoinableQueue, Manager, cpu_count, util
 from codecs import open
 from datetime import datetime
 from tempfile import NamedTemporaryFile
@@ -33,6 +33,7 @@ from .utils import (variant_file, silent, outfile, processes, temp_dir,
                     get_file_handle)
 
 logger = logging.getLogger(__name__)
+util.abstract_sockets_supported = False
 
 @click.command('compound', short_help="Score compounds")
 @variant_file
@@ -44,8 +45,10 @@ logger = logging.getLogger(__name__)
                     is_flag=True,
                     help='If variants are annotated with the Variant Effect Predictor.'
 )
+@click.option('--threshold', type=int, help="Threshold for model-dependent penalty if no compounds with passing score", default=9)
+@click.option('--penalty', type=int, help="Penalty applied together with --threshold", default=6)
 @click.pass_context
-def compound(context, variant_file, silent, outfile, vep, processes, temp_dir):
+def compound(context, variant_file, silent, outfile, vep, threshold: int, penalty: int, processes, temp_dir):
     """
     Score compound variants in a vcf file based on their rank score.
     """
@@ -79,6 +82,13 @@ def compound(context, variant_file, silent, outfile, vep, processes, temp_dir):
     header_line = head.header
     individuals = head.individuals
 
+    add_metadata(head,
+                 'info',
+                 'CompoundsNormalized',
+                 annotation_number='.',
+                 entry_type='String',
+                 description='Rank score as provided by compound analysis, based on RankScoreNormalized. family_id:rank_score')
+
     ###################################################################
     ### The task queue is where all jobs(in this case batches that  ###
     ### represents variants in a region) is put. The consumers will ###
@@ -102,6 +112,8 @@ def compound(context, variant_file, silent, outfile, vep, processes, temp_dir):
             task_queue=variant_queue,
             results_queue=results,
             individuals=individuals,
+            threshold=threshold,
+            penalty=penalty,
         )
         for i in range(num_scorers)
     ]

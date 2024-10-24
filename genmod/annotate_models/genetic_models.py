@@ -144,7 +144,7 @@ def check_genetic_models(variant_batch, families, phased = False,
             
             # Only check X-linked for the variants in the X-chromosome:
             # For X-linked we do not need to check the other models
-            if variant['CHROM'] == 'X':
+            if variant['CHROM'] in ['X', 'chrX']:
                 if check_X_recessive(variant, family, strict):
                     variant['inheritance_models'][family_id]['XR'] = True
                     for individual_id in individuals:

@@ -3,7 +3,7 @@
 
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3841142.svg)](https://doi.org/10.5281/zenodo.3841142)
-[![Build Status](https://travis-ci.org/moonso/vcf_parser.svg)](https://travis-ci.org/moonso/genmod)
+![Build Status - GitHub][actions-build-status]
 
 
 **GENMOD** is a simple to use command line tool for annotating and analyzing genomic variations in the [VCF](http://samtools.github.io/hts-specs/VCFv4.1.pdf) file format.
@@ -17,26 +17,24 @@ The tools in the genmod suite are:
 - **genmod score**, Score the variants of a vcf based on their annotation
 - **genmod filter**, Filter the variants of a vcf based on their annotation
 
-##Installation:##
+## Installation
 
-**GENMOD** works with Python 2.7 and Python 3.2 and above
+**GENMOD**
 
     pip install genmod
 
 or
 
-	git clone https://github.com/moonso/genmod.git
+	git clone https://github.com/Clinical-Genomics/genmod.git
 	cd genmod
 	python setup.py install
 
 
-## USAGE: ##
+## Usage
 
-<!-- TODO change documentation link -->
-*This is an overview, for more in depth documentation see [documentation](http://moonso.github.io/genmod/)*
+*This is an overview, for more in depth documentation see [documentation](https://Clinical-Genomics.github.io/genmod)*
 
-
-### Example: ###
+### Example
 
 
 The following command should work when installed successfully. The files are distributed with the package.
@@ -65,7 +63,7 @@ X	302253	.	CCCTCCTGCCCCT	C	100	PASS	MQ=1	GT:AD:GQ	0/0:10,10:60	0/1:10,10:60	1/1:
 MT	302253	.	CCCTCCTGCCCCT	C	100	PASS	MQ=1	GT:AD:GQ	0/0:10,10:60	0/1:10,10:60	1/1:10,10:60	0/0:10,10:60	1/1:10,10:60	1/1:10,10:60
 
 $ cat examples/test_vcf.vcf |\
->genmod annotate - --regions |\ 
+>genmod annotate - --annotate-regions |\
 >genmod models - --family_file examples/recessive_trio.ped > test_vcf_models_annotated.vcf
 
 $ cat test_vcf_models_annotated.vcf
@@ -128,7 +126,7 @@ Any annotation in the bed format can be used.
 To annotate the variants with user defined regions use
 
 ```bash
-$genmod annotate <vcf_file> -r/--regions --region-file path_to_regions.bed
+$genmod annotate <vcf_file> -r/--annotate-regions --region-file path_to_regions.bed
 
 ```
 
@@ -139,29 +137,24 @@ $genmod models <vcf_file> -f/--family_file <family.ped>
 
 ```
 
-<!-- ###genmod annotate###
+#### genmod annotate  
 
-
+```
     genmod annotate variant_file.vcf
+```
 
 This will print a new vcf to standard out with all variants annotated according to the statements below.
 All individuals described in the [ped](http://pngu.mgh.harvard.edu/~purcell/plink/data.shtml#ped) file must be present in the vcf file
 
 See examples in the folder ```genmod/examples```.
 
-**From version 1.9 genmod can split multiallelic calls in vcf:s, use flag -split/--split_variants.**
+**From version 1.9 genmod can split multiallelic calls in VCFs: use flag `-split/--split_variants`.**
 
 To get an example of how splitting variants work, run genmod on the file ```examples/multi_allele_example.vcf``` with the dominant trio.
 That is:
     ```genmod annotate examples/multi_allele_example.vcf -f examples/dominant_trio.ped -split```
 
 Compare the result when not using the ```-split``` flag.
-
-Genmod is distributed with a annotation database that is built from the refGene data.
-If the user wants to build a new annotation set use the command below:
-
-	genmod build_annotation [--type] annotation_file
-
 
 Each variant in the VCF-file will be annotated with which genetic models that are followed in the family if a family file
 (ped file) is provided.
@@ -184,7 +177,7 @@ It is possible to run without a family file, in this case all variants will be a
 
 [Variant Effect Predictor](http://www.ensembl.org/info/docs/tools/vep/index.html)(vep) annotations are supported, use the ```--vep```-flag if variants are already annotated with vep.
 
-**GENMOD** will add entrys to the INFO column for the given VCF file depending on what information is given.
+**GENMOD** will add entries to the INFO column for the given VCF file depending on what information is given.
 
 If ```--vep``` is NOT provided:
 
@@ -222,36 +215,7 @@ All annotations will be present only if they have a value.
 - If you want canonical splice site region to be bigger than 2 base pairs on each side of the exons, use `-splice/--splice_padding <integer>`
 - The `-strict/--strict` flag tells **genmod** to only annotate genetic models if they are proved by the data. If a variant is not called in a family member it will not be annotated.
 
-
-###genmod build_annotation###
-
-	genmod build_annotation [--type] [-o/--outdir] annotation_file
-
-The following file formats are supported for building new annotations:
-
-- bed
-- ccds
-- gtf
-- gene_pred
-
-The user can also specify the amount of positions around exon boundaries that should be considered as splice sites. Use
-
-```--splice_padding INTEGER```
-
-###genmod analyze###
-
-From version 1.6 there is also a tool for analyzing the variants annotated by **genmod**. This tool will look at all variants in a vcf and do an analysis based on which inheritance patterns they follow. The variants are then ranked based on the cadd scores, the highest ranked variants for each category is printed to screen and the full list for each category is printed to new vcf files.
-Run with:
-
-	genmod analyze path/to/file.vcf
-
-For more information do
-
-	genmod analyze --help
-
-
-### genmod sort ###
-
+#### genmod sort
 
 Sort a VCF file based on Rank Score.
 
@@ -269,18 +233,9 @@ Options:
   --help                Show this message and exit.
 ```
 
-###genmod summarize###
+## Conditions for Genetic Models
 
-Tool to get basic statistics of the annotated in a vcf file.
-Run
-
-	genmod summarize --help
-
-for more information.
-
-## Conditions for Genetic Models ##
-
-### Short explanation of genotype calls in VCF format:###
+### Short explanation of genotype calls in VCF format
 
 Since we only look at humans, that are diploid, the genotypes represent what we see on both alleles in a single position.
 0 represents the reference sequence, 1 is the first of the alternative alleles, 2 second alternative and so on.
@@ -290,8 +245,7 @@ Some chromosomes are only present in one copy in humans, here it is allowed to o
 
 If phasing has been done the pairs are not unordered anymore and the delimiter is then changed to '|', so one can be heterozygote in two ways; 0|1 or 1|0.
 
-
-### Autosomal Recessive ###
+### Autosomal Recessive
 
 For this model individuals can be carriers so healthy individuals can be heterozygous. Both alleles need to have the variant for an individual to be sick so a healthy individual can not be homozygous alternative and a sick individual *has* to be homozygous alternative.
 
@@ -300,14 +254,13 @@ For this model individuals can be carriers so healthy individuals can be heteroz
 * Variant is considered _de novo_ if both parents are genotyped and do not carry the variant
 
 
-### Autosomal Dominant ###
+### Autosomal Dominant
 
 * Affected individuals have to be heterozygous (het.)
 * Healthy individuals cannot have the alternative variant
 * Variant is considered _de novo_ if both parents are genotyped and do not carry the variant
 
-
-### Autosomal Compound Heterozygote ###
+### Autosomal Compound Heterozygote
 
 This model includes pairs of exonic variants that are present within the same gene.
 **The default behaviour of GENMOD is to look for compounds only in exonic/canonical splice sites**.
@@ -326,7 +279,7 @@ If the user wants all variants in genes checked use the flag -gene/--whole_gene.
 	* If only one or no variant is found in parents it is considered _de novo_
 
 
-### X-Linked Dominant###
+### X-Linked Dominant
 
 These traits are inherited on the x-chromosome, of which men have one allele and women have two.
 
@@ -338,7 +291,7 @@ These traits are inherited on the x-chromosome, of which men have one allele and
 * If sex is female variant is considered _de novo_ if none of the parents carry the variant
 
 
-### X Linked Recessive ###
+### X Linked Recessive
 
 * Variant has to be on chromosome X
 * Affected males have to be het. or hom. alt. (het is theoretically not possible in males, but can occur due to Pseudo Autosomal Regions).
@@ -347,4 +300,7 @@ These traits are inherited on the x-chromosome, of which men have one allele and
 * Healthy males cannot carry the variant
 * If sex is male the variant is considered _de novo_ if mother is genotyped and does not carry the variant
 * If sex is female variant is considered _de novo_ if not both parents carry the variant
- -->
+
+
+
+[actions-build-status]: https://github.com/Clinical-Genomics/genmod/actions/workflows/build_and_publish.yml/badge.svg

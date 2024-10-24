@@ -8,11 +8,29 @@ Please add a new candidate release at the top after changing the latest one. Fee
 
 Try to use the following format:
 
+## [unreleased]
+### Fixed
+- The optional fields Source and Version are allowed in the VCF header([#106](https://github.com/Clinical-Genomics/genmod/pull/106))
+
+
+## [3.9]
+- Fixed wrong models when chromosome X was named `chrX` and not `X` ([#135](https://github.com/Clinical-Genomics/genmod/pull/135))
+- Added GitHub Actions workflows for automatic publishing to PyPI on release, and keep a changelog reminder ([#136](https://github.com/Clinical-Genomics/genmod/pull/136))
+- Optional user defined threshold and penalty for compound scoring ([#138](https://github.com/Clinical-Genomics/genmod/pull/138))
+- Update README with current github.io docs page ([#140](https://github.com/Clinical-Genomics/genmod/pull/140))
+
+
+## [3.8.3]
+- Fixed unstable compounds order in models output ([#134](https://github.com/Clinical-Genomics/genmod/pull/134))
+- Added `six` to requirements.txt and setup.py ([#134](https://github.com/Clinical-Genomics/genmod/pull/134))
+
+## [3.8.0]
+- Rank score normalisation
+
 ## [3.7.4]
 
 ### Fixed
-
-- The optional fields Source and Version are allowed in the VCF header
+- OSError crashes due to socket address conflicts when using containers
 
 ## [x.x.x]
 

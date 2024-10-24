@@ -12,8 +12,25 @@ Copyright (c) 2015 __MoonsoInc__. All rights reserved.
 from __future__ import print_function
 
 import logging
+from typing import List
 
 from intervaltree import IntervalTree
+from enum import Enum
+
+
+class ModeLookup(Enum):
+    """
+    Class that abstracts ScoreFunction's method for score lookup
+    """
+    # Score lookup from value dict
+    VALUE = 1
+    # Score lookup string dict
+    STRING = 2
+    # Score lookup in tree
+    TREE = 3
+    # User provided score value
+    UNBOUNDED_USER_DEFINED = 4
+
 
 class ScoreFunction(object):
     """Class for holding score functions"""
@@ -174,3 +191,82 @@ class ScoreFunction(object):
         self.logger.debug("Setting equal to True")
         self._equal = True
         return
+
+    @property
+    def _scoring_mode(self) -> ModeLookup:
+        """
+        Return ModeLookup, i.e. the way ScoreFunction intends to map a
+        VALUE into SCORE (see self.get_score()).
+
+        This is done by a XOR tree, to invalidate an ambiguous configuration,
+        for example when self._value_dict and self._interval_tree is set.
+
+        Intended to be run post-initialization of ScoreFunction, i.e. when all
+        score-mappings have been established by callee.
+
+        Returns:
+            ModeLookup enum
+        """
+        if self._equal:
+            return ModeLookup.UNBOUNDED_USER_DEFINED
+
+        mode_value: bool = bool(self._value_dict)
+        mode_str: bool = bool(self._string_dict)
+        mode_tree: bool = bool(self._interval_tree)
+        if sum([mode_value, mode_str, mode_tree]) > 1:
+            raise ValueError('Unable to accurately determine what mapping to use for determining score range')
+        if mode_value:
+            return ModeLookup.VALUE
+        if mode_str:
+            return ModeLookup.STRING
+        if mode_tree:
+            return ModeLookup.TREE
+
+    @property
+    def score_range(self) -> List[float]:
+        """
+        Returns discrete rank score values, originating from the plugin config file.
+        These are the values the scoring function can provide, including values for not reported and
+        reported scores.
+
+        Returns:
+            list of discrete rank scores, list[float]
+        """
+        if self._scoring_mode == ModeLookup.UNBOUNDED_USER_DEFINED:
+            # Invalid request to expect a known range from an unknown plugin config
+            raise ValueError('User supplied score values does not have a known score range')
+        elif self._scoring_mode == ModeLookup.VALUE:
+            scores: list = [float(score_value) for score_value in self._value_dict.values()]  # val -> score
+        elif self._scoring_mode == ModeLookup.STRING:
+            scores: list = [float(score_value) for score_value in self._string_dict.values()]  # str -> score
+        elif self._scoring_mode == ModeLookup.TREE:
+            scores: list = []
+            for interval in self._interval_tree.all_intervals:
+                scores.append(interval.data)  # tree.interval -> score
+        else:
+            raise NotImplementedError('Unknown scoring mode', self._scoring_mode)
+
+        # Append set_reported and set_not_reported scores (as they're part of score value set)
+        scores.append(float(self._not_reported_score))
+        scores.append(float(self._reported_score))
+
+        if not isinstance(scores, list) and len(scores) > 0:
+            raise KeyError('Found no score values', scores)
+        for score_value in scores:
+            if not isinstance(score_value, float):
+                raise TypeError('Invalid score type', score_value)
+        return scores
+
+    @property
+    def score_max(self) -> float:
+        """
+        Returns plugin score max value
+        """
+        return float(max(self.score_range))
+
+    @property
+    def score_min(self) -> float:
+        """
+        Returns plugin score min value
+        """
+        return float(min(self.score_range))

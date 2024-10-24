@@ -1,13 +1,13 @@
 from codecs import open
 from tempfile import NamedTemporaryFile
-from multiprocessing import Manager
+from multiprocessing import Manager, util
 from collections import OrderedDict
 
 from genmod.utils import VariantPrinter
 from genmod.vcf_tools import (get_variant_dict, get_info_dict, 
 get_variant_id, HeaderParser)
 
-
+util.abstract_sockets_supported = False
 
 def setup_vcf_file():
     """
