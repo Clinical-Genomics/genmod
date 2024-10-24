@@ -303,4 +303,4 @@ These traits are inherited on the x-chromosome, of which men have one allele and
 
 
 
-[actions-build-status]: https://github.com/Clinical-Genomics/scout/actions/workflows/build_and_publish.yml/badge.svg
+[actions-build-status]: https://github.com/Clinical-Genomics/genmod/actions/workflows/build_and_publish.yml/badge.svg
