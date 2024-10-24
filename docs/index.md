@@ -1,8 +1,8 @@
 # Genmod #
 
 <p align="center">
-  <a href="https://github.com/moonso/genmod">
-    <img src="https://github.com/moonso/genmod/raw/master/artwork/tree_man.JPG"/>
+  <a href="https://github.com/Clinical-Genomics/genmod">
+    <img src="https://github.com/Clinical-Genomics/genmod/raw/master/artwork/tree_man.JPG"/>
   </a>
 </p>
 
@@ -24,15 +24,15 @@ whole exome data and whole genome data.
 ## Installation ##
 
 **GENMOD**
-
+```bash
     pip install genmod
-
+```
 or
-
-	git clone https://github.com/moonso/genmod.git
+```bash
+	git clone https://github.com/Clinical-Genomics/genmod.git
 	cd genmod
 	python setup.py install
-
+```
 
 
 ### Example: ###
