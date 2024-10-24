@@ -110,9 +110,9 @@ def annotate(context, variant_file, annotate_regions, region_file, cadd_file,
     
     if not region_file:
         if genome_build == '37':
-            region_file = ensembl_path_37
+            region_file = str(ensembl_path_37)
         elif genome_build == '38':
-            region_file = ensembl_path_38
+            region_file = str(ensembl_path_38)
     
     start_time_analysis = datetime.now()
     annotation_arguments = {}
