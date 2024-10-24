@@ -5,12 +5,14 @@ RUN mkdir -p /genmod
 
 COPY requirements.txt /genmod/
 
-RUN pip3 install -r /genmod/requirements.txt .
+RUN pip3 install -r /genmod/requirements.txt
 
 COPY . /genmod
 
 ENV PYTHONPATH=/genmod
 
 WORKDIR /genmod
+
+RUN pip3 install .
 
 ENTRYPOINT ["pytest"]
