@@ -13,12 +13,10 @@ Copyright (c) 2015 __MoonsoInc__. All rights reserved.
 
 import sys
 import logging
-import pkg_resources
 import itertools
 
 import click
 
-from codecs import open
 from datetime import datetime
 
 from tabix import TabixError

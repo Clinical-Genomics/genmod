@@ -34,18 +34,11 @@ Copyright (c) 2014 __MoonsoInc__. All rights reserved.
 from __future__ import (print_function, division)
 
 import sys
-import os
 import logging
 import json
 import click
 
-from codecs import open
-from datetime import datetime
-
-import pkg_resources
-
 from vcf_parser import VCFParser
-from ped_parser import FamilyParser
 
 from genmod.vcf_tools import HeaderParser
 
