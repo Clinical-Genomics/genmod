@@ -11,7 +11,7 @@ Try to use the following format:
 ## [unreleased]
 ### Fixed
 - The optional fields Source and Version are allowed in the VCF header([#106](https://github.com/Clinical-Genomics/genmod/pull/106))
-- Released the constraint on Python 3.8 (collections import) ([#125](https://github.com/Clinical-Genomics/genmod/pull/125))
+- Released the constraint on Python 3.8 (collections, pkg_resources to importlib, tests) ([#142](https://github.com/Clinical-Genomics/genmod/pull/142))
 
 ## [3.9]
 - Fixed wrong models when chromosome X was named `chrX` and not `X` ([#135](https://github.com/Clinical-Genomics/genmod/pull/135))
