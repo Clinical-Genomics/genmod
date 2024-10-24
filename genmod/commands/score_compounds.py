@@ -45,8 +45,10 @@ util.abstract_sockets_supported = False
                     is_flag=True,
                     help='If variants are annotated with the Variant Effect Predictor.'
 )
+@click.option('--threshold', type=int, help="Threshold for model-dependent penalty if no compounds with passing score", default=9)
+@click.option('--penalty', type=int, help="Penalty applied together with --threshold", default=6)
 @click.pass_context
-def compound(context, variant_file, silent, outfile, vep, processes, temp_dir):
+def compound(context, variant_file, silent, outfile, vep, threshold: int, penalty: int, processes, temp_dir):
     """
     Score compound variants in a vcf file based on their rank score.
     """
@@ -110,6 +112,8 @@ def compound(context, variant_file, silent, outfile, vep, processes, temp_dir):
             task_queue=variant_queue,
             results_queue=results,
             individuals=individuals,
+            threshold=threshold,
+            penalty=penalty,
         )
         for i in range(num_scorers)
     ]

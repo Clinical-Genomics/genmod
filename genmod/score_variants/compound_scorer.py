@@ -90,7 +90,7 @@ class CompoundScorer(Process):
     the results queue.
     """
     
-    def __init__(self, task_queue, results_queue, individuals):
+    def __init__(self, task_queue, results_queue, individuals, threshold: int, penalty: int):
         """
         Initialize the VariantAnnotator
         
@@ -119,6 +119,9 @@ class CompoundScorer(Process):
         logger.debug("Setting up individuals")
         self.individuals = individuals
         
+        self.threshold = threshold
+        self.penalty = penalty
+
         if len(self.individuals) == 1:
             self.models = ['AR_comp', 'AR_comp_dn', 'AD', 'AD_dn']
         else:
@@ -235,7 +238,7 @@ class CompoundScorer(Process):
                         for compound_id in compound_list:
                             compound_rank_score = rank_scores[rank_score_type][compound_id]
                             if compound_rank_score > get_rank_score(rank_score_type=rank_score_type,
-                                                                    threshold=9,
+                                                                    threshold=self.threshold,
                                                                     min_rank_score_value=variant_rankscore_normalization_bounds[variant_id][0],
                                                                     max_rank_score_value=variant_rankscore_normalization_bounds[variant_id][1]
                                                                     ):
@@ -246,7 +249,7 @@ class CompoundScorer(Process):
                             logger.debug("correcting rank score for {0}".format(
                                 variant_id))
                             current_rank_score -= get_rank_score_as_magnitude(rank_score_type=rank_score_type,
-                                                                              rank_score=6,
+                                                                              rank_score=self.penalty,
                                                                               min_rank_score_value=variant_rankscore_normalization_bounds[variant_id][0],
                                                                               max_rank_score_value=variant_rankscore_normalization_bounds[variant_id][1]
                                                                               )
