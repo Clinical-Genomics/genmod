@@ -24,7 +24,7 @@ setup(name='genmod',
     description='Annotate genetic inheritance models in variant files',
     author = 'Mans Magnusson',
     author_email = 'mans.magnusson@scilifelab.se',
-    url = 'http://github.com/moonso/genmod',
+    url = 'http://github.com/Clinical-Genomics/genmod',
     license = 'MIT License',
     python_requires="~=3.8.0",
     install_requires=[
