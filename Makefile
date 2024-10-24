@@ -24,5 +24,10 @@ test_dist: docker-build
 		pip3 install dist/genmod*.tar.gz && \
 		genmod -v annotate --annotate-regions --genome-build 37 examples/test_vcf.vcf"
 
+build-release-pypi:
+	rm -rf dist && \
+	python3 -m build && \
+	python3 -m twine upload dist/*
+
 docker-clean-images:
 	docker system prune
