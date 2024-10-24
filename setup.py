@@ -9,7 +9,7 @@ except ImportError:
 
 here = os.path.join(os.path.abspath(os.path.dirname(__file__)))
 
-def parse_reqs(req_path = "requirements.txt"):
+def parse_reqs(req_path = "./requirements.txt"):
     """Recursively parse requirements from nested pip files."""
     install_requires = []
     with io.open(os.path.join(here, req_path), encoding="utf-8") as handle:
