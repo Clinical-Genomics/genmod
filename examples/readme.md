@@ -30,7 +30,7 @@ With the basic command listed above the output should look like the variants in 
 The following variants are to show how the `--strict` flag affects the analysis. When in strict mode we will only annotate a variant to follow a pattern if there is *proof* in the data. So if there are no calls in some individuals it will not follow any pattern. 
 
 
-##Annotate variants for Dominant Family
+## Annotate variants for Dominant Family
 ```
     genmod annotate -o examples/test_vcf_annotated.vcf --annotate_regions examples/test_vcf.vcf
 	genmod models -f examples/dominant_trio.ped -o examples/test_vcf_dominant_annotated.vcf examples/test_vcf_annotated.vcf
@@ -39,7 +39,7 @@ The following variants are to show how the `--strict` flag affects the analysis.
 We can now see how the conditions change when one of the parents are affected. For example the recessive pattern for the first variant is not followed since all affected needs to be homozygote alternative if the variant should follow the Autosomal Recessive pattern.
 
 
-##Annotate variants for Multiple Families##
+## Annotate variants for Multiple Families
 ```
     genmod annotate -o examples/test_vcf_annotated.vcf --annotate_regions examples/test_vcf.vcf
 	genmod models -f examples/multi_family.ped -o examples/test_vcf_multi_annotated.vcf examples/test_vcf_annotated.vcf
