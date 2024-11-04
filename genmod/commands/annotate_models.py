@@ -63,10 +63,6 @@ util.abstract_sockets_supported = False
                     is_flag=True,
                     help='If strict model annotations should be used(see documentation).'
 )
-@click.option('-w' ,'--whole_gene','--whole-gene', 
-                    is_flag=True,
-                    help='If compounds should be checked for all variants in a gene. DEPRECATED'
-)
 @processes
 @silent
 @click.option('-k' ,'--keyword', 
@@ -79,7 +75,7 @@ util.abstract_sockets_supported = False
 @click.pass_context
 def models(context, variant_file, family_file, family_type, reduced_penetrance,
            vep, keyword, phased, strict, silent, processes, outfile,
-           temp_dir, whole_gene):
+           temp_dir):
     """
     Annotate genetic models for vcf variants. 
     

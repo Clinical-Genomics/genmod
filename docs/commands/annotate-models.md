@@ -31,8 +31,6 @@ Options:
    -p, --processes INTEGER         Define how many processes that should be use
                                    for annotation.
    --silent                        Do not print the variants.
-   -w, --whole_gene                If compounds should be checked over the
-                                   whole gene.
    -k, --keyword TEXT              What annotation keyword that should be used
                                    when
                                    searching for features.
@@ -102,10 +100,6 @@ If there are several processes running at the same time the variants will be pri
 ### silent ###
  
 If no variants or headers should be printed to screen. This is mainly for testing.
-
-### whole_gene ###
- 
-If variants in introns should be considered when checking compound pairs. This will lead to a huge number of compound candidates/pairs when dealing with whole genome data.
 
 ### keyword ###
 

@@ -25,7 +25,7 @@ With the basic command listed above the output should look like the variants in 
 3. Here we have a de novo case, notice that we will only annotate this with `AR_hom_dn` for more effective sorting in a downstream analysis.
 4. Next two variants form a compound pair, that is each parent carry one variant each while the affected child have both. This implies that both variants are exonic(or in canonical splice region) and belong to the same gene.
 5. At position 947378 we see an example of a Autosomal Dominant *de novo* variant.
-6. The two following variants could form a compound pair since they are heterozygous in the affected child but they are not exonic. If the flag `-g/--whole_gene` is used these two will be annotated as compounds.
+6. The two following variants could form a compound pair since they are heterozygous in the affected child but they are not exonic.
 
 The following variants are to show how the `--strict` flag affects the analysis. When in strict mode we will only annotate a variant to follow a pattern if there is *proof* in the data. So if there are no calls in some individuals it will not follow any pattern. 
 
