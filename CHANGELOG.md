@@ -11,14 +11,13 @@ Try to use the following format:
 ## [unreleased]
 ### Fixed
 - The optional fields Source and Version are allowed in the VCF header([#106](https://github.com/Clinical-Genomics/genmod/pull/106))
-
+- Released the constraint on Python 3.8 (collections, pkg_resources to importlib, tests) ([#142](https://github.com/Clinical-Genomics/genmod/pull/142))
 
 ## [3.9]
 - Fixed wrong models when chromosome X was named `chrX` and not `X` ([#135](https://github.com/Clinical-Genomics/genmod/pull/135))
 - Added GitHub Actions workflows for automatic publishing to PyPI on release, and keep a changelog reminder ([#136](https://github.com/Clinical-Genomics/genmod/pull/136))
 - Optional user defined threshold and penalty for compound scoring ([#138](https://github.com/Clinical-Genomics/genmod/pull/138))
 - Update README with current github.io docs page ([#140](https://github.com/Clinical-Genomics/genmod/pull/140))
-
 
 ## [3.8.3]
 - Fixed unstable compounds order in models output ([#134](https://github.com/Clinical-Genomics/genmod/pull/134))
