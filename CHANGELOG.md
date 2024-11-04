@@ -12,7 +12,7 @@ Try to use the following format:
 ### Fixed
 - The optional fields Source and Version are allowed in the VCF header([#106](https://github.com/Clinical-Genomics/genmod/pull/106))
 - Released the constraint on Python 3.8 (collections, pkg_resources to importlib, tests) ([#142](https://github.com/Clinical-Genomics/genmod/pull/142))
-- Update annotation examaples ([#144](https://github.com/Clinical-Genomics/genmod/pull/144))
+- Update annotation examples ([#144](https://github.com/Clinical-Genomics/genmod/pull/144))
 
 
 ## [3.9]
