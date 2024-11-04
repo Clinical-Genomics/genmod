@@ -63,6 +63,10 @@ util.abstract_sockets_supported = False
                     is_flag=True,
                     help='If strict model annotations should be used(see documentation).'
 )
+@click.option('-w' ,'--whole_gene','--whole-gene',
+                    is_flag=True,
+                    help='DEPRECATED FLAG - on by default'
+)
 @processes
 @silent
 @click.option('-k' ,'--keyword', 
@@ -75,15 +79,17 @@ util.abstract_sockets_supported = False
 @click.pass_context
 def models(context, variant_file, family_file, family_type, reduced_penetrance,
            vep, keyword, phased, strict, silent, processes, outfile,
-           temp_dir):
+           temp_dir, whole_gene):
     """
     Annotate genetic models for vcf variants. 
     
     Checks what patterns of inheritance that are followed in a VCF file.
     The analysis is family based so each family that are specified in the family
     file and exists in the variant file will get it's own annotation.
+
+    Note that the "whole_gene" flag has been disabled and will be removed in a later version.
     """
-    
+
     ######### This is for logging the command line string #########
     frame = inspect.currentframe()
     args, _, _, values = inspect.getargvalues(frame)
