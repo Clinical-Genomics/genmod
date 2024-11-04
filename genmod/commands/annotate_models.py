@@ -63,9 +63,9 @@ util.abstract_sockets_supported = False
                     is_flag=True,
                     help='If strict model annotations should be used(see documentation).'
 )
-@click.option('-w' ,'--whole_gene','--whole-gene', 
+@click.option('-w' ,'--whole_gene','--whole-gene',
                     is_flag=True,
-                    help='If compounds should be checked for all variants in a gene. DEPRECATED'
+                    help='DEPRECATED FLAG - on by default'
 )
 @processes
 @silent
@@ -86,8 +86,10 @@ def models(context, variant_file, family_file, family_type, reduced_penetrance,
     Checks what patterns of inheritance that are followed in a VCF file.
     The analysis is family based so each family that are specified in the family
     file and exists in the variant file will get it's own annotation.
+
+    Note that the "whole_gene" flag has been disabled and will be removed in a later version.
     """
-    
+
     ######### This is for logging the command line string #########
     frame = inspect.currentframe()
     args, _, _, values = inspect.getargvalues(frame)

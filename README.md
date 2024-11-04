@@ -195,7 +195,6 @@ Also a line for logging is added in the vcf header with the id **genmod**, here 
 
 - Compound heterozygote inheritance pattern will be checked if two variants are exonic (or in canonical splice sites) and if they reside in the same gene.
 
-- If compounds should be checked in the whole gene (including introns) use ```--whole_gene```
 - GENMOD supports phased data, use the ```-phased``` flag. Data should follow the [GATK way](http://gatkforums.broadinstitute.org/discussion/45/read-backed-phasing) of phasing.
 
 All annotations will be present only if they have a value.
@@ -211,7 +210,6 @@ All annotations will be present only if they have a value.
 - By default the relative cadd scores is annotated with 'CADD=score', there is also an alternative to annotate with the raw cadd scores using the `--cadd_raw` flag. In this case a info field 'CADD_raw=score'.
 - If your VCF is already annotated with VEP, use `-vep/--vep`
 - If data is phased use `-phased/--phased`
-- If you want to allow compound pairs in intronic regions to use `-gene/--whole_gene`
 - If you want canonical splice site region to be bigger than 2 base pairs on each side of the exons, use `-splice/--splice_padding <integer>`
 - The `-strict/--strict` flag tells **genmod** to only annotate genetic models if they are proved by the data. If a variant is not called in a family member it will not be annotated.
 
@@ -263,9 +261,6 @@ For this model individuals can be carriers so healthy individuals can be heteroz
 ### Autosomal Compound Heterozygote
 
 This model includes pairs of exonic variants that are present within the same gene.
-**The default behaviour of GENMOD is to look for compounds only in exonic/canonical splice sites**.
-The reason for this is that since some genes have huge intronic regions the data will be drowned in compound pairs.
-If the user wants all variants in genes checked use the flag -gene/--whole_gene.
 
 1. Non-phased data:
 	* Affected individuals have to be het. for both variants

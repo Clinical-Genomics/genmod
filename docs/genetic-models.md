@@ -33,10 +33,7 @@ with reduced penetrance we will allow healthy carriers. (i.e. healthy individual
 
 ### Autosomal Compound Heterozygote ###
 
-This model includes pairs of exonic variants that are present within the same gene.
-**The default behaviour of GENMOD is to look for compounds only in exonic/canonical splice sites**.
-The reason for this is that since some genes have huge intronic regions the data will be drowned in compound pairs.
-If the user wants all variants in genes checked use the flag -gene/--whole_gene.
+This model includes pairs of variants that are present within the same gene.
 
 1. Non-phased data:
 	* Affected individuals have to be het. for both variants
