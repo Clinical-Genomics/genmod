@@ -1,9 +1,9 @@
 ###############################################
 # Dockerfile to build GeMod container image
 ###############################################
-#FROM ghcr.io/astral-sh/uv:python3.13-alpine
-FROM ghcr.io/astral-sh/uv:python3.13-bookworm
+FROM ghcr.io/astral-sh/uv:python3.13-alpine
 
+RUN apk update & apk add build-base zlib-dev
 # Copy the project into the image
 ADD . /app
 
