@@ -11,10 +11,7 @@ Copyright (c) 2013 __MyCompanyName__. All rights reserved.
 
 from __future__ import (print_function)
 
-import sys
-import os
 import click
-import logging
 
 from . import (sort_command, models_command, score_command,
 score_compounds_command, annotate_variant_command, filter_command)

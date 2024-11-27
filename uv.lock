@@ -177,7 +177,6 @@ dependencies = [
     { name = "intervaltree" },
     { name = "ped-parser" },
     { name = "pytabix" },
-    { name = "pytest" },
     { name = "six" },
     { name = "vcftoolbox" },
 ]
@@ -203,7 +202,6 @@ requires-dist = [
     { name = "intervaltree", specifier = ">=3.1.0" },
     { name = "ped-parser" },
     { name = "pytabix" },
-    { name = "pytest" },
     { name = "six" },
     { name = "vcftoolbox" },
 ]
