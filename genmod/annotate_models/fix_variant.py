@@ -1,5 +1,4 @@
-from . import get_model_score
-
+from .model_score import get_model_score
 
 def make_print_version(variant, families):
     """

@@ -29,10 +29,9 @@ import logging
 import click
 import configobj
 from extract_vcf import Plugin
-from six import string_types
 from validate import ValidateError
 
-from genmod.score_variants import ScoreFunction
+from . import ScoreFunction
 
 
 class ConfigParser(configobj.ConfigObj):

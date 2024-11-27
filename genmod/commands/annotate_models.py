@@ -17,7 +17,6 @@ import inspect
 import itertools
 import logging
 import os
-import shutil
 import sys
 from codecs import open
 from datetime import datetime

@@ -1,5 +1,4 @@
 from tempfile import NamedTemporaryFile
-from typing import Dict, Union
 
 from click.testing import CliRunner
 from genmod.commands import models_command
