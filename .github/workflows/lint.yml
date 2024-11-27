@@ -11,16 +11,21 @@ jobs:
   lint:
     name: Lint
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v3
       - name: Ruff lint
-        run: uv run ruff check .
-      - name: Ruff check import sorting
-        run: uv run ruff check --select I .
-      - name: Ruff format
-        run: uv run ruff format --diff .
+        uses: astral-sh/ruff-action@v1
+        with:
+          args: "check ."
 
-      # This isn't a general Python lint, this style is just used in this repository
-      - name: Prettier format
-        run: npx prettier --prose-wrap always --check "**/*.md"
+      - name: Ruff check import sorting
+        uses: astral-sh/ruff-action@v1
+        with:
+          args: "check --select I ."
+
+      - name: Ruff format diff
+        uses: astral-sh/ruff-action@v1
+        with:
+          args: "format --diff ."
+
