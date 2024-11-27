@@ -31,7 +31,7 @@ import configobj
 from extract_vcf import Plugin
 from validate import ValidateError
 
-from . import ScoreFunction
+from .score_function import ScoreFunction
 
 
 class ConfigParser(configobj.ConfigObj):
