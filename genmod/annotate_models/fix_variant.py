@@ -1,5 +1,6 @@
 from .model_score import get_model_score
 
+
 def make_print_version(variant, families):
     """
     Get the variants ready for printing

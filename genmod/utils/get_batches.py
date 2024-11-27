@@ -4,8 +4,9 @@ import logging
 from collections import OrderedDict
 from datetime import datetime
 
-from .get_features import get_annotation
 from genmod.vcf_tools import get_info_dict, get_variant_dict, get_variant_id, get_vep_dict
+
+from .get_features import get_annotation
 
 logger = logging.getLogger(__name__)
 
