@@ -52,6 +52,7 @@ setup(name='genmod',
     author = 'Mans Magnusson',
     author_email = 'mans.magnusson@scilifelab.se',
     url = 'http://github.com/Clinical-Genomics/genmod',
+
     license = 'MIT License',
     install_requires=REQUIRED,
     packages=find_packages(
@@ -61,10 +62,13 @@ setup(name='genmod',
     #     'genmod': ['annotations/*']
     # },
     include_package_data = True,
+
+
     entry_points= { "console_scripts" : [
         "genmod = genmod.commands.base:cli",
         ]
     },
+
     keywords = ['inheritance', 'vcf', 'variants'],
     classifiers = [
         "Programming Language :: Python",

@@ -27,7 +27,6 @@ classifiers = [
 dependencies = [
     "ped_parser",
     "pytabix",
-    "pytest",
     "interval_tree >= 0.3.4",
     "click",
     "configobj",
