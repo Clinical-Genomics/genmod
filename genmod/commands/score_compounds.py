@@ -11,60 +11,64 @@ Copyright (c) 2015 __MoonsoInc__. All rights reserved.
 
 from __future__ import print_function
 
-import sys
-import os
-import click
-import logging
 import itertools
-
-from multiprocessing import JoinableQueue, Manager, cpu_count, util
+import logging
+import os
+import sys
 from codecs import open
 from datetime import datetime
+from multiprocessing import JoinableQueue, Manager, cpu_count, util
 from tempfile import NamedTemporaryFile
 
-from genmod.vcf_tools import (HeaderParser, add_metadata, print_headers, 
-sort_variants, print_variant)
-from genmod.utils import (get_batches, VariantPrinter)
-from genmod.score_variants import CompoundScorer
+import click
 
 from genmod import __version__
+from genmod.score_variants import CompoundScorer
+from genmod.utils import VariantPrinter, get_batches
+from genmod.vcf_tools import HeaderParser, add_metadata, print_headers, print_variant, sort_variants
 
-from .utils import (variant_file, silent, outfile, processes, temp_dir, 
-                    get_file_handle)
+from .utils import get_file_handle, outfile, processes, silent, temp_dir, variant_file
 
 logger = logging.getLogger(__name__)
 util.abstract_sockets_supported = False
 
-@click.command('compound', short_help="Score compounds")
+
+@click.command("compound", short_help="Score compounds")
 @variant_file
 @silent
 @outfile
 @processes
 @temp_dir
-@click.option('--vep', 
-                    is_flag=True,
-                    help='If variants are annotated with the Variant Effect Predictor.'
+@click.option(
+    "--vep", is_flag=True, help="If variants are annotated with the Variant Effect Predictor."
 )
-@click.option('--threshold', type=int, help="Threshold for model-dependent penalty if no compounds with passing score", default=9)
-@click.option('--penalty', type=int, help="Penalty applied together with --threshold", default=6)
+@click.option(
+    "--threshold",
+    type=int,
+    help="Threshold for model-dependent penalty if no compounds with passing score",
+    default=9,
+)
+@click.option("--penalty", type=int, help="Penalty applied together with --threshold", default=6)
 @click.pass_context
-def compound(context, variant_file, silent, outfile, vep, threshold: int, penalty: int, processes, temp_dir):
+def compound(
+    context, variant_file, silent, outfile, vep, threshold: int, penalty: int, processes, temp_dir
+):
     """
     Score compound variants in a vcf file based on their rank score.
     """
-    logger.info('Running GENMOD score_compounds, version: {0}'.format(__version__))
-    
+    logger.info("Running GENMOD score_compounds, version: {0}".format(__version__))
+
     variant_file = get_file_handle(variant_file)
-    
+
     start_time_analysis = datetime.now()
     logger.info("Initializing a Header Parser")
     head = HeaderParser()
-    
+
     line = None
     for line in variant_file:
         line = line.rstrip()
-        if line.startswith('#'):
-            if line.startswith('##'):
+        if line.startswith("#"):
+            if line.startswith("##"):
                 head.parse_meta_data(line)
             else:
                 head.parse_header_line(line)
@@ -72,8 +76,8 @@ def compound(context, variant_file, silent, outfile, vep, threshold: int, penalt
             break
 
     logger.info("Headers parsed")
-    
-    if not line.startswith('#'):
+
+    if not line.startswith("#"):
         variant_file = itertools.chain([line], variant_file)
     else:
         print_headers(head=head, outfile=outfile, silent=silent)
@@ -82,12 +86,14 @@ def compound(context, variant_file, silent, outfile, vep, threshold: int, penalt
     header_line = head.header
     individuals = head.individuals
 
-    add_metadata(head,
-                 'info',
-                 'CompoundsNormalized',
-                 annotation_number='.',
-                 entry_type='String',
-                 description='Rank score as provided by compound analysis, based on RankScoreNormalized. family_id:rank_score')
+    add_metadata(
+        head,
+        "info",
+        "CompoundsNormalized",
+        annotation_number=".",
+        entry_type="String",
+        description="Rank score as provided by compound analysis, based on RankScoreNormalized. family_id:rank_score",
+    )
 
     ###################################################################
     ### The task queue is where all jobs(in this case batches that  ###
@@ -101,12 +107,12 @@ def compound(context, variant_file, silent, outfile, vep, threshold: int, penalt
     results = Manager().Queue()
 
     num_scorers = processes
-    #Adapt the number of processes to the machine that run the analysis
-    logger.info('Number of CPU:s {}'.format(cpu_count()))
-    logger.info('Number of model checkers: {}'.format(num_scorers))
+    # Adapt the number of processes to the machine that run the analysis
+    logger.info("Number of CPU:s {}".format(cpu_count()))
+    logger.info("Number of model checkers: {}".format(num_scorers))
 
     # These are the workers that do the heavy part of the analysis
-    logger.info('Seting up the workers')
+    logger.info("Seting up the workers")
     compound_scorers = [
         CompoundScorer(
             task_queue=variant_queue,
@@ -117,16 +123,16 @@ def compound(context, variant_file, silent, outfile, vep, threshold: int, penalt
         )
         for i in range(num_scorers)
     ]
-    
+
     try:
-        logger.info('Starting the workers')
+        logger.info("Starting the workers")
         for worker in compound_scorers:
-            logger.debug('Starting worker {0}'.format(worker))
+            logger.debug("Starting worker {0}".format(worker))
             worker.start()
-        
+
         # This process prints the variants to temporary files
-        logger.info('Seting up the variant printer')
-        
+        logger.info("Seting up the variant printer")
+
         # We use a temp file to store the processed variants
         logger.debug("Build a tempfile for printing the variants")
         if temp_dir:
@@ -134,48 +140,40 @@ def compound(context, variant_file, silent, outfile, vep, threshold: int, penalt
         else:
             temp_file = NamedTemporaryFile(delete=False)
         temp_file.close()
-        
+
         variant_printer = VariantPrinter(
-            task_queue=results,
-            head=head,
-            mode='chromosome',
-            outfile = temp_file.name
+            task_queue=results, head=head, mode="chromosome", outfile=temp_file.name
         )
-        
-        logger.info('Starting the variant printer process')
+
+        logger.info("Starting the variant printer process")
         variant_printer.start()
-        
+
         start_time_variant_parsing = datetime.now()
-        
+
         # This process parses the original vcf and create batches to put in the variant queue:
         chromosome_list = get_batches(
-                                    variants = variant_file,
-                                    batch_queue = variant_queue,
-                                    header = head,
-                                    vep = vep,
-                                    results_queue=results
-                                )
-        
+            variants=variant_file,
+            batch_queue=variant_queue,
+            header=head,
+            vep=vep,
+            results_queue=results,
+        )
+
         logger.debug("Put stop signs in the variant queue")
         for i in range(num_scorers):
             variant_queue.put(None)
-        
+
         variant_queue.join()
         results.put(None)
         variant_printer.join()
-        
-        sort_variants(infile=temp_file.name, mode='chromosome')
-        
+
+        sort_variants(infile=temp_file.name, mode="chromosome")
+
         print_headers(head=head, outfile=outfile, silent=silent)
-        
-        with open(temp_file.name, 'r', encoding='utf-8') as f:
+
+        with open(temp_file.name, "r", encoding="utf-8") as f:
             for line in f:
-                print_variant(
-                    variant_line=line,
-                    outfile=outfile,
-                    mode='modified',
-                    silent=silent
-                )
+                print_variant(variant_line=line, outfile=outfile, mode="modified", silent=silent)
     except Exception as e:
         logger.warning(e)
         for worker in compound_scorers:
@@ -186,7 +184,5 @@ def compound(context, variant_file, silent, outfile, vep, threshold: int, penalt
         logger.info("Removing temp file")
         os.remove(temp_file.name)
         logger.debug("Temp file removed")
-    
 
-    logger.info('Time for whole analyis: {0}'.format(
-        str(datetime.now() - start_time_analysis)))
+    logger.info("Time for whole analyis: {0}".format(str(datetime.now() - start_time_analysis)))

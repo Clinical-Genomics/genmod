@@ -1,5 +1,5 @@
-from genmod.commands import sort_command
 from click.testing import CliRunner
+from genmod.commands import sort_command
 
 ANNOTATED_VCF_FILE = "tests/fixtures/test_vcf_annotated.vcf"
 VCF_FILE = "tests/fixtures/test_vcf_regions.vcf"
@@ -10,6 +10,7 @@ BAD_FAMILY_FILE = "tests/fixtures/annotate_models/one_ind.ped"
 
 from genmod import logger
 from genmod.log import init_log
+
 init_log(logger, loglevel="INFO")
 
 
@@ -21,50 +22,57 @@ init_log(logger, loglevel="INFO")
 #     # This should fail since there is no family file
 #     assert result.exit_code == 1
 
+
 def test_genmod_sort():
     """docstring for test_genmod_annotate_models"""
     runner = CliRunner()
-    result = runner.invoke(sort_command, [
-        SCORED_VCF,
-        ]
+    result = runner.invoke(
+        sort_command,
+        [
+            SCORED_VCF,
+        ],
     )
 
     print(result.output)
     assert result.exit_code == 0
+
 
 def test_genmod_sort_empty():
     """docstring for test_genmod_annotate_models"""
     runner = CliRunner()
-    result = runner.invoke(sort_command, [
-        EMPTY_VCF_FILE,
-        ]
+    result = runner.invoke(
+        sort_command,
+        [
+            EMPTY_VCF_FILE,
+        ],
     )
 
     print(result.output)
     assert result.exit_code == 0
+
 
 def test_genmod_sort_not_scored():
     """docstring for test_genmod_annotate_models"""
     runner = CliRunner()
-    result = runner.invoke(sort_command, [
-        ANNOTATED_VCF_FILE,
-        ]
+    result = runner.invoke(
+        sort_command,
+        [
+            ANNOTATED_VCF_FILE,
+        ],
     )
 
     print(result.output)
     assert result.exit_code == 0
+
 
 def test_genmod_sort_position():
     """docstring for test_genmod_annotate_models"""
     runner = CliRunner()
-    result = runner.invoke(sort_command, [
-        SCORED_VCF,
-        '-p'
-        ]
-    )
+    result = runner.invoke(sort_command, [SCORED_VCF, "-p"])
 
     print(result.output)
     assert result.exit_code == 0
+
 
 # def test_annotate_models_already_scored():
 #     """docstring for test_genmod_annotate_models"""
@@ -76,7 +84,7 @@ def test_genmod_sort_position():
 #         ]
 #     )
 
-    # assert result.exit_code == 1
+# assert result.exit_code == 1
 #
 # def test_annotate_models_lacking_ind():
 #     """docstring for test_genmod_annotate_models"""

@@ -11,44 +11,41 @@ Copyright (c) 2015 __MoonsoInc__. All rights reserved.
 
 from __future__ import print_function
 
-import sys
-import os
-import click
 import logging
-
+import os
+import sys
 from codecs import open
-from tempfile import NamedTemporaryFile
 from datetime import datetime
+from tempfile import NamedTemporaryFile
 
-
-from genmod.vcf_tools import (sort_variants, get_info_dict, print_variant, 
-                              HeaderParser, print_headers)
-
-from genmod.utils import (get_chromosome_priority, get_rank_score)
+import click
 
 from genmod import __version__
+from genmod.utils import get_chromosome_priority, get_rank_score
+from genmod.vcf_tools import (
+    HeaderParser,
+    get_info_dict,
+    print_headers,
+    print_variant,
+    sort_variants,
+)
 
-from .utils import (variant_file, outfile, silent, temp_dir, get_file_handle)
+from .utils import get_file_handle, outfile, silent, temp_dir, variant_file
 
 logger = logging.getLogger(__name__)
+
 
 @click.command()
 @variant_file
 @outfile
-@click.option('-f', '--family_id',
-                    type=str,
-                    help='Specify the family id for sorting.'
-)
+@click.option("-f", "--family_id", type=str, help="Specify the family id for sorting.")
 @silent
 @temp_dir
-@click.option('-p', '--position',
-                is_flag=True,
-                help='If variants should be sorted by position.'
-)
+@click.option("-p", "--position", is_flag=True, help="If variants should be sorted by position.")
 def sort(variant_file, outfile, family_id, silent, position, temp_dir):
     """
     Sort a VCF file based on rank score.
-    """    
+    """
     head = HeaderParser()
     variant_file = get_file_handle(variant_file)
     logger.info("Running GENMOD sort version {0}".format(__version__))
@@ -61,91 +58,65 @@ def sort(variant_file, outfile, family_id, silent, position, temp_dir):
         temp_file = NamedTemporaryFile(delete=False)
     temp_file.close()
     # Open the temp file with codecs
-    temp_file_handle = open(
-                                temp_file.name,
-                                mode='w',
-                                encoding='utf-8',
-                                errors='replace'
-                                )
+    temp_file_handle = open(temp_file.name, mode="w", encoding="utf-8", errors="replace")
     logger.debug("Temp file created")
     logger.info("Printing variants to temp file")
     nr_variants = 0
     # Print the variants with rank score in first column
     for line in variant_file:
         line = line.rstrip()
-        if line.startswith('#'):
-            if line.startswith('##'):
+        if line.startswith("#"):
+            if line.startswith("##"):
                 head.parse_meta_data(line)
             else:
                 head.parse_header_line(line)
         else:
             nr_variants += 1
-            priority = '0'
-            
+            priority = "0"
+
             if position:
                 chrom = line.split()[0]
                 priority = get_chromosome_priority(chrom)
             else:
                 priority = get_rank_score(line)
-            
-            print_variant(
-                variant_line=line, 
-                priority=priority, 
-                outfile=temp_file_handle
-            )
-    
+
+            print_variant(variant_line=line, priority=priority, outfile=temp_file_handle)
+
     temp_file_handle.close()
-    
+
     logger.info("Variants printed to temp file")
     logger.info("Nr or variants in VCF file: {0}".format(nr_variants))
-    
-    sort_mode = 'rank'
-    
+
+    sort_mode = "rank"
+
     if nr_variants == 0:
         logger.debug("Printing headers")
-        print_headers(
-            head = head, 
-            outfile = outfile, 
-            silent=silent
-        )
+        print_headers(head=head, outfile=outfile, silent=silent)
         sys.exit(0)
-        
-    
+
     if position:
-        sort_mode = 'chromosome'
-    
+        sort_mode = "chromosome"
+
     logger.info("Sorting variants")
-    sort_variants(
-        infile = temp_file.name, 
-        mode=sort_mode
-    )
+    sort_variants(infile=temp_file.name, mode=sort_mode)
     logger.info("Variants sorted")
 
     logger.debug("Printing headers")
-    print_headers(
-        head = head, 
-        outfile = outfile, 
-        silent=silent
-    )
+    print_headers(head=head, outfile=outfile, silent=silent)
     logger.debug("Headers printed")
-    
+
     logger.info("Printing variants")
-    with open(temp_file.name, mode='r', encoding='utf-8', errors='replace') as f:
+    with open(temp_file.name, mode="r", encoding="utf-8", errors="replace") as f:
         for variant_line in f:
-            print_variant(
-                variant_line = variant_line, 
-                outfile = outfile, 
-                mode = 'modified',
-                silent=False
-                )
+            print_variant(variant_line=variant_line, outfile=outfile, mode="modified", silent=False)
     logger.debug("Variants printed")
-    
+
     logger.info("Removing temp file")
     os.remove(temp_file.name)
     logger.debug("Temp file removed")
-    
-    logger.info("Sorting done, time for sorting: {0}".format(datetime.now()-start))
+
+    logger.info("Sorting done, time for sorting: {0}".format(datetime.now() - start))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     sort()
