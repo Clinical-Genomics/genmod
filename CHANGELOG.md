@@ -14,6 +14,7 @@ Try to use the following format:
 - Released the constraint on Python 3.8 (collections, pkg_resources to importlib, tests) ([#142](https://github.com/Clinical-Genomics/genmod/pull/142))
 - Update annotation examples ([#144](https://github.com/Clinical-Genomics/genmod/pull/144))
 - Updated documentation with warning about compounds only being scored within the first family in the VCF ([#151](https://github.com/Clinical-Genomics/genmod/pull/151)) 
+- Use `uv` with `hatchling` to build and publish ([#104](https://github.com/Clinical-Genomics/genmod/issues/143))
 
 ## [3.9]
 - Fixed wrong models when chromosome X was named `chrX` and not `X` ([#135](https://github.com/Clinical-Genomics/genmod/pull/135))

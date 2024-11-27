@@ -16,9 +16,11 @@ jobs:
       - uses: astral-sh/setup-uv@v3
       - name: Ruff lint
         run: uv run ruff check .
+      - name: Ruff check import sorting
+        run: uv run ruff check --select I .
       - name: Ruff format
         run: uv run ruff format --diff .
-        
+
       # This isn't a general Python lint, this style is just used in this repository
       - name: Prettier format
         run: npx prettier --prose-wrap always --check "**/*.md"
