@@ -1,15 +1,15 @@
 from click.testing import CliRunner
 from genmod.commands import sort_command
 
+from genmod import logger
+from genmod.log import init_log
+
 ANNOTATED_VCF_FILE = "tests/fixtures/test_vcf_annotated.vcf"
 VCF_FILE = "tests/fixtures/test_vcf_regions.vcf"
 EMPTY_VCF_FILE = "tests/fixtures/empty.vcf"
 SCORED_VCF = "tests/fixtures/test_vcf_annotated_scored.vcf"
 SCORE_CONFIG = "tests/fixtures/score_variants/genmod_example.ini"
 BAD_FAMILY_FILE = "tests/fixtures/annotate_models/one_ind.ped"
-
-from genmod import logger
-from genmod.log import init_log
 
 init_log(logger, loglevel="INFO")
 

@@ -16,11 +16,6 @@ import sys
 
 import click
 
-try:
-    import cPickle as pickle
-except:
-    import pickle
-
 from codecs import open
 from datetime import datetime
 
@@ -398,11 +393,6 @@ def get_interesting_variants(
     help="""Specify genotype quality treshold for variants 
                             to be considered. Default 20.""",
 )
-# @click.option('-p', '--patterns',
-#                     type=click.Choice(['AR', 'AD', 'X']),
-#                     multiple=True,
-#                     help='Specify the inheritance patterns. Default is all patterns'
-# )
 @click.option(
     "-o",
     "--outdir",
@@ -465,19 +455,8 @@ def analyze(
 
     start_time_analysis = datetime.now()
 
-    # configs = ConfigObj(config_file)
-    # prefered_models = make_models([])
-
-    inheritance_keyword = "GeneticModels"
     families = check_families(variant_file)
     file_name = os.path.splitext(os.path.split(variant_file)[-1])[0]
-
-    # if config_file:
-    #     frequency_treshold = float(configs.get('frequency', {}).get('rare', frequency_treshold))
-    #     freq_keyword = configs.get('frequency', {}).get('keyword', freq_keyword)
-    #     inheritance_patterns = [pattern for pattern in configs.get('inheritance', {}).get('patterns',[])]
-    #     inheritance_keyword = configs.get('inheritance', {}).get('keyword',inheritance_keyword)
-    #     prefered_models = make_models(inheritance_patterns)
 
     if variant_file == "-":
         variant_parser = VCFParser(fsock=sys.stdin)

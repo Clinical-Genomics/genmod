@@ -325,20 +325,6 @@ class HeaderParser(object):
         self.parse_meta_data(contig_line)
         return
 
-    def add_contig(self, contig_id, length):
-        """
-        Add a contig line to the header.
-
-        Arguments:
-            contig_id (str): The id of the alternative line
-            length (str): A description of the info line
-
-        """
-        contig_line = "##contig=<ID={0},length={1}>".format(contig_id, length)
-        self.logger.info("Adding contig line to vcf: {0}".format(contig_line))
-        self.parse_meta_data(contig_line)
-        return
-
     def add_version_tracking(self, info_id, version, date, command_line=""):
         """
         Add a line with information about which software that was run and when

@@ -62,10 +62,6 @@ Copyright (c) 2013 __MyCompanyName__. All rights reserved.
 from __future__ import absolute_import, print_function
 
 import logging
-import os
-import sys
-from datetime import datetime
-from pprint import pprint as pp
 
 from genmod.utils import generate_pairs
 

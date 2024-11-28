@@ -29,7 +29,7 @@ def test_dominant_affected_recessive_male():
     recessive_variant = {"genotypes": {}}
     recessive_variant["genotypes"]["proband"] = Genotype(**{"GT": "0/1"})
 
-    assert check_dominant(variant=recessive_variant, family=family) == True
+    assert check_dominant(variant=recessive_variant, family=family) is True
 
 
 def test_dominant_affected_homozygote_male():
@@ -45,7 +45,7 @@ def test_dominant_affected_homozygote_male():
     homozygote_variant = {"genotypes": {}}
     homozygote_variant["genotypes"]["proband"] = Genotype(**{"GT": "1/1"})
 
-    assert check_dominant(variant=homozygote_variant, family=family) == False
+    assert check_dominant(variant=homozygote_variant, family=family) is False
 
 
 def test_dominant_affected_male_ref_call():
@@ -61,7 +61,7 @@ def test_dominant_affected_male_ref_call():
     homozygote_variant = {"genotypes": {}}
     homozygote_variant["genotypes"]["proband"] = Genotype(**{"GT": "0/0"})
 
-    assert check_dominant(variant=homozygote_variant, family=family) == False
+    assert check_dominant(variant=homozygote_variant, family=family) is False
 
 
 def test_dominant_affected_no_call_male():
@@ -79,7 +79,7 @@ def test_dominant_affected_no_call_male():
     no_call_variant = {"genotypes": {}}
     no_call_variant["genotypes"]["proband"] = Genotype(**{"GT": "./."})
 
-    assert check_dominant(variant=no_call_variant, family=family) == True
+    assert check_dominant(variant=no_call_variant, family=family) is True
 
 
 def test_dominant_affected_no_call_male_strict():
@@ -98,7 +98,7 @@ def test_dominant_affected_no_call_male_strict():
     no_call_variant = {"genotypes": {}}
     no_call_variant["genotypes"]["proband"] = Genotype(**{"GT": "./."})
 
-    assert check_dominant(variant=no_call_variant, family=family, strict=True) == False
+    assert check_dominant(variant=no_call_variant, family=family, strict=True) is False
 
 
 ############### Test healthy ##############
@@ -116,7 +116,7 @@ def test_dominant_healthy_recessive_male():
     recessive_variant = {"genotypes": {}}
     recessive_variant["genotypes"]["proband"] = Genotype(**{"GT": "0/1"})
 
-    assert check_dominant(variant=recessive_variant, family=family) == False
+    assert check_dominant(variant=recessive_variant, family=family) is False
 
 
 def test_dominant_healthy_recessive_male_reduced_penetrance():
@@ -135,4 +135,4 @@ def test_dominant_healthy_recessive_male_reduced_penetrance():
     recessive_variant["genotypes"]["proband"] = Genotype(**{"GT": "0/1"})
     recessive_variant["reduced_penetrance"] = True
 
-    assert check_dominant(variant=recessive_variant, family=family) == True
+    assert check_dominant(variant=recessive_variant, family=family) is True

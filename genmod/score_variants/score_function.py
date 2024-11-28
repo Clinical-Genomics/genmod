@@ -158,7 +158,7 @@ class ScoreFunction(object):
         ## TODO fix this ugly solution
         try:
             score = int(score)
-        except error as e:
+        except ValueError:
             score = int(float(score))
 
         return score

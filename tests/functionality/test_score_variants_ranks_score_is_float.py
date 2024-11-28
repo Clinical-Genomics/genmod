@@ -18,7 +18,6 @@ def _generate_rank_score_strings_from_file(file_path: str) -> str:
         rank_score_entry: str = variant["info_dict"].get("RankScore", "")
         for family_rank_score in rank_score_entry.split(","):
             family_rank_score = family_rank_score.split(":")
-            family_id: str = family_rank_score[0]
             rank_score: str = family_rank_score[1]
             yield rank_score
 

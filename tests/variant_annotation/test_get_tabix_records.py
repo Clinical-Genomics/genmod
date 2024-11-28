@@ -28,4 +28,4 @@ def test_get_non_existing_tabix_record(thousand_g_handle):
     for i, row in enumerate(get_tabix_records(thousand_g_handle, chrom, start)):
         print(row)
     # Should find one row
-    assert i == None
+    assert i is None

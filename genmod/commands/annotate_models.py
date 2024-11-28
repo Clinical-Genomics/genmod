@@ -192,14 +192,14 @@ def models(
         sys.exit(0)
 
     if vep:
-        if not "CSQ" in head.info_dict:
+        if "CSQ" not in head.info_dict:
             logger.warning("vep flag is used but there is no CSQ field specified in header")
             logger.info("Please check VCF file")
             context.abort()
         else:
             logger.info("Using VEP annotation")
     else:
-        if not keyword in head.info_dict:
+        if keyword not in head.info_dict:
             logger.warning("Annotation key {0} could not be found in VCF header".format(keyword))
             logger.info("Please check VCF file")
             context.abort()
@@ -337,11 +337,9 @@ def models(
         logger.info("Starting the variant printer process")
         variant_printer.start()
 
-        start_time_variant_parsing = datetime.now()
-
         # This process parses the original vcf and create batches to put in the variant queue:
         logger.info("Start parsing the variants")
-        chromosome_list = get_batches(
+        get_batches(
             variants=variant_file,
             batch_queue=variant_queue,
             header=head,

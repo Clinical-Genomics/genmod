@@ -39,9 +39,6 @@ Created by Måns Magnusson on 2014-06-30.
 Copyright (c) 2013 __MyCompanyName__. All rights reserved.
 """
 
-import os
-import sys
-
 
 class Genotype(object):
     """Holds information about a genotype"""

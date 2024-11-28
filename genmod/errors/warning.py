@@ -11,7 +11,6 @@ Copyright (c) 2014 __MoonsoInc__. All rights reserved.
 
 from __future__ import print_function, unicode_literals
 
-import os
 import sys
 
 

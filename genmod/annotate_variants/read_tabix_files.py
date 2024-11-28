@@ -64,7 +64,6 @@ def get_frequencies(tabix_reader, chrom, start, alt):
     Returns:
         frequencies (dict): A dictionary with relevant frequencies
     """
-    freq = None
     records = get_tabix_records(tabix_reader, chrom, start)
 
     frequencies = {}

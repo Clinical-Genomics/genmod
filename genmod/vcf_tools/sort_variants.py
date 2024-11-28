@@ -12,8 +12,6 @@ Copyright (c) 2015 __MoonsoInc__. All rights reserved.
 from __future__ import print_function
 
 import logging
-import os
-import sys
 from datetime import datetime
 from subprocess import call
 

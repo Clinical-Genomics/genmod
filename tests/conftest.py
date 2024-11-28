@@ -1,6 +1,3 @@
-import os
-from tempfile import NamedTemporaryFile
-
 import pytest
 import tabix
 from genmod.annotations import ensembl_path_37 as ensembl_path

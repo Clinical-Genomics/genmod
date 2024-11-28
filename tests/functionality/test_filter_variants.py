@@ -1,10 +1,10 @@
 from click.testing import CliRunner
 from genmod.commands import filter_command
 
-ANNOTATED_VCF_FILE = "tests/fixtures/test_vcf_annotated.vcf"
-
 from genmod import logger
 from genmod.log import init_log
+
+ANNOTATED_VCF_FILE = "tests/fixtures/test_vcf_annotated.vcf"
 
 init_log(logger, loglevel="INFO")
 

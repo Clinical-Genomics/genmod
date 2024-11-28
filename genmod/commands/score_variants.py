@@ -13,9 +13,7 @@ from __future__ import print_function
 
 import itertools
 import logging
-import os
 import sys
-from codecs import open
 from datetime import datetime
 
 import click

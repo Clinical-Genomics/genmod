@@ -19,11 +19,6 @@ Copyright (c) 2016 __MonsoInc__. All rights reserved.
 
 import logging
 
-try:
-    import cPickle as pickle
-except:
-    import pickle
-
 from intervaltree import Interval, IntervalTree
 
 logger = logging.getLogger(__name__)

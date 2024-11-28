@@ -14,8 +14,6 @@ Copyright (c) 2013 __MyCompanyName__. All rights reserved.
 from __future__ import division, print_function
 
 import logging
-import os
-import sys
 from multiprocessing import Process
 from typing import Dict, List, Tuple, Union
 

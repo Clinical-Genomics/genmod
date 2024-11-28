@@ -148,10 +148,10 @@ def compound(
         logger.info("Starting the variant printer process")
         variant_printer.start()
 
-        start_time_variant_parsing = datetime.now()
+        datetime.now()
 
         # This process parses the original vcf and create batches to put in the variant queue:
-        chromosome_list = get_batches(
+        get_batches(
             variants=variant_file,
             batch_queue=variant_queue,
             header=head,

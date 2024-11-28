@@ -1,4 +1,3 @@
-import pytest
 from genmod.utils import get_annotation
 
 

@@ -53,8 +53,6 @@ def test_variant_printer():
 
     variant_printer.start()
 
-    batch = OrderedDict()
-
     for line in open(vcf_file):
         line = line.rstrip()
 

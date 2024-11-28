@@ -1,7 +1,6 @@
 """Parse a variant line in different ways"""
 
 import logging
-import string
 
 logging = logging.getLogger(__name__)
 

@@ -1,7 +1,12 @@
 from tempfile import NamedTemporaryFile
 
 from click.testing import CliRunner
+
 from genmod.commands import models_command
+from genmod import logger
+from genmod.log import init_log
+
+from test_utils import generate_variants_from_file
 
 ANNOTATED_VCF_FILE = "tests/fixtures/test_vcf_annotated.vcf"
 VCF_FILE = "tests/fixtures/test_vcf_regions.vcf"
@@ -9,10 +14,6 @@ VCF_FILE_WITH_CHR = "tests/fixtures/test_vcf_regions_with_chr.vcf"
 FAMILY_FILE = "tests/fixtures/recessive_trio.ped"
 BAD_FAMILY_FILE = "tests/fixtures/annotate_models/one_ind.ped"
 EMPTY_VCF_FILE = "tests/fixtures/empty.vcf"
-
-from genmod import logger
-from genmod.log import init_log
-from test_utils import generate_variants_from_file
 
 init_log(logger, loglevel="INFO")
 

@@ -287,7 +287,7 @@ class ConfigParser(configobj.ConfigObj):
 
         try:
             vcf_field = vcf_section["field"]
-            if not vcf_field in self.vcf_columns:
+            if vcf_field not in self.vcf_columns:
                 raise ValidateError(
                     "field has to be in {0}\n" "Wrong field name in plugin: {1}".format(
                         self.vcf_columns, plugin
@@ -299,10 +299,10 @@ class ConfigParser(configobj.ConfigObj):
 
                     if info_key == "CSQ":
                         try:
-                            csq_key = vcf_section["csq_key"]
+                            vcf_section["csq_key"]
                         except KeyError:
                             try:
-                                csq_key = vcf_section["vep_key"]
+                                vcf_section["vep_key"]
                             except KeyError:
                                 raise ValidateError(
                                     "CSQ entrys has to refer to an csq field.\n"
@@ -324,7 +324,7 @@ class ConfigParser(configobj.ConfigObj):
 
         try:
             data_type = vcf_section["data_type"]
-            if not data_type in self.data_types:
+            if data_type not in self.data_types:
                 raise ValidateError(
                     "data_type has to be in {0}\n" "Wrong data_type in plugin: {1}".format(
                         self.data_types, plugin
@@ -352,7 +352,7 @@ class ConfigParser(configobj.ConfigObj):
         record_rule = vcf_section.get("record_rule", None)
 
         if record_rule:
-            if not record_rule in ["min", "max"]:
+            if record_rule not in ["min", "max"]:
                 raise ValidateError(
                     "Record rules have to be in {0}\n" "Wrong record_rule in plugin: {1}".format(
                         ["min", "max"], plugin

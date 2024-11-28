@@ -169,10 +169,6 @@ def summarize(
 
     head = HeaderParser()
 
-    nr_of_variants = 0
-
-    header = ["sample_id", "nr_of_variants"]
-
     samples = {}
 
     logger.debug("Setting up a variant parser")

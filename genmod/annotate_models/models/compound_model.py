@@ -13,9 +13,6 @@ Copyright (c) 2013 __MoonsoInc__. All rights reserved.
 from __future__ import print_function
 
 import logging
-import os
-import sys
-
 
 def check_compounds(variant_1, variant_2, family, intervals, phased):
     """
