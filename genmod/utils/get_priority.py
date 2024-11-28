@@ -1,4 +1,3 @@
-
 from genmod.score_variants import RANK_SCORE_TYPE_NAMES
 
 

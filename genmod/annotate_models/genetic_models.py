@@ -71,8 +71,8 @@ from .models import (
     check_X_dominant,
     check_X_recessive,
 )
-
 from .models.compound_model import check_compounds
+
 
 def check_genetic_models(variant_batch, families, phased=False, strict=False):
     """

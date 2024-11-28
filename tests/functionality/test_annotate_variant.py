@@ -1,7 +1,6 @@
 from click.testing import CliRunner
-from genmod.commands.base import cli
-
 from genmod import logger
+from genmod.commands.base import cli
 from genmod.log import init_log
 
 VCF_FILE = "tests/fixtures/test_vcf_regions.vcf"

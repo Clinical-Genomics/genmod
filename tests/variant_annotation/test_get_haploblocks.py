@@ -1,5 +1,6 @@
 from genmod.annotate_models.make_haploblocks import get_haploblocks
 
+
 def get_variant(**kwargs):
     """
     Construct a variant and return it
