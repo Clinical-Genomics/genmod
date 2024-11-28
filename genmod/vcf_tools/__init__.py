@@ -18,3 +18,28 @@ from .parse_variant import get_info_dict, get_variant_dict, get_variant_id, get_
 from .print_headers import print_headers
 from .print_variants import print_variant, print_variant_dict, print_variant_for_sorting
 from .sort_variants import sort_variants
+
+__all__ = [
+    "add_annotation_header",
+    "add_compounds_header",
+    "add_exonic_header",
+    "add_genetic_models_header",
+    "add_metadata",
+    "add_model_score_header",
+    "add_version_header",
+    "add_vcf_info",
+    "replace_vcf_info",
+    "check_info",
+    "Genotype",
+    "get_genotypes",
+    "HeaderParser",
+    "get_info_dict",
+    "get_variant_dict",
+    "get_variant_id",
+    "get_vep_dict",
+    "print_headers",
+    "print_variant",
+    "print_variant_dict",
+    "print_variant_for_sorting",
+    "sort_variants",
+]

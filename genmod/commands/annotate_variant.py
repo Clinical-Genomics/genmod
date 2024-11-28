@@ -14,7 +14,6 @@ Copyright (c) 2015 __MoonsoInc__. All rights reserved.
 import itertools
 import logging
 import sys
-from datetime import datetime
 
 import click
 from tabix import TabixError
@@ -137,7 +136,6 @@ def annotate(
         elif genome_build == "38":
             region_file = str(ensembl_path_38)
 
-    start_time_analysis = datetime.now()
     annotation_arguments = {}
 
     variants = get_file_handle(variant_file)

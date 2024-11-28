@@ -61,3 +61,17 @@ EXONIC_SO_TERMS = {
     "synonymous_variant",
     "coding_sequence_variant",
 }
+
+__all__ = [
+    "check_individuals",
+    "get_batches",
+    "check_vep_annotation",
+    "get_annotation",
+    "get_chromosome_priority",
+    "get_rank_score",
+    "is_number",
+    "generate_pairs",
+    "VariantPrinter",
+    "INTERESTING_SO_TERMS",
+    "EXONIC_SO_TERMS",
+]

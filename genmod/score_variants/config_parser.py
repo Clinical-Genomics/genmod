@@ -227,8 +227,6 @@ class ConfigParser(configobj.ConfigObj):
             except ValueError:
                 pass
 
-        string_rules = {}
-
         for raw_info in string_info:
             try:
                 string = raw_info["string"]

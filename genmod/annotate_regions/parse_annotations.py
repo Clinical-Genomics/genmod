@@ -84,7 +84,6 @@ def bed_parser(bed_lines, padding=4000):
                         'symbol': str
                     }
     """
-    genes = {}
     for index, line in enumerate(bed_lines):
         if not line.startswith("#") and len(line) > 1:
             line = line.rstrip().split()

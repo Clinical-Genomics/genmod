@@ -83,7 +83,6 @@ def compound(
         print_headers(head=head, outfile=outfile, silent=silent)
         sys.exit(0)
 
-    header_line = head.header
     individuals = head.individuals
 
     add_metadata(

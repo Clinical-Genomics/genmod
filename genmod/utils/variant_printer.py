@@ -55,7 +55,6 @@ class VariantPrinter(Process):
     def run(self):
         """Starts the printing"""
         # Print the results to a temporary file:
-        number_of_finished = 0
         proc_name = self.name
         self.logger.info(("{0}: starting".format(proc_name)))
 

@@ -15,7 +15,6 @@ from __future__ import print_function
 import itertools
 import logging
 import sys
-from datetime import datetime
 
 import click
 from extract_vcf import Plugin
@@ -65,7 +64,6 @@ def filter(variant_file, annotation, threshold, discard, greater, silent, outfil
     """
     logger.info("Running genmod filter version {0}".format(__version__))
     variant_file = get_file_handle(variant_file)
-    start_time_analysis = datetime.now()
 
     logger.info("Initializing a Header Parser")
     head = HeaderParser()
@@ -83,8 +81,6 @@ def filter(variant_file, annotation, threshold, discard, greater, silent, outfil
 
     # Add the first variant to the iterator
     variant_file = itertools.chain([line], variant_file)
-
-    header_line = head.header
 
     if annotation not in head.info_dict:
         logger.warning("Annotation {0} not specified in header".format(annotation))
