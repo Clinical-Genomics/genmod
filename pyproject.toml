@@ -2,7 +2,7 @@
 name = "genmod"
 version = "3.9"
 description = "Annotate genetic inheritance models in Variant Call Format (VCF) files"
-authors = [{name="Mans Magnuson", email="mans.magnusson@scilifelab.se"}, {name="Tor Björgen", email="tor.bjorgen@scilifelab.se"}, {name="Felix Lenner", email="felix.lenner@scilifelab.se"}, {name="Anders Jemt", email="anders.jemt@scilifelab.se"},{name="Daniel Nilsson", email="daniel.nilsson@ki.se"}]
+authors = [{name="Mans Magnuson", email="mans.magnusson@scilifelab.se"}, {name="Tor Björgen", email="tor.bjorgen@scilifelab.se"}, {name="Felix Lenner", email="felix.lenner@scilifelab.se"}, {name="Anders Jemt", email="anders.jemt@scilifelab.se"}, {name="Daniel Nilsson", email="daniel.nilsson@ki.se"}]
 license = {text = "MIT License"}
 readme = "README.md"
 include = [

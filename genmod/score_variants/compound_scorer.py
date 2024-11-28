@@ -200,7 +200,6 @@ class CompoundScorer(Process):
 
                         # TODO check if correct family id
                         # Right now we assume that there is only one family in the vcf
-                        family_id = family_rank_score[0]
                         rank_score = float(family_rank_score[-1])
 
                         rank_scores[rank_score_type][variant_id] = rank_score
