@@ -1,4 +1,3 @@
-import pytest
 from genmod.utils import is_number
 
 

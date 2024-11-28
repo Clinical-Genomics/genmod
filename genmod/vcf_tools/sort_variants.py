@@ -15,8 +15,6 @@ import logging
 from datetime import datetime
 from subprocess import call
 
-import click
-
 logger = logging.getLogger(__name__)
 
 

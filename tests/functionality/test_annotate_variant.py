@@ -1,14 +1,14 @@
 from click.testing import CliRunner
 from genmod.commands.base import cli
 
+from genmod import logger
+from genmod.log import init_log
+
 VCF_FILE = "tests/fixtures/test_vcf_regions.vcf"
 EMPTY_VCF_FILE = "tests/fixtures/empty.vcf"
 THOUSAND_G_FILE = "tests/fixtures/annotate_variant/small_1000G.vcf.gz"
 CADD_FILE = "tests/fixtures/annotate_variant/small_CADD.tsv.gz"
 CADD_1000G_FILE = "tests/fixtures/annotate_variant/small_1000G_CADD.tsv.gz"
-
-from genmod import logger
-from genmod.log import init_log
 
 init_log(logger, loglevel="INFO")
 
