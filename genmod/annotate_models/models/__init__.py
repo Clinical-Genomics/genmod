@@ -5,3 +5,5 @@ from .compound_model import check_compounds
 from .dominant_model import check_dominant
 from .recessive_model import check_recessive
 from .x_models import check_X_dominant, check_X_recessive
+
+__all__ = ['check_dominant','check_compounds', 'check_recessive', 'check_X_dominant', 'check_X_recessive']

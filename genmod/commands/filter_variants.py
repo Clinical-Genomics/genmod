@@ -14,9 +14,7 @@ from __future__ import print_function
 
 import itertools
 import logging
-import os
 import sys
-from codecs import open
 from datetime import datetime
 
 import click
@@ -25,8 +23,6 @@ from extract_vcf import Plugin
 from genmod import __version__
 from genmod.vcf_tools import (
     HeaderParser,
-    get_info_dict,
-    get_variant_dict,
     print_headers,
     print_variant,
 )
@@ -90,7 +86,7 @@ def filter(variant_file, annotation, threshold, discard, greater, silent, outfil
 
     header_line = head.header
 
-    if not annotation in head.info_dict:
+    if annotation not in head.info_dict:
         logger.warning("Annotation {0} not specified in header".format(annotation))
         logger.info("Please check VCF file")
         logger.info("Exiting...")

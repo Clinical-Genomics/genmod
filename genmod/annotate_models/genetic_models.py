@@ -66,13 +66,13 @@ import logging
 from genmod.utils import generate_pairs
 
 from .models import (
-    check_compounds,
     check_dominant,
     check_recessive,
     check_X_dominant,
     check_X_recessive,
 )
 
+from .models.compound_model import check_compounds
 
 def check_genetic_models(variant_batch, families, phased=False, strict=False):
     """

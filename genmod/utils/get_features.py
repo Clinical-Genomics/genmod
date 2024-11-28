@@ -2,7 +2,7 @@ from __future__ import print_function
 
 import logging
 
-from genmod.utils import EXONIC_SO_TERMS, INTERESTING_SO_TERMS
+from genmod.utils import INTERESTING_SO_TERMS
 
 
 def check_vep_annotation(variant):

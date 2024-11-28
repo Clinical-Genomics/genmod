@@ -161,8 +161,7 @@ def get_batches(
 
     logger.info(
         "Chromosome {0} parsed. Time to parse" " chromosome: {0}".format(
-            current_chrom, datetime.now() - start_chrom_time
-        )
+            current_chrom, )
     )
 
     if len(batch) > 0:

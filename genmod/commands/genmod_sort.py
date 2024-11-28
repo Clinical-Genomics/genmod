@@ -24,7 +24,6 @@ from genmod import __version__
 from genmod.utils import get_chromosome_priority, get_rank_score
 from genmod.vcf_tools import (
     HeaderParser,
-    get_info_dict,
     print_headers,
     print_variant,
     sort_variants,
