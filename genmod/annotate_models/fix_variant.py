@@ -16,8 +16,6 @@ def make_print_version(variant, families):
     variant_id = variant["variant_id"]
     vcf_info = variant["INFO"].split(";")
 
-    feature_list = variant.get("annotation", set())
-
     # variant[compounds] is a dictionary with family id as keys and a set of compounds as values
     compounds = variant.get("compounds", dict())
     # Here we store the compound strings that should be added to the variant:

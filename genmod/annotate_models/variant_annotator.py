@@ -18,7 +18,9 @@ from multiprocessing import Process
 
 from genmod.vcf_tools import get_genotypes
 
-from . import check_genetic_models, get_haploblocks, make_print_version
+from .make_haploblocks import get_haploblocks
+from .genetic_models import check_genetic_models
+from .fix_variant import make_print_version
 
 
 class VariantAnnotator(Process):
