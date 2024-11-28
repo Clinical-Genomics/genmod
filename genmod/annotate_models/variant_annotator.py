@@ -38,7 +38,7 @@ class VariantAnnotator(Process):
         phased=False,
         strict=False,
         vep=False,
-        reduced_penetrance_genes=set(),
+        reduced_penetrance_genes=None,
     ):
         """
         Initialize the VariantAnnotator
@@ -83,7 +83,7 @@ class VariantAnnotator(Process):
         self.logger.debug("Setting strict to {0}".format(self.strict))
         self.vep = vep
         self.logger.debug("Setting vep to {0}".format(self.vep))
-        self.reduced_penetrance = reduced_penetrance_genes
+        self.reduced_penetrance = reduced_penetrance_genes or set()
 
     def run(self):
         """Run the consuming"""

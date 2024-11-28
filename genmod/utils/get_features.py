@@ -2,7 +2,37 @@ from __future__ import print_function
 
 import logging
 
-from genmod.utils import INTERESTING_SO_TERMS
+INTERESTING_SO_TERMS = {
+    "transcript_ablation",
+    "splice_donor_variant",
+    "splice_acceptor_variant",
+    "stop_gained",
+    "start_lost",
+    "frameshift_variant",
+    "stop_lost",
+    "initiator_codon_variant",
+    "transcript_amplification",
+    "inframe_insertion",
+    "inframe_deletion",
+    "protein_altering_variant",
+    "missense_variant",
+    "splice_region_variant",
+    "incomplete_terminal_codon_variant",
+    "stop_retained_variant",
+    "synonymous_variant",
+    "coding_sequence_variant",
+    "mature_miRNA_variant",
+    "5_prime_UTR_variant",
+    "3_prime_UTR_variant",
+    "non_coding_exon_variant",
+    "non_coding_transcript_exon_variant",
+    "nc_transcript_variant",
+    "intron_variant",
+    "NMD_transcript_variant",
+    "non_coding_transcript_variant",
+    "upstream_gene_variant",
+    "downstream_gene_variant",
+}
 
 
 def check_vep_annotation(variant):
