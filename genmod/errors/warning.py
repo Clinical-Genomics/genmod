@@ -12,15 +12,16 @@ Copyright (c) 2014 __MoonsoInc__. All rights reserved.
 from __future__ import print_function, unicode_literals
 
 import sys
-import os
+
 
 def warning(*objs):
     """Prints the warning messages to std err"""
     print("WARNING: ", *objs, file=sys.stderr)
-    
+
+
 def main():
-    print('This is a warning!')
+    print("This is a warning!")
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()
-

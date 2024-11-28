@@ -1,10 +1,10 @@
-from genmod.score_variants.score_variant import MIN_SCORE_NORMALIZED
 from genmod.score_variants.rank_score_variant_definitions import RANK_SCORE_TYPE_NAMES
+from genmod.score_variants.score_variant import MIN_SCORE_NORMALIZED
 
 
-def cap_rank_score_to_min_bound(rank_score_type: str,
-                                rank_score,
-                                min_rank_score_value: float) -> float:
+def cap_rank_score_to_min_bound(
+    rank_score_type: str, rank_score, min_rank_score_value: float
+) -> float:
     """
     Caps rank_score to fall withing MIN bound of normalized rank score, if it's outside valid range.
     Args:
@@ -17,9 +17,9 @@ def cap_rank_score_to_min_bound(rank_score_type: str,
     """
 
     if rank_score_type not in set(RANK_SCORE_TYPE_NAMES):
-        raise ValueError(f'Unknown rank score type {rank_score_type}')
+        raise ValueError(f"Unknown rank score type {rank_score_type}")
 
-    if rank_score_type == 'RankScoreNormalized':
+    if rank_score_type == "RankScoreNormalized":
         min_rank_score_value = MIN_SCORE_NORMALIZED
 
     if rank_score < min_rank_score_value:
