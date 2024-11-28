@@ -211,7 +211,9 @@ def test_single_category_two_plugin(config_file, variant_0, aggregation_mode, ex
 @pytest.mark.parametrize(
     "aggregation_mode,expected", [("sum", (-3, -5, 2)), ("max", (2, 0, 2)), ("min", (-5, -5, 0))]
 )
-def test_single_category_two_plugin_negative_score_range(config_file, variant_0, aggregation_mode, expected):
+def test_single_category_two_plugin_negative_score_range(
+    config_file, variant_0, aggregation_mode, expected
+):
     """
     Test two categories, negative score range.
     """

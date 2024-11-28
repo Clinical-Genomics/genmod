@@ -11,6 +11,7 @@ Copyright (c) 2013 __MoonsoInc__. All rights reserved.
 
 from __future__ import print_function
 
+
 def check_recessive(variant, family, strict):
     """
     Check if the variant follows the autosomal recessive homozygote (AR_hom)

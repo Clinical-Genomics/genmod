@@ -1,11 +1,9 @@
 from tempfile import NamedTemporaryFile
 
 from click.testing import CliRunner
-
-from genmod.commands import models_command
 from genmod import logger
+from genmod.commands import models_command
 from genmod.log import init_log
-
 from test_utils import generate_variants_from_file
 
 ANNOTATED_VCF_FILE = "tests/fixtures/test_vcf_annotated.vcf"

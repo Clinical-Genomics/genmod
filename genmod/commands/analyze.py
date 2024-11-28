@@ -13,12 +13,10 @@ from __future__ import print_function
 
 import os
 import sys
-
-import click
-
 from codecs import open
 from datetime import datetime
 
+import click
 from vcf_parser import VCFParser
 
 from genmod.utils import print_headers

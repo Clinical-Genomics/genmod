@@ -14,6 +14,7 @@ from __future__ import print_function
 
 import logging
 
+
 def check_compounds(variant_1, variant_2, family, intervals, phased):
     """
     Check if two variants of a pair follow the compound heterozygous model.
