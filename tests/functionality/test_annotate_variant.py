@@ -2,7 +2,6 @@ from genmod.commands.base import cli
 from click.testing import CliRunner
 
 VCF_FILE = "tests/fixtures/test_vcf_regions.vcf"
-VCF_FILE_38 = "tests/fixtures/test_vcf_regions_with_chr.vcf"
 EMPTY_VCF_FILE = "tests/fixtures/empty.vcf"
 THOUSAND_G_FILE = "tests/fixtures/annotate_variant/small_1000G.vcf.gz"
 CADD_FILE = "tests/fixtures/annotate_variant/small_CADD.tsv.gz"
