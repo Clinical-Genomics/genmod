@@ -60,8 +60,7 @@ logger = logging.getLogger(__name__)
     "-r",
     "--rank_results",
     is_flag=True,
-    help="Add a info field that shows how the different categories"
-    " contribute to the rank score.",
+    help="Add a info field that shows how the different categories contribute to the rank score.",
 )
 @outfile
 @click.option(

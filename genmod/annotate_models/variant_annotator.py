@@ -110,7 +110,7 @@ class VariantAnnotator(Process):
                 # Check if the variant is in a gene with reduced penetrance
                 if variant.get("annotation", set()).intersection(self.reduced_penetrance):
                     self.logger.debug(
-                        "Setting reduced_penetrance to True for" " variant: {0}".format(variant_id)
+                        "Setting reduced_penetrance to True for variant: {0}".format(variant_id)
                     )
 
                     variant["reduced_penetrance"] = True

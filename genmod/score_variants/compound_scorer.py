@@ -155,11 +155,15 @@ class CompoundScorer(Process):
                 float(entry_minmax[2]),
             )
             if not rankscore_normalization_min_max[0] <= rankscore_normalization_min_max[1]:
-                raise ValueError(f"Invalid min-max normalization value expected MIN-MAX \
-                {rankscore_normalization_min_max}")
+                raise ValueError(
+                    f"Invalid min-max normalization value expected MIN-MAX \
+                {rankscore_normalization_min_max}"
+                )
             if variant_id in variant_rankscore_normalization_bounds.keys():
-                raise KeyError(f"Cannot add variant ID to normalization data dict since it's already present \
-                               {variant_id}, {variant_rankscore_normalization_bounds}")
+                raise KeyError(
+                    f"Cannot add variant ID to normalization data dict since it's already present \
+                               {variant_id}, {variant_rankscore_normalization_bounds}"
+                )
             variant_rankscore_normalization_bounds.update(
                 {variant_id: rankscore_normalization_min_max}
             )
@@ -312,7 +316,7 @@ class CompoundScorer(Process):
 
                         # variant['info_dict']['IndividualRankScore'] = current_rank_score_string
                         variant["info_dict"][f"{rank_score_type}"] = new_rank_score_string
-                        variant["info_dict"][f'Compounds{rank_score_type.strip("RankScore")}'] = (
+                        variant["info_dict"][f"Compounds{rank_score_type.strip('RankScore')}"] = (
                             new_compound_string
                         )
 
@@ -324,7 +328,7 @@ class CompoundScorer(Process):
 
                         # CompoundsNormalized is not previously added to VCF.
                         # For this case, perform an VCF INFO ADD operation, rather than a REPLACE
-                        keyword_compounds = f'Compounds{rank_score_type.strip("RankScore")}'
+                        keyword_compounds = f"Compounds{rank_score_type.strip('RankScore')}"
                         fn_add_replace_vcf_info = replace_vcf_info
                         if not (
                             keyword_compounds in variant["INFO"]

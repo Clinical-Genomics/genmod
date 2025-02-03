@@ -50,7 +50,7 @@ def print_version(ctx, param, value):
     "-l",
     "--logfile",
     type=click.Path(exists=False),
-    help="Path to log file. If none logging is " "printed to stderr.",
+    help="Path to log file. If none logging is printed to stderr.",
 )
 @click.option(
     "-v",

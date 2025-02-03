@@ -21,7 +21,7 @@ def check_plugins(config_parser, head):
             info_key = plugin_object.info_key
             if info_key not in head.info_dict:
                 logger.warning(
-                    "INFO field {0} is not in vcf INFO." " This field will not be scored.".format(
+                    "INFO field {0} is not in vcf INFO. This field will not be scored.".format(
                         info_key
                     )
                 )

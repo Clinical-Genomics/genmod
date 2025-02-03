@@ -37,7 +37,7 @@ logger = logging.getLogger(__name__)
     "-a",
     "--annotation",
     default="1000GAF",
-    help="Specify the info annotation to search for." " Default 1000GAF",
+    help="Specify the info annotation to search for. Default 1000GAF",
 )
 @click.option(
     "-t", "--threshold", default=0.05, help="""Threshold for filter variants. Default 0.05"""
@@ -46,13 +46,13 @@ logger = logging.getLogger(__name__)
     "-d",
     "--discard",
     is_flag=True,
-    help="If variants without the annotation should be" " discarded",
+    help="If variants without the annotation should be discarded",
 )
 @click.option(
     "-g",
     "--greater",
     is_flag=True,
-    help="If greater than threshold should be used instead of" " less thatn threshold.",
+    help="If greater than threshold should be used instead of less thatn threshold.",
 )
 @silent
 @outfile
@@ -98,7 +98,7 @@ def filter(variant_file, annotation, threshold, discard, greater, silent, outfil
         data_type="float",
     )
     logger.debug(
-        "Plugin=(field={0},info_key={1},separators={2},record_rule={3}" ",data_type={4})".format(
+        "Plugin=(field={0},info_key={1},separators={2},record_rule={3},data_type={4})".format(
             "INFO", annotation, "','", "min", "float"
         )
     )

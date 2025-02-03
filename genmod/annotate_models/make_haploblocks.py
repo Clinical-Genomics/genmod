@@ -48,7 +48,7 @@ def get_haploblocks(variant_batch, individuals):
 
                 if not in_haploblock[ind_id]:
                     logger.debug(
-                        "Setting haploblock start to: {0}" " for individual {1}".format(
+                        "Setting haploblock start to: {0} for individual {1}".format(
                             variant["POS"], ind_id
                         )
                     )

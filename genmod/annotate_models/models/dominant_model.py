@@ -58,7 +58,7 @@ def check_dominant(variant, family, strict=False):
         # Check in all individuals what genotypes that are in the trio based
         # of the individual picked.
         logger.debug(
-            "Checking autosomal dominant pattern for variant {0}," " individual: {1}".format(
+            "Checking autosomal dominant pattern for variant {0}, individual: {1}".format(
                 variant.get("variant_id", None), individual
             )
         )

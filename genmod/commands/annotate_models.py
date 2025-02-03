@@ -156,9 +156,7 @@ def models(
             families[family_id] = family_obj
         else:
             logger.warning(
-                "No affected individuals found for family {0}." " Skipping family.".format(
-                    family_id
-                )
+                "No affected individuals found for family {0}. Skipping family.".format(family_id)
             )
 
     if not families:
@@ -207,7 +205,7 @@ def models(
             logger.info("Using {0} annotation".format(keyword))
 
     if "GeneticModels" in head.info_dict:
-        logger.warning("Genetic models are already annotated according to vcf" " header.")
+        logger.warning("Genetic models are already annotated according to vcf header.")
         context.abort()
 
     logger.info("Adding genmod version to vcf header")

@@ -138,7 +138,7 @@ class ConfigParser(configobj.ConfigObj):
                             "Please add specifications for category {0}".format(category)
                         )
                         raise ValidateError(
-                            "Plugins must have a category" " defined in 'Categories' section"
+                            "Plugins must have a category defined in 'Categories' section"
                         )
                 else:
                     self.logger.error("{0} is missing category".format(plugin))
@@ -287,7 +287,7 @@ class ConfigParser(configobj.ConfigObj):
             vcf_field = vcf_section["field"]
             if vcf_field not in self.vcf_columns:
                 raise ValidateError(
-                    "field has to be in {0}\n" "Wrong field name in plugin: {1}".format(
+                    "field has to be in {0}\nWrong field name in plugin: {1}".format(
                         self.vcf_columns, plugin
                     )
                 )
@@ -324,7 +324,7 @@ class ConfigParser(configobj.ConfigObj):
             data_type = vcf_section["data_type"]
             if data_type not in self.data_types:
                 raise ValidateError(
-                    "data_type has to be in {0}\n" "Wrong data_type in plugin: {1}".format(
+                    "data_type has to be in {0}\nWrong data_type in plugin: {1}".format(
                         self.data_types, plugin
                     )
                 )
@@ -352,7 +352,7 @@ class ConfigParser(configobj.ConfigObj):
         if record_rule:
             if record_rule not in ["min", "max"]:
                 raise ValidateError(
-                    "Record rules have to be in {0}\n" "Wrong record_rule in plugin: {1}".format(
+                    "Record rules have to be in {0}\nWrong record_rule in plugin: {1}".format(
                         ["min", "max"], plugin
                     )
                 )

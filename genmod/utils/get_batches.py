@@ -132,7 +132,7 @@ def get_batches(
                     # New chromosome means new batch
                     send = True
                     logger.info(
-                        "Chromosome {0} parsed. Time to parse" " chromosome: {1}".format(
+                        "Chromosome {0} parsed. Time to parse chromosome: {1}".format(
                             current_chrom, datetime.now() - start_chrom_time
                         )
                     )
@@ -160,7 +160,7 @@ def get_batches(
         chromosomes.append(current_chrom)
 
     logger.info(
-        "Chromosome {0} parsed. Time to parse" " chromosome: {0}".format(
+        "Chromosome {0} parsed. Time to parse chromosome: {0}".format(
             current_chrom,
         )
     )

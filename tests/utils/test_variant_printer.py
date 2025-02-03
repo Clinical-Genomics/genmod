@@ -14,8 +14,7 @@ def setup_vcf_file():
         "##fileformat=VCFv4.1\n",
         '##INFO=<ID=MQ,Number=1,Type=Float,Description="RMS Mapping Quality">\n',
         "##contig=<ID=1,length=249250621,assembly=b37>\n",
-        "##reference=file:///humgen/gsa-hpprojects/GATK/bundle"
-        "/current/b37/human_g1k_v37.fasta\n",
+        "##reference=file:///humgen/gsa-hpprojects/GATK/bundle/current/b37/human_g1k_v37.fasta\n",
         "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\tfather\tmother\tproband\n",
         "1\t11900\t.\tA\tT\t100\tPASS\tMQ=1\tGT:GQ\t0/1:60\t0/1:60\t1/1:60\n",
         "1\t879585\t.\tA\tT\t100\tPASS\tMQ=1\tGT:GQ\t0/1:60\t0/0:60\t0/1:60\n",

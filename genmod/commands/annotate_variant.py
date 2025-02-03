@@ -79,23 +79,23 @@ logger = logging.getLogger(__name__)
     "--thousand-g",
     "--thousand_g",
     type=click.Path(exists=True),
-    help="Specify the path to a bgzipped vcf file" " (with index) with 1000g variants",
+    help="Specify the path to a bgzipped vcf file (with index) with 1000g variants",
 )
 @click.option(
     "--exac",
     type=click.Path(exists=True),
-    help="Specify the path to a bgzipped vcf file" " (with index) with exac variants.",
+    help="Specify the path to a bgzipped vcf file (with index) with exac variants.",
 )
 @click.option(
     "--cosmic",
     type=click.Path(exists=True),
-    help="Specify the path to a bgzipped vcf file" " (with index) with COSMIC variants.",
+    help="Specify the path to a bgzipped vcf file (with index) with COSMIC variants.",
 )
 @click.option("--max-af", "--max_af", is_flag=True, help="If the MAX AF should be annotated")
 @click.option(
     "--spidex",
     type=click.Path(exists=True),
-    help="Specify the path to a bgzipped tsv file" " (with index) with spidex information.",
+    help="Specify the path to a bgzipped tsv file (with index) with spidex information.",
 )
 @click.option(
     "--cadd-raw", "--cadd_raw", is_flag=True, help="""If the raw cadd scores should be annotated."""

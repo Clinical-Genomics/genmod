@@ -56,7 +56,7 @@ def sort_variants(infile, mode="chromosome"):
     except OSError as e:
         logger.warning("unix program 'sort' does not seem to exist on your system...")
         logger.warning("genmod needs unix sort to provide a sorted output.")
-        logger.warning("Output VCF will not be sorted since genmod can not find" "unix sort")
+        logger.warning("Output VCF will not be sorted since genmod can not findunix sort")
         raise e
 
     logger.info("Sorting done. Time to sort: {0}".format(datetime.now() - sort_start))
