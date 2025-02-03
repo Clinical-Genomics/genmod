@@ -103,7 +103,6 @@ def check_genetic_models(variant_batch, families, phased=False, strict=False):
         individuals = family.individuals
 
         compound_candidates = []
-        compound_pairs = []
 
         for variant_id in variant_batch:
             inheritance_models = {
@@ -222,7 +221,6 @@ def check_genetic_models(variant_batch, families, phased=False, strict=False):
                             or variant_2["inheritance_models"][family_id]["AR_comp_dn"]
                         ):
                             variant_2["compounds"][family_id].add(pair[0])
-    return
 
 
 def check_compound_candidate(variant, family, strict):
@@ -332,12 +330,10 @@ def check_parents(model, individual_id, family, variant, variant_2={}, strict=Fa
 
     if mother_id != "0":
         mother_genotype = variant["genotypes"][mother_id]
-        mother_phenotype = family.get_phenotype(mother_id)
         parent_genotypes.append(mother_genotype)
 
     if father_id != "0":
         father_genotype = variant["genotypes"][father_id]
-        father_phenotype = family.get_phenotype(father_id)
         parent_genotypes.append(father_genotype)
 
     if model == "recessive":
