@@ -17,7 +17,6 @@ def annotate_variant(variant, annotation_arguments):
     if chrom.startswith(("chr", "CHR", "Chr")):
         chrom = chrom[3:]
     pos = int(variant_info[1])
-    ref = variant_info[3]
     alt = variant_info[4]
 
     info = variant_info[7]
@@ -30,7 +29,6 @@ def annotate_variant(variant, annotation_arguments):
     start = pos
     # This is a construct so that there will not be inconsistent genetic regions
     end = pos + 1
-    # end = pos + max(len(ref), len(alt))
 
     # Check which annotations that are available
     regions = None
