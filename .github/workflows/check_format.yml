@@ -1,0 +1,26 @@
+# Basic CI setup: Lint format with ruff
+name: Format-check
+
+on:
+  pull_request:
+    types: [ opened, synchronize, reopened, ready_for_review, labeled, unlabeled ]
+
+jobs:
+  lint-format:
+    name: Ruff includes and format
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Ruff check import sorting
+        uses: astral-sh/ruff-action@v3
+        with:
+          version: "latest"
+          args: "check --select I ."
+
+      - name: Ruff format diff
+        uses: astral-sh/ruff-action@v3
+        with:
+          version: "latest"
+          args: "format --diff ."
+

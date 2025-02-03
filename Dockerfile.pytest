@@ -1,18 +1,9 @@
 # Dockerfile to run genmod pytest suite
-FROM python:3.13
+FROM ghcr.io/astral-sh/uv:python3.13-bookworm
 
-RUN mkdir -p /genmod
+ADD . /app
 
-COPY requirements.txt /genmod/
+WORKDIR /app
+RUN uv sync --all-extras --dev
 
-RUN pip3 install -r /genmod/requirements.txt
-
-COPY . /genmod
-
-ENV PYTHONPATH=/genmod
-
-WORKDIR /genmod
-
-RUN pip3 install .
-
-ENTRYPOINT ["pytest"]
+ENTRYPOINT ["uv", "run", "pytest"]

@@ -1,0 +1,19 @@
+# Basic CI setup: Lint with ruff
+name: Lint
+
+on:
+  pull_request:
+    types: [ opened, synchronize, reopened, ready_for_review, labeled, unlabeled ]
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Ruff lint
+        uses: astral-sh/ruff-action@v3
+        with:
+          version: "latest"
+          args: "check ."

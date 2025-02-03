@@ -27,7 +27,8 @@ or
 
 	git clone https://github.com/Clinical-Genomics/genmod.git
 	cd genmod
-	python setup.py install
+	uv install genmod
+	uv run genmod
 
 
 ## Usage

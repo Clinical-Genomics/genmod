@@ -1,0 +1,73 @@
+[project]
+name = "genmod"
+version = "3.9"
+description = "Annotate genetic inheritance models in Variant Call Format (VCF) files"
+authors = [{name="Mans Magnuson", email="mans.magnusson@scilifelab.se"}, {name="Tor Björgen", email="tor.bjorgen@scilifelab.se"}, {name="Felix Lenner", email="felix.lenner@scilifelab.se"}, {name="Anders Jemt", email="anders.jemt@scilifelab.se"}, {name="Daniel Nilsson", email="daniel.nilsson@ki.se"}]
+license = {text = "MIT License"}
+readme = "README.md"
+include = [
+  "README.md",
+  "genmod/**/*",
+  "tests/**/*"
+]
+requires-python = ">=3.7"
+keywords = ["vcf", "variants", "inheritance"]
+classifiers = [
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3",
+  "Development Status :: 5 - Production/Stable",
+  "Programming Language :: Python :: Implementation :: CPython",
+  "Operating System :: MacOS :: MacOS X",
+  "Operating System :: Unix",
+  "Intended Audience :: Science/Research",
+  "Topic :: Scientific/Engineering :: Bio-Informatics",
+  "Topic :: Scientific/Engineering :: Medical Science Apps.",
+]
+dependencies = [
+    "ped_parser",
+    "pytabix",
+    "interval_tree >= 0.3.4",
+    "click",
+    "configobj",
+    "importlib_resources",
+    "intervaltree >= 3.1.0",
+    "extract_vcf",
+    "vcftoolbox",
+    "six",
+]
+
+[project.urls]
+Repository = "http://github.com/Clinical-Genomics/genmod"
+Changelog = "https://github.com/Clinical-Genomics/genmod/blob/main/CHANGELOG.md"
+"Bug Tracker" = "https://github.com/Clinical-Genomics/genmod/issues"
+
+[project.scripts]
+genmod = "genmod.commands.base:cli"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.black]
+line-length = 100
+target-version = ['py313']
+
+[tool.ruff]
+src = ["genmod", "tests"]
+line-length = 100
+
+[tool.isort]
+profile = "black"
+
+[dependency-groups]
+dev = [
+    "pytest-cov>=4.1.0",
+    "pytest>=7.4.4",
+    "ruff>=0.8.0",
+]
+lint = [
+    "black>=23.3.0",
+    "isort>=5.11.5",
+    "ruff>=0.8.0",
+]
