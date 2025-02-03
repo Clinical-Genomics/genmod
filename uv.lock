@@ -185,6 +185,7 @@ dependencies = [
 dev = [
     { name = "pytest" },
     { name = "pytest-cov" },
+    { name = "ruff" },
 ]
 lint = [
     { name = "black" },
@@ -210,6 +211,7 @@ requires-dist = [
 dev = [
     { name = "pytest", specifier = ">=7.4.4" },
     { name = "pytest-cov", specifier = ">=4.1.0" },
+    { name = "ruff", specifier = ">=0.8.0" },
 ]
 lint = [
     { name = "black", specifier = ">=23.3.0" },

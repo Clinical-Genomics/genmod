@@ -15,6 +15,7 @@ Try to use the following format:
 - Update annotation examples ([#144](https://github.com/Clinical-Genomics/genmod/pull/144))
 - Updated documentation with warning about compounds only being scored within the first family in the VCF ([#151](https://github.com/Clinical-Genomics/genmod/pull/151)) 
 - Use `uv` with `hatchling` to build and publish ([#104](https://github.com/Clinical-Genomics/genmod/issues/143))
+- Fix linting issues ([#154](https://github.com/Clinical-Genomics/genmod/issues/154))
 
 ## [3.9]
 - Fixed wrong models when chromosome X was named `chrX` and not `X` ([#135](https://github.com/Clinical-Genomics/genmod/pull/135))

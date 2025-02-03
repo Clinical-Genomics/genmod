@@ -579,7 +579,6 @@ def analyze(
                 mode="denovo",
             )
 
-
         print("")
 
         print("Number of interesting Dominant variants: %s" % len(dominant_dict))
