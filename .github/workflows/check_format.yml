@@ -13,12 +13,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Ruff check import sorting
-        uses: astral-sh/ruff-action@v1
+        uses: astral-sh/ruff-action@v3
         with:
+          version: "latest"
           args: "check --select I ."
 
       - name: Ruff format diff
-        uses: astral-sh/ruff-action@v1
+        uses: astral-sh/ruff-action@v3
         with:
+          version: "latest"
           args: "format --diff ."
 
