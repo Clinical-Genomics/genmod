@@ -96,12 +96,12 @@ def print_results(
         )
         if mode == "compound":
             # If we look at compounds we want to consider the combined score
-            family_compounds = compound_dict[variant_id]["info_dict"].get("Compounds", None)
-            if compounds:
+            family_compounds = variant_dict[variant_id]["info_dict"].get("Compounds", None)
+            if family_compounds:
                 for family in family_compounds:
-                    splitted_compounds = family.split(":")
-                    if splitted_compounds[0] == family_id:
-                        compounds = splitted_compounds[1].split("|")
+                    split_compounds = family.split(":")
+                    if split_compounds[0] == family_id:
+                        compounds = split_compounds[1].split("|")
 
                 for variant_2_id in compounds:
                     if variant_2_id in variant_dict:
@@ -184,8 +184,6 @@ def print_results(
                 f.write("\t".join(print_line) + "\n")
             i += 1
 
-    return
-
 
 ###           This is for analyzing the variants       ###
 
@@ -221,11 +219,11 @@ def remove_inacurate_compounds(compound_dict, family_id):
     for variant_id in list(compound_dict.keys()):
         # Get the compounds for the variant
         family_compounds = compound_dict[variant_id]["info_dict"].get("Compounds", None)
-        if compounds:
+        if family_compounds:
             for family in family_compounds.split(","):
-                splitted_compounds = family.split(":")
-                if splitted_compounds[0] == family_id:
-                    compounds = splitted_compounds[1].split("|")
+                split_compounds = family.split(":")
+                if split_compounds[0] == family_id:
+                    compounds = split_compounds[1].split("|")
                     compound_set = set(compounds)
             for compound in compounds:
                 # If requrements are not met it has never been placed in compound dict
@@ -253,6 +251,7 @@ def get_interesting_variants(
     compound_dict,
     x_linked_dict,
     dominant_dn_dict,
+    dn_dict,
     freq_treshold,
     freq_keyword,
     cadd_treshold,
@@ -261,7 +260,7 @@ def get_interesting_variants(
     coverage,
     exclude_problematic,
 ):
-    """Collect the interesting variants in their dictionarys. add RankScore."""
+    """Collect the interesting variants in their dictionariesx. add RankScore."""
 
     inheritance_keyword = "GeneticModels"
 
@@ -325,6 +324,8 @@ def get_interesting_variants(
                         x_linked_dict[variant_id] = variant
                     if models_found.intersection(dominant_dn_set):
                         dominant_dn_dict[variant_id] = variant
+                    if models_found.intersection(de_novo_set):
+                        dn_dict[variant_id] = variant
 
     return
 
@@ -471,6 +472,7 @@ def analyze(
         compound_dict = {}
         x_linked_dict = {}
         dominant_dn_dict = {}
+        dn_dict = {}
 
         get_interesting_variants(
             variant_parser,
@@ -480,6 +482,7 @@ def analyze(
             compound_dict,
             x_linked_dict,
             dominant_dn_dict,
+            dn_dict,
             frequency_treshold,
             frequency_keyword,
             cadd_treshold,
@@ -561,6 +564,21 @@ def analyze(
                 frequency_keyword,
                 mode="denovo",
             )
+
+        if len(dn_dict) > 0:
+            dn_file = os.path.join(outdir, file_name + "_denovo_analysis.vcf")
+            print_headers(head, dn_file)
+
+            print_results(
+                dn_dict,
+                dn_file,
+                family_id,
+                variant_parser.header,
+                cadd_keyword,
+                frequency_keyword,
+                mode="denovo",
+            )
+
 
         print("")
 
