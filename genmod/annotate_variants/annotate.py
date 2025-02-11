@@ -1,7 +1,7 @@
 import logging
 
 from genmod.annotate_regions.get_features import get_region
-from genmod.annotate_variants.read_tabix_files import (get_frequencies, 
+from genmod.annotate_variants.read_tabix_files import (get_frequencies,
      get_spidex_score, get_cadd_scores)
 
 logger = logging.getLogger(__name__)
@@ -12,29 +12,31 @@ def annotate_variant(variant, annotation_arguments):
     chrom = variant_info[0]
     if chrom.startswith(('chr', 'CHR', 'Chr')):
         chrom = chrom[3:]
+    elif chrom == 'MT':
+        chrom = 'M'
     pos = int(variant_info[1])
     ref = variant_info[3]
     alt = variant_info[4]
-    
+
     info = variant_info[7]
     if info == '.':
         info = []
     else:
         info = info.split(';')
-    
+
     ## TODO this needs to be handeled different for SV:s
     start = pos
     # This is a construct so that there will not be inconsistent genetic regions
     end = pos + 1
     # end = pos + max(len(ref), len(alt))
-    
+
     #Check which annotations that are available
     regions = None
     if 'region_trees' in annotation_arguments:
         regions = get_region(chrom, start, end, annotation_arguments['region_trees'])
         if regions:
             info.append("Annotation={0}".format(','.join(regions)))
-    
+
     if 'exac' in annotation_arguments:
         reader = annotation_arguments['exac']
         frequencies = get_frequencies(reader, chrom, start, alt)
@@ -76,7 +78,7 @@ def annotate_variant(variant, annotation_arguments):
         info_string = ';'.join(info)
     else:
         info_string = '.'
-    
+
     variant_info[7] = info_string
-    
+
     return '\t'.join(variant_info)

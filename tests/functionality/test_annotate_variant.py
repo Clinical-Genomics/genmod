@@ -60,7 +60,7 @@ def test_genmod_annotate_thousand_g():
             '--thousand-g',
             THOUSAND_G_FILE
         ])
-    
+
     assert result.exit_code == 0
 
 def test_genmod_annotate_cadd():
@@ -73,7 +73,7 @@ def test_genmod_annotate_cadd():
             '--cadd-file',
             CADD_FILE
         ])
-    
+
     assert result.exit_code == 0
 
 def test_genmod_annotate_multiple_cadd():
@@ -87,8 +87,8 @@ def test_genmod_annotate_multiple_cadd():
             CADD_FILE,
             '--cadd-file',
             CADD_1000G_FILE
-            
+
         ])
-    
+
     assert result.exit_code == 0
 
