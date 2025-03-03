@@ -103,23 +103,23 @@ def print_results(
                     if split_compounds[0] == family_id:
                         compounds = split_compounds[1].split("|")
 
-                for variant_2_id in compounds:
-                    if variant_2_id in variant_dict:
-                        max_score_2 = max(
-                            [
-                                float(score)
-                                for score in variant_dict[variant_2_id]["info_dict"].get(
-                                    score_key, "0"
+                        for variant_2_id in compounds:
+                            if variant_2_id in variant_dict:
+                                max_score_2 = max(
+                                    [
+                                        float(score)
+                                        for score in variant_dict[variant_2_id]["info_dict"].get(
+                                            score_key, "0"
+                                        )
+                                    ]
                                 )
-                            ]
-                        )
-                    if max_score_2 > 10:
-                        # print(variant_dict[variant_2_id])
-                        variant_pair = (variant_id, variant_2_id)
-                        max_score = (max_score + max_score_2) / 2
-                        already_scored = [set(var_pair) for var_pair in list(score_dict.keys())]
-                        if set(variant_pair) not in already_scored:
-                            score_dict[variant_pair] = max_score
+                            if max_score_2 > 10:
+                                # print(variant_dict[variant_2_id])
+                                variant_pair = (variant_id, variant_2_id)
+                                max_score = (max_score + max_score_2) / 2
+                                already_scored = [set(var_pair) for var_pair in list(score_dict.keys())]
+                                if set(variant_pair) not in already_scored:
+                                    score_dict[variant_pair] = max_score
         else:
             score_dict[variant_id] = max_score
 
@@ -225,11 +225,11 @@ def remove_inacurate_compounds(compound_dict, family_id):
                 if split_compounds[0] == family_id:
                     compounds = split_compounds[1].split("|")
                     compound_set = set(compounds)
-            for compound in compounds:
-                # If requrements are not met it has never been placed in compound dict
-                if compound not in compound_dict:
-                    compound_set.discard(compound)
-                # If no compounds in the pair upfills the requirements we remove the pair
+                    for compound in compounds:
+                        # If requirements are not met it has never been placed in compound dict
+                        if compound not in compound_dict:
+                            compound_set.discard(compound)
+                        # If no compounds in the pair fulfills the requirements we remove the pair
             if len(compound_set) == 0:
                 compound_dict.pop(variant_id)
     return
