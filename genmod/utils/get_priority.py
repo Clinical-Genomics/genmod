@@ -28,7 +28,7 @@ def get_chromosome_priority(chrom, chrom_dict={}):
                 priority = "23"
             elif chrom == "Y":
                 priority = "24"
-            elif chrom in ["MT","M"]:
+            elif chrom in ["MT", "M"]:
                 priority = "25"
             else:
                 priority = "26"
