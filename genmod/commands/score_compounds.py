@@ -147,8 +147,6 @@ def compound(
         logger.info("Starting the variant printer process")
         variant_printer.start()
 
-        datetime.now()
-
         # This process parses the original vcf and create batches to put in the variant queue:
         get_batches(
             variants=variant_file,
