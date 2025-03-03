@@ -117,7 +117,9 @@ def print_results(
                                 # print(variant_dict[variant_2_id])
                                 variant_pair = (variant_id, variant_2_id)
                                 max_score = (max_score + max_score_2) / 2
-                                already_scored = [set(var_pair) for var_pair in list(score_dict.keys())]
+                                already_scored = [
+                                    set(var_pair) for var_pair in list(score_dict.keys())
+                                ]
                                 if set(variant_pair) not in already_scored:
                                     score_dict[variant_pair] = max_score
         else:
