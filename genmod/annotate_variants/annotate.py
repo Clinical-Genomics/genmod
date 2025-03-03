@@ -1,11 +1,9 @@
 import logging
 
 from genmod.annotate_regions.get_features import get_region
-from genmod.annotate_variants.read_tabix_files import (
-    get_cadd_scores,
-    get_frequencies,
-    get_spidex_score,
-)
+
+from genmod.annotate_variants.read_tabix_files import (get_frequencies,
+     get_spidex_score, get_cadd_scores)
 
 logger = logging.getLogger(__name__)
 
@@ -16,6 +14,8 @@ def annotate_variant(variant, annotation_arguments):
     chrom = variant_info[0]
     if chrom.startswith(("chr", "CHR", "Chr")):
         chrom = chrom[3:]
+    elif chrom == 'MT':
+        chrom = 'M'
     pos = int(variant_info[1])
     alt = variant_info[4]
 
@@ -29,8 +29,9 @@ def annotate_variant(variant, annotation_arguments):
     start = pos
     # This is a construct so that there will not be inconsistent genetic regions
     end = pos + 1
+    # end = pos + max(len(ref), len(alt))
 
-    # Check which annotations that are available
+    #Check which annotations that are available
     regions = None
     if "region_trees" in annotation_arguments:
         regions = get_region(chrom, start, end, annotation_arguments["region_trees"])

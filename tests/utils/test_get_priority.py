@@ -21,6 +21,10 @@ def test_get_MT_priority():
     assert get_chromosome_priority(chrom="MT", chrom_dict={}) == "25"
 
 
+def test_get_chrM_priority():
+    """docstring for test_get_MT_priority"""
+    assert get_chromosome_priority(chrom='M', chrom_dict={}) == '25'
+
 def test_get_OTHER_priority():
     """docstring for test_get_MT_priority"""
     assert get_chromosome_priority(chrom="GL37", chrom_dict={}) == "26"
