@@ -46,7 +46,7 @@ def header(request, vcf_path):
     with open(vcf_path, 'r') as variant_file:
         for line in variant_file:
             line = line.rstrip()
-        
+
             if line.startswith('#'):
                 if line.startswith('##'):
                     head.parse_meta_data(line)
@@ -54,7 +54,7 @@ def header(request, vcf_path):
                     head.parse_header_line(line)
             else:
                 break
-    
+
     return head
 
 

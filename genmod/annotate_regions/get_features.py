@@ -15,13 +15,13 @@ logger = logging.getLogger(__name__)
 
 def get_region(chrom, start, end, region_trees):
     """Check if a position overlapps any regions
-    
+
     Arguments:
        chrom (str): The chromosome
        start (int): The start position for the feature
        end (int): The stop position for the feature
        region_trees (dict): A dictionary with chromosomes as keys and interval trees as values
-    
+
     Returns:
         regions (set): The regions that the variant ovelapps
     """
