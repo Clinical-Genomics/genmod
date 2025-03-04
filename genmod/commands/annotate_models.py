@@ -181,7 +181,7 @@ def models(
                 head.parse_header_line(line)
         else:
             break
-    
+
     # Check before adding models info to header
     if "GeneticModels" in head.info_dict:
         logger.warning("Genetic models are already annotated according to vcf header.")
@@ -233,13 +233,13 @@ def models(
     )
     logger.debug("Compounds added")
 
-    #Add the first variant to the iterator
-    if not line.startswith('#'):
+    # Add the first variant to the iterator
+    if not line.startswith("#"):
         variant_file = itertools.chain([line], variant_file)
     else:
         print_headers(head=head, outfile=outfile, silent=silent)
         sys.exit(0)
-    
+
     if vep:
         if "CSQ" not in head.info_dict:
             logger.warning("vep flag is used but there is no CSQ field specified in header")
