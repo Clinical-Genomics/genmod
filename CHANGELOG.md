@@ -16,6 +16,7 @@ Try to use the following format:
 - Updated documentation with warning about compounds only being scored within the first family in the VCF ([#151](https://github.com/Clinical-Genomics/genmod/pull/151))
 - Fixed sorting of variants ([#152](https://github.com/Clinical-Genomics/genmod/pull/152))
 - genmod annotate for mitochondrial variants when using the `chrM` notation ([#157](https://github.com/Clinical-Genomics/genmod/pull/157))
+- genmod models adds headers to VCF even if it contains no variants ([#160](https://github.com/Clinical-Genomics/genmod/pull/160)) 
 
 ## [3.9]
 - Fixed wrong models when chromosome X was named `chrX` and not `X` ([#135](https://github.com/Clinical-Genomics/genmod/pull/135))
