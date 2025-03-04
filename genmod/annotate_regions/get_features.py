@@ -13,6 +13,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 def get_region(chrom, start, end, region_trees):
     """Check if a position overlapps any regions
 
