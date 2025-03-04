@@ -14,6 +14,7 @@ Try to use the following format:
 - Released the constraint on Python 3.8 (collections, pkg_resources to importlib, tests) ([#142](https://github.com/Clinical-Genomics/genmod/pull/142))
 - Update annotation examples ([#144](https://github.com/Clinical-Genomics/genmod/pull/144))
 - Updated documentation with warning about compounds only being scored within the first family in the VCF ([#151](https://github.com/Clinical-Genomics/genmod/pull/151))
+- Fixed sorting of variants ([#152](https://github.com/Clinical-Genomics/genmod/pull/152))
 - genmod annotate for mitochondrial variants when using the `chrM` notation ([#157](https://github.com/Clinical-Genomics/genmod/pull/157))
 
 ## [3.9]

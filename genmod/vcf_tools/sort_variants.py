@@ -40,9 +40,9 @@ def sort_variants(infile, mode='chromosome'):
             'sort',
             ]
     if mode == 'chromosome':
-        command.append('-n')
-        command.append('-k1')
-        command.append('-k3')
+        command.append('-k1,1V') # Version sorting to deal with e.g. Un_* contigs
+        command.append('-k3,3n') # Sorting positions numerically
+        command.append('--stable')
 
     elif mode == 'rank':
         command.append('-rn')
