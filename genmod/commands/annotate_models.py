@@ -169,6 +169,12 @@ def models(context, variant_file, family_file, family_type, reduced_penetrance,
         else:
             break
     
+    # Check before adding models info to header
+    if "GeneticModels" in head.info_dict:
+        logger.warning("Genetic models are already annotated according to vcf"\
+        " header.")
+        context.abort()
+    
     logger.info("Adding genmod version to vcf header")
     head.add_version_tracking(
                     info_id='genmod',
@@ -234,13 +240,7 @@ def models(context, variant_file, family_file, family_type, reduced_penetrance,
             context.abort()
         else:
             logger.info("Using {0} annotation".format(keyword))
-        
-    
-    if "GeneticModels" in head.info_dict:
-        logger.warning("Genetic models are already annotated according to vcf"\
-        " header.")
-        context.abort()
-    
+
     vcf_individuals = head.individuals
     logger.debug("Individuals found in vcf file: {}".format(', '.join(vcf_individuals)))
     
