@@ -16,49 +16,46 @@ The intervals represent features that are annotated in the infile.
 Created by Måns Magnusson on 2016-12-23.
 Copyright (c) 2016 __MonsoInc__. All rights reserved.
 """
+
 import logging
 
-try:
-    import cPickle as pickle
-except:
-    import pickle
-
-from intervaltree import (Interval, IntervalTree)
+from intervaltree import Interval, IntervalTree
 
 logger = logging.getLogger(__name__)
+
 
 def get_interval(start, stop, value):
     """Create an interval instance
 
-        Args:
-            start(int)
-            stop(int)
-            value
+    Args:
+        start(int)
+        stop(int)
+        value
 
-        Returns:
-            interval(intervaltree.Interval)
-
+    Returns:
+        interval(intervaltree.Interval)
     """
     interval = Interval(start, stop, value)
     return interval
 
+
 def build_region_trees(bed_lines, padding):
     """Build region trees for each chromosome
 
-        Build a dictionary with chromosomes as keys and interval trees as
-        values.
+    Build a dictionary with chromosomes as keys and interval trees as
+    values.
 
-        Args:
-            bed_lines(iterable): An iterable with bed formated lines
-            padding (int): Defines what should be considered upstream
-                           and downstream variants
+    Args:
+        bed_lines(iterable): An iterable with bed formated lines
+        padding (int): Defines what should be considered upstream
+                       and downstream variants
     """
     region_trees = {}
     for region in bed_parser(bed_lines, padding):
-        chrom = region['chrom']
-        start = region['start']
-        stop = region['stop']
-        symbol = region['symbol']
+        chrom = region["chrom"]
+        start = region["start"]
+        stop = region["stop"]
+        symbol = region["symbol"]
 
         if chrom not in region_trees:
             region_trees[chrom] = IntervalTree()
@@ -86,16 +83,15 @@ def bed_parser(bed_lines, padding=4000):
                         'symbol': str
                     }
     """
-    genes = {}
     for index, line in enumerate(bed_lines):
-        if not line.startswith('#') and len(line) > 1:
+        if not line.startswith("#") and len(line) > 1:
             line = line.rstrip().split()
             feature_id = str(index)
             # Get the coordinates for the region:
-            chrom = line[0].lstrip('chr')
-            if chrom in ['MT', 'M']:
+            chrom = line[0].lstrip("chr")
+            if chrom in ["MT", "M"]:
                 # Only represent the mitochondrial chromosome as M
-                chrom = 'M'
+                chrom = "M"
                 feature_start = int(line[1])
                 feature_stop = int(line[2])
             else:
@@ -104,13 +100,13 @@ def bed_parser(bed_lines, padding=4000):
 
             # Get the feature id
             if len(line) > 3:
-                feature_id = line [3]
+                feature_id = line[3]
 
             region = {
-                'chrom': chrom,
-                'start': feature_start,
-                'stop': feature_stop,
-                'symbol': feature_id
+                "chrom": chrom,
+                "start": feature_start,
+                "stop": feature_stop,
+                "symbol": feature_id,
             }
 
             yield region
