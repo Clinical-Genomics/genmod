@@ -169,34 +169,6 @@ def models(context, variant_file, family_file, family_type, reduced_penetrance,
         else:
             break
     
-    #Add the first variant to the iterator
-    if not line.startswith('#'):
-        variant_file = itertools.chain([line], variant_file)
-    else:
-        print_headers(head=head, outfile=outfile, silent=silent)
-        sys.exit(0)
-    
-    if vep:
-        if not "CSQ" in head.info_dict:
-            logger.warning("vep flag is used but there is no CSQ field specified in header")
-            logger.info("Please check VCF file")
-            context.abort()
-        else:
-            logger.info("Using VEP annotation")
-    else:
-        if not keyword in head.info_dict:
-            logger.warning("Annotation key {0} could not be found in VCF header".format(keyword))
-            logger.info("Please check VCF file")
-            context.abort()
-        else:
-            logger.info("Using {0} annotation".format(keyword))
-        
-    
-    if "GeneticModels" in head.info_dict:
-        logger.warning("Genetic models are already annotated according to vcf"\
-        " header.")
-        context.abort()
-    
     logger.info("Adding genmod version to vcf header")
     head.add_version_tracking(
                     info_id='genmod',
@@ -240,6 +212,34 @@ def models(context, variant_file, family_file, family_type, reduced_penetrance,
         "with ':'. Compounds are separated with '|'.")
     )
     logger.debug("Compounds added")
+
+    #Add the first variant to the iterator
+    if not line.startswith('#'):
+        variant_file = itertools.chain([line], variant_file)
+    else:
+        print_headers(head=head, outfile=outfile, silent=silent)
+        sys.exit(0)
+    
+    if vep:
+        if not "CSQ" in head.info_dict:
+            logger.warning("vep flag is used but there is no CSQ field specified in header")
+            logger.info("Please check VCF file")
+            context.abort()
+        else:
+            logger.info("Using VEP annotation")
+    else:
+        if not keyword in head.info_dict:
+            logger.warning("Annotation key {0} could not be found in VCF header".format(keyword))
+            logger.info("Please check VCF file")
+            context.abort()
+        else:
+            logger.info("Using {0} annotation".format(keyword))
+        
+    
+    if "GeneticModels" in head.info_dict:
+        logger.warning("Genetic models are already annotated according to vcf"\
+        " header.")
+        context.abort()
     
     vcf_individuals = head.individuals
     logger.debug("Individuals found in vcf file: {}".format(', '.join(vcf_individuals)))
