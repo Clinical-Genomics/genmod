@@ -241,14 +241,14 @@ def models(
         sys.exit(0)
     
     if vep:
-        if not "CSQ" in head.info_dict:
+        if "CSQ" not in head.info_dict:
             logger.warning("vep flag is used but there is no CSQ field specified in header")
             logger.info("Please check VCF file")
             context.abort()
         else:
             logger.info("Using VEP annotation")
     else:
-        if not keyword in head.info_dict:
+        if keyword not in head.info_dict:
             logger.warning("Annotation key {0} could not be found in VCF header".format(keyword))
             logger.info("Please check VCF file")
             context.abort()
