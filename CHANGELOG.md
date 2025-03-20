@@ -9,6 +9,9 @@ Please add a new candidate release at the top after changing the latest one. Fee
 Try to use the following format:
 
 ## [unreleased]
+### Changed
+- Use `uv` with `hatchling` to build and publish ([#104](https://github.com/Clinical-Genomics/genmod/issues/143))
+- Automation for Docker publish and mkdocs githubio ([#161](https://github.com/Clinical-Genomics/genmod/issues/161))
 ### Fixed
 - The optional fields Source and Version are allowed in the VCF header([#106](https://github.com/Clinical-Genomics/genmod/pull/106))
 - Released the constraint on Python 3.8 (collections, pkg_resources to importlib, tests) ([#142](https://github.com/Clinical-Genomics/genmod/pull/142))
@@ -16,7 +19,6 @@ Try to use the following format:
 - Updated documentation with warning about compounds only being scored within the first family in the VCF ([#151](https://github.com/Clinical-Genomics/genmod/pull/151))
 - Fixed sorting of variants ([#152](https://github.com/Clinical-Genomics/genmod/pull/152))
 - genmod annotate for mitochondrial variants when using the `chrM` notation ([#157](https://github.com/Clinical-Genomics/genmod/pull/157))
-- Use `uv` with `hatchling` to build and publish ([#104](https://github.com/Clinical-Genomics/genmod/issues/143))
 - Fix linting issues ([#154](https://github.com/Clinical-Genomics/genmod/issues/154))
 
 ## [3.9]
