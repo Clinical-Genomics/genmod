@@ -18,6 +18,7 @@ Try to use the following format:
 - genmod annotate for mitochondrial variants when using the `chrM` notation ([#157](https://github.com/Clinical-Genomics/genmod/pull/157))
 - Use `uv` with `hatchling` to build and publish ([#104](https://github.com/Clinical-Genomics/genmod/issues/143))
 - Fix linting issues ([#154](https://github.com/Clinical-Genomics/genmod/issues/154))
+- genmod models adds headers to VCF even if it contains no variants ([#160](https://github.com/Clinical-Genomics/genmod/pull/160)) 
 
 ## [3.9]
 - Fixed wrong models when chromosome X was named `chrX` and not `X` ([#135](https://github.com/Clinical-Genomics/genmod/pull/135))

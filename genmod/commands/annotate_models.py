@@ -182,28 +182,7 @@ def models(
         else:
             break
 
-    # Add the first variant to the iterator
-    if not line.startswith("#"):
-        variant_file = itertools.chain([line], variant_file)
-    else:
-        print_headers(head=head, outfile=outfile, silent=silent)
-        sys.exit(0)
-
-    if vep:
-        if "CSQ" not in head.info_dict:
-            logger.warning("vep flag is used but there is no CSQ field specified in header")
-            logger.info("Please check VCF file")
-            context.abort()
-        else:
-            logger.info("Using VEP annotation")
-    else:
-        if keyword not in head.info_dict:
-            logger.warning("Annotation key {0} could not be found in VCF header".format(keyword))
-            logger.info("Please check VCF file")
-            context.abort()
-        else:
-            logger.info("Using {0} annotation".format(keyword))
-
+    # Check before adding models info to header
     if "GeneticModels" in head.info_dict:
         logger.warning("Genetic models are already annotated according to vcf header.")
         context.abort()
@@ -253,6 +232,28 @@ def models(
         ),
     )
     logger.debug("Compounds added")
+
+    # Add the first variant to the iterator
+    if not line.startswith("#"):
+        variant_file = itertools.chain([line], variant_file)
+    else:
+        print_headers(head=head, outfile=outfile, silent=silent)
+        sys.exit(0)
+
+    if vep:
+        if "CSQ" not in head.info_dict:
+            logger.warning("vep flag is used but there is no CSQ field specified in header")
+            logger.info("Please check VCF file")
+            context.abort()
+        else:
+            logger.info("Using VEP annotation")
+    else:
+        if keyword not in head.info_dict:
+            logger.warning("Annotation key {0} could not be found in VCF header".format(keyword))
+            logger.info("Please check VCF file")
+            context.abort()
+        else:
+            logger.info("Using {0} annotation".format(keyword))
 
     vcf_individuals = head.individuals
     logger.debug("Individuals found in vcf file: {}".format(", ".join(vcf_individuals)))
