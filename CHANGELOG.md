@@ -8,7 +8,7 @@ Please add a new candidate release at the top after changing the latest one. Fee
 
 Try to use the following format:
 
-## [unreleased]
+## [3.10]
 ### Changed
 - Use `uv` with `hatchling` to build and publish ([#104](https://github.com/Clinical-Genomics/genmod/issues/143))
 - Automation for Docker publish and mkdocs githubio ([#161](https://github.com/Clinical-Genomics/genmod/issues/161))
