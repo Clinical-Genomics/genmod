@@ -7,8 +7,11 @@ RUN apk update & apk add build-base zlib-dev
 # Copy the project into the image
 ADD . /app
 
-# Sync the project into a new environment, using the frozen lockfile
+# Sync the project into a new virtual environment, using the frozen lockfile
 WORKDIR /app
 RUN uv sync --frozen
 
-ENTRYPOINT ["uv", "run", "genmod"]
+# Add the project venv to PATH to be able to run genmod without changing to the environment
+ENV PATH="/app/.venv/bin:$PATH"
+
+ENTRYPOINT ["genmod"]
