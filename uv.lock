@@ -423,7 +423,7 @@ sdist = { url = "https://files.pythonhosted.org/packages/ca/da/455a1ca48f5bfabf0
 
 [[package]]
 name = "genmod"
-version = "3.9"
+version = "3.10"
 source = { editable = "." }
 dependencies = [
     { name = "click" },
