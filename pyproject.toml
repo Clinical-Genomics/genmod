@@ -71,3 +71,8 @@ lint = [
     "isort>=5.11.5",
     "ruff>=0.8.0",
 ]
+docs = [
+	"mkdocs",
+	"mkdocs-material",
+	"markdown-include",
+]
