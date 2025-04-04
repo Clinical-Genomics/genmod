@@ -8,6 +8,10 @@ Please add a new candidate release at the top after changing the latest one. Fee
 
 Try to use the following format:
 
+## [unreleased]
+### Fixed
+- Documentation formatting for more modern mkdocs (pages to nav)
+
 ## [3.10]
 ### Changed
 - Use `uv` with `hatchling` to build and publish ([#104](https://github.com/Clinical-Genomics/genmod/issues/143))
