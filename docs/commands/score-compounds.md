@@ -3,7 +3,7 @@
 This module performs ranking of compound variants.
 
 > [!WARNING]
-> Ranking of compound variants is only done for the the first family in the VCF.
+> Ranking of compound variants is only done for the first family in the VCF.
 
 During the ranking of these compounds the rank score might be modified in place.
 See `genmod/score_variants/compound_scorer.py:L248`.

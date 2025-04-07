@@ -2,14 +2,13 @@
 
 <p align="center">
   <a href="https://github.com/Clinical-Genomics/genmod">
-    <img src="https://github.com/Clinical-Genomics/genmod/raw/master/artwork/tree_man.JPG"/>
+    <img src="https://github.com/Clinical-Genomics/genmod/blob/main/artwork/tree_man.JPG"/>
   </a>
 </p>
 
 Annotating and analyzing primarily genetic models in the [VCF](http://samtools.github.io/hts-specs/VCFv4.1.pdf) file format. 
 
 ## Overview ##
-
 
 The main function is to annotate **accurate patterns of inheritance** for each 
 variant in a vcf file including one or several families of arbitrary size. 

@@ -2,18 +2,20 @@
 site_name: genmod docs
 site_description: Project documentation with Markdown
 site_author: Måns Magnusson
-
+site_url: https://clinical-genomics.github.io/genmod
 repo_url: https://github.com/Clinical-Genomics/genmod
 
-pages:
-- Home: index.md
-- Genetic Models: genetic-models.md
+nav:
+- Home: 'index.md'
+- Genetic Models: 'genetic-models.md'
 - Commands:
-    - Annotating Variants: commands/annotate-variants.md
-    - Annotate Genetic Models: commands/annotate-models.md
-    - Filter Variants: commands/filter-variants.md
-    - Sort Variants: commands/sort-variants.md
-    - Build References: commands/build-annotation.md
+    - Annotating Variants: 'commands/annotate-variants.md'
+    - Annotate Genetic Models: 'commands/annotate-models.md'
+    - Filter Variants: 'commands/filter-variants.md'
+    - Sort Variants: 'commands/sort-variants.md'
+    - Build References: 'commands/build-annotation.md'
+    - Score compounds: 'commands/score-compounds.md'
+    - Score variants: 'commands/score-variants.md'
 
 dev_addr: "0.0.0.0:4000"
 theme: mkdocs
