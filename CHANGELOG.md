@@ -11,6 +11,7 @@ Try to use the following format:
 ## [unreleased]
 ### Fixed
 - Documentation formatting for more modern mkdocs (pages to nav)
+- Stable sort in bioconda (BusyBox sort) not recognizing long options
 
 ## [3.10]
 ### Changed
