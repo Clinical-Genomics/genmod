@@ -12,6 +12,7 @@ Try to use the following format:
 ### Fixed
 - Documentation formatting for more modern mkdocs (pages to nav)
 - Stable sort in bioconda (BusyBox sort) not recognizing long options
+- Unstable `Annotation=` order in `genmod annotate --regions`
 
 ## [3.10]
 ### Changed
