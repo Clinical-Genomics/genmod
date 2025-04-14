@@ -37,8 +37,9 @@ def annotate_variant(variant, annotation_arguments):
     regions = None
     if "region_trees" in annotation_arguments:
         regions = get_region(chrom, start, end, annotation_arguments["region_trees"])
+        sorted_regions = sorted(regions)
         if regions:
-            info.append("Annotation={0}".format(",".join(regions)))
+            info.append("Annotation={0}".format(",".join(sorted_regions)))
 
     if "exac" in annotation_arguments:
         reader = annotation_arguments["exac"]
