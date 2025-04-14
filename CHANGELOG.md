@@ -8,7 +8,7 @@ Please add a new candidate release at the top after changing the latest one. Fee
 
 Try to use the following format:
 
-## [3.11]
+## [unreleased]
 ### Fixed
 - Documentation formatting for more modern mkdocs (pages to nav)
 - Stable sort in bioconda (BusyBox sort) not recognizing long options
