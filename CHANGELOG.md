@@ -8,11 +8,11 @@ Please add a new candidate release at the top after changing the latest one. Fee
 
 Try to use the following format:
 
-## [unreleased]
+## [3.10.1]
 ### Fixed
-- Documentation formatting for more modern mkdocs (pages to nav)
-- Stable sort in bioconda (BusyBox sort) not recognizing long options
-- Unstable `Annotation=` order in `genmod annotate --regions`
+- Documentation formatting for more modern mkdocs (pages to nav) ([#168](https://github.com/Clinical-Genomics/genmod/pull/168))
+- Stable sort in bioconda (BusyBox sort) not recognizing long options ([#170](https://github.com/Clinical-Genomics/genmod/pull/170))
+- Unstable `Annotation=` order in `genmod annotate --regions` ([#173](https://github.com/Clinical-Genomics/genmod/pull/173))
 
 ## [3.10]
 ### Changed
