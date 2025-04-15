@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="description" content="Project documentation with Markdown">
+        <meta name="author" content="Måns Magnusson">
+        <link rel="canonical" href="https://clinical-genomics.github.io/genmod/">
+        <link rel="shortcut icon" href="img/favicon.ico">
+        <title>genmod docs</title>
+        <link href="css/bootstrap.min.css" rel="stylesheet">
+        <link href="css/fontawesome.min.css" rel="stylesheet">
+        <link href="css/brands.min.css" rel="stylesheet">
+        <link href="css/solid.min.css" rel="stylesheet">
+        <link href="css/v4-font-face.min.css" rel="stylesheet">
+        <link href="css/base.css" rel="stylesheet">
+        <link id="hljs-light" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" >
+        <link id="hljs-dark" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css" disabled>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+        <script>hljs.highlightAll();</script> 
+    </head>
+
+    <body class="homepage">
+        <div class="navbar fixed-top navbar-expand-lg navbar-dark bg-primary">
+            <div class="container">
+                <a class="navbar-brand" href=".">genmod docs</a>
+                <!-- Expander button -->
+                <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navbar-collapse" aria-controls="navbar-collapse" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <!-- Expanded navigation -->
+                <div id="navbar-collapse" class="navbar-collapse collapse">
+                        <!-- Main navigation -->
+                        <ul class="nav navbar-nav">
+                            <li class="nav-item">
+                                <a href="." class="nav-link active" aria-current="page">Home</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="genetic-models/" class="nav-link">Genetic Models</a>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Commands</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="commands/annotate-variants/" class="dropdown-item">Annotating Variants</a>
+</li>
+                                    
+<li>
+    <a href="commands/annotate-models/" class="dropdown-item">Annotate Genetic Models</a>
+</li>
+                                    
+<li>
+    <a href="commands/filter-variants/" class="dropdown-item">Filter Variants</a>
+</li>
+                                    
+<li>
+    <a href="commands/sort-variants/" class="dropdown-item">Sort Variants</a>
+</li>
+                                    
+<li>
+    <a href="commands/build-annotation/" class="dropdown-item">Build References</a>
+</li>
+                                    
+<li>
+    <a href="commands/score-compounds/" class="dropdown-item">Score compounds</a>
+</li>
+                                    
+<li>
+    <a href="commands/score-variants/" class="dropdown-item">Score variants</a>
+</li>
+                                </ul>
+                            </li>
+                        </ul>
+
+                    <ul class="nav navbar-nav ms-md-auto">
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" data-bs-toggle="modal" data-bs-target="#mkdocs_search_modal">
+                                <i class="fa fa-search"></i> Search
+                            </a>
+                        </li>
+                            <li class="nav-item">
+                                <a rel="prev" class="nav-link disabled">
+                                    <i class="fa fa-arrow-left"></i> Previous
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a rel="next" href="genetic-models/" class="nav-link">
+                                    Next <i class="fa fa-arrow-right"></i>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="https://github.com/Clinical-Genomics/genmod/edit/master/docs/index.md" class="nav-link"><i class="fa-brands fa-github"></i> Edit on GitHub</a>
+                            </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="row">
+                    <div class="col-md-3"><div class="navbar-expand-md bs-sidebar hidden-print affix" role="complementary">
+    <div class="navbar-header">
+        <button type="button" class="navbar-toggler collapsed" data-bs-toggle="collapse" data-bs-target="#toc-collapse" title="Table of Contents">
+            <span class="fa fa-angle-down"></span>
+        </button>
+    </div>
+
+    
+    <div id="toc-collapse" class="navbar-collapse collapse card bg-body-tertiary">
+        <ul class="nav flex-column">
+            
+            <li class="nav-item" data-bs-level="1"><a href="#genmod" class="nav-link">Genmod</a>
+              <ul class="nav flex-column">
+            <li class="nav-item" data-bs-level="2"><a href="#overview" class="nav-link">Overview</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#installation" class="nav-link">Installation</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+              </ul>
+            </li>
+        </ul>
+    </div>
+</div></div>
+                    <div class="col-md-9" role="main">
+
+<h1 id="genmod">Genmod</h1>
+<p align="center">
+  <a href="https://github.com/Clinical-Genomics/genmod">
+    <img src="https://github.com/Clinical-Genomics/genmod/blob/main/artwork/tree_man.JPG"/>
+  </a>
+</p>
+
+<p>Annotating and analyzing primarily genetic models in the <a href="http://samtools.github.io/hts-specs/VCFv4.1.pdf">VCF</a> file format. </p>
+<h2 id="overview">Overview</h2>
+<p>The main function is to annotate <strong>accurate patterns of inheritance</strong> for each 
+variant in a vcf file including one or several families of arbitrary size. </p>
+<p>By default variants will be annotated from the human refGene database but 
+alternative annotations can be built with <code>genmod build</code>. 
+<strong>genmod</strong> can also be used for annotating variants with their frequencies in 1000G, 
+ExAC or their predicted CADD scores, see <strong>genmod annotate</strong>.
+genmod uses multithreading to annotate variants and operates fast for both 
+whole exome data and whole genome data.</p>
+<h2 id="installation">Installation</h2>
+<p><strong>GENMOD</strong></p>
+<pre><code class="language-bash">    pip install genmod
+</code></pre>
+<p>or</p>
+<pre><code class="language-bash">    git clone https://github.com/Clinical-Genomics/genmod.git
+    cd genmod
+    python setup.py install
+</code></pre>
+<h3 id="example">Example:</h3>
+<p>The basic idea with genmod is to make fast and easy analysis of vcf variants 
+for rare disease.
+It can still be interesting to use in other cases, such as annotating what 
+genetic regions the variants in a bacteria belongs to.
+<strong>genmod</strong> can annotate accurate patterns of inheritance in arbitrary sized families.
+The genetic models checked are the basic mendelian ones, these are:</p>
+<ul>
+<li>Autsomal Recessive, denoted 'AR_hom'</li>
+<li>Autsomal Recessive denovo, denoted 'AR_hom_dn'</li>
+<li>Autsomal Dominant, 'AD'</li>
+<li>Autsomal Dominant denovo, 'AD_dn'</li>
+<li>Autosomal Compound Heterozygote, 'AR_comp'</li>
+<li>X-linked dominant, 'XD'</li>
+<li>X-linked dominant de novo, 'XD_dn'</li>
+<li>X-linked Recessive, 'XR'</li>
+<li>X-linked Recessive de novo, 'XR_dn'</li>
+</ul>
+<p>The following command should work when installed successfully. The files are distributed with the package.</p>
+<pre><code class="language-bash">$ cat examples/test_vcf.vcf
+##fileformat=VCFv4.1
+##INFO=&lt;ID=MQ,Number=1,Type=Float,Description=&quot;RMS Mapping Quality&quot;&gt;
+##contig=&lt;ID=1,length=249250621,assembly=b37&gt;
+##reference=file:///humgen/gsa-hpprojects/GATK/bundle/current/b37/human_g1k_v37.fasta
+#CHROM  POS ID  REF ALT QUAL    FILTER  INFO    FORMAT  father  mother  proband father_2    mother_2    proband_2
+1   879537  .   T   C   100 PASS    MQ=1    GT:AD:GQ    0/1:10,10:60    0/1:10,10:60    1/1:10,10:60    0/0:10,10:60    0/1:10,10:60    1/1:10,10:60
+1   879541  .   G   A   100 PASS    MQ=1    GT:AD:GQ    ./. 0/1:10,10:60    1/1:10,10:60    ./. 0/1:10,10:60    0/1:10,10:60
+1   879595  .   C   T   100 PASS    MQ=1    GT:AD:GQ    0/1:10,10:60    0/0:10,10:60    1/1:10,10:60    0/1:10,10:60    0/0:10,10:60    0/1:10,10:60
+1   879676  .   G   A   100 PASS    MQ=1    GT:AD:GQ    0/1:10,10:60    1/1:10,10:60    1/1:10,10:60    0/1:10,10:60    0/1:10,10:60    0/1:10,10:60
+1   879911  .   G   A   100 PASS    MQ=1    GT:AD:GQ    0/1:10,10:60    0/0:10,10:60    0/1:10,10:60    0/1:10,10:60    0/0:10,10:60    0/1:10,10:60
+1   880012  .   A   G   100 PASS    MQ=1    GT:AD:GQ    0/0:10,10:60    0/1:10,10:60    0/1:10,10:60    0/0:10,10:60    0/1:10,10:60    0/1:10,10:60
+1   880086  .   T   C   100 PASS    MQ=1    GT:AD:GQ    0/0:10,10:60    0/0:10,10:60    0/1:10,10:60    0/0:10,10:60    0/0:10,10:60    0/1:10,10:60
+1   880199  .   G   A   100 PASS    MQ=1    GT:AD:GQ    0/0:10,10:60    0/0:10,10:60    0/1:10,10:60    0/0:10,10:60    0/0:10,10:60    0/1:10,10:60
+1   880217  .   T   G   100 PASS    MQ=1    GT:AD:GQ    0/0:10,10:60    0/0:10,10:60    0/1:10,10:60    0/0:10,10:60    0/0:10,10:60    0/1:10,10:60
+10  76154051    .   A   G   100 PASS    MQ=1    GT:AD:GQ    0/0:10,10:60    0/1:10,10:60    0/1:10,10:60    0/0:10,10:60    0/1:10,10:60    0/1:10,10:60
+10  76154073    .   T   G   100 PASS    MQ=1    GT:AD:GQ    0/0:10,10:60    0/0:10,10:60    0/1:10,10:60    0/0:10,10:60    0/0:10,10:60    0/1:10,10:60
+10  76154074    .   C   G   100 PASS    MQ=1    GT:AD:GQ    ./. 0/1:10,10:60    0/1:10,10:60    0/1:10,10:60    0/1:10,10:60    0/1:10,10:60
+10  76154076    .   G   C   100 PASS    MQ=1    GT:AD:GQ    ./. 0/0:10,10:60    0/1:10,10:60    ./. 0/0:10,10:60    0/1:10,10:60
+X   302253  .   CCCTCCTGCCCCT   C   100 PASS    MQ=1    GT:AD:GQ    0/0:10,10:60    0/1:10,10:60    1/1:10,10:60    0/0:10,10:60    1/1:10,10:60    1/1:10,10:60
+MT  302253  .   CCCTCCTGCCCCT   C   100 PASS    MQ=1    GT:AD:GQ    0/0:10,10:60    0/1:10,10:60    1/1:10,10:60    0/0:10,10:60    1/1:10,10:60    1/1:10,10:60
+
+$ cat examples/test_vcf.vcf |\
+&gt;genmod annotate - --annotate_regions |\ 
+&gt;genmod models - --family_file examples/recessive_trio.ped &gt; test_vcf_models_annotated.vcf
+
+$ cat test_vcf_models_annotated.vcf
+##fileformat=VCFv4.1
+##INFO=&lt;ID=MQ,Number=1,Type=Float,Description=&quot;RMS Mapping Quality&quot;&gt;
+##INFO=&lt;ID=Annotation,Number=.,Type=String,Description=&quot;Annotates what feature(s) this variant belongs to.&quot;&gt;
+##INFO=&lt;ID=Exonic,Number=0,Type=Flag,Description=&quot;Indicates if the variant is exonic.&quot;&gt;
+##INFO=&lt;ID=GeneticModels,Number=.,Type=String,Description=&quot;':'-separated list of genetic models for this variant.&quot;&gt;
+##INFO=&lt;ID=ModelScore,Number=.,Type=String,Description=&quot;PHRED score for genotype models.&quot;&gt;
+##INFO=&lt;ID=Compounds,Number=.,Type=String,Description=&quot;List of compound pairs for this variant.The list is splitted on ',' family id is separated with compoundswith ':'. Compounds are separated with '|'.&quot;&gt;
+##contig=&lt;ID=1,length=249250621,assembly=b37&gt;
+##reference=file:///humgen/gsa-hpprojects/GATK/bundle/current/b37/human_g1k_v37.fasta
+##Software=&lt;ID=genmod,Version=3.0.1,Date=&quot;2015-09-22 08:40&quot;,CommandLineOptions=&quot;processes=4 keyword=Annotation family_type=ped family_file=&lt;open file 'examples/recessive_trio.ped', mode 'r' at 0x102d3a780&gt; variant_file=&lt;_io.TextIOWrapper name='&lt;stdin&gt;' encoding='utf-8'&gt; logger=&lt;logging.Logger object at 0x102d64250&gt;&quot;&gt;
+#CHROM  POS ID  REF ALT QUAL    FILTER  INFO    FORMAT  father  mother  proband father_2    mother_2    proband_2
+1   879537  .   T   C   100 PASS    MQ=1;Exonic;Annotation=SAMD11;GeneticModels=1:AR_hom;ModelScore=1:55.0  GT:AD:GQ    0/1:10,10:60    0/1:10,10:60    1/1:10,10:60    0/0:10,10:60    0/1:10,10:60    1/1:10,10:60
+1   879541  .   G   A   100 PASS    MQ=1;Exonic;Annotation=SAMD11;GeneticModels=1:AR_hom_dn|AR_hom;ModelScore=1:57.0    GT:AD:GQ    ./. 0/1:10,10:60    1/1:10,10:60    ./. 0/1:10,10:60    0/1:10,10:60
+1   879595  .   C   T   100 PASS    MQ=1;Exonic;Annotation=NOC2L,SAMD11;GeneticModels=1:AR_hom_dn;ModelScore=1:55.0 GT:AD:GQ    0/1:10,10:60    0/0:10,10:60    1/1:10,10:60    0/1:10,10:60    0/0:10,10:60    0/1:10,10:60
+1   879676  .   G   A   100 PASS    MQ=1;Exonic;Annotation=NOC2L,SAMD11 GT:AD:GQ    0/1:10,10:60    1/1:10,10:60    1/1:10,10:60    0/1:10,10:60    0/1:10,10:60    0/1:10,10:60
+1   879911  .   G   A   100 PASS    MQ=1;Exonic;Annotation=NOC2L,SAMD11;Compounds=1:1_880086_T_C|1_880012_A_G;GeneticModels=1:AR_comp|AR_comp_dn;ModelScore=1:55.0  GT:AD:GQ    0/1:10,10:60    0/0:10,10:60    0/1:10,10:60    0/1:10,10:60    0/0:10,10:60    0/1:10,10:60
+1   880012  .   A   G   100 PASS    MQ=1;Exonic;Annotation=NOC2L;Compounds=1:1_879911_G_A|1_880086_T_C;GeneticModels=1:AR_comp|AR_comp_dn;ModelScore=1:55.0 GT:AD:GQ    0/0:10,10:60    0/1:10,10:60    0/1:10,10:60    0/0:10,10:60    0/1:10,10:60    0/1:10,10:60
+1   880086  .   T   C   100 PASS    MQ=1;Exonic;Annotation=NOC2L;Compounds=1:1_879911_G_A|1_880012_A_G;GeneticModels=1:AD_dn|AR_comp_dn;ModelScore=1:55.0   GT:AD:GQ    0/0:10,10:60    0/0:10,10:60    0/1:10,10:60    0/0:10,10:60    0/0:10,10:60    0/1:10,10:60
+1   880199  .   G   A   100 PASS    MQ=1;Annotation=NOC2L;GeneticModels=1:AD_dn;ModelScore=1:55.0   GT:AD:GQ    0/0:10,10:60    0/0:10,10:60    0/1:10,10:60    0/0:10,10:60    0/0:10,10:60    0/1:10,10:60
+1   880217  .   T   G   100 PASS    MQ=1;Annotation=NOC2L;GeneticModels=1:AD_dn;ModelScore=1:55.0   GT:AD:GQ    0/0:10,10:60    0/0:10,10:60    0/1:10,10:60    0/0:10,10:60    0/0:10,10:60    0/1:10,10:60
+10  76154051    .   A   G   100 PASS    MQ=1;Exonic;Annotation=ADK;Compounds=1:10_76154073_T_G;GeneticModels=1:AR_comp_dn;ModelScore=1:55.0 GT:AD:GQ    0/0:10,10:60    0/1:10,10:60    0/1:10,10:60    0/0:10,10:60    0/1:10,10:60    0/1:10,10:60
+10  76154073    .   T   G   100 PASS    MQ=1;Exonic;Annotation=ADK;Compounds=1:10_76154051_A_G;GeneticModels=1:AD_dn|AR_comp_dn;ModelScore=1:55.0   GT:AD:GQ    0/0:10,10:60    0/0:10,10:60    0/1:10,10:60    0/0:10,10:60    0/0:10,10:60    0/1:10,10:60
+10  76154074    .   C   G   100 PASS    MQ=1;Annotation=ADK GT:AD:GQ    ./. 0/1:10,10:60    0/1:10,10:60    0/1:10,10:60    0/1:10,10:60    0/1:10,10:60
+10  76154076    .   G   C   100 PASS    MQ=1;Annotation=ADK;GeneticModels=1:AD_dn|AD;ModelScore=1:57.0  GT:AD:GQ    ./. 0/0:10,10:60    0/1:10,10:60    ./. 0/0:10,10:60    0/1:10,10:60
+X   302253  .   CCCTCCTGCCCCT   C   100 PASS    MQ=1;Annotation=PPP2R3B;GeneticModels=1:XD|XR;ModelScore=1:55.0 GT:AD:GQ    0/0:10,10:60    0/1:10,10:60    1/1:10,10:60    0/0:10,10:60    1/1:10,10:60    1/1:10,10:60
+MT  302253  .   CCCTCCTGCCCCT   C   100 PASS    MQ=1;GeneticModels=1:AR_hom_dn;ModelScore=1:55.0    GT:AD:GQ    0/0:10,10:60    0/1:10,10:60    1/1:10,10:60    0/0:10,10:60    1/1:10,10:60    1/1:10,10:60
+</code></pre>
+<p><strong>genmod</strong> is made for working on any type of annotated vcf.
+To get relevant Autosomal Compound Heterozygotes we need to know what genetic regions that the variants belong to.
+We can use annotations from the <a href="http://www.ensembl.org/info/docs/tools/vep/index.html">Variant Effect Predictor</a> 
+or let <strong>genmod</strong> do the annotation.</p>
+<p><strong>genmod</strong> comes with a prebuilt annotation data base that is made from the latest refSeq dataset. 
+We can also build new annotation sets with <strong>genmod build</strong>, please see wiki for mor info.</p>
+<p>(There are files for testing the following commands in genmod/examples)</p>
+<p>To annotate the variants with regions use</p>
+<pre><code class="language-bash">$genmod annotate &lt;vcf_file&gt; -r/--annotate_regions (-a/--annotation_dir)
+
+</code></pre>
+<p>Now the variants are ready to get their models annotated:</p>
+<pre><code class="language-bash">$genmod models &lt;vcf_file&gt; -f/--family_file &lt;family.ped&gt;
+
+</code></pre></div>
+            </div>
+        </div>
+
+        <footer class="col-md-12">
+            <hr>
+            <p>Documentation built with <a href="https://www.mkdocs.org/">MkDocs</a>.</p>
+        </footer>
+        <script src="js/bootstrap.bundle.min.js"></script>
+        <script>
+            var base_url = ".",
+                shortcuts = {"help": 191, "next": 78, "previous": 80, "search": 83};
+        </script>
+        <script src="js/base.js"></script>
+        <script src="search/main.js"></script>
+
+        <div class="modal" id="mkdocs_search_modal" tabindex="-1" role="dialog" aria-labelledby="searchModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="searchModalLabel">Search</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>From here you can search these documents. Enter your search terms below.</p>
+                <form>
+                    <div class="form-group">
+                        <input type="search" class="form-control" placeholder="Search..." id="mkdocs-search-query" title="Type search term here">
+                    </div>
+                </form>
+                <div id="mkdocs-search-results" data-no-results-text="No results found"></div>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div><div class="modal" id="mkdocs_keyboard_modal" tabindex="-1" role="dialog" aria-labelledby="keyboardModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="keyboardModalLabel">Keyboard Shortcuts</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th style="width: 20%;">Keys</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="help shortcut"><kbd>?</kbd></td>
+                    <td>Open this help</td>
+                  </tr>
+                  <tr>
+                    <td class="next shortcut"><kbd>n</kbd></td>
+                    <td>Next page</td>
+                  </tr>
+                  <tr>
+                    <td class="prev shortcut"><kbd>p</kbd></td>
+                    <td>Previous page</td>
+                  </tr>
+                  <tr>
+                    <td class="search shortcut"><kbd>s</kbd></td>
+                    <td>Search</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div>
+
+    </body>
+</html>
+
+<!--
+MkDocs version : 1.6.1
+Build Date UTC : 2025-04-15 09:40:35.010209+00:00
+-->
