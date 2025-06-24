@@ -34,6 +34,7 @@ class ModeLookup(Enum):
     # User provided score value
     UNBOUNDED_USER_DEFINED = 5
 
+
 class ScoreFunction(object):
     """Class for holding score functions"""
 
@@ -225,7 +226,6 @@ class ScoreFunction(object):
             return ModeLookup.TREE
         if flag_value:
             return ModeLookup.FLAG
-
 
     @property
     def score_range(self) -> List[float]:
