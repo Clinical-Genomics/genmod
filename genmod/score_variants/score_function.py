@@ -29,9 +29,10 @@ class ModeLookup(Enum):
     STRING = 2
     # Score lookup in tree
     TREE = 3
+    # Score lookup is by determining if there is a value (flag set) or not
+    FLAG = 4
     # User provided score value
-    UNBOUNDED_USER_DEFINED = 4
-
+    UNBOUNDED_USER_DEFINED = 5
 
 class ScoreFunction(object):
     """Class for holding score functions"""
@@ -208,6 +209,7 @@ class ScoreFunction(object):
         if self._equal:
             return ModeLookup.UNBOUNDED_USER_DEFINED
 
+        flag_value: bool = bool(self._reported_score)
         mode_value: bool = bool(self._value_dict)
         mode_str: bool = bool(self._string_dict)
         mode_tree: bool = bool(self._interval_tree)
@@ -221,6 +223,9 @@ class ScoreFunction(object):
             return ModeLookup.STRING
         if mode_tree:
             return ModeLookup.TREE
+        if flag_value:
+            return ModeLookup.FLAG
+
 
     @property
     def score_range(self) -> List[float]:
@@ -247,18 +252,20 @@ class ScoreFunction(object):
             scores: list = []
             for interval in self._interval_tree.all_intervals:
                 scores.append(interval.data)  # tree.interval -> score
+        elif self._scoring_mode == ModeLookup.FLAG:
+            scores: list = []
+            scores.append(float(self._reported_score))
         else:
             raise NotImplementedError("Unknown scoring mode", self._scoring_mode)
 
-        # Append set_reported and set_not_reported scores (as they're part of score value set)
         scores.append(float(self._not_reported_score))
-        scores.append(float(self._reported_score))
 
         if not isinstance(scores, list) and len(scores) > 0:
             raise KeyError("Found no score values", scores)
         for score_value in scores:
             if not isinstance(score_value, float):
                 raise TypeError("Invalid score type", score_value)
+
         return scores
 
     @property
