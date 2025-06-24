@@ -210,11 +210,11 @@ class ScoreFunction(object):
         if self._equal:
             return ModeLookup.UNBOUNDED_USER_DEFINED
 
-        flag_value: bool = bool(self._reported_score)
         mode_value: bool = bool(self._value_dict)
         mode_str: bool = bool(self._string_dict)
         mode_tree: bool = bool(self._interval_tree)
-        if sum([mode_value, mode_str, mode_tree]) > 1:
+        mode_flag: bool = bool(self._reported_score)
+        if sum([mode_value, mode_str, mode_tree, mode_flag]) > 1:
             raise ValueError(
                 "Unable to accurately determine what mapping to use for determining score range"
             )
@@ -224,7 +224,7 @@ class ScoreFunction(object):
             return ModeLookup.STRING
         if mode_tree:
             return ModeLookup.TREE
-        if flag_value:
+        if mode_flag:
             return ModeLookup.FLAG
 
     @property
