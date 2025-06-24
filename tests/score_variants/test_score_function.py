@@ -135,6 +135,7 @@ def test_score_mode_string_lookup():
     assert score_function.score_min == -100
     assert score_function.score_max == 2
 
+
 def test_score_mode_flag_lookup():
     """Test ScoreFunctions min max bounds property."""
     # GIVEN a score function with a flag reported/not_reported score
