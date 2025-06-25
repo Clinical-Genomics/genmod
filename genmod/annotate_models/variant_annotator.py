@@ -130,7 +130,7 @@ class VariantAnnotator(Process):
 
                     variant["compound_candidate"] = False
 
-                    if variant["annotation"]:
+                    if variant.get("annotation"):
                         variant["compound_candidate"] = True
                         self.logger.debug("Set compound_candidate to True")
 
