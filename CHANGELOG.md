@@ -8,6 +8,10 @@ Please add a new candidate release at the top after changing the latest one. Fee
 
 Try to use the following format:
 
+## [unreleased]
+### Fixed 
+- Add scoring normalisation for flag lookup mode ([#177](https://github.com/Clinical-Genomics/genmod/pull/177))
+
 ## [3.10.1]
 ### Fixed
 - Documentation formatting for more modern mkdocs (pages to nav) ([#168](https://github.com/Clinical-Genomics/genmod/pull/168))

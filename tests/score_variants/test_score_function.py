@@ -134,3 +134,24 @@ def test_score_mode_string_lookup():
     # THEN expect the proper min max values
     assert score_function.score_min == -100
     assert score_function.score_max == 2
+
+
+def test_score_mode_flag_lookup():
+    """Test ScoreFunctions min max bounds property."""
+    # GIVEN a score function with a flag reported/not_reported score
+    score_function = ScoreFunction(match_type="flag")
+    not_reported_score = -100
+    reported_score = 10
+    score_function.set_not_reported(not_reported_score)
+    score_function.set_reported(reported_score)
+
+    # WHEN accessing min max plugin score
+    # THEN expect the proper min max values
+    assert score_function.score_min == not_reported_score
+    assert score_function.score_max == reported_score
+
+    # WHEN asking for a missing value, THEN not reported is flagged and scored
+    assert score_function.get_score(None) == not_reported_score
+
+    # WHEN asking for a set value, THEN reported is flagged and scored
+    assert score_function.get_score("c'est une pipe") == reported_score
