@@ -11,6 +11,7 @@ Try to use the following format:
 ## [unreleased]
 ### Fixed 
 - Add scoring normalisation for flag lookup mode ([#177](https://github.com/Clinical-Genomics/genmod/pull/177))
+- Fix crash on test for missing annotation key for phased mode ([#178](https://github.com/Clinical-Genomics/genmod/pull/178))
 
 ## [3.10.1]
 ### Fixed
