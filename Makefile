@@ -20,5 +20,8 @@ test_dist: docker-build
 		pip3 install dist/genmod*.tar.gz && \
 		uv run genmod -v annotate --annotate-regions --genome-build 37 examples/test_vcf.vcf"
 
+test_mivmir: docker-build
+	$(DOCKER) run -i -l genmod-test genmod/test -v -s -o log_cli=true -k test_rescore_with_annotation_suffix 2>&1
+
 docker-clean-images:
 	docker system prune
