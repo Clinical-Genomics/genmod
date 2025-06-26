@@ -12,6 +12,7 @@ Try to use the following format:
 ### Fixed 
 - Add scoring normalisation for flag lookup mode ([#177](https://github.com/Clinical-Genomics/genmod/pull/177))
 - Fix crash on test for missing annotation key for phased mode ([#178](https://github.com/Clinical-Genomics/genmod/pull/178))
+- Correct test VCF file that contained prematurely added Compounds annotation ([#179](https://github.com/Clinical-Genomics/genmod/pull/179))
 
 ## [3.10.1]
 ### Fixed
