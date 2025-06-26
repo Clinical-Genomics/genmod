@@ -1,3 +1,13 @@
+from click.testing import CliRunner
+from genmod import logger
+from genmod.commands import score_command
+from genmod.log import init_log
+
+SCORED_VCF = "tests/fixtures/test_vcf_annotated_scored.vcf"
+SCORE_CONFIG = "tests/fixtures/score_variants/genmod_example.ini"
+
+init_log(logger, loglevel="INFO")
+
 def test_rescore_with_annotation_suffix():
     """
     Test for asserting secondary Genmod annotation is present in VCF.
