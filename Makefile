@@ -21,7 +21,7 @@ test_dist: docker-build
 		uv run genmod -v annotate --annotate-regions --genome-build 37 examples/test_vcf.vcf"
 
 test_mivmir: docker-build
-	$(DOCKER) run -i -l genmod-test genmod/test -v -s -o log_cli=true -k test_mivmir_additional_annotations
+	$(DOCKER) run -i -l genmod-test genmod/test -v -s -o log_cli=true -k test_rescore_with_annotation_suffix
 
 docker-clean-images:
 	docker system prune
