@@ -51,9 +51,14 @@ util.abstract_sockets_supported = False
     default=9,
 )
 @click.option("--penalty", type=int, help="Penalty applied together with --threshold", default=6)
+@click.option(
+    "-s", "--annotation_suffix",
+    default=None,
+    help="Target score with SUFFIX and append suffix to compound INFO fields (to not overwrite existing compound score entries)."
+)
 @click.pass_context
 def compound(
-    context, variant_file, silent, outfile, vep, threshold: int, penalty: int, processes, temp_dir
+    context, variant_file, silent, outfile, vep, threshold: int, penalty: int, annotation_suffix: str, processes, temp_dir
 ):
     """
     Score compound variants in a vcf file based on their rank score.
@@ -77,6 +82,13 @@ def compound(
         else:
             break
 
+    # Setup INFO field name suffix
+    if annotation_suffix is None:
+        annotation_suffix: str = ''  # i.e. add no suffix to INFO field name
+    else:
+        annotation_suffix: str = f'{annotation_suffix}'
+        logger.debug(f"Adding scoring suffix: {annotation_suffix}")
+
     logger.info("Headers parsed")
 
     if not line.startswith("#"):
@@ -90,7 +102,7 @@ def compound(
     add_metadata(
         head,
         "info",
-        "CompoundsNormalized",
+        "CompoundsNormalized" + annotation_suffix,
         annotation_number=".",
         entry_type="String",
         description="Rank score as provided by compound analysis, based on RankScoreNormalized. family_id:rank_score",
@@ -121,6 +133,7 @@ def compound(
             individuals=individuals,
             threshold=threshold,
             penalty=penalty,
+            annotation_suffix=annotation_suffix
         )
         for i in range(num_scorers)
     ]

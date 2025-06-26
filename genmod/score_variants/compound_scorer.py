@@ -30,78 +30,13 @@ from genmod.vcf_tools import add_vcf_info, replace_vcf_info
 logger = log_to_stderr(level=logging.INFO)
 
 
-def get_rank_score(
-    rank_score_type: str,
-    threshold: Union[int, float],
-    min_rank_score_value: float,
-    max_rank_score_value: float,
-) -> Union[int, float]:
-    """
-    Return raw rank score or normalized rank score.
-
-    Args:
-        rank_score_type: Type according to RANK_SCORE_TYPE_NAMES
-        threshold: A rank score like value
-        min_rank_score_value: input to as_normalized_max_min
-        max_rank_score_value: input to as_normalized_max_min
-    Returns:
-        A rank score like value, possibly normalized
-    """
-    if rank_score_type == "RankScore":
-        return threshold
-    elif rank_score_type == "RankScoreNormalized":
-        # Normalize raw rank score
-        return as_normalized_max_min(
-            score=float(threshold),
-            min_score_value=min_rank_score_value,
-            max_score_value=max_rank_score_value,
-        )
-    raise ValueError("Unknown RANK_SCORE_TYPE_NAMES config", rank_score_type)
-
-
-def get_rank_score_as_magnitude(
-    rank_score_type: str,
-    rank_score: Union[int, float],
-    min_rank_score_value: float,
-    max_rank_score_value: float,
-) -> float:
-    """
-    Returns rank score as a magnitude (delta), to make the rank score
-    suitable for addition/subtraction operations.
-
-    In case of raw rank score, return the input value as the magnitude.
-
-    In case of normalized rank score, return the input value as the
-    percentage of the rank score dynamic range.
-
-    Args:
-        rank_score_type: Type according to RANK_SCORE_TYPE_NAMES
-        rank_score: A rank score like value, to be used in an addition/subtraction operation
-        min_rank_score_value: input to as_normalized_max_min
-        max_rank_score_value: input to as_normalized_max_min
-    Returns:
-        A value, magnitude, compatible with raw or normalized rank score values
-
-    """
-    if rank_score_type == "RankScore":
-        return rank_score
-    elif rank_score_type == "RankScoreNormalized":
-        normalized_rank_score: float = rank_score / (max_rank_score_value - min_rank_score_value)
-        if not (MIN_SCORE_NORMALIZED <= normalized_rank_score <= MAX_SCORE_NORMALIZED):
-            raise ValueError(
-                f"Failed to normalize to within expected bounds {normalized_rank_score}"
-            )
-        return normalized_rank_score
-    raise ValueError(f"Unknown rank score type {rank_score_type}")
-
-
 class CompoundScorer(Process):
     """
     Annotates variant in batches from the task queue and puts the result in
     the results queue.
     """
 
-    def __init__(self, task_queue, results_queue, individuals, threshold: int, penalty: int):
+    def __init__(self, task_queue, results_queue, individuals, threshold: int, penalty: int, annotation_suffix: str):
         """
         Initialize the VariantAnnotator
 
@@ -113,6 +48,10 @@ class CompoundScorer(Process):
             task_queue (Queue)
             results_queue (Queue)
             individuals (list)
+            annotation_suffix: Suffix to target and append to INFO annotations.
+                If this is used, the Compound Scorer will also target a RankScore[SUFFIX] score
+                in contrast to the per-default RankScore annotation. I.e. this step has a
+                pre-requisite on generating variant scores with SUFFIX in a previous step.
         """
         Process.__init__(self)
 
@@ -137,8 +76,81 @@ class CompoundScorer(Process):
         else:
             self.models = ["AR_comp", "AR_comp_dn"]
 
-    @staticmethod
-    def _get_rankscore_normalization_bounds(variant_batch: Dict[str, Dict]) -> Dict[str, Tuple]:
+        self._annotation_suffix = annotation_suffix
+        # Create RankScore names to load during compound score computation and rank score adjustment
+        # Treat the suffix name no different than any other entry in RANK_SCORE_TYPE_NAMES
+        self._rank_score_type_names = [f"{name}{self._annotation_suffix}" for name in RANK_SCORE_TYPE_NAMES]
+        logger.debug(f'Rank score type names: {self._rank_score_type_names}')
+
+
+    def get_rank_score(
+            self,
+            rank_score_type: str,
+            threshold: Union[int, float],
+            min_rank_score_value: float,
+            max_rank_score_value: float,
+    ) -> Union[int, float]:
+        """
+        Return raw rank score or normalized rank score.
+
+        Args:
+            rank_score_type: Type according to RANK_SCORE_TYPE_NAMES
+            threshold: A rank score like value
+            min_rank_score_value: input to as_normalized_max_min
+            max_rank_score_value: input to as_normalized_max_min
+        Returns:
+            A rank score like value, possibly normalized
+        """
+        if rank_score_type == f"RankScore{self._annotation_suffix}":
+            return threshold
+        elif rank_score_type == f"RankScoreNormalized{self._annotation_suffix}":
+            # Normalize raw rank score
+            return as_normalized_max_min(
+                score=float(threshold),
+                min_score_value=min_rank_score_value,
+                max_score_value=max_rank_score_value,
+            )
+        raise ValueError(f"Unknown RANK_SCORE_TYPE_NAMES config {rank_score_type}" + \
+                         f"expected any in {self._rank_score_type_names}")
+
+
+    def get_rank_score_as_magnitude(
+            self,
+            rank_score_type: str,
+            rank_score: Union[int, float],
+            min_rank_score_value: float,
+            max_rank_score_value: float,
+    ) -> float:
+        """
+        Returns rank score as a magnitude (delta), to make the rank score
+        suitable for addition/subtraction operations.
+
+        In case of raw rank score, return the input value as the magnitude.
+
+        In case of normalized rank score, return the input value as the
+        percentage of the rank score dynamic range.
+
+        Args:
+            rank_score_type: Type according to RANK_SCORE_TYPE_NAMES
+            rank_score: A rank score like value, to be used in an addition/subtraction operation
+            min_rank_score_value: input to as_normalized_max_min
+            max_rank_score_value: input to as_normalized_max_min
+        Returns:
+            A value, magnitude, compatible with raw or normalized rank score values
+
+        """
+        if rank_score_type == f"RankScore{self._annotation_suffix}":
+            return rank_score
+        elif rank_score_type == f"RankScoreNormalized{self._annotation_suffix}":
+            normalized_rank_score: float = rank_score / (max_rank_score_value - min_rank_score_value)
+            if not (MIN_SCORE_NORMALIZED <= normalized_rank_score <= MAX_SCORE_NORMALIZED):
+                raise ValueError(
+                    f"Failed to normalize to within expected bounds {normalized_rank_score}"
+                )
+            return normalized_rank_score
+        raise ValueError(f"Unknown rank score type {rank_score_type}")
+
+    def _get_rankscore_normalization_bounds(self, variant_batch: Dict[str, Dict]) -> Dict[str, Tuple]:
         """
         For all variants in a variant batch, find the rank score normalization
         min-max bounds.
@@ -149,7 +161,7 @@ class CompoundScorer(Process):
         variant_rankscore_normalization_bounds: dict = {}
         for variant_id in variant_batch:
             entry_minmax: List[str] = variant_batch[variant_id]["info_dict"][
-                "RankScoreMinMax"
+                f"RankScoreMinMax{self._annotation_suffix}"
             ].split(":")
             rankscore_normalization_min_max: tuple = (
                 float(entry_minmax[1]),
@@ -189,7 +201,7 @@ class CompoundScorer(Process):
             # This is a dictionary on the form {'variant_id: rank_score}
             rank_scores = {}
             # We are now going to score the compounds
-            for rank_score_type in RANK_SCORE_TYPE_NAMES:
+            for rank_score_type in self._rank_score_type_names:
                 # Prepare rank_scores dict to contain raw RankScore and RankScoreNormalized compound scores
                 rank_scores.update({rank_score_type: dict()})
 
@@ -220,7 +232,7 @@ class CompoundScorer(Process):
                 # we want to pennalise the score if the compounds have low scores
                 variant = variant_batch[variant_id]
                 raw_compounds = variant["info_dict"].get("Compounds", None)
-                for rank_score_type in RANK_SCORE_TYPE_NAMES:
+                for rank_score_type in self._rank_score_type_names:
                     if raw_compounds:
                         logger.debug("Scoring compound for variant %s" % variant_id)
                         # Variable to see if we should correct the rank score
@@ -257,7 +269,7 @@ class CompoundScorer(Process):
                         # Loop through compounds to check if they are only low scored
                         for compound_id in compound_list:
                             compound_rank_score = rank_scores[rank_score_type][compound_id]
-                            if compound_rank_score > get_rank_score(
+                            if compound_rank_score > self.get_rank_score(
                                 rank_score_type=rank_score_type,
                                 threshold=self.threshold,
                                 min_rank_score_value=variant_rankscore_normalization_bounds[
@@ -272,7 +284,7 @@ class CompoundScorer(Process):
 
                         if correct_score and only_low:
                             logger.debug("correcting rank score for {0}".format(variant_id))
-                            current_rank_score -= get_rank_score_as_magnitude(
+                            current_rank_score -= self.get_rank_score_as_magnitude(
                                 rank_score_type=rank_score_type,
                                 rank_score=self.penalty,
                                 min_rank_score_value=variant_rankscore_normalization_bounds[
@@ -285,7 +297,8 @@ class CompoundScorer(Process):
                             # In case the current_rank_score falls outside normalization bounds after modification,
                             # cap it to within the MIN normalization bound.
                             current_rank_score = cap_rank_score_to_min_bound(
-                                rank_score_type=rank_score_type,
+                                # Strip suffix in rank_score_type to adhere to default naming convention
+                                rank_score_type=rank_score_type.replace(self._annotation_suffix, ''),
                                 rank_score=current_rank_score,
                                 min_rank_score_value=variant_rankscore_normalization_bounds[
                                     variant_id
@@ -317,7 +330,7 @@ class CompoundScorer(Process):
 
                         # variant['info_dict']['IndividualRankScore'] = current_rank_score_string
                         variant["info_dict"][f"{rank_score_type}"] = new_rank_score_string
-                        variant["info_dict"][f"Compounds{rank_score_type.strip('RankScore')}"] = (
+                        variant["info_dict"][f"Compounds{rank_score_type.replace('RankScore', '')}"] = (
                             new_compound_string
                         )
 
@@ -329,7 +342,7 @@ class CompoundScorer(Process):
 
                         # CompoundsNormalized is not previously added to VCF.
                         # For this case, perform an VCF INFO ADD operation, rather than a REPLACE
-                        keyword_compounds = f"Compounds{rank_score_type.strip('RankScore')}"
+                        keyword_compounds = f"Compounds{rank_score_type.replace('RankScore', '')}"
                         fn_add_replace_vcf_info = replace_vcf_info
                         if not (
                             keyword_compounds in variant["INFO"]
