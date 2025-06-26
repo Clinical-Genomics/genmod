@@ -66,6 +66,11 @@ logger = logging.getLogger(__name__)
 @click.option(
     "-c", "--score_config", type=click.Path(exists=True), help="The plug-in config file(.ini)"
 )
+@click.option(
+    "--skip_is_previously_scored_check",
+    is_flag=True,
+    help="Allow rescoring of previously scored VCF"
+)
 @click.pass_context
 def score(
     context,
@@ -77,6 +82,7 @@ def score(
     silent,
     skip_plugin_check,
     rank_results,
+    skip_is_previously_scored_check,
     outfile,
 ):
     """
@@ -147,7 +153,7 @@ def score(
 
     header_line = head.header
 
-    if "RankScore" in head.info_dict:
+    if "RankScore" in head.info_dict and not skip_is_previously_scored_check:
         logger.warning("Variants already scored according to VCF header")
         logger.info("Please check VCF file")
         context.abort()
