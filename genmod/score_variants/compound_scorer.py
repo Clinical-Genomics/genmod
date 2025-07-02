@@ -16,6 +16,7 @@ from __future__ import division, print_function
 import logging
 from multiprocessing import Process, log_to_stderr
 from typing import Dict, List, Tuple, Union
+import traceback
 
 from genmod.score_variants.cap_rank_score_to_min_bound import cap_rank_score_to_min_bound
 from genmod.score_variants.rank_score_variant_definitions import RANK_SCORE_TYPE_NAMES
@@ -169,7 +170,7 @@ class CompoundScorer(Process):
             )
         return variant_rankscore_normalization_bounds
 
-    def run(self):
+    def _run(self):
         """Run the consuming"""
         logger.info("%s: Starting!" % self.proc_name)
         # Check if there are any batches in the queue
@@ -349,3 +350,11 @@ class CompoundScorer(Process):
             self.task_queue.task_done()
 
         return
+
+    def run(self, *args, **kwargs):
+        # Wrapper for catching errors in main method
+        try:
+            return self._run(*args, **kwargs)
+        except Exception as e:
+            logger.fatal(f"{e}:{traceback.format_exc()}")
+            raise e
