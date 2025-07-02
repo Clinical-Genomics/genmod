@@ -19,6 +19,7 @@ from codecs import open
 from datetime import datetime
 from multiprocessing import JoinableQueue, Manager, cpu_count, util, log_to_stderr
 from tempfile import NamedTemporaryFile
+from time import sleep
 
 import click
 
@@ -161,6 +162,15 @@ def compound(
         for i in range(num_scorers):
             variant_queue.put(None)
 
+        # Before joining on variant_queue, check whether workers have completed
+        # or failed, to avoid main process deadlock on never-decreasing queue semaphore.
+        while any([worker.is_alive() for worker in compound_scorers]):
+            sleep(1)  # Don't churn CPU
+            for worker in compound_scorers:
+                if not worker.is_alive() and worker.exitcode != 0:
+                    raise RuntimeError(f"Worker {worker} failed")
+                logger.debug(f"Worker {worker} alive")
+
         variant_queue.join()
         results.put(None)
         variant_printer.join()
@@ -173,7 +183,7 @@ def compound(
             for line in f:
                 print_variant(variant_line=line, outfile=outfile, mode="modified", silent=silent)
     except Exception as e:
-        logger.warning(e)
+        logger.error(e)
         for worker in compound_scorers:
             worker.terminate()
         variant_printer.terminate()
