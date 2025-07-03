@@ -17,8 +17,9 @@ import os
 import sys
 from codecs import open
 from datetime import datetime
-from multiprocessing import JoinableQueue, Manager, cpu_count, util
+from multiprocessing import JoinableQueue, Manager, cpu_count, log_to_stderr, util
 from tempfile import NamedTemporaryFile
+from time import sleep
 
 import click
 
@@ -29,7 +30,8 @@ from genmod.vcf_tools import HeaderParser, add_metadata, print_headers, print_va
 
 from .utils import get_file_handle, outfile, processes, silent, temp_dir, variant_file
 
-logger = logging.getLogger(__name__)
+logger = log_to_stderr(logging.INFO)
+logging.basicConfig(stream=sys.stderr, force=True)
 util.abstract_sockets_supported = False
 
 
@@ -49,9 +51,24 @@ util.abstract_sockets_supported = False
     default=9,
 )
 @click.option("--penalty", type=int, help="Penalty applied together with --threshold", default=6)
+@click.option(
+    "-s",
+    "--annotation_suffix",
+    default=None,
+    help="Target score with SUFFIX and append suffix to compound INFO fields (to not overwrite existing compound score entries).",
+)
 @click.pass_context
 def compound(
-    context, variant_file, silent, outfile, vep, threshold: int, penalty: int, processes, temp_dir
+    context,
+    variant_file,
+    silent,
+    outfile,
+    vep,
+    threshold: int,
+    penalty: int,
+    annotation_suffix: str,
+    processes,
+    temp_dir,
 ):
     """
     Score compound variants in a vcf file based on their rank score.
@@ -75,6 +92,13 @@ def compound(
         else:
             break
 
+    # Setup INFO field name suffix
+    if annotation_suffix is None:
+        annotation_suffix: str = ""  # i.e. add no suffix to INFO field name
+    else:
+        annotation_suffix: str = f"{annotation_suffix}"
+        logger.debug(f"Adding scoring suffix: {annotation_suffix}")
+
     logger.info("Headers parsed")
 
     if not line.startswith("#"):
@@ -88,7 +112,7 @@ def compound(
     add_metadata(
         head,
         "info",
-        "CompoundsNormalized",
+        "CompoundsNormalized" + annotation_suffix,
         annotation_number=".",
         entry_type="String",
         description="Rank score as provided by compound analysis, based on RankScoreNormalized. family_id:rank_score",
@@ -119,6 +143,7 @@ def compound(
             individuals=individuals,
             threshold=threshold,
             penalty=penalty,
+            annotation_suffix=annotation_suffix,
         )
         for i in range(num_scorers)
     ]
@@ -160,6 +185,15 @@ def compound(
         for i in range(num_scorers):
             variant_queue.put(None)
 
+        # Before joining on variant_queue, check whether workers have completed
+        # or failed, to avoid main process deadlock on never-decreasing queue semaphore.
+        while any([worker.is_alive() for worker in compound_scorers]):
+            sleep(1)  # Don't churn CPU
+            for worker in compound_scorers:
+                if not worker.is_alive() and worker.exitcode != 0:
+                    raise RuntimeError(f"Worker {worker} failed")
+                logger.debug(f"Worker {worker} alive")
+
         variant_queue.join()
         results.put(None)
         variant_printer.join()
@@ -172,7 +206,7 @@ def compound(
             for line in f:
                 print_variant(variant_line=line, outfile=outfile, mode="modified", silent=silent)
     except Exception as e:
-        logger.warning(e)
+        logger.error(e)
         for worker in compound_scorers:
             worker.terminate()
         variant_printer.terminate()
