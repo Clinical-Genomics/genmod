@@ -11,15 +11,16 @@ Copyright (c) 2013 __MyCompanyName__. All rights reserved.
 
 from __future__ import print_function
 
-import sys
 import logging
+import sys
 from codecs import open
 from multiprocessing import Process, log_to_stderr
-logger = log_to_stderr(logging.INFO)
-logging.basicConfig(stream=sys.stderr, force=True)
 
 from genmod.utils import get_chromosome_priority, get_rank_score
 from genmod.vcf_tools import print_variant
+
+logger = log_to_stderr(logging.INFO)
+logging.basicConfig(stream=sys.stderr, force=True)
 
 
 class VariantPrinter(Process):

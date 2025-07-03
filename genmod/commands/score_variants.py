@@ -69,12 +69,13 @@ logger = logging.getLogger(__name__)
 @click.option(
     "--skip_is_previously_scored_check",
     is_flag=True,
-    help="Allow rescoring of previously scored VCF"
+    help="Allow rescoring of previously scored VCF",
 )
 @click.option(
-    "-s", "--annotation_suffix",
+    "-s",
+    "--annotation_suffix",
     default=None,
-    help="Append suffix to all INFO fields related to scoring (to not overwrite existing entries)."
+    help="Append suffix to all INFO fields related to scoring (to not overwrite existing entries).",
 )
 @click.pass_context
 def score(
@@ -151,9 +152,9 @@ def score(
 
     # Setup INFO field name suffix
     if annotation_suffix is None:
-        annotation_suffix: str = ''  # i.e. add no suffix to INFO field name
+        annotation_suffix: str = ""  # i.e. add no suffix to INFO field name
     else:
-        annotation_suffix: str = f'{annotation_suffix}'
+        annotation_suffix: str = f"{annotation_suffix}"
         logger.debug(f"Adding scoring suffix: {annotation_suffix}")
 
     csq_format = head.vep_columns
@@ -194,7 +195,7 @@ def score(
         add_metadata(
             head,
             "info",
-            "RankResult"+annotation_suffix,
+            "RankResult" + annotation_suffix,
             annotation_number=".",
             entry_type="String",
             description="|".join(score_categories),
@@ -263,7 +264,7 @@ def score(
                 variant = add_vcf_info(
                     keyword="RankResult" + annotation_suffix,
                     variant_dict=variant,
-                    annotation="|".join(category_scores)
+                    annotation="|".join(category_scores),
                 )
 
             print_variant(

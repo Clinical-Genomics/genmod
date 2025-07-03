@@ -14,9 +14,9 @@ Copyright (c) 2013 __MyCompanyName__. All rights reserved.
 from __future__ import division, print_function
 
 import logging
+import traceback
 from multiprocessing import Process, log_to_stderr
 from typing import Dict, List, Tuple, Union
-import traceback
 
 from genmod.score_variants.cap_rank_score_to_min_bound import cap_rank_score_to_min_bound
 from genmod.score_variants.rank_score_variant_definitions import RANK_SCORE_TYPE_NAMES
@@ -36,7 +36,15 @@ class CompoundScorer(Process):
     the results queue.
     """
 
-    def __init__(self, task_queue, results_queue, individuals, threshold: int, penalty: int, annotation_suffix: str):
+    def __init__(
+        self,
+        task_queue,
+        results_queue,
+        individuals,
+        threshold: int,
+        penalty: int,
+        annotation_suffix: str,
+    ):
         """
         Initialize the VariantAnnotator
 
@@ -79,16 +87,17 @@ class CompoundScorer(Process):
         self._annotation_suffix = annotation_suffix
         # Create RankScore names to load during compound score computation and rank score adjustment
         # Treat the suffix name no different than any other entry in RANK_SCORE_TYPE_NAMES
-        self._rank_score_type_names = [f"{name}{self._annotation_suffix}" for name in RANK_SCORE_TYPE_NAMES]
-        logger.debug(f'Rank score type names: {self._rank_score_type_names}')
-
+        self._rank_score_type_names = [
+            f"{name}{self._annotation_suffix}" for name in RANK_SCORE_TYPE_NAMES
+        ]
+        logger.debug(f"Rank score type names: {self._rank_score_type_names}")
 
     def get_rank_score(
-            self,
-            rank_score_type: str,
-            threshold: Union[int, float],
-            min_rank_score_value: float,
-            max_rank_score_value: float,
+        self,
+        rank_score_type: str,
+        threshold: Union[int, float],
+        min_rank_score_value: float,
+        max_rank_score_value: float,
     ) -> Union[int, float]:
         """
         Return raw rank score or normalized rank score.
@@ -110,16 +119,17 @@ class CompoundScorer(Process):
                 min_score_value=min_rank_score_value,
                 max_score_value=max_rank_score_value,
             )
-        raise ValueError(f"Unknown RANK_SCORE_TYPE_NAMES config {rank_score_type}" + \
-                         f"expected any in {self._rank_score_type_names}")
-
+        raise ValueError(
+            f"Unknown RANK_SCORE_TYPE_NAMES config {rank_score_type}"
+            + f"expected any in {self._rank_score_type_names}"
+        )
 
     def get_rank_score_as_magnitude(
-            self,
-            rank_score_type: str,
-            rank_score: Union[int, float],
-            min_rank_score_value: float,
-            max_rank_score_value: float,
+        self,
+        rank_score_type: str,
+        rank_score: Union[int, float],
+        min_rank_score_value: float,
+        max_rank_score_value: float,
     ) -> float:
         """
         Returns rank score as a magnitude (delta), to make the rank score
@@ -142,7 +152,9 @@ class CompoundScorer(Process):
         if rank_score_type == f"RankScore{self._annotation_suffix}":
             return rank_score
         elif rank_score_type == f"RankScoreNormalized{self._annotation_suffix}":
-            normalized_rank_score: float = rank_score / (max_rank_score_value - min_rank_score_value)
+            normalized_rank_score: float = rank_score / (
+                max_rank_score_value - min_rank_score_value
+            )
             if not (MIN_SCORE_NORMALIZED <= normalized_rank_score <= MAX_SCORE_NORMALIZED):
                 raise ValueError(
                     f"Failed to normalize to within expected bounds {normalized_rank_score}"
@@ -150,7 +162,9 @@ class CompoundScorer(Process):
             return normalized_rank_score
         raise ValueError(f"Unknown rank score type {rank_score_type}")
 
-    def _get_rankscore_normalization_bounds(self, variant_batch: Dict[str, Dict]) -> Dict[str, Tuple]:
+    def _get_rankscore_normalization_bounds(
+        self, variant_batch: Dict[str, Dict]
+    ) -> Dict[str, Tuple]:
         """
         For all variants in a variant batch, find the rank score normalization
         min-max bounds.
@@ -298,7 +312,9 @@ class CompoundScorer(Process):
                             # cap it to within the MIN normalization bound.
                             current_rank_score = cap_rank_score_to_min_bound(
                                 # Strip suffix in rank_score_type to adhere to default naming convention
-                                rank_score_type=rank_score_type.replace(self._annotation_suffix, ''),
+                                rank_score_type=rank_score_type.replace(
+                                    self._annotation_suffix, ""
+                                ),
                                 rank_score=current_rank_score,
                                 min_rank_score_value=variant_rankscore_normalization_bounds[
                                     variant_id
@@ -330,9 +346,9 @@ class CompoundScorer(Process):
 
                         # variant['info_dict']['IndividualRankScore'] = current_rank_score_string
                         variant["info_dict"][f"{rank_score_type}"] = new_rank_score_string
-                        variant["info_dict"][f"Compounds{rank_score_type.replace('RankScore', '')}"] = (
-                            new_compound_string
-                        )
+                        variant["info_dict"][
+                            f"Compounds{rank_score_type.replace('RankScore', '')}"
+                        ] = new_compound_string
 
                         variant = replace_vcf_info(
                             keyword=f"{rank_score_type}",

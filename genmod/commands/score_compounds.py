@@ -17,7 +17,7 @@ import os
 import sys
 from codecs import open
 from datetime import datetime
-from multiprocessing import JoinableQueue, Manager, cpu_count, util, log_to_stderr
+from multiprocessing import JoinableQueue, Manager, cpu_count, log_to_stderr, util
 from tempfile import NamedTemporaryFile
 from time import sleep
 
@@ -52,13 +52,23 @@ util.abstract_sockets_supported = False
 )
 @click.option("--penalty", type=int, help="Penalty applied together with --threshold", default=6)
 @click.option(
-    "-s", "--annotation_suffix",
+    "-s",
+    "--annotation_suffix",
     default=None,
-    help="Target score with SUFFIX and append suffix to compound INFO fields (to not overwrite existing compound score entries)."
+    help="Target score with SUFFIX and append suffix to compound INFO fields (to not overwrite existing compound score entries).",
 )
 @click.pass_context
 def compound(
-    context, variant_file, silent, outfile, vep, threshold: int, penalty: int, annotation_suffix: str, processes, temp_dir
+    context,
+    variant_file,
+    silent,
+    outfile,
+    vep,
+    threshold: int,
+    penalty: int,
+    annotation_suffix: str,
+    processes,
+    temp_dir,
 ):
     """
     Score compound variants in a vcf file based on their rank score.
@@ -84,9 +94,9 @@ def compound(
 
     # Setup INFO field name suffix
     if annotation_suffix is None:
-        annotation_suffix: str = ''  # i.e. add no suffix to INFO field name
+        annotation_suffix: str = ""  # i.e. add no suffix to INFO field name
     else:
-        annotation_suffix: str = f'{annotation_suffix}'
+        annotation_suffix: str = f"{annotation_suffix}"
         logger.debug(f"Adding scoring suffix: {annotation_suffix}")
 
     logger.info("Headers parsed")
@@ -133,7 +143,7 @@ def compound(
             individuals=individuals,
             threshold=threshold,
             penalty=penalty,
-            annotation_suffix=annotation_suffix
+            annotation_suffix=annotation_suffix,
         )
         for i in range(num_scorers)
     ]
