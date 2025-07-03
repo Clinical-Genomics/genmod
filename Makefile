@@ -26,6 +26,11 @@ test_rescore: docker-build
 test_mivmir: docker-build
 	$(DOCKER) run -i -l genmod-test genmod/test -v -s -o log_cli=true -k test_mivmir_minimal_score_config 2>&1
 
+build-export-singularity:
+	$(DOCKER) build -t genmod/hasta --force-rm=true --rm=true -f Dockerfile .
+	docker save genmod/hasta -o genmod.tar
+	singularity build -F genmod.sif docker-archive://genmod.tar
+	rm genmod.tar
 
 docker-clean-images:
 	docker system prune
