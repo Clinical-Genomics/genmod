@@ -12,6 +12,9 @@ Try to use the following format:
 ### Fixed 
 - Add scoring normalisation for flag lookup mode ([#177](https://github.com/Clinical-Genomics/genmod/pull/177))
 - Fix crash on test for missing annotation key for phased mode ([#178](https://github.com/Clinical-Genomics/genmod/pull/178))
+- Fix for deadlock in compound scoring, improved error logging ([#180](https://github.com/Clinical-Genomics/genmod/pull/180))
+### Changed
+- Add option to allow rescoring of (compound) variants ([#180](https://github.com/Clinical-Genomics/genmod/pull/180))
 
 ## [3.10.1]
 ### Fixed

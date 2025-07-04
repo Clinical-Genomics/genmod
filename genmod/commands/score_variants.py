@@ -66,6 +66,17 @@ logger = logging.getLogger(__name__)
 @click.option(
     "-c", "--score_config", type=click.Path(exists=True), help="The plug-in config file(.ini)"
 )
+@click.option(
+    "--skip_is_previously_scored_check",
+    is_flag=True,
+    help="Allow rescoring of previously scored VCF",
+)
+@click.option(
+    "-s",
+    "--annotation_suffix",
+    default=None,
+    help="Append suffix to all INFO fields related to scoring (to not overwrite existing entries).",
+)
 @click.pass_context
 def score(
     context,
@@ -77,6 +88,8 @@ def score(
     silent,
     skip_plugin_check,
     rank_results,
+    skip_is_previously_scored_check,
+    annotation_suffix,
     outfile,
 ):
     """
@@ -137,6 +150,13 @@ def score(
     else:
         logger.info("All plugins are defined in vcf")
 
+    # Setup INFO field name suffix
+    if annotation_suffix is None:
+        annotation_suffix: str = ""  # i.e. add no suffix to INFO field name
+    else:
+        annotation_suffix: str = f"{annotation_suffix}"
+        logger.debug(f"Adding scoring suffix: {annotation_suffix}")
+
     csq_format = head.vep_columns
     # Add the first variant to the iterator
     if not line.startswith("#"):
@@ -147,7 +167,7 @@ def score(
 
     header_line = head.header
 
-    if "RankScore" in head.info_dict:
+    if "RankScore" in head.info_dict and not skip_is_previously_scored_check:
         logger.warning("Variants already scored according to VCF header")
         logger.info("Please check VCF file")
         context.abort()
@@ -156,7 +176,7 @@ def score(
         add_metadata(
             head,
             "info",
-            rank_score_type,
+            rank_score_type + annotation_suffix,
             annotation_number=".",
             entry_type="String",
             description=rank_score_description,
@@ -165,7 +185,7 @@ def score(
     add_metadata(
         head,
         "info",
-        "RankScoreMinMax",
+        f"RankScoreMinMax{annotation_suffix}",
         annotation_number=".",
         entry_type="String",
         description="The rank score MIN-MAX bounds. family_id:min:max.",
@@ -175,7 +195,7 @@ def score(
         add_metadata(
             head,
             "info",
-            "RankResult",
+            "RankResult" + annotation_suffix,
             annotation_number=".",
             entry_type="String",
             description="|".join(score_categories),
@@ -221,19 +241,19 @@ def score(
             )
 
             variant = add_vcf_info(
-                keyword="RankScore",
+                keyword="RankScore" + annotation_suffix,
                 variant_dict=variant,
                 annotation="{0}:{1}".format(family_id, rank_score),
             )
 
             variant: dict = add_vcf_info(
-                keyword="RankScoreNormalized",
+                keyword=f"RankScoreNormalized{annotation_suffix}",
                 variant_dict=variant,
                 annotation="{0}:{1}".format(family_id, rank_score_normalized),
             )
 
             variant: dict = add_vcf_info(
-                keyword="RankScoreMinMax",
+                keyword=f"RankScoreMinMax{annotation_suffix}",
                 variant_dict=variant,
                 annotation="{0}:{1}:{2}".format(
                     family_id, category_scores_min, category_scores_max
@@ -242,7 +262,9 @@ def score(
 
             if rank_results:
                 variant = add_vcf_info(
-                    keyword="RankResult", variant_dict=variant, annotation="|".join(category_scores)
+                    keyword="RankResult" + annotation_suffix,
+                    variant_dict=variant,
+                    annotation="|".join(category_scores),
                 )
 
             print_variant(
