@@ -17,7 +17,7 @@ import os
 import sys
 from codecs import open
 from datetime import datetime
-from multiprocessing import JoinableQueue, Manager, cpu_count, util, log_to_stderr
+from multiprocessing import JoinableQueue, Manager, cpu_count, log_to_stderr, util
 from tempfile import NamedTemporaryFile
 from time import sleep
 

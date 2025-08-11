@@ -14,9 +14,9 @@ Copyright (c) 2013 __MyCompanyName__. All rights reserved.
 from __future__ import division, print_function
 
 import logging
+import traceback
 from multiprocessing import Process, log_to_stderr
 from typing import Dict, List, Tuple, Union
-import traceback
 
 from genmod.score_variants.cap_rank_score_to_min_bound import cap_rank_score_to_min_bound
 from genmod.score_variants.rank_score_variant_definitions import RANK_SCORE_TYPE_NAMES
