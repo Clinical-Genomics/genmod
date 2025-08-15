@@ -14,7 +14,8 @@ Copyright (c) 2013 __MyCompanyName__. All rights reserved.
 from __future__ import division, print_function
 
 import logging
-from multiprocessing import Process
+import traceback
+from multiprocessing import Process, log_to_stderr
 from typing import Dict, List, Tuple, Union
 
 from genmod.score_variants.cap_rank_score_to_min_bound import cap_rank_score_to_min_bound
@@ -26,7 +27,7 @@ from genmod.score_variants.score_variant import (
 )
 from genmod.vcf_tools import add_vcf_info, replace_vcf_info
 
-logger = logging.getLogger(__name__)
+logger = log_to_stderr(level=logging.INFO)
 
 
 def get_rank_score(
@@ -169,7 +170,7 @@ class CompoundScorer(Process):
             )
         return variant_rankscore_normalization_bounds
 
-    def run(self):
+    def _run(self):
         """Run the consuming"""
         logger.info("%s: Starting!" % self.proc_name)
         # Check if there are any batches in the queue
@@ -349,3 +350,11 @@ class CompoundScorer(Process):
             self.task_queue.task_done()
 
         return
+
+    def run(self, *args, **kwargs):
+        # Wrapper for catching errors in main method
+        try:
+            return self._run(*args, **kwargs)
+        except Exception as e:
+            logger.fatal(f"{e}:{traceback.format_exc()}")
+            raise e

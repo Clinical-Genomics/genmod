@@ -17,8 +17,9 @@ import os
 import sys
 from codecs import open
 from datetime import datetime
-from multiprocessing import JoinableQueue, Manager, cpu_count, util
+from multiprocessing import JoinableQueue, Manager, cpu_count, log_to_stderr, util
 from tempfile import NamedTemporaryFile
+from time import sleep
 
 import click
 
@@ -29,7 +30,8 @@ from genmod.vcf_tools import HeaderParser, add_metadata, print_headers, print_va
 
 from .utils import get_file_handle, outfile, processes, silent, temp_dir, variant_file
 
-logger = logging.getLogger(__name__)
+logger = log_to_stderr(logging.INFO)
+logging.basicConfig(stream=sys.stderr, force=True)
 util.abstract_sockets_supported = False
 
 
@@ -160,6 +162,15 @@ def compound(
         for i in range(num_scorers):
             variant_queue.put(None)
 
+        # Before joining on variant_queue, check whether workers have completed
+        # or failed, to avoid main process deadlock on never-decreasing queue semaphore.
+        while any([worker.is_alive() for worker in compound_scorers]):
+            sleep(1)  # Don't churn CPU
+            for worker in compound_scorers:
+                if not worker.is_alive() and worker.exitcode != 0:
+                    raise RuntimeError(f"Worker {worker} failed")
+                logger.debug(f"Worker {worker} alive")
+
         variant_queue.join()
         results.put(None)
         variant_printer.join()
@@ -172,7 +183,7 @@ def compound(
             for line in f:
                 print_variant(variant_line=line, outfile=outfile, mode="modified", silent=silent)
     except Exception as e:
-        logger.warning(e)
+        logger.error(e)
         for worker in compound_scorers:
             worker.terminate()
         variant_printer.terminate()

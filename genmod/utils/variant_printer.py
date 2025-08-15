@@ -12,11 +12,15 @@ Copyright (c) 2013 __MyCompanyName__. All rights reserved.
 from __future__ import print_function
 
 import logging
+import sys
 from codecs import open
-from multiprocessing import Process
+from multiprocessing import Process, log_to_stderr
 
 from genmod.utils import get_chromosome_priority, get_rank_score
 from genmod.vcf_tools import print_variant
+
+logger = log_to_stderr(logging.INFO)
+logging.basicConfig(stream=sys.stderr, force=True)
 
 
 class VariantPrinter(Process):
@@ -45,7 +49,7 @@ class VariantPrinter(Process):
 
     def __init__(self, task_queue, head, mode="chromosome", outfile=None, silent=False):
         Process.__init__(self)
-        self.logger = logging.getLogger(__name__)
+        self.logger = logger
         self.task_queue = task_queue
         self.outfile = outfile
         self.header = head.header
