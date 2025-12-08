@@ -323,7 +323,7 @@ def models(
             else:
                 outfile_name = outfile
             variant_printer = VariantPrinter(
-                task_queue=results, head=head, mode="normal", outfile=outfile
+                task_queue=results, head=head, mode="normal", outfile=outfile_name
             )
         else:
             # We use a temp file to store the processed variants
