@@ -317,6 +317,11 @@ def models(
         logger.info("Seting up the variant printer")
         if len(model_checkers) == 1:
             print_headers(head=head, outfile=outfile, silent=silent)
+            if hasattr(outfile, "name"):
+                outfile_name = outfile.name
+                outfile.close()
+            else:
+                outfile_name = outfile
             variant_printer = VariantPrinter(
                 task_queue=results, head=head, mode="normal", outfile=outfile
             )
