@@ -33,7 +33,6 @@ dependencies = [
     "importlib_resources",
     "intervaltree >= 3.1.0",
     "extract_vcf",
-    "vcftoolbox",
     "six",
 ]
 
