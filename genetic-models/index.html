@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        
+        <meta name="author" content="Måns Magnusson">
+        <link rel="canonical" href="https://clinical-genomics.github.io/genmod/genetic-models/">
+        <link rel="shortcut icon" href="../img/favicon.ico">
+        <title>Genetic Models - genmod docs</title>
+        <link href="../css/bootstrap.min.css" rel="stylesheet">
+        <link href="../css/fontawesome.min.css" rel="stylesheet">
+        <link href="../css/brands.min.css" rel="stylesheet">
+        <link href="../css/solid.min.css" rel="stylesheet">
+        <link href="../css/v4-font-face.min.css" rel="stylesheet">
+        <link href="../css/base.css" rel="stylesheet">
+        <link id="hljs-light" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" >
+        <link id="hljs-dark" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css" disabled>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+        <script>hljs.highlightAll();</script> 
+    </head>
+
+    <body>
+        <div class="navbar fixed-top navbar-expand-lg navbar-dark bg-primary">
+            <div class="container">
+                <a class="navbar-brand" href="..">genmod docs</a>
+                <!-- Expander button -->
+                <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navbar-collapse" aria-controls="navbar-collapse" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <!-- Expanded navigation -->
+                <div id="navbar-collapse" class="navbar-collapse collapse">
+                        <!-- Main navigation -->
+                        <ul class="nav navbar-nav">
+                            <li class="nav-item">
+                                <a href=".." class="nav-link">Home</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="./" class="nav-link active" aria-current="page">Genetic Models</a>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Commands</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../commands/annotate-variants/" class="dropdown-item">Annotating Variants</a>
+</li>
+                                    
+<li>
+    <a href="../commands/annotate-models/" class="dropdown-item">Annotate Genetic Models</a>
+</li>
+                                    
+<li>
+    <a href="../commands/filter-variants/" class="dropdown-item">Filter Variants</a>
+</li>
+                                    
+<li>
+    <a href="../commands/sort-variants/" class="dropdown-item">Sort Variants</a>
+</li>
+                                    
+<li>
+    <a href="../commands/build-annotation/" class="dropdown-item">Build References</a>
+</li>
+                                    
+<li>
+    <a href="../commands/score-compounds/" class="dropdown-item">Score compounds</a>
+</li>
+                                    
+<li>
+    <a href="../commands/score-variants/" class="dropdown-item">Score variants</a>
+</li>
+                                </ul>
+                            </li>
+                        </ul>
+
+                    <ul class="nav navbar-nav ms-md-auto">
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" data-bs-toggle="modal" data-bs-target="#mkdocs_search_modal">
+                                <i class="fa fa-search"></i> Search
+                            </a>
+                        </li>
+                            <li class="nav-item">
+                                <a rel="prev" href=".." class="nav-link">
+                                    <i class="fa fa-arrow-left"></i> Previous
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a rel="next" href="../commands/annotate-variants/" class="nav-link">
+                                    Next <i class="fa fa-arrow-right"></i>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="https://github.com/Clinical-Genomics/genmod/edit/master/docs/genetic-models.md" class="nav-link"><i class="fa-brands fa-github"></i> Edit on GitHub</a>
+                            </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="row">
+                    <div class="col-md-3"><div class="navbar-expand-md bs-sidebar hidden-print affix" role="complementary">
+    <div class="navbar-header">
+        <button type="button" class="navbar-toggler collapsed" data-bs-toggle="collapse" data-bs-target="#toc-collapse" title="Table of Contents">
+            <span class="fa fa-angle-down"></span>
+        </button>
+    </div>
+
+    
+    <div id="toc-collapse" class="navbar-collapse collapse card bg-body-tertiary">
+        <ul class="nav flex-column">
+            
+            <li class="nav-item" data-bs-level="2"><a href="#conditions-for-genetic-models" class="nav-link">Conditions for Genetic Models</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+        </ul>
+    </div>
+</div></div>
+                    <div class="col-md-9" role="main">
+
+<h2 id="conditions-for-genetic-models">Conditions for Genetic Models</h2>
+<h3 id="short-explanation-of-genotype-calls-in-vcf-format">Short explanation of genotype calls in VCF format:</h3>
+<p>Since we only look at humans, that are diploid, the genotypes represent what we see on both alleles in a single position.
+<code>0</code> represents the reference sequence, <code>1</code> is the first of the alternative alleles, <code>2</code> second alternative and so on.
+If no phasing has been done the genotype is an unordered pair on the form <code>x/x</code>, so <code>0/1</code> means that the individual is heterozygote in this given position with the reference base on one of the alleles and the first of the alternatives on the other.
+<code>2/2</code> means that we see the second of the alternatives on both alleles.
+Some chromosomes are only present in one copy in humans, here it is allowed to only use a single digit to show the genotype. A <code>0</code> would mean reference and <code>1</code> first of alternatives.</p>
+<p>If phasing has been done the pairs are not unordered anymore and the delimiter is then changed to '|', so one can be heterozygote in two ways; <code>0|1</code> or <code>1|0</code>.</p>
+<h3 id="autosomal-recessive">Autosomal Recessive</h3>
+<p>For this model individuals can be carriers so healthy individuals can be heterozygous. Both alleles need to have the variant for an individual to be sick so a healthy individual can not be homozygous alternative and a sick individual <em>has</em> to be homozygous alternative.</p>
+<ul>
+<li>Affected individuals have to be homozygous alternative (hom. alt.)</li>
+<li>Healthy individuals cannot be hom. alt.</li>
+<li>Variant is considered <em>de novo</em> if both parents are genotyped and do not carry the variant</li>
+<li>The variants following this modell will be annotated with <code>AR_hom</code>, or <code>AR_hom_dn</code> for de novo</li>
+</ul>
+<h3 id="autosomal-dominant">Autosomal Dominant</h3>
+<ul>
+<li>Affected individuals have to be heterozygous (het.)</li>
+<li>Healthy individuals cannot have the alternative variant</li>
+<li>Variant is considered <em>de novo</em> if both parents are genotyped and do not carry the variant</li>
+<li>The variants following this modell will be annotated with <code>AD</code>or <code>AD_dn</code></li>
+</ul>
+<p><strong>Special Case:</strong> If the variant belongs to a gene that have been annotated 
+with reduced penetrance we will allow healthy carriers. (i.e. healthy individuals can be heterozygotes)</p>
+<h3 id="autosomal-compound-heterozygote">Autosomal Compound Heterozygote</h3>
+<p>This model includes pairs of variants that are present within the same gene.</p>
+<ol>
+<li>
+<p>Non-phased data:</p>
+<ul>
+<li>Affected individuals have to be het. for both variants</li>
+<li>Healthy individuals can be het. for one of the variants but cannot have both variants</li>
+<li>Variant is considered <em>de novo</em> if only one or no variant is found in the parents</li>
+</ul>
+</li>
+<li>
+<p>Phased data:</p>
+<ul>
+<li>All affected individuals have to be het. for both variants <strong>and</strong> the variants has to be on two different alleles</li>
+<li>Healthy individuals can be heterozygous for one but cannot have both variants</li>
+<li>If only one or no variant is found in parents it is considered <em>de novo</em></li>
+</ul>
+</li>
+</ol>
+<p>Variant following this patters will be annotated with <code>AR_comp</code> or <code>AR_comp_dn</code></p>
+<h3 id="x-linked-dominant">X-Linked Dominant</h3>
+<p>These traits are inherited on the x-chromosome, of which men have one allele and women have two.</p>
+<ul>
+<li>Variant has to be on chromosome X</li>
+<li>Affected individuals have to be het. or hom. alt.</li>
+<li>Healthy males cannot carry the variant</li>
+<li>Healthy females can carry the variant (because of X inactivation)</li>
+<li>If sex is male the variant is considered <em>de novo</em> if mother is genotyped and does not carry the variant</li>
+<li>If sex is female variant is considered <em>de novo</em> if none of the parents carry the variant</li>
+<li>The variants following this modell will be annotated with <code>XD</code>or <code>XD_dn</code></li>
+</ul>
+<h3 id="x-linked-recessive">X Linked Recessive</h3>
+<ul>
+<li>Variant has to be on chromosome X</li>
+<li>Affected males have to be het. or hom. alt. (het is theoretically not possible in males, but can occur due to Pseudo Autosomal Regions).</li>
+<li>Healthy males cannot carry the variant</li>
+<li>Affected females have to be hom. alt.</li>
+<li>Healthy females cannot be hom. alt.</li>
+<li>If sex is male the variant is considered <em>de novo</em> if mother is genotyped and does not carry the variant</li>
+<li>If sex is female variant is considered <em>de novo</em> if not both parents carry the variant</li>
+<li>The variants following this modell will be annotated with <code>XR</code>or <code>XR_dn</code></li>
+</ul></div>
+            </div>
+        </div>
+
+        <footer class="col-md-12">
+            <hr>
+            <p>Documentation built with <a href="https://www.mkdocs.org/">MkDocs</a>.</p>
+        </footer>
+        <script src="../js/bootstrap.bundle.min.js"></script>
+        <script>
+            var base_url = "..",
+                shortcuts = {"help": 191, "next": 78, "previous": 80, "search": 83};
+        </script>
+        <script src="../js/base.js"></script>
+        <script src="../search/main.js"></script>
+
+        <div class="modal" id="mkdocs_search_modal" tabindex="-1" role="dialog" aria-labelledby="searchModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="searchModalLabel">Search</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>From here you can search these documents. Enter your search terms below.</p>
+                <form>
+                    <div class="form-group">
+                        <input type="search" class="form-control" placeholder="Search..." id="mkdocs-search-query" title="Type search term here">
+                    </div>
+                </form>
+                <div id="mkdocs-search-results" data-no-results-text="No results found"></div>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div><div class="modal" id="mkdocs_keyboard_modal" tabindex="-1" role="dialog" aria-labelledby="keyboardModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="keyboardModalLabel">Keyboard Shortcuts</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th style="width: 20%;">Keys</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="help shortcut"><kbd>?</kbd></td>
+                    <td>Open this help</td>
+                  </tr>
+                  <tr>
+                    <td class="next shortcut"><kbd>n</kbd></td>
+                    <td>Next page</td>
+                  </tr>
+                  <tr>
+                    <td class="prev shortcut"><kbd>p</kbd></td>
+                    <td>Previous page</td>
+                  </tr>
+                  <tr>
+                    <td class="search shortcut"><kbd>s</kbd></td>
+                    <td>Search</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div>
+
+    </body>
+</html>
