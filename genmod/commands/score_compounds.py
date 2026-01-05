@@ -138,16 +138,16 @@ def compound(
         # We use a temp file to store the processed variants
         logger.debug("Build a tempfile for printing the variants")
         if temp_dir:
-            temp_file = NamedTemporaryFile(delete=False, dir=temp_dir)
+            temp_variant_file = NamedTemporaryFile(delete=False, dir=temp_dir)
             temp_header_file = NamedTemporaryFile(delete=False, dir=temp_dir)
         else:
-            temp_file = NamedTemporaryFile(delete=False)
+            temp_variant_file = NamedTemporaryFile(delete=False)
             temp_header_file = NamedTemporaryFile(delete=False, dir=temp_dir)
-        temp_file.close()
+        temp_variant_file.close()
         temp_header_file.close()
 
         variant_printer = VariantPrinter(
-            task_queue=results, head=head, mode="normal", outfile=temp_file.name
+            task_queue=results, head=head, mode="normal", outfile=temp_variant_file.name
         )
 
         logger.info("Starting the variant printer process")
@@ -185,11 +185,11 @@ def compound(
             print_headers(head=head, outfile=fh, silent=silent)
 
         # Sort the variants temp file first
-        sort_variants(infile=temp_file.name, mode="vcf")
+        sort_variants(infile=temp_variant_file.name, mode="vcf")
 
         # Combine header + sorted variants into final file
         subprocess.run(
-            ["cat", temp_header_file.name, temp_file.name],
+            ["cat", temp_header_file.name, temp_variant_file.name],
             stdout=open(outfile.name, "wb"),
             check=True,
         )
@@ -200,9 +200,9 @@ def compound(
         variant_printer.terminate()
         context.abort()
     finally:
-        logger.info("Removing temp file")
-        os.remove(temp_file.name)
+        logger.info("Removing temp files")
+        os.remove(temp_variant_file.name)
         os.remove(temp_header_file.name)
-        logger.debug("Temp file removed")
+        logger.debug("Temp files removed")
 
     logger.info("Time for whole analyis: {0}".format(str(datetime.now() - start_time_analysis)))
