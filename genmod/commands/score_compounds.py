@@ -14,10 +14,11 @@ from __future__ import print_function
 import itertools
 import logging
 import os
+import subprocess
 import sys
 from codecs import open
 from datetime import datetime
-from multiprocessing import JoinableQueue, Manager, cpu_count, log_to_stderr, util
+from multiprocessing import JoinableQueue, Queue, cpu_count, log_to_stderr, util
 from tempfile import NamedTemporaryFile
 from time import sleep
 
@@ -26,7 +27,7 @@ import click
 from genmod import __version__
 from genmod.score_variants import CompoundScorer
 from genmod.utils import VariantPrinter, get_batches
-from genmod.vcf_tools import HeaderParser, add_metadata, print_headers, print_variant, sort_variants
+from genmod.vcf_tools import HeaderParser, add_metadata, print_headers, sort_variants
 
 from .utils import get_file_handle, outfile, processes, silent, temp_dir, variant_file
 
@@ -105,7 +106,7 @@ def compound(
     logger.debug("Setting up a JoinableQueue for storing variant batches")
     variant_queue = JoinableQueue(maxsize=1000)
     logger.debug("Setting up a Queue for storing results from workers")
-    results = Manager().Queue()
+    results = Queue()
 
     num_scorers = processes
     # Adapt the number of processes to the machine that run the analysis
@@ -138,12 +139,15 @@ def compound(
         logger.debug("Build a tempfile for printing the variants")
         if temp_dir:
             temp_file = NamedTemporaryFile(delete=False, dir=temp_dir)
+            temp_header_file = NamedTemporaryFile(delete=False, dir=temp_dir)
         else:
             temp_file = NamedTemporaryFile(delete=False)
+            temp_header_file = NamedTemporaryFile(delete=False, dir=temp_dir)
         temp_file.close()
+        temp_header_file.close()
 
         variant_printer = VariantPrinter(
-            task_queue=results, head=head, mode="chromosome", outfile=temp_file.name
+            task_queue=results, head=head, mode="normal", outfile=temp_file.name
         )
 
         logger.info("Starting the variant printer process")
@@ -172,16 +176,23 @@ def compound(
                 logger.debug(f"Worker {worker} alive")
 
         variant_queue.join()
+
         results.put(None)
         variant_printer.join()
+        results.close()
 
-        sort_variants(infile=temp_file.name, mode="chromosome")
+        with open(temp_header_file.name, "w", encoding="utf-8") as fh:
+            print_headers(head=head, outfile=fh, silent=silent)
 
-        print_headers(head=head, outfile=outfile, silent=silent)
+        # Sort the variants temp file first
+        sort_variants(infile=temp_file.name, mode="vcf")
 
-        with open(temp_file.name, "r", encoding="utf-8") as f:
-            for line in f:
-                print_variant(variant_line=line, outfile=outfile, mode="modified", silent=silent)
+        # Combine header + sorted variants into final file
+        subprocess.run(
+            ["cat", temp_header_file.name, temp_file.name],
+            stdout=open(outfile.name, "wb"),
+            check=True,
+        )
     except Exception as e:
         logger.error(e)
         for worker in compound_scorers:
@@ -191,6 +202,7 @@ def compound(
     finally:
         logger.info("Removing temp file")
         os.remove(temp_file.name)
+        os.remove(temp_header_file.name)
         logger.debug("Temp file removed")
 
     logger.info("Time for whole analyis: {0}".format(str(datetime.now() - start_time_analysis)))
