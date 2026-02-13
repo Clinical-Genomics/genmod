@@ -60,11 +60,24 @@ def get_variant_id(variant_dict):
     chrom = variant_dict["CHROM"]
     pos = variant_dict["POS"]
     ref = variant_dict["REF"]
+    alt_raw = variant_dict["ALT"]
     # There are several symbols in structural variant calls that make
     # things hard. We will strip those symbols
     bad_chars = "<>[]:"
-    alt = "".join(c for c in variant_dict["ALT"] if c not in bad_chars)
-    return "_".join([chrom, pos, ref, alt])
+    alt = "".join(c for c in alt_raw if c not in bad_chars)
+    base_id = "_".join([chrom, pos, ref, alt])
+
+    # For SVs with symbolic ALT values, we append END/SVLEN if present to reduce id collisions
+    if "<" in alt_raw or ">" in alt_raw:
+        info = variant_dict.get("info_dict", {})
+        end = info.get("END")
+        svlen = info.get("SVLEN")
+        if end:
+            return "{}_END{}".format(base_id, end)
+        if svlen:
+            return "{}_SVLEN{}".format(base_id, svlen)
+
+    return base_id
 
 
 def get_vep_dict(vep_string, vep_header, allele=None):
