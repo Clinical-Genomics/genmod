@@ -8,6 +8,9 @@ Please add a new candidate release at the top after changing the latest one. Fee
 
 Try to use the following format:
 
+## [3.10.3]
+- Fix symbolic SVs being silently dropped when sharing the same CHROM,POS and REF  ([]())
+
 ## [3.10.2]
 ### Fixed 
 - Add scoring normalisation for flag lookup mode ([#177](https://github.com/Clinical-Genomics/genmod/pull/177))
