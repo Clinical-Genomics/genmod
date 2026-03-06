@@ -12,6 +12,7 @@ VCF_FILE_WITH_CHR = "tests/fixtures/test_vcf_regions_with_chr.vcf"
 FAMILY_FILE = "tests/fixtures/recessive_trio.ped"
 BAD_FAMILY_FILE = "tests/fixtures/annotate_models/one_ind.ped"
 EMPTY_VCF_FILE = "tests/fixtures/empty.vcf"
+SV_SAME_POS_VCF_FILE = "tests/fixtures/test_vcf_sv_same_pos.vcf"
 
 init_log(logger, loglevel="INFO")
 
@@ -95,3 +96,20 @@ def test_annotate_models_chr_prefix():
     # Assert that the lists of models are identical
     assert len(models_list) > 0 and len(models_list_with_chr) > 0, "No models in VCFs"
     assert models_list == models_list_with_chr, "Models differ between VCF files."
+
+
+def test_annotate_models_same_pos_sv_keeps_distinct_end_variants():
+    """Test that same-position symbolic SV records are not collapsed."""
+    runner = CliRunner()
+    # Use SVTYPE as annotation keyword so both DEL records are processed in the same batch.
+    result = runner.invoke(models_command, [SV_SAME_POS_VCF_FILE, "-f", FAMILY_FILE, "-k", "SVTYPE"])
+
+    assert result.exit_code == 0
+
+    with NamedTemporaryFile(delete=False) as temp_file:
+        temp_file.write(result.stdout_bytes)
+        temp_file.seek(0)
+        output_variants = list(generate_variants_from_file(temp_file.name))
+
+    assert len(output_variants) == 2
+    assert {variant["info_dict"].get("END") for variant in output_variants} == {"1001", "101"}
