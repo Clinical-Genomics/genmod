@@ -47,9 +47,10 @@ def get_info_dict(info_line):
 def get_variant_id(variant_dict):
     """Build a variant id
 
-    The variant id is a string made of CHROM_POS_REF_ALT
-
-    The alt field for svs needs some massage to work downstream.
+    Build CHROM_POS_REF_ALT and sanitize ALT by stripping '<>[]:'.
+    For structural variants with symbolic ALT values (for example <DEL>),
+    append _END{END} when END is available. If END is missing but SVLEN is
+    present, append _SVLEN{SVLEN} instead.
 
     Args:
         variant_dict (dict): A variant dictionary
