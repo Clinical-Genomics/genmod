@@ -44,6 +44,7 @@ def test_nocall():
     assert not my_nocall.has_variant
     assert not my_nocall.genotyped
 
+
 def test_nocall_phased():
     """
     A nocall is when no informations is found on this position for the
@@ -59,6 +60,7 @@ def test_nocall_phased():
     assert not my_nocall.homo_alt
     assert not my_nocall.has_variant
     assert not my_nocall.genotyped
+
 
 def test_haploid_genotype():
     """
