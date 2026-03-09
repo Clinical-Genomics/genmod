@@ -37,14 +37,12 @@ def check_compounds(variant_1: dict, variant_2: dict, family, phased: bool) -> b
     Args:
         variant_1, variant_2: Variants in a potential compound pair
         family: A family object with the individuals
-        intervals: A interval tree that describes the phased intervals
         phased: A bool that tells if the individuals are phased
 
     Returns:
         bool: depending on if the pair follow the rules stated above
 
     """
-    # Check in all individuals what genotypes that are in the trio based of the individual picked.
     logger = logging.getLogger(__name__)
     for individual_id, individual in family.individuals.items():
         logger.debug("Check compounds for individual {0}".format(individual_id))
