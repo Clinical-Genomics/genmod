@@ -44,6 +44,21 @@ def test_nocall():
     assert not my_nocall.has_variant
     assert not my_nocall.genotyped
 
+def test_nocall_phased():
+    """
+    A nocall is when no informations is found on this position for the
+    individual. It should be False on all questions except nocall.
+    Also in the case of haploidity the result should be the same.
+    """
+    my_nocall = Genotype(**{"GT": ".|."})
+    assert (
+        my_nocall.genotype == ".|."
+    )  # We never need to look at the alleles since genotype is defined by 'allele_1/allele_2'
+    assert not my_nocall.heterozygote
+    assert not my_nocall.homo_ref
+    assert not my_nocall.homo_alt
+    assert not my_nocall.has_variant
+    assert not my_nocall.genotyped
 
 def test_haploid_genotype():
     """
@@ -51,7 +66,7 @@ def test_haploid_genotype():
     """
     haploid_call = Genotype(**{"GT": "1"})
     assert haploid_call.genotype == "1/."
-    # assert not haploid_call.heterozygote
+    assert haploid_call.heterozygote
     # assert not haploid_call.homo_ref
     # assert haploid_call.homo_alt
     # assert haploid_call.has_variant
@@ -174,7 +189,7 @@ def test_phased_data():
     """
     my_genotype = Genotype(**{"GT": "1|0"})
     assert (
-        my_genotype.genotype == "1/0"
+        my_genotype.genotype == "1|0"
     )  # If asked about the genotype, it should still be on the same form.
     assert my_genotype.heterozygote
     assert not my_genotype.homo_ref

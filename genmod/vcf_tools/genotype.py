@@ -5,7 +5,8 @@ genotype.py
 
 This is a class with information about genotypecalls that follows the (GATK) .vcf standard.
 
-The indata, that is the genotype call, is allways on the form x/x, so they look like 0/0, 1/2, 1/1 and so on.
+The indata, that is the genotype call, is typically on the form x/x (unphased) or x|x (phased),
+so they look like 0/0, 1/2, 1/1, 0|1 and so on.
 The first sign inidcates what we find on the first allele, the second is a separator on the form '/' or '|' and the third indicates what is seen on the second allele.
 The alleles are unordered.
 
@@ -43,75 +44,78 @@ Copyright (c) 2013 __MyCompanyName__. All rights reserved.
 class Genotype(object):
     """Holds information about a genotype"""
 
-    def __init__(self, **kwargs):
-        super(Genotype, self).__init__()
-        # These are the different genotypes:
-        GT = kwargs.get("GT", "./.")
-        AD = kwargs.get("AD", ".,.")
-        DP = kwargs.get("DP", "0")
-        GQ = kwargs.get("GQ", "0")
-        PL = kwargs.get("PL", None)
+    def __init__(self, GT="./.", AD=".,.", DP="0", GQ="0", PL=None, **kwargs):
+        GT = GT or "./."
+        AD = AD or ".,."
+        DP = DP or "0"
+        GQ = GQ or "0"
+        PL = PL or None
+
+        self.phased = "|" in GT
+        self.separator = "|" if self.phased else "/"
+
+        # Split alleles safely
+        if self.separator in GT:
+            self.alleles = GT.split(self.separator)
+        else:
+            # Haploid calls (e.g. "0", "1") or missing (".")
+            self.alleles = [GT] if GT else ["."]
+        while len(self.alleles) < 2:
+            self.alleles.append(".")
+
+        self.allele_1 = self.alleles[0]
+        self.allele_2 = self.alleles[1]
+
+        # Flags
+        self.genotyped = GT not in ("./.", ".|.", ".")
         self.heterozygote = False
-        self.allele_depth = False
         self.homo_alt = False
         self.homo_ref = False
         self.has_variant = False
-        self.genotyped = False
-        self.phased = False
         self.depth_of_coverage = 0
         self.quality_depth = 0
-        self.genotype_quality = 0
-        # Check phasing
-        if "|" in GT:
-            self.phased = True
-        # Check the genotyping:
-        # This is the case when only one allele is present(eg. X-chromosome) and presented like '0' or '1':
-        if len(GT) < 3:
-            self.allele_1 = GT
-            self.allele_2 = "."
-        else:
-            self.allele_1 = GT[0]
-            self.allele_2 = GT[-1]
-        # The genotype should allways be represented on the same form
-        self.genotype = self.allele_1 + "/" + self.allele_2
+        self.genotype_quality = 0.0
+        self.genotype = self.separator.join(self.alleles)
 
-        if self.genotype != "./.":
-            self.genotyped = True
-            # Check allele status
-            if self.genotype in ["0/0", "./0", "0/."]:
+        # Check if a variant is homozygote reference, homozygote alternative or heterozygote
+        if self.genotyped:
+            if all(allele in ("0", ".") for allele in (self.allele_1, self.allele_2)):
                 self.homo_ref = True
+            # Treat e.g. ./1 or 1/. as heterozygous
             elif self.allele_1 == self.allele_2:
                 self.homo_alt = True
-                self.has_variant = True
             else:
                 self.heterozygote = True
-                self.has_variant = True
-        # Check the allele depth:
+
+        self.has_variant = self.homo_alt or self.heterozygote
+
+        # Parse allele depth
         self.ref_depth = 0
         self.alt_depth = 0
-
-        allele_depths = AD.split(",")
-
-        if len(allele_depths) > 1:
-            if allele_depths[0].isdigit():
-                self.ref_depth = int(allele_depths[0])
-            if allele_depths[1].isdigit():
-                self.alt_depth = int(allele_depths[1])
+        try:
+            allele_depths = [int(depth) if depth.isdigit() else 0 for depth in AD.split(",")]
+            self.ref_depth = allele_depths[0] if len(allele_depths) > 0 else 0
+            self.alt_depth = sum(allele_depths[1:]) if len(allele_depths) > 1 else 0
+        except Exception:
+            self.ref_depth = 0
+            self.alt_depth = 0
 
         self.quality_depth = self.ref_depth + self.alt_depth
+
         # Check the depth of coverage:
         try:
             self.depth_of_coverage = int(DP)
         except ValueError:
             pass
+
         # Check the genotype quality
         try:
             self.genotype_quality = float(GQ)
         except ValueError:
             pass
+
         # Check the genotype likelihoods
         self.phred_likelihoods = []
-
         if PL:
             try:
                 self.phred_likelihoods = [int(score) for score in PL.split(",")]
@@ -120,4 +124,4 @@ class Genotype(object):
 
     def __str__(self):
         """Specifies what will be printed when printing the object."""
-        return self.allele_1 + "/" + self.allele_2
+        return self.genotype
