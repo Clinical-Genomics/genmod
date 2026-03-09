@@ -131,8 +131,8 @@ def variants_on_same_allele(individual_id: str, variant_1: dict, variant_2: dict
         bool: True if the variants are on the same allele in the same phase set,
               False otherwise.
     """
-    genotype_1 = variant_1["genotypes"][individual_id]
-    genotype_2 = variant_2["genotypes"][individual_id]
+    genotype_1 = get_genotype(variant_1, individual_id)
+    genotype_2 = get_genotype(variant_2, individual_id)
 
     same_phase = get_phase_set(variant_1, individual_id) == get_phase_set(variant_2, individual_id)
     overlapping_allele = (
