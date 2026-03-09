@@ -44,12 +44,11 @@ Copyright (c) 2013 __MyCompanyName__. All rights reserved.
 class Genotype(object):
     """Holds information about a genotype"""
 
-    def __init__(self, GT="./.", AD=".,.", DP="0", GQ="0", PL=None, **kwargs):
+    def __init__(self, GT="./.", AD=".,.", DP="0", GQ="0", **kwargs):
         GT = GT or "./."
         AD = AD or ".,."
         DP = DP or "0"
         GQ = GQ or "0"
-        PL = PL or None
 
         self.phased = "|" in GT
         self.separator = "|" if self.phased else "/"
@@ -113,14 +112,6 @@ class Genotype(object):
             self.genotype_quality = float(GQ)
         except ValueError:
             pass
-
-        # Check the genotype likelihoods
-        self.phred_likelihoods = []
-        if PL:
-            try:
-                self.phred_likelihoods = [int(score) for score in PL.split(",")]
-            except ValueError:
-                pass
 
     def __str__(self):
         """Specifies what will be printed when printing the object."""
