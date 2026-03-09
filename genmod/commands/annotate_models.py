@@ -62,7 +62,11 @@ util.abstract_sockets_supported = False
 @click.option(
     "--vep", is_flag=True, help="If variants are annotated with the Variant Effect Predictor."
 )
-@click.option("--phased", is_flag=True, help="If data is phased use this flag. Requires PS (Phase set) genotype fields.")
+@click.option(
+    "--phased",
+    is_flag=True,
+    help="If data is phased use this flag. Requires PS (Phase set) genotype fields.",
+)
 @click.option(
     "-s",
     "--strict",
