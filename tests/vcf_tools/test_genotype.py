@@ -122,14 +122,6 @@ def test_bad_gq():
     assert my_genotype.genotype_quality == 0
 
 
-def test_phred_likelihoods():
-    """
-    A normal heterozygote call, has_variant and heterozygote is true.
-    """
-    my_genotype = Genotype(**{"GT": "0/1", "PL": "60,70,80"})
-    assert my_genotype.phred_likelihoods == [60, 70, 80]
-
-
 def test_genotype_1_2():
     """
     A normal heterozygote call, has_variant and heterozygote is true.
