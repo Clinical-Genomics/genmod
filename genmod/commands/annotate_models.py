@@ -62,7 +62,7 @@ util.abstract_sockets_supported = False
 @click.option(
     "--vep", is_flag=True, help="If variants are annotated with the Variant Effect Predictor."
 )
-@click.option("--phased", is_flag=True, help="If data is phased use this flag.")
+@click.option("--phased", is_flag=True, help="If data is phased use this flag. Requires PS (Phase set) genotype fields.")
 @click.option(
     "-s",
     "--strict",
@@ -78,7 +78,7 @@ util.abstract_sockets_supported = False
     "-k",
     "--keyword",
     default="Annotation",
-    help="""What annotation keyword that should be used when 
+    help="""What annotation keyword that should be used when
                     searching for features.""",
 )
 @outfile

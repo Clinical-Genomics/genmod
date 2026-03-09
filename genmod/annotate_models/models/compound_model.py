@@ -82,14 +82,7 @@ def check_compounds(variant_1, variant_2, family, intervals, phased):
 
         # check if variants are in the same phased interval:
 
-        if phased:
-            variant_1_interval = intervals[individual_id].find_range(
-                [int(variant_1["POS"]), int(variant_1["POS"])]
-            )
-            variant_2_interval = intervals[individual_id].find_range(
-                [int(variant_2["POS"]), int(variant_2["POS"])]
-            )
-
+            variant_2_phase_set = get_phase_set(variant_2, individual.individual_id)
         # If phased a healthy individual can have both variants if they are on
         # the same haploblock
         # if not phased:
@@ -105,17 +98,33 @@ def check_compounds(variant_1, variant_2, family, intervals, phased):
             # If the individual is sick and phased it has to have one variant on
             # each allele
             if phased:
-                # Variants need to be in the same phased interval, othervise we
+                # Variants need to be in the same phase set, othervise we
                 # do not have any extra info
-                if variant_1_interval == variant_2_interval:
-                    # If they are in the same interval they can not be on same
-                    # allele
+                if get_phase_set(variant_1, individual.individual_id) == get_phase_set(variant_2, individual.individual_id):
+                    # If they are in the same interval they can not be on same allele
                     if (genotype_1.allele_1 == genotype_2.allele_1) or (
                         genotype_1.allele_2 == genotype_2.allele_2
                     ):
                         return False
 
     return True
+
+# TODO: Write a test for this
+def get_phase_set(variant_dict, sample_id):
+    """
+    Extracts the PS (phase set) field for a given sample from a VCF-like variant dictionary.
+
+    Parameters:
+        variant_dict (dict): A dictionary representing a variant (with FORMAT and per-sample fields)
+        sample_id (str): The sample/individual ID to extract the PS for
+
+    Returns:
+        str or None: The PS value for the sample, or None if missing
+    """
+    format_fields = variant_dict["FORMAT"].split(":")
+    sample_values = variant_dict.get(sample_id, "").split(":")
+    field_map = dict(zip(format_fields, sample_values))
+    return field_map.get("PS")
 
 
 def main():
