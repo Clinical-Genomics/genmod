@@ -56,7 +56,7 @@ def check_compounds(variant_1: dict, variant_2: dict, family, intervals: Interva
             for parent_id in (individual.mother, individual.father):
                 if parent_id != "0":
                     parent = family.individuals[parent_id]
-                    parent_genotypes = [get_genotype(variant, parent) for variant in (variant_1, variant_2)]
+                    parent_genotypes = [get_genotype(variant, parent_id) for variant in (variant_1, variant_2)]
                     if parent.healthy and all(genotype.has_variant for genotype in parent_genotypes):
                         return False
 
@@ -76,7 +76,6 @@ def check_compounds(variant_1: dict, variant_2: dict, family, intervals: Interva
     return True
 
 # TODO: Write a test for this
-# TODO: Fix KeyError
 def get_genotype(variant: dict, individual_id: str) -> Genotype:
     """
     Return the Genotype object for a variants for a given individual.
