@@ -11,14 +11,14 @@ Copyright (c) 2013 __MoonsoInc__. All rights reserved.
 """
 
 from __future__ import print_function
-from genmod.vcf_tools.genotype import Genotype
-from intervaltree import IntervalTree
+
 import logging
 from typing import Union
 
-# TODO: What is family?
-# TODO: Remove intervals
-def check_compounds(variant_1: dict, variant_2: dict, family, intervals: IntervalTree, phased: bool) -> bool:
+from genmod.vcf_tools.genotype import Genotype
+
+
+def check_compounds(variant_1: dict, variant_2: dict, family, phased: bool) -> bool:
     """
     Check if two variants of a pair follow the compound heterozygous model.
 
@@ -56,8 +56,12 @@ def check_compounds(variant_1: dict, variant_2: dict, family, intervals: Interva
             for parent_id in (individual.mother, individual.father):
                 if parent_id != "0":
                     parent = family.individuals[parent_id]
-                    parent_genotypes = [get_genotype(variant, parent_id) for variant in (variant_1, variant_2)]
-                    if parent.healthy and all(genotype.has_variant for genotype in parent_genotypes):
+                    parent_genotypes = [
+                        get_genotype(variant, parent_id) for variant in (variant_1, variant_2)
+                    ]
+                    if parent.healthy and all(
+                        genotype.has_variant for genotype in parent_genotypes
+                    ):
                         return False
 
         genotype_1 = get_genotype(variant_1, individual_id)
@@ -69,13 +73,17 @@ def check_compounds(variant_1: dict, variant_2: dict, family, intervals: Interva
             return False
 
         # If the individual is affected and phased we can say that the variants need to be on different alleles, otherwise it can not be a compound pair.
-        if individual.affected and phased and variants_on_same_allele(individual.individual_id, variant_1, variant_2):
+        if (
+            individual.affected
+            and phased
+            and variants_on_same_allele(individual.individual_id, variant_1, variant_2)
+        ):
             return False
 
     # If the individual is affected and not phased we can not say anything about the phase, so we say it is a compound pair, since it could be a compound pair.
     return True
 
-# TODO: Write a test for this
+
 def get_genotype(variant: dict, individual_id: str) -> Genotype:
     """
     Return the Genotype object for a variants for a given individual.
@@ -89,7 +97,7 @@ def get_genotype(variant: dict, individual_id: str) -> Genotype:
     """
     return variant["genotypes"][individual_id]
 
-# TODO: Write a test for this
+
 def get_phase_set(variant_dict: dict, sample_id: str) -> Union[str, None]:
     """
     Extracts the PS (phase set) field for a given sample from a VCF-like variant dictionary.
@@ -106,7 +114,7 @@ def get_phase_set(variant_dict: dict, sample_id: str) -> Union[str, None]:
     field_map = dict(zip(format_fields, sample_values))
     return field_map.get("PS")
 
-# TODO: Write a test for this
+
 def variants_on_same_allele(individual_id: str, variant_1: dict, variant_2: dict) -> bool:
     """
     Determine if two phased variants are on the same haplotype for a given individual.
@@ -130,12 +138,12 @@ def variants_on_same_allele(individual_id: str, variant_1: dict, variant_2: dict
 
     same_phase = get_phase_set(variant_1, individual_id) == get_phase_set(variant_2, individual_id)
     overlapping_allele = (
-        genotype_1.allele_1 == genotype_2.allele_1 or
-        genotype_1.allele_2 == genotype_2.allele_2
+        genotype_1.allele_1 == genotype_2.allele_1 or genotype_1.allele_2 == genotype_2.allele_2
     )
 
     # Variants are on the same allele if they overlap in the same haplotype and are in the same phase set
     return same_phase and overlapping_allele
+
 
 def main():
     pass
