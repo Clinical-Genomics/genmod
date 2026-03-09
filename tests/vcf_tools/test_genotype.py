@@ -69,6 +69,7 @@ def test_haploid_genotype():
     haploid_call = Genotype(**{"GT": "1"})
     assert haploid_call.genotype == "1/."
     assert haploid_call.heterozygote
+    # TODO: Add a good description on why this test contains these commented lines. Do we not care about haploid calls?
     # assert not haploid_call.homo_ref
     # assert haploid_call.homo_alt
     # assert haploid_call.has_variant
