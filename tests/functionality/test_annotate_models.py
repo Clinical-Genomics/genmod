@@ -95,3 +95,19 @@ def test_annotate_models_chr_prefix():
     # Assert that the lists of models are identical
     assert len(models_list) > 0 and len(models_list_with_chr) > 0, "No models in VCFs"
     assert models_list == models_list_with_chr, "Models differ between VCF files."
+
+
+def test_annotate_models_outfile_header():
+    """Test that headers are present in outfile with --processes 1 and 2"""
+    for procs in ["1", "2"]:
+        runner = CliRunner()
+        with NamedTemporaryFile(delete=False) as temp_file:
+            result = runner.invoke(
+                models_command,
+                [VCF_FILE, "-f", FAMILY_FILE, "--processes", procs, "--outfile", temp_file.name],
+            )
+            assert result.exit_code == 0
+            temp_file.seek(0)
+            output = temp_file.read().decode("utf-8")
+            assert "##fileformat=" in output
+            assert "##INFO=<ID=GeneticModels" in output
