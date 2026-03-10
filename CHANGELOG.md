@@ -8,8 +8,12 @@ Please add a new candidate release at the top after changing the latest one. Fee
 
 Try to use the following format:
 
+## [unreleased]
+### Fixed
+- Fixed duplicate parameter `-s` in genmod models
+
 ## [3.10.2]
-### Fixed 
+### Fixed
 - Add scoring normalisation for flag lookup mode ([#177](https://github.com/Clinical-Genomics/genmod/pull/177))
 - Fix crash on test for missing annotation key for phased mode ([#178](https://github.com/Clinical-Genomics/genmod/pull/178))
 - Bugfixes related to multiprocessing stability and error handling ([#183](https://github.com/Clinical-Genomics/genmod/pull/183) and [#186](https://github.com/Clinical-Genomics/genmod/pull/186))
@@ -33,7 +37,7 @@ Try to use the following format:
 - Fixed sorting of variants ([#152](https://github.com/Clinical-Genomics/genmod/pull/152))
 - genmod annotate for mitochondrial variants when using the `chrM` notation ([#157](https://github.com/Clinical-Genomics/genmod/pull/157))
 - Fix linting issues ([#154](https://github.com/Clinical-Genomics/genmod/issues/154))
-- genmod models adds headers to VCF even if it contains no variants ([#160](https://github.com/Clinical-Genomics/genmod/pull/160)) 
+- genmod models adds headers to VCF even if it contains no variants ([#160](https://github.com/Clinical-Genomics/genmod/pull/160))
 
 ## [3.9]
 - Fixed wrong models when chromosome X was named `chrX` and not `X` ([#135](https://github.com/Clinical-Genomics/genmod/pull/135))
