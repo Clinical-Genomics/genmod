@@ -102,7 +102,9 @@ def test_annotate_models_same_pos_sv_keeps_distinct_end_variants():
     """Test that same-position symbolic SV records are not collapsed."""
     runner = CliRunner()
     # Use SVTYPE as annotation keyword so both DEL records are processed in the same batch.
-    result = runner.invoke(models_command, [SV_SAME_POS_VCF_FILE, "-f", FAMILY_FILE, "-k", "SVTYPE"])
+    result = runner.invoke(
+        models_command, [SV_SAME_POS_VCF_FILE, "-f", FAMILY_FILE, "-k", "SVTYPE"]
+    )
 
     assert result.exit_code == 0
 
