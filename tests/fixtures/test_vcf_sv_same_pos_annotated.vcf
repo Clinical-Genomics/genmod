@@ -1,0 +1,22 @@
+##fileformat=VCFv4.1
+##FILTER=<ID=PASS,Description="All filters passed">
+##FORMAT=<ID=CN,Number=1,Type=Float,Description="Copy number">
+##FORMAT=<ID=CNQ,Number=1,Type=Float,Description="Copy number genotype quality">
+##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">
+##INFO=<ID=END,Number=1,Type=Integer,Description="End position of the variant described in this record">
+##INFO=<ID=SVLEN,Number=A,Type=Integer,Description="Length of structural variant">
+##INFO=<ID=GeneticModels,Number=.,Type=String,Description="':'-separated list of genetic models for this variant.">
+##INFO=<ID=SVTYPE,Number=1,Type=String,Description="Type of structural variant">
+##INFO=<ID=GeneticModels,Number=.,Type=String,Description="':'-separated list of genetic models for this variant.">
+##INFO=<ID=ModelScore,Number=1,Type=Integer,Description="PHRED score for genotype models.">
+##INFO=<ID=Compounds,Number=.,Type=String,Description="List of compound pairs for this variant.The list is splitted on ',' family id is separated with compoundswith ':'. Compounds are separated with '|'.">
+##INFO=<ID=Annotation,Number=.,Type=String,Description="Annotates what feature(s) this variant belongs to.">
+##INFO=<ID=CADD,Number=A,Type=Float,Description="The CADD relative score for this alternative.">
+##INFO=<ID=1000GAF,Number=A,Type=Float,Description="Frequency in the 1000G database.">
+##INFO=<ID=CLNSIG,Number=A,Type=String,Description="Variant Clinical Significance, 0 - Uncertain significance, 1 - not provided, 2 - Benign, 3 - Likely benign, 4 - Likely pathogenic, 5 - Pathogenic, 6 - drug response, 7 - histocompatibility, 255 - other">
+##ALT=<ID=DEL,Description="Deletion">
+##contig=<ID=chr16,length=90338345>
+##source=MergeVCF
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	proband	father	mother
+chr16	1	.	G	<DEL>	487	PASS	SVTYPE=DEL;END=1001;SVLEN=1000;GeneticModels=1:AD|AD_dn	GT:CN:CNQ	0/1:1:487	./.:.:.	./.:.:.
+chr16	1	.	G	<DEL>	69	PASS	SVTYPE=DEL;END=101;SVLEN=100;GeneticModels=1:AR_hom|AR_hom_dn	GT:CN:CNQ	./.:.:.	./.:.:.	0/1:1:69
