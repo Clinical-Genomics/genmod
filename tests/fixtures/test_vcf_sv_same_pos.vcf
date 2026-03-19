@@ -1,0 +1,15 @@
+##fileformat=VCFv4.1
+##FILTER=<ID=PASS,Description="All filters passed">
+##FORMAT=<ID=CN,Number=1,Type=Float,Description="Copy number">
+##FORMAT=<ID=CNQ,Number=1,Type=Float,Description="Copy number genotype quality">
+##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">
+##INFO=<ID=END,Number=1,Type=Integer,Description="End position of the variant described in this record">
+##INFO=<ID=SVLEN,Number=A,Type=Integer,Description="Length of structural variant">
+##INFO=<ID=SVTYPE,Number=1,Type=String,Description="Type of structural variant">
+##INFO=<ID=Annotation,Number=.,Type=String,Description="Annotates what feature(s) this variant belongs to.">
+##contig=<ID=chr16,length=90338345>
+##ALT=<ID=DEL,Description="Deletion">
+##source=MergeVCF
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	proband	father	mother
+chr16	1	.	G	<DEL>	487	PASS	SVTYPE=DEL;END=1001;SVLEN=1000	GT:CN:CNQ	0/1:1:487	./.:.:.	./.:.:.
+chr16	1	.	G	<DEL>	69	PASS	SVTYPE=DEL;END=101;SVLEN=100	GT:CN:CNQ	./.:.:.	./.:.:.	0/1:1:69

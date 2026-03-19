@@ -63,9 +63,9 @@ def get_batches(
     for line in variants:
         if not line.startswith("#"):
             variant = get_variant_dict(line, header_line)
+            variant["info_dict"] = get_info_dict(variant["INFO"])
             variant_id = get_variant_id(variant)
             variant["variant_id"] = variant_id
-            variant["info_dict"] = get_info_dict(variant["INFO"])
 
             if vep:
                 variant["vep_info"] = get_vep_dict(

@@ -64,7 +64,6 @@ util.abstract_sockets_supported = False
 )
 @click.option("--phased", is_flag=True, help="If data is phased use this flag.")
 @click.option(
-    "-s",
     "--strict",
     is_flag=True,
     help="If strict model annotations should be used(see documentation).",
@@ -78,7 +77,7 @@ util.abstract_sockets_supported = False
     "-k",
     "--keyword",
     default="Annotation",
-    help="""What annotation keyword that should be used when 
+    help="""What annotation keyword that should be used when
                     searching for features.""",
 )
 @outfile

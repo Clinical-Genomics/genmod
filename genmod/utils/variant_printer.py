@@ -64,7 +64,7 @@ class VariantPrinter(Process):
 
         if self.outfile:
             if isinstance(self.outfile, str):
-                self.outfile = open(self.outfile, "w+", encoding="utf-8")
+                self.outfile = open(self.outfile, "a", encoding="utf-8")
 
         while True:
             # A task is a variant dictionary
