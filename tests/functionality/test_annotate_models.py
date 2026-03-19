@@ -112,8 +112,8 @@ def test_annotate_models_outfile_header():
             output = temp_file.read().decode("utf-8")
             assert "##fileformat=" in output
             assert "##INFO=<ID=GeneticModels" in output
-            
-            
+
+
 def test_annotate_models_same_pos_sv_keeps_distinct_end_variants():
     """Test that same-position symbolic SV records are not collapsed."""
     runner = CliRunner()
