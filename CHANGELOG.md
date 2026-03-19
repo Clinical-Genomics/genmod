@@ -9,6 +9,8 @@ Please add a new candidate release at the top after changing the latest one. Fee
 Try to use the following format:
 
 ## [unreleased]
+### Added
+- Pre-commit hooks with ruff for automatic check and format ([#200](https://github.com/Clinical-Genomics/genmod/pull/200))
 ### Fixed
 - Sorting command more inclusive for e.g. BusyBox sort for containers built with Bioconda ([#198](https://github.com/Clinical-Genomics/genmod/pull/198))
 - Fix symbolic SVs being silently dropped when sharing the same CHROM,POS and REF  ([#191](https://github.com/Clinical-Genomics/genmod/pull/191))
