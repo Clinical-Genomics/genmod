@@ -9,11 +9,17 @@ Please add a new candidate release at the top after changing the latest one. Fee
 Try to use the following format:
 
 ## [unreleased]
+### Added
+- Pre-commit hooks with ruff for automatic check and format ([#200](https://github.com/Clinical-Genomics/genmod/pull/200))
 ### Changed
 - Changed to use PS-tag instead of intervals to check for variants in phase with `genmod models --phased` ([#197](https://github.com/Clinical-Genomics/genmod/pull/197))
 - Refactored the implementation of `check_compounds()` to improve maintainability ([#197](https://github.com/Clinical-Genomics/genmod/pull/197))
 ### Fixed
+- Sorting command more inclusive for e.g. BusyBox sort for containers built with Bioconda ([#198](https://github.com/Clinical-Genomics/genmod/pull/198))
+- Fix symbolic SVs being silently dropped when sharing the same CHROM,POS and REF  ([#191](https://github.com/Clinical-Genomics/genmod/pull/191))
 - KeyError when running `genmod models --phased` with multiple individuals ([#197](https://github.com/Clinical-Genomics/genmod/pull/197))
+- Print header in `genmod models` when running with `--processes 1` ([#199](https://github.com/Clinical-Genomics/genmod/pull/199))
+- Fixed duplicate parameter `-s` in genmod models ([#202](https://github.com/Clinical-Genomics/genmod/pull/202))
 
 ## [3.10.2]
 ### Fixed

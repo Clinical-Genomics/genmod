@@ -10,6 +10,36 @@ class TestGetVariantId:
         variant = {"CHROM": "1", "POS": "10", "REF": "N", "ALT": "<INS>"}
         assert get_variant_id(variant) == "1_10_N_INS"
 
+    def test_get_variant_id_sv_end(self):
+        variant = {
+            "CHROM": "1",
+            "POS": "10",
+            "REF": "N",
+            "ALT": "<DEL>",
+            "info_dict": {"END": "20"},
+        }
+        assert get_variant_id(variant) == "1_10_N_DEL_END20"
+
+    def test_get_variant_id_sv_svlen(self):
+        variant = {
+            "CHROM": "1",
+            "POS": "10",
+            "REF": "N",
+            "ALT": "<DEL>",
+            "info_dict": {"SVLEN": "-10"},
+        }
+        assert get_variant_id(variant) == "1_10_N_DEL_SVLEN-10"
+
+    def test_get_variant_id_sv_end_over_svlen(self):
+        variant = {
+            "CHROM": "1",
+            "POS": "10",
+            "REF": "N",
+            "ALT": "<DEL>",
+            "info_dict": {"END": "20", "SVLEN": "-10"},
+        }
+        assert get_variant_id(variant) == "1_10_N_DEL_END20"
+
     def test_get_variant_id_sv_dup_tandem(self):
         variant = {"CHROM": "1", "POS": "10", "REF": "N", "ALT": "<DUP:TANDEM>"}
         assert get_variant_id(variant) == "1_10_N_DUPTANDEM"

@@ -68,7 +68,6 @@ util.abstract_sockets_supported = False
     help="If data is phased use this flag. Requires PS (Phase set) genotype fields.",
 )
 @click.option(
-    "-s",
     "--strict",
     is_flag=True,
     help="If strict model annotations should be used(see documentation).",
