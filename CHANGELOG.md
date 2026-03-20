@@ -11,6 +11,8 @@ Try to use the following format:
 ## [unreleased]
 ### Added
 - Pre-commit hooks with ruff for automatic check and format ([#200](https://github.com/Clinical-Genomics/genmod/pull/200))
+### Changed
+- Compounds `print_variant()` to use `cat` which provides significant speedups for large variants ([#189](https://github.com/Clinical-Genomics/genmod/pull/189))
 ### Fixed
 - Sorting command more inclusive for e.g. BusyBox sort for containers built with Bioconda ([#198](https://github.com/Clinical-Genomics/genmod/pull/198))
 - Fix symbolic SVs being silently dropped when sharing the same CHROM,POS and REF  ([#191](https://github.com/Clinical-Genomics/genmod/pull/191))
