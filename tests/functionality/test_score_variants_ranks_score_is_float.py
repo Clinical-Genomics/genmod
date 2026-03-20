@@ -95,5 +95,7 @@ def test_rankscore_is_float_type():
     )
     assert result.exit_code == 0
     # THEN expect all rank scores (including modified compound scores) to be float type
-    for rank_score_string in _generate_rank_score_strings_from_file(file_path=compound_output_file.name):
+    for rank_score_string in _generate_rank_score_strings_from_file(
+        file_path=compound_output_file.name
+    ):
         _check_rankscore_string_is_float(rank_score_string)
