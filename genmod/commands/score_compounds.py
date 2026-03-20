@@ -142,7 +142,7 @@ def compound(
             temp_header_file = NamedTemporaryFile(delete=False, dir=temp_dir)
         else:
             temp_variant_file = NamedTemporaryFile(delete=False)
-            temp_header_file = NamedTemporaryFile(delete=False, dir=temp_dir)
+            temp_header_file = NamedTemporaryFile(delete=False)
         temp_variant_file.close()
         temp_header_file.close()
 
