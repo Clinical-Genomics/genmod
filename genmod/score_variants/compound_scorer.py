@@ -15,7 +15,7 @@ from __future__ import division, print_function
 
 import logging
 import traceback
-from multiprocessing import Process, log_to_stderr
+from multiprocessing import Process
 from typing import Dict, List, Tuple, Union
 
 from genmod.score_variants.cap_rank_score_to_min_bound import cap_rank_score_to_min_bound
@@ -27,7 +27,7 @@ from genmod.score_variants.score_variant import (
 )
 from genmod.vcf_tools import add_vcf_info, replace_vcf_info
 
-logger = log_to_stderr(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 def get_rank_score(

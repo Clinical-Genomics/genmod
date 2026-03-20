@@ -18,7 +18,7 @@ import subprocess
 import sys
 from codecs import open
 from datetime import datetime
-from multiprocessing import JoinableQueue, Queue, cpu_count, log_to_stderr, util
+from multiprocessing import JoinableQueue, Queue, cpu_count, util
 from tempfile import NamedTemporaryFile
 from time import sleep
 
@@ -31,8 +31,7 @@ from genmod.vcf_tools import HeaderParser, add_metadata, print_headers, sort_var
 
 from .utils import get_file_handle, outfile, processes, silent, temp_dir, variant_file
 
-logger = log_to_stderr(logging.INFO)
-logging.basicConfig(stream=sys.stderr, force=True)
+logger = logging.getLogger(__name__)
 util.abstract_sockets_supported = False
 
 
