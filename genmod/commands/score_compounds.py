@@ -147,7 +147,7 @@ def compound(
         temp_header_file.close()
 
         variant_printer = VariantPrinter(
-            task_queue=results, head=head, mode="normal", outfile=temp_variant_file.name
+            task_queue=results, head=head, mode="vcf", outfile=temp_variant_file.name
         )
 
         logger.info("Starting the variant printer process")
@@ -181,8 +181,8 @@ def compound(
         variant_printer.join()
         results.close()
 
-        with open(temp_header_file.name, "w", encoding="utf-8") as fh:
-            print_headers(head=head, outfile=fh, silent=silent)
+        with open(temp_header_file.name, "w", encoding="utf-8") as header_file:
+            print_headers(head=head, outfile=header_file, silent=silent)
 
         # Sort the variants temp file first
         sort_variants(infile=temp_variant_file.name, mode="vcf")
