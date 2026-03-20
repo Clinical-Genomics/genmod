@@ -36,12 +36,16 @@ def sort_variants(infile, mode="chromosome"):
     command = [
         "sort",
     ]
-    if mode == "chromosome" or mode == "vcf":
+    if mode == "chromosome":
         command.append("-k1,1")
         command.append("-k3,3")
         command.append("-s")
         command.append("-V")  # Version sorting to deal with e.g. Un_* contigs
-
+    elif mode == "vcf":
+        command.append("-k1,1")
+        command.append("-k2,2")
+        command.append("-s")
+        command.append("-V")  # Version sorting to deal with e.g. Un_* contigs
     elif mode == "rank":
         command.append("-rn")
         command.append("-k1")
