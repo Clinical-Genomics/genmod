@@ -5,7 +5,7 @@ genotype.py
 
 This is a class with information about genotypecalls that follows the (GATK) .vcf standard.
 
-The indata, that is the genotype call, is typically on the form x/x (unphased) or x|x (phased),
+The indata, that is the genotype call, is always on the form x/x (unphased) or x|x (phased),
 so they look like 0/0, 1/2, 1/1, 0|1 and so on.
 The first sign inidcates what we find on the first allele, the second is a separator on the form '/' or '|' and the third indicates what is seen on the second allele.
 The alleles are unordered.
