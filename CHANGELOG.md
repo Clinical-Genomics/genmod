@@ -11,6 +11,9 @@ Try to use the following format:
 ## [unreleased]
 ### Added
 - Pre-commit hooks with ruff for automatic check and format ([#200](https://github.com/Clinical-Genomics/genmod/pull/200))
+### Changed
+- Return phased genotype string from Genotype class if variant is phased ([#195](https://github.com/Clinical-Genomics/genmod/pull/195))
+- Slightly more readable Genotype class ([#195](https://github.com/Clinical-Genomics/genmod/pull/195))
 ### Fixed
 - Sorting command more inclusive for e.g. BusyBox sort for containers built with Bioconda ([#198](https://github.com/Clinical-Genomics/genmod/pull/198))
 - Fix symbolic SVs being silently dropped when sharing the same CHROM,POS and REF  ([#191](https://github.com/Clinical-Genomics/genmod/pull/191))
