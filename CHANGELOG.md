@@ -12,8 +12,11 @@ Try to use the following format:
 ### Added
 - Pre-commit hooks with ruff for automatic check and format ([#200](https://github.com/Clinical-Genomics/genmod/pull/200))
 ### Changed
+- Compounds `print_variant()` to use `cat` which provides significant speedups for large variants ([#189](https://github.com/Clinical-Genomics/genmod/pull/189))
 - Return phased genotype string from Genotype class if variant is phased ([#195](https://github.com/Clinical-Genomics/genmod/pull/195))
 - Slightly more readable Genotype class ([#195](https://github.com/Clinical-Genomics/genmod/pull/195))
+- Logging to use standard hierarchy instead of stderr ([#203](https://github.com/Clinical-Genomics/genmod/pull/203))
+- Multiprocessing `Manager` to `Queue` in score compounds ([#203](https://github.com/Clinical-Genomics/genmod/pull/203))
 ### Fixed
 - Sorting command more inclusive for e.g. BusyBox sort for containers built with Bioconda ([#198](https://github.com/Clinical-Genomics/genmod/pull/198))
 - Fix symbolic SVs being silently dropped when sharing the same CHROM,POS and REF  ([#191](https://github.com/Clinical-Genomics/genmod/pull/191))

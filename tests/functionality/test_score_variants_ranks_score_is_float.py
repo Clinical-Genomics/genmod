@@ -82,17 +82,20 @@ def test_rankscore_is_float_type():
 
     # GIVEN some ranked VCF file, run compound scoring (which modify the RankScore)
     runner = CliRunner()
+    compound_output_file = NamedTemporaryFile(suffix=".vcf", delete=False)
+    compound_output_file.close()
     # WHEN computing compound score
     result = runner.invoke(
         score_compounds_command,
         [
             temporary_file.name,
+            "-o",
+            compound_output_file.name,
         ],
     )
     assert result.exit_code == 0
-    temporary_file = NamedTemporaryFile()
-    with open(temporary_file.name, "w") as file:
-        file.write(result.stdout_bytes.decode("utf-8"))  # Save processed VCF to file
     # THEN expect all rank scores (including modified compound scores) to be float type
-    for rank_score_string in _generate_rank_score_strings_from_file(file_path=temporary_file.name):
+    for rank_score_string in _generate_rank_score_strings_from_file(
+        file_path=compound_output_file.name
+    ):
         _check_rankscore_string_is_float(rank_score_string)
