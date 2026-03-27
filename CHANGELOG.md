@@ -12,6 +12,8 @@ Try to use the following format:
 ### Added
 - Pre-commit hooks with ruff for automatic check and format ([#200](https://github.com/Clinical-Genomics/genmod/pull/200))
 ### Changed
+- Return phased genotype string from Genotype class if variant is phased ([#195](https://github.com/Clinical-Genomics/genmod/pull/195))
+- Slightly more readable Genotype class ([#195](https://github.com/Clinical-Genomics/genmod/pull/195))
 - Changed to use PS-tag instead of intervals to check for variants in phase with `genmod models --phased` ([#197](https://github.com/Clinical-Genomics/genmod/pull/197))
 - Refactored the implementation of `check_compounds()` to improve maintainability ([#197](https://github.com/Clinical-Genomics/genmod/pull/197))
 ### Fixed
