@@ -13,9 +13,12 @@ Copyright (c) 2013 __MoonsoInc__. All rights reserved.
 from __future__ import print_function
 
 import logging
+from typing import Union
+
+from genmod.vcf_tools.genotype import Genotype
 
 
-def check_compounds(variant_1, variant_2, family, intervals, phased):
+def check_compounds(variant_1: dict, variant_2: dict, family, phased: bool) -> bool:
     """
     Check if two variants of a pair follow the compound heterozygous model.
 
@@ -34,88 +37,110 @@ def check_compounds(variant_1, variant_2, family, intervals, phased):
     Args:
         variant_1, variant_2: Variants in a potential compound pair
         family: A family object with the individuals
-        intervals: A interval tree that describes the phased intervals
         phased: A bool that tells if the individuals are phased
 
     Returns:
         bool: depending on if the pair follow the rules stated above
 
     """
-    # Check in all individuals what genotypes that are in the trio based of the
-    # individual picked.
     logger = logging.getLogger(__name__)
-
-    for individual_id in family.individuals:
+    for individual_id, individual in family.individuals.items():
         logger.debug("Check compounds for individual {0}".format(individual_id))
         individual = family.individuals[individual_id]
 
-        genotype_1 = variant_1["genotypes"][individual_id]
-        genotype_2 = variant_2["genotypes"][individual_id]
-
+        # If the individual has parents we can check if the parents are healthy and have both variants, if they do they can not be a compound pair, since the variants could be on different alleles.
+        # The parents would then be carriers of the disease, which is not possible if the parents are healthy.
         if individual.has_parents:
-            mother_id = individual.mother
-            father_id = individual.father
-
-            if mother_id != "0":
-                # mother_genotype_1 = variant_1['genotypes'][mother_id]
-                # mother_genotype_2 = variant_2['genotypes'][mother_id]
-                mother = family.individuals[mother_id]
-
-            if father_id != "0":
-                # father_genotype_1 = variant_1['genotypes'][father_id]
-                # father_genotype_2 = variant_2['genotypes'][father_id]
-                father = family.individuals[father_id]
-
-            if mother_id != "0" and mother.healthy:
-                if (
-                    variant_1["genotypes"][mother_id].has_variant
-                    and variant_2["genotypes"][mother_id].has_variant
-                ):
-                    return False
-
-            if father_id != "0" and father.healthy:
-                if (
-                    variant_1["genotypes"][father_id].has_variant
-                    and variant_2["genotypes"][father_id].has_variant
-                ):
-                    return False
-
-        # check if variants are in the same phased interval:
-
-        if phased:
-            variant_1_interval = intervals[individual_id].find_range(
-                [int(variant_1["POS"]), int(variant_1["POS"])]
-            )
-            variant_2_interval = intervals[individual_id].find_range(
-                [int(variant_2["POS"]), int(variant_2["POS"])]
-            )
-
-        # If phased a healthy individual can have both variants if they are on
-        # the same haploblock
-        # if not phased:
-
-        if individual.healthy:
-            if genotype_1.heterozygote and genotype_2.heterozygote:
-                return False
-        # The case where the individual is affected
-        # We know since ealier that all affected are heterozygotes
-        # for these variants
-        # So we only need to know if the variants are on the same phase
-        elif individual.affected:
-            # If the individual is sick and phased it has to have one variant on
-            # each allele
-            if phased:
-                # Variants need to be in the same phased interval, othervise we
-                # do not have any extra info
-                if variant_1_interval == variant_2_interval:
-                    # If they are in the same interval they can not be on same
-                    # allele
-                    if (genotype_1.allele_1 == genotype_2.allele_1) or (
-                        genotype_1.allele_2 == genotype_2.allele_2
+            for parent_id in (individual.mother, individual.father):
+                if parent_id != "0":
+                    parent = family.individuals[parent_id]
+                    parent_genotypes = [
+                        get_genotype(variant, parent_id) for variant in (variant_1, variant_2)
+                    ]
+                    if parent.healthy and all(
+                        genotype.has_variant for genotype in parent_genotypes
                     ):
                         return False
 
+        genotype_1 = get_genotype(variant_1, individual_id)
+        genotype_2 = get_genotype(variant_2, individual_id)
+
+        # If a healthy individual is not phased and has both variants it can not be a compound pair, since the variants could be on different alleles.
+        # The individual would then be a carrier of the disease, which is not possible if the individual is healthy.
+        if individual.healthy and (genotype_1.heterozygote and genotype_2.heterozygote):
+            return False
+
+        # If the individual is affected and phased we can say that the variants need to be on different alleles, otherwise it can not be a compound pair.
+        if (
+            individual.affected
+            and phased
+            and variants_on_same_allele(individual.individual_id, variant_1, variant_2)
+        ):
+            return False
+
+    # If the individual is affected and not phased we can not say anything about the phase, so we say it is a compound pair, since it could be a compound pair.
     return True
+
+
+def get_genotype(variant: dict, individual_id: str) -> Genotype:
+    """
+    Return the Genotype object for a variants for a given individual.
+
+    Args:
+        variant (dict): A dictionary representing a variant (with per-sample genotypes)
+        individual_id (str): Sample/individual ID
+
+    Returns:
+        Genotype: The genotype object for the individual at the given variant
+    """
+    return variant["genotypes"][individual_id]
+
+
+def get_phase_set(variant_dict: dict, sample_id: str) -> Union[str, None]:
+    """
+    Extracts the PS (phase set) field for a given sample from a VCF-like variant dictionary.
+
+    Parameters:
+        variant_dict (dict): A dictionary representing a variant (with FORMAT and per-sample fields)
+        sample_id (str): The sample/individual ID to extract the PS for
+
+    Returns:
+        str or None: The PS value for the sample, or None if missing
+    """
+    format_fields = variant_dict["FORMAT"].split(":")
+    sample_values = variant_dict.get(sample_id, "").split(":")
+    field_map = dict(zip(format_fields, sample_values))
+    return field_map.get("PS")
+
+
+def variants_on_same_allele(individual_id: str, variant_1: dict, variant_2: dict) -> bool:
+    """
+    Determine if two phased variants are on the same haplotype for a given individual.
+
+    This function assumes that both variants are phased and that the PS (phase set)
+    field is present in the genotype information. Two variants are considered to be
+    on the same allele if they belong to the same phase set and have at least one
+    allele in the same haplotype position (allele_1 with allele_1 or allele_2 with allele_2).
+
+    Parameters:
+        individual_id (str): ID of the individual/sample.
+        variant_1 (dict): First variant dictionary containing per-sample genotypes.
+        variant_2 (dict): Second variant dictionary containing per-sample genotypes.
+
+    Returns:
+        bool: True if the variants are on the same allele in the same phase set,
+              False otherwise.
+    """
+    genotype_1 = get_genotype(variant_1, individual_id)
+    genotype_2 = get_genotype(variant_2, individual_id)
+
+    same_phase = get_phase_set(variant_1, individual_id) == get_phase_set(variant_2, individual_id)
+    overlapping_allele = (
+        genotype_1.allele_1 == genotype_2.allele_1 or genotype_1.allele_2 == genotype_2.allele_2
+    )
+
+    # Variants are on the same allele if they overlap in the same haplotype and are in the same phase set
+    return same_phase and overlapping_allele
 
 
 def main():
