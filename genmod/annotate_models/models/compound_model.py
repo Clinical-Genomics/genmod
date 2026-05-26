@@ -45,7 +45,7 @@ def check_compounds(variant_1: dict, variant_2: dict, family, phased: bool) -> b
     """
     logger = logging.getLogger(__name__)
     for individual_id, individual in family.individuals.items():
-        logger.debug("Check compounds for individual {0}".format(individual_id))
+        logger.debug(f"Check compounds for individual {individual_id}")
         individual = family.individuals[individual_id]
 
         # If the individual has parents, we can check whether the parents are healthy and carry both variants, if they do they can not be a compound pair, since the variants could be on different alleles.
