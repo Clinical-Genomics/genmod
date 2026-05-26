@@ -26,7 +26,7 @@ def sort_variants(infile, mode="chromosome"):
 
     Args:
         infile : A string that is the path to a file
-        mode : 'chromosome' or 'rank'
+        mode : 'chromosome', 'vcf' or 'rank'
         outfile : The path to an outfile where the variants should be printed
 
     Returns:
@@ -41,7 +41,11 @@ def sort_variants(infile, mode="chromosome"):
         command.append("-k3,3")
         command.append("-s")
         command.append("-V")  # Version sorting to deal with e.g. Un_* contigs
-
+    elif mode == "vcf":
+        command.append("-k1,1")
+        command.append("-k2,2")
+        command.append("-s")
+        command.append("-V")  # Version sorting to deal with e.g. Un_* contigs
     elif mode == "rank":
         command.append("-rn")
         command.append("-k1")
