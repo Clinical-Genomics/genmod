@@ -11,7 +11,7 @@ Try to use the following format:
 ## [unreleased]
 ### Added
 - Pre-commit hooks with ruff for automatic check and format ([#200](https://github.com/Clinical-Genomics/genmod/pull/200))
-- A `RELEASE.md` instruction for creating releases ([#203])
+- A `RELEASE.md` instruction for creating releases ([#210](https://github.com/Clinical-Genomics/genmod/pull/210))
 ### Changed
 - Compounds `print_variant()` to use `cat` which provides significant speedups for large variants ([#189](https://github.com/Clinical-Genomics/genmod/pull/189))
 - Return phased genotype string from Genotype class if variant is phased ([#195](https://github.com/Clinical-Genomics/genmod/pull/195))
