@@ -45,6 +45,7 @@ This in particular also updates the genmod package verison. Note that it is now 
     ```bash
     git push -u origin version_3.12
     ```
-6. Solicit a review of the pull request and after getting it approved, merge it to main.
-7. Draft a new release on GitHub, add some text - e.g. an abbreviated CHANGELOG - and release.
-8. The GitHub release action should take care of the rest (build and submit to PyPi and DockerHub, build and publish docs).
+6. Thoroughly test any new features of Genmod, and ideally ensure they are covered by tests, manual example runs or external tests of failure points for bugfixes.
+7. Solicit a review of the pull request and after getting it approved, merge it to main.
+8. Draft a new release on GitHub, add some text - e.g. an abbreviated CHANGELOG - and release. 
+9. The GitHub release action should take care of the rest (build and submit to PyPi and DockerHub, build and publish docs).
