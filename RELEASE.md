@@ -19,22 +19,31 @@ The following steps are used to release a new version of Genmod.
     ```
    
 2. Update version to, e.g. 3.12
-
-   - in `genmod/pyproject.toml`
-   ```toml
-   [project]
-   name = "genmod"
-   version = "3.12"
+   Either use the `uv version` tool to bump the version and update dependencies, or manually update the version in `genmod/pyproject.toml`.
+   ```bash
+      uv version --bump=minor
+      git add genmod/pyproject.toml uv.lock
+      git commit -m 'Bump version and upgrade dependencies'
    ```
-
-3. Update the `uv.lock` file to the latest compatible versions of dependencies
-This in particular also updates the genmod package verison. Note that it is now the same as in the previous step.
-
+   OR 
+   - in `genmod/pyproject.toml`
+     ```toml
+     [project]
+     name = "genmod"
+     version = "3.12"
+     ```
+   ```bash
+     git add genmod/pyproject.toml
+     git commit -m 'Bump version'
+   ```
+   And update the `uv.lock` file to the latest compatible versions of dependencies
+   This in particular also updates the genmod package verison. Note that it is now the same as in the previous step.
    ```bash
    uv lock --upgrade
    git add uv.lock
    git commit -m 'Upgrade dependencies'
    ```
+
 4. Make sure CHANGELOG.md is up to date for the release. Add a new candidate release at the top after changing the latest one. 
  ```bash
    add CHANGELOG.md
