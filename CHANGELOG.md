@@ -8,7 +8,7 @@ Please add a new candidate release at the top after changing the latest one. Fee
 
 Try to use the following format:
 
-## [unreleased]
+## [3.12.0]
 ### Changed
 - Changed to use PS-tag instead of intervals to check for variants in phase with `genmod models --phased` ([#197](https://github.com/Clinical-Genomics/genmod/pull/197))
 - Refactored the implementation of `check_compounds()` to improve maintainability ([#197](https://github.com/Clinical-Genomics/genmod/pull/197))
