@@ -17,12 +17,12 @@ Try to use the following format:
 - Slightly more readable Genotype class ([#195](https://github.com/Clinical-Genomics/genmod/pull/195))
 - Changed to use PS-tag instead of intervals to check for variants in phase with `genmod models --phased` ([#197](https://github.com/Clinical-Genomics/genmod/pull/197))
 - Refactored the implementation of `check_compounds()` to improve maintainability ([#197](https://github.com/Clinical-Genomics/genmod/pull/197))
+- Removed haploblock interval tree code and the `interval_tree` dependency in favour of PS-tag phasing check ([#197](https://github.com/Clinical-Genomics/genmod/pull/197))
 - Logging to use standard hierarchy instead of stderr ([#203](https://github.com/Clinical-Genomics/genmod/pull/203))
 - Multiprocessing `Manager` to `Queue` in score compounds ([#203](https://github.com/Clinical-Genomics/genmod/pull/203))
 ### Fixed
 - Sorting command more inclusive for e.g. BusyBox sort for containers built with Bioconda ([#198](https://github.com/Clinical-Genomics/genmod/pull/198))
 - Fix symbolic SVs being silently dropped when sharing the same CHROM,POS and REF  ([#191](https://github.com/Clinical-Genomics/genmod/pull/191))
-- KeyError when running `genmod models --phased` with multiple individuals ([#197](https://github.com/Clinical-Genomics/genmod/pull/197))
 - Print header in `genmod models` when running with `--processes 1` ([#199](https://github.com/Clinical-Genomics/genmod/pull/199))
 - Fixed duplicate parameter `-s` in genmod models ([#202](https://github.com/Clinical-Genomics/genmod/pull/202))
 
