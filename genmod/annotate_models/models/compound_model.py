@@ -134,7 +134,9 @@ def variants_on_same_allele(individual_id: str, variant_1: dict, variant_2: dict
     genotype_1 = get_genotype(variant_1, individual_id)
     genotype_2 = get_genotype(variant_2, individual_id)
 
-    same_phase = get_phase_set(variant_1, individual_id) == get_phase_set(variant_2, individual_id)
+    phase_set_1 = get_phase_set(variant_1, individual_id)
+    phase_set_2 = get_phase_set(variant_2, individual_id)
+    same_phase = phase_set_1 is not None and phase_set_1 == phase_set_2
     overlapping_allele = (
         genotype_1.allele_1 == genotype_2.allele_1 or genotype_1.allele_2 == genotype_2.allele_2
     )
