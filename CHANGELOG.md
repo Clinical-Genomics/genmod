@@ -8,6 +8,16 @@ Please add a new candidate release at the top after changing the latest one. Fee
 
 Try to use the following format:
 
+## [unreleased]
+### Changed
+- Changed to use PS-tag instead of intervals to check for variants in phase with `genmod models --phased` ([#197](https://github.com/Clinical-Genomics/genmod/pull/197))
+- Refactored the implementation of `check_compounds()` to improve maintainability ([#197](https://github.com/Clinical-Genomics/genmod/pull/197))
+- Removed haploblock interval tree code and the `interval_tree` dependency in favour of PS-tag phasing check ([#197](https://github.com/Clinical-Genomics/genmod/pull/197))
+
+### Fixed
+- Models giving KeyError with `--phased` when variants lack region annotation ([#197](https://github.com/Clinical-Genomics/genmod/pull/197))
+
+
 ## [3.11.0]
 ### Added
 - Pre-commit hooks with ruff for automatic check and format ([#200](https://github.com/Clinical-Genomics/genmod/pull/200))
@@ -15,9 +25,6 @@ Try to use the following format:
 - Compounds `print_variant()` to use `cat` which provides significant speedups for large variants ([#189](https://github.com/Clinical-Genomics/genmod/pull/189))
 - Return phased genotype string from Genotype class if variant is phased ([#195](https://github.com/Clinical-Genomics/genmod/pull/195))
 - Slightly more readable Genotype class ([#195](https://github.com/Clinical-Genomics/genmod/pull/195))
-- Changed to use PS-tag instead of intervals to check for variants in phase with `genmod models --phased` ([#197](https://github.com/Clinical-Genomics/genmod/pull/197))
-- Refactored the implementation of `check_compounds()` to improve maintainability ([#197](https://github.com/Clinical-Genomics/genmod/pull/197))
-- Removed haploblock interval tree code and the `interval_tree` dependency in favour of PS-tag phasing check ([#197](https://github.com/Clinical-Genomics/genmod/pull/197))
 - Logging to use standard hierarchy instead of stderr ([#203](https://github.com/Clinical-Genomics/genmod/pull/203))
 - Multiprocessing `Manager` to `Queue` in score compounds ([#203](https://github.com/Clinical-Genomics/genmod/pull/203))
 ### Fixed
