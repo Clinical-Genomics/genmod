@@ -94,7 +94,6 @@ def check_genetic_models(variant_batch, families, phased=False, strict=False):
     # A variant batch is a dictionary on the form
     # {variant_id:variant_dict, variant_2_id:variant_dict_2, ...}
     logger = logging.getLogger(__name__)
-    intervals = variant_batch.pop("haploblocks", {})
 
     # We check the genetic models for one family at a time
     for family_id in families:
@@ -192,7 +191,7 @@ def check_genetic_models(variant_batch, families, phased=False, strict=False):
                         variant_1["inheritance_models"][family_id]["AR_comp"] = True
                         variant_2["inheritance_models"][family_id]["AR_comp"] = True
                     # We know from check_compound_candidates that all variants are present in all affected
-                    elif check_compounds(variant_1, variant_2, family, intervals, phased):
+                    elif check_compounds(variant_1, variant_2, family, phased):
                         parents_found = False
                         for individual_id in individuals:
                             individual = individuals[individual_id]

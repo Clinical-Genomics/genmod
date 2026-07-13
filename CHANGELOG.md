@@ -8,6 +8,16 @@ Please add a new candidate release at the top after changing the latest one. Fee
 
 Try to use the following format:
 
+## [unreleased]
+### Changed
+- Changed to use PS-tag instead of intervals to check for variants in phase with `genmod models --phased` ([#197](https://github.com/Clinical-Genomics/genmod/pull/197))
+- Refactored the implementation of `check_compounds()` to improve maintainability ([#197](https://github.com/Clinical-Genomics/genmod/pull/197))
+- Removed haploblock interval tree code and the `interval_tree` dependency in favour of PS-tag phasing check ([#197](https://github.com/Clinical-Genomics/genmod/pull/197))
+
+### Fixed
+- Models giving KeyError with `--phased` when variants lack region annotation ([#197](https://github.com/Clinical-Genomics/genmod/pull/197))
+
+
 ## [3.11.0]
 ### Added
 - Pre-commit hooks with ruff for automatic check and format ([#200](https://github.com/Clinical-Genomics/genmod/pull/200))
