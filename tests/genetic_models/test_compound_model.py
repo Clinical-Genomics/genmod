@@ -132,6 +132,44 @@ def test_check_compounds_false_when_affected_phased_same_allele():
     assert check_compounds(variant_1, variant_2, family=family, phased=True) is False
 
 
+def test_check_compounds_true_when_affected_phased_different_alleles():
+    family_lines = [
+        "#FamilyID\tSampleID\tFather\tMother\tSex\tPhenotype\n",
+        "1\tchild\tfather\tmother\t1\t2\n",
+        "1\tfather\t0\t0\t1\t1\n",
+        "1\tmother\t0\t0\t2\t1\n",
+    ]
+    family = get_family(family_lines)
+
+    variant_1 = make_variant(
+        genotypes={
+            "child": Genotype(GT="0|1"),
+            "father": Genotype(GT="0/1"),
+            "mother": Genotype(GT="0/0"),
+        },
+        sample_fields={"child": "0|1:1"},
+    )
+
+    variant_2 = make_variant(
+        genotypes={
+            "child": Genotype(GT="1|0"),
+            "father": Genotype(GT="0/0"),
+            "mother": Genotype(GT="0/1"),
+        },
+        sample_fields={"child": "1|0:1"},
+    )
+
+    assert (
+        check_compounds(
+            variant_1,
+            variant_2,
+            family=family,
+            phased=True,
+        )
+        is True
+    )
+
+
 def test_check_compounds_true_when_affected_phased_but_phase_set_missing():
     family_lines = [
         "#FamilyID\tSampleID\tFather\tMother\tSex\tPhenotype\n",
