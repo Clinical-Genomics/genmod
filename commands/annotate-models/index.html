@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        
+        <meta name="author" content="Måns Magnusson">
+        <link rel="canonical" href="https://clinical-genomics.github.io/genmod/commands/annotate-models/">
+        <link rel="shortcut icon" href="../../img/favicon.ico">
+        <title>Annotate Genetic Models - genmod docs</title>
+        <link href="../../css/bootstrap.min.css" rel="stylesheet">
+        <link href="../../css/fontawesome.min.css" rel="stylesheet">
+        <link href="../../css/brands.min.css" rel="stylesheet">
+        <link href="../../css/solid.min.css" rel="stylesheet">
+        <link href="../../css/v4-font-face.min.css" rel="stylesheet">
+        <link href="../../css/base.css" rel="stylesheet">
+        <link id="hljs-light" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" >
+        <link id="hljs-dark" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css" disabled>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+        <script>hljs.highlightAll();</script> 
+    </head>
+
+    <body>
+        <div class="navbar fixed-top navbar-expand-lg navbar-dark bg-primary">
+            <div class="container">
+                <a class="navbar-brand" href="../..">genmod docs</a>
+                <!-- Expander button -->
+                <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navbar-collapse" aria-controls="navbar-collapse" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <!-- Expanded navigation -->
+                <div id="navbar-collapse" class="navbar-collapse collapse">
+                        <!-- Main navigation -->
+                        <ul class="nav navbar-nav">
+                            <li class="nav-item">
+                                <a href="../.." class="nav-link">Home</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../../genetic-models/" class="nav-link">Genetic Models</a>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle active" aria-current="page" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Commands</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../annotate-variants/" class="dropdown-item">Annotating Variants</a>
+</li>
+                                    
+<li>
+    <a href="./" class="dropdown-item active" aria-current="page">Annotate Genetic Models</a>
+</li>
+                                    
+<li>
+    <a href="../filter-variants/" class="dropdown-item">Filter Variants</a>
+</li>
+                                    
+<li>
+    <a href="../sort-variants/" class="dropdown-item">Sort Variants</a>
+</li>
+                                    
+<li>
+    <a href="../build-annotation/" class="dropdown-item">Build References</a>
+</li>
+                                    
+<li>
+    <a href="../score-compounds/" class="dropdown-item">Score compounds</a>
+</li>
+                                    
+<li>
+    <a href="../score-variants/" class="dropdown-item">Score variants</a>
+</li>
+                                </ul>
+                            </li>
+                        </ul>
+
+                    <ul class="nav navbar-nav ms-md-auto">
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" data-bs-toggle="modal" data-bs-target="#mkdocs_search_modal">
+                                <i class="fa fa-search"></i> Search
+                            </a>
+                        </li>
+                            <li class="nav-item">
+                                <a rel="prev" href="../annotate-variants/" class="nav-link">
+                                    <i class="fa fa-arrow-left"></i> Previous
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a rel="next" href="../filter-variants/" class="nav-link">
+                                    Next <i class="fa fa-arrow-right"></i>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="https://github.com/Clinical-Genomics/genmod/edit/master/docs/commands/annotate-models.md" class="nav-link"><i class="fa-brands fa-github"></i> Edit on GitHub</a>
+                            </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="row">
+                    <div class="col-md-3"><div class="navbar-expand-md bs-sidebar hidden-print affix" role="complementary">
+    <div class="navbar-header">
+        <button type="button" class="navbar-toggler collapsed" data-bs-toggle="collapse" data-bs-target="#toc-collapse" title="Table of Contents">
+            <span class="fa fa-angle-down"></span>
+        </button>
+    </div>
+
+    
+    <div id="toc-collapse" class="navbar-collapse collapse card bg-body-tertiary">
+        <ul class="nav flex-column">
+            
+            <li class="nav-item" data-bs-level="1"><a href="#annotating-patterns-of-inheritance" class="nav-link">Annotating Patterns of Inheritance</a>
+              <ul class="nav flex-column">
+            <li class="nav-item" data-bs-level="2"><a href="#overview" class="nav-link">Overview</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#options-and-arguments" class="nav-link">Options and Arguments</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+              </ul>
+            </li>
+        </ul>
+    </div>
+</div></div>
+                    <div class="col-md-9" role="main">
+
+<h1 id="annotating-patterns-of-inheritance">Annotating Patterns of Inheritance</h1>
+<h3 id="basic-command">Basic command</h3>
+<pre><code class="language-bash">
+$ genmod models --help
+Usage: genmod models [OPTIONS] &lt;vcf_file&gt; or -
+
+  Annotate genetic models for vcf variants.
+
+  Checks what patterns of inheritance that are followed in a VCF file. The
+  analysis is family based so each family that are specified in the family
+  file and exists in the variant file will get it's own annotation.
+
+Options:
+ Options:
+   -f, --family_file &lt;ped_file&gt;
+   -t, --family_type [ped|alt|cmms|mip]
+                                   If the analysis use one of the known setups,
+                                   please specify which one.
+   -r, --reduced_penetrance &lt;tsv_file&gt;
+                                   File with gene ids that have reduced
+                                   penetrance.
+   --vep                           If variants are annotated with the Variant
+                                   Effect Predictor.
+   --phased                        If data is phased use this flag.
+   -s, --strict                    If strict model annotations should be
+                                   used(see documentation).
+   -p, --processes INTEGER         Define how many processes that should be use
+                                   for annotation.
+   --silent                        Do not print the variants.
+   -k, --keyword TEXT              What annotation keyword that should be used
+                                   when
+                                   searching for features.
+   -o, --outfile FILENAME          Specify the path to a file where results
+                                   should be stored.
+   --help                          Show this message and exit.
+
+</code></pre>
+<h2 id="overview">Overview</h2>
+<p>The <code>genmod models</code> command is used to annotate patterns of inheritance in vcf files. 
+<strong>genmod</strong> can handle multiple families of arbitrary sizes in the same vcf.<br />
+The individuals and families to be included in the analysis is specified in 
+the family file that is given with the <code>-f/--family_file</code> option.</p>
+<h2 id="options-and-arguments">Options and Arguments</h2>
+<h3 id="vcf_file">vcf_file</h3>
+<p>This is the only mandatory argument. A proper vcf file or a stream with a vcf file is allways input</p>
+<h3 id="family_file">family_file</h3>
+<p>This is a file in ped like format that describes which individuals that should be considered in the analysis and how they are related.
+The default file format is <a href="http://pngu.mgh.harvard.edu/~purcell/plink/data.shtml#ped">ped</a> but there are some alternatives.
+Please see <code>-t/--family_type</code>.</p>
+<h3 id="family_type">family_type</h3>
+<p>Family files are usually in the ped format but there are possibilities to use ped like files.
+If a ped file includes more columns than the first six mandatory (described <a href="http://pngu.mgh.harvard.edu/~purcell/plink/data.shtml#ped">here</a>) one may use the <code>alt</code> option for this parameter.</p>
+<h3 id="reduced_penetrance">reduced_penetrance</h3>
+<p>Some phenotypes are known to have reduced penetrance. This means that healthy 
+individuals can carry a heterozygous variant without being affected, while others
+that have the same variant are affected.
+When annotating inheritance patterns with <strong>genmod</strong> the user can provide a tab separated 
+file where the first column describes a gene id per row.
+Use the flag <code>-r/--reduced_penetrance</code> to provide this file to genmod.
+Genmod will then allow healthy carriers for variants that resides in these genes when
+ annotating the Autosomal Dominant inheritance pattern.</p>
+<h3 id="vep">vep</h3>
+<p>This flag tell genmod that the variants are annotated with the <a href="http://www.ensembl.org/info/docs/tools/vep/index.html">Variant Effect Predictor</a>.
+In this case the vep annotations will be used to determine if a compound pair is in the same gene.</p>
+<h3 id="strict">strict</h3>
+<p>Only annotate that a genetic model is followed if there is "proof", which means that the variants are called in all individuals.</p>
+<h3 id="phased">phased</h3>
+<p>This flag tell genmod that the variant calls are phased. This will make it possible for more accurate compound checks.
+For all autosomal chromosomes humans have two copies. If two variants resides on the same copy there will still be one copy that should produce "healthy" transcripts. </p>
+<p>With phased variants <strong>genmod</strong> can take this information into account.</p>
+<h3 id="processes">processes</h3>
+<p>How many processes should be used during the analysis. If <code>-p/--processes 1</code> the streaming functionality will work better for genmod since no intermediate file needs to be used, the variants will be processes line by line and printed directly.</p>
+<p>If there are several processes running at the same time the variants will be printed unordered to a intermediate file that will be sorted when all variants are analyzed.</p>
+<h3 id="silent">silent</h3>
+<p>If no variants or headers should be printed to screen. This is mainly for testing.</p>
+<h3 id="keyword">keyword</h3>
+<p>This is the keyword in the vcf info field that genmod will look for when trying to find what genes the variant is annotated with.
+Default is <code>Annotation</code> since this is the keyword used by <code>genmod annotate</code>.</p></div>
+            </div>
+        </div>
+
+        <footer class="col-md-12">
+            <hr>
+            <p>Documentation built with <a href="https://www.mkdocs.org/">MkDocs</a>.</p>
+        </footer>
+        <script src="../../js/bootstrap.bundle.min.js"></script>
+        <script>
+            var base_url = "../..",
+                shortcuts = {"help": 191, "next": 78, "previous": 80, "search": 83};
+        </script>
+        <script src="../../js/base.js"></script>
+        <script src="../../search/main.js"></script>
+
+        <div class="modal" id="mkdocs_search_modal" tabindex="-1" role="dialog" aria-labelledby="searchModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="searchModalLabel">Search</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>From here you can search these documents. Enter your search terms below.</p>
+                <form>
+                    <div class="form-group">
+                        <input type="search" class="form-control" placeholder="Search..." id="mkdocs-search-query" title="Type search term here">
+                    </div>
+                </form>
+                <div id="mkdocs-search-results" data-no-results-text="No results found"></div>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div><div class="modal" id="mkdocs_keyboard_modal" tabindex="-1" role="dialog" aria-labelledby="keyboardModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="keyboardModalLabel">Keyboard Shortcuts</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th style="width: 20%;">Keys</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="help shortcut"><kbd>?</kbd></td>
+                    <td>Open this help</td>
+                  </tr>
+                  <tr>
+                    <td class="next shortcut"><kbd>n</kbd></td>
+                    <td>Next page</td>
+                  </tr>
+                  <tr>
+                    <td class="prev shortcut"><kbd>p</kbd></td>
+                    <td>Previous page</td>
+                  </tr>
+                  <tr>
+                    <td class="search shortcut"><kbd>s</kbd></td>
+                    <td>Search</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div>
+
+    </body>
+</html>
