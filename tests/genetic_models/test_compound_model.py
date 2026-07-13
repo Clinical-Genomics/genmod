@@ -82,6 +82,27 @@ def test_variants_on_same_allele_false_same_phase_set_no_overlap():
     assert variants_on_same_allele("sample", variant_1, variant_2) is False
 
 
+def test_variants_on_same_allele_false_when_one_phase_set_missing():
+    variant_1 = make_variant(
+        genotypes={"sample": Genotype(**{"GT": "0|1"})},
+        sample_fields={"sample": "0|1:1"},
+    )
+    variant_2 = make_variant(genotypes={"sample": Genotype(**{"GT": "0|1"})})
+
+    assert get_phase_set(variant_1, "sample") == "1"
+    assert get_phase_set(variant_2, "sample") is None
+    assert variants_on_same_allele("sample", variant_1, variant_2) is False
+
+
+def test_variants_on_same_allele_false_when_both_phase_sets_missing():
+    variant_1 = make_variant(genotypes={"sample": Genotype(**{"GT": "0|1"})})
+    variant_2 = make_variant(genotypes={"sample": Genotype(**{"GT": "0|1"})})
+
+    assert get_phase_set(variant_1, "sample") is None
+    assert get_phase_set(variant_2, "sample") is None
+    assert variants_on_same_allele("sample", variant_1, variant_2) is False
+
+
 def test_check_compounds_false_when_affected_phased_same_allele():
     family_lines = [
         "#FamilyID\tSampleID\tFather\tMother\tSex\tPhenotype\n",
@@ -109,6 +130,63 @@ def test_check_compounds_false_when_affected_phased_same_allele():
     )
 
     assert check_compounds(variant_1, variant_2, family=family, phased=True) is False
+
+
+def test_check_compounds_true_when_affected_phased_but_phase_set_missing():
+    family_lines = [
+        "#FamilyID\tSampleID\tFather\tMother\tSex\tPhenotype\n",
+        "1\tchild\tfather\tmother\t1\t2\n",
+        "1\tfather\t0\t0\t1\t1\n",
+        "1\tmother\t0\t0\t2\t1\n",
+    ]
+    family = get_family(family_lines)
+
+    variant_1 = make_variant(
+        genotypes={
+            "child": Genotype(**{"GT": "0|1"}),
+            "father": Genotype(**{"GT": "0|0"}),
+            "mother": Genotype(**{"GT": "0|0"}),
+        }
+    )
+    variant_2 = make_variant(
+        genotypes={
+            "child": Genotype(**{"GT": "0|1"}),
+            "father": Genotype(**{"GT": "0|0"}),
+            "mother": Genotype(**{"GT": "0|0"}),
+        }
+    )
+
+    # Should be true because the child is affected and phased, but the phase set is missing, so we cannot determine if they are on the same allele or not.
+    assert check_compounds(variant_1, variant_2, family=family, phased=True) is True
+
+
+def test_check_compounds_true_when_affected_phased_but_one_phase_set_missing():
+    family_lines = [
+        "#FamilyID\tSampleID\tFather\tMother\tSex\tPhenotype\n",
+        "1\tchild\tfather\tmother\t1\t2\n",
+        "1\tfather\t0\t0\t1\t1\n",
+        "1\tmother\t0\t0\t2\t1\n",
+    ]
+    family = get_family(family_lines)
+
+    variant_1 = make_variant(
+        genotypes={
+            "child": Genotype(**{"GT": "0|1"}),
+            "father": Genotype(**{"GT": "0|0"}),
+            "mother": Genotype(**{"GT": "0|0"}),
+        },
+        sample_fields={"child": "0|1:1"},
+    )
+    variant_2 = make_variant(
+        genotypes={
+            "child": Genotype(**{"GT": "0|1"}),
+            "father": Genotype(**{"GT": "0|0"}),
+            "mother": Genotype(**{"GT": "0|0"}),
+        }
+    )
+
+    # Should be true because the child is affected and phased, but one of the phase sets is missing, so we cannot determine if they are on the same allele or not.
+    assert check_compounds(variant_1, variant_2, family=family, phased=True) is True
 
 
 def test_check_compounds_false_when_healthy_parent_has_both_variants():
