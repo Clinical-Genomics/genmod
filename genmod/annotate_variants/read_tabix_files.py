@@ -1,5 +1,8 @@
+from __future__ import annotations
+
 import logging
 import os
+from typing import Optional
 
 import pysam
 
@@ -10,9 +13,17 @@ class TabixError(Exception):
     """Raised when a tabix file is unusable (not bgzipped, missing index, unreadable)"""
 
 
-def get_tabixhandle(path):
-    """Check if a file is zipped and that the index exists
-    If something looks wierd raise a TabixError
+def get_tabixhandle(path: str) -> pysam.TabixFile:
+    """Open a bgzipped, tabix indexed file.
+
+    Args:
+        path: Path to a ``.gz`` file with a ``.tbi`` index next to it.
+
+    Returns:
+        A handle to the file.
+
+    Raises:
+        TabixError: If the file is not ``.gz``, has no index or cannot be opened.
     """
     if not path.endswith(".gz"):
         raise TabixError("File {0} does not end with '.gz'".format(path))
@@ -26,19 +37,20 @@ def get_tabixhandle(path):
         raise TabixError("Could not open {0}: {1}".format(path, err))
 
 
-def get_tabix_records(tabix_reader, chrom, start):
-    """Get the tabix records for some given coordinates
+def get_tabix_records(
+    tabix_reader: pysam.TabixFile, chrom: str, start: str | int
+) -> list[tuple[str, ...]]:
+    """Get the records overlapping a position, trying the contig with and without ``chr``.
 
     Args:
-        tabix_reader (Tabix.reader): A Tabix object
-        chrom (str): The chromosome of the position
-        start (str): The start position of the variant
-        alt (str): The alternative sequence
+        tabix_reader: A tabix handle.
+        chrom: The chromosome of the position.
+        start: The 1-based position.
 
     Returns:
-        records (Iterable): The overlapping records found
+        The overlapping records as tuples of columns. Empty if there are none or the
+        chromosome is not in the file.
     """
-    records = []
     logger.debug("Looking for record in %s" % (tabix_reader))
     logger.debug("Looking for records with chr:%s, pos:%s" % (chrom, start))
     tabix_key = int(start)
@@ -54,21 +66,22 @@ def get_tabix_records(tabix_reader, chrom, start):
             continue
     logger.info("Chromosome {0} does not seem to exist in {1}".format(chrom, tabix_reader))
 
-    return records
+    return []
 
 
-def get_frequencies(tabix_reader, chrom, start, alt):
-    """
-    Return the frequencies from a tabix indexed vcf file.
+def get_frequencies(
+    tabix_reader: pysam.TabixFile, chrom: str, start: str | int, alt: str
+) -> dict[str, str]:
+    """Return the ``AF`` and ``MAX_AF`` frequencies of an alternative from an indexed VCF.
 
-    Arguments:
-        tabix_reader (Tabix.reader): A Tabix object
-        chrom (str): The chromosome of the position
-        start (str): The start position of the variant
-        alt (str): The alternative sequence
+    Args:
+        tabix_reader: A tabix handle.
+        chrom: The chromosome of the position.
+        start: The 1-based position.
+        alt: The alternative sequence.
 
     Returns:
-        frequencies (dict): A dictionary with relevant frequencies
+        The frequencies found, keyed by INFO key.
     """
     records = get_tabix_records(tabix_reader, chrom, start)
 
@@ -80,34 +93,33 @@ def get_frequencies(tabix_reader, chrom, start, alt):
         for i, alternative in enumerate(record[4].split(",")):
             if alternative == alt:
                 for info in record[7].split(";"):
-                    info = info.split("=")
-                    if info[0] in ["AF", "MAX_AF"]:
-                        freqs = info[-1].split(",")
-                        frequencies[info[0]] = freqs[i]
+                    key_value = info.split("=")
+                    if key_value[0] in ["AF", "MAX_AF"]:
+                        freqs = key_value[-1].split(",")
+                        frequencies[key_value[0]] = freqs[i]
 
     return frequencies
 
 
-def get_spidex_score(tabix_reader, chrom, start, alt):
-    """
-    Return the record from a spidex file.
+def get_spidex_score(
+    tabix_reader: pysam.TabixFile, chrom: str, start: str | int, alt: str
+) -> Optional[float]:
+    """Return the SPIDEX z score of an alternative from a SPIDEX file.
 
-    Arguments:
-        tabix_reader (Tabix.reader): A Tabix object
-        chrom (str): The chromosome of the position
-        start (str): The start position of the variant
-        alt (str): The alternative sequence
+    Args:
+        tabix_reader: A tabix handle.
+        chrom: The chromosome of the position.
+        start: The 1-based position.
+        alt: The alternative sequence.
 
     Returns:
-        spidex_score float: The spidex z scores for this position
-
+        The z score, or None if there is no match.
     """
     records = get_tabix_records(tabix_reader, chrom, start)
     spidex_score = None
 
     for record in records:
         if record[3] == alt:
-            # We need to send both cadd values
             spidex_score = float(record[5])
 
     logger.debug("Found spidex score: %s" % str(spidex_score))
@@ -115,26 +127,23 @@ def get_spidex_score(tabix_reader, chrom, start, alt):
     return spidex_score
 
 
-def get_cosmic(tabix_reader, chrom, start, alt):
-    """
-    Return if record exists in cosmic database.
+def get_cosmic(tabix_reader: pysam.TabixFile, chrom: str, start: str | int, alt: str) -> bool:
+    """Return whether an alternative at a position is in COSMIC.
 
-    Arguments:
-        tabix_reader (Tabix.reader): A Tabix object
-        chrom (str): The chromosome of the position
-        start (str): The start position of the variant
-        alt (str): The alternative sequence
+    Args:
+        tabix_reader: A tabix handle.
+        chrom: The chromosome of the position.
+        start: The 1-based position.
+        alt: The alternative sequence.
 
     Returns:
-        in_cosmic (bool): If variant is in COSMIC
-
+        True if a COSMIC record matches the alternative.
     """
     records = get_tabix_records(tabix_reader, chrom, start)
     in_cosmic = False
 
     for record in records:
         if record[4] == alt:
-            # We need to send both cadd values
             in_cosmic = True
     if in_cosmic:
         logger.debug("Variant was found in COSMIC")
@@ -144,19 +153,19 @@ def get_cosmic(tabix_reader, chrom, start, alt):
     return in_cosmic
 
 
-def get_cadd_scores(tabix_reader, chrom, start, alt):
-    """
-    Return the record from a cadd file.
+def get_cadd_scores(
+    tabix_reader: pysam.TabixFile, chrom: str, start: str | int, alt: str
+) -> dict[str, str]:
+    """Return the CADD scores of an alternative from a CADD file.
 
-    Arguments:
-        tabix_reader (Tabix.reader): A Tabix object
-        chrom (str): The chromosome of the position
-        start (str): The start position of the variant
-        alternatives (str): The alternative sequence
+    Args:
+        tabix_reader: A tabix handle.
+        chrom: The chromosome of the position.
+        start: The 1-based position.
+        alt: The alternative sequence.
 
     Returns:
-        cadd_scores (dict): The cadd scores for this position
-
+        ``cadd_raw`` and ``cadd_phred`` as strings. Empty if there is no match.
     """
     cadd_scores = {}
     records = get_tabix_records(tabix_reader, chrom, start)
