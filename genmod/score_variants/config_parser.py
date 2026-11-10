@@ -28,7 +28,7 @@ import logging
 
 import click
 import configobj
-from extract_vcf import Plugin
+from genmod.plugin import Plugin
 from validate import ValidateError
 
 from .score_function import ScoreFunction
