@@ -125,6 +125,7 @@ class ConfigParser(configobj.ConfigObj):
                     csq_key=plugin_info.get("csq_key", None),
                     record_rule=plugin_info.get("record_rule", "max"),
                     string_rules=string_rules,
+                    exact_match=self.get_exact_match(plugin, plugin_info),
                 )
 
                 if category:
@@ -207,6 +208,21 @@ class ConfigParser(configobj.ConfigObj):
                     score_function.add_interval(lower=lower_bound, upper=upper_bound, score=score)
 
         return score_function
+
+    def get_exact_match(self, plugin, plugin_info):
+        """Return the `exact_match` setting of a plugin, False if not set.
+
+        With `exact_match = true` string rules are matched against whole tokens
+        instead of as substrings of the raw VCF value.
+        """
+        try:
+            return plugin_info.as_bool("exact_match") if "exact_match" in plugin_info else False
+        except ValueError:
+            raise ValidateError(
+                "exact_match has to be true or false.\nWrong exact_match in plugin: {0}".format(
+                    plugin
+                )
+            )
 
     def get_string_dict(self, plugin_info):
         """Convert a section with information of priorities to a string dict.

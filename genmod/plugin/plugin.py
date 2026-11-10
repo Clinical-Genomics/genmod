@@ -43,6 +43,7 @@ class Plugin(object):
         gt_key: Optional[str] = None,
         string_rules: dict[str, int] = {},
         dict_entry: bool = False,
+        exact_match: bool = False,
     ) -> None:
         """Initialise the plugin.
 
@@ -64,6 +65,10 @@ class Plugin(object):
             dict_entry: If the values are annotated as a dictionary. The first two
                 separators then split the dictionary and its keys and values, and the
                 remaining ones split the value.
+            exact_match: If True, string rules are matched against whole tokens (the
+                entry split on the separators, ignoring a trailing VEP ``(score)``)
+                instead of as substrings of the raw entry. Default False, the legacy
+                substring matching.
         """
         super(Plugin, self).__init__()
         self.logger = getLogger(__name__)
@@ -103,6 +108,8 @@ class Plugin(object):
         self.logger.info("gt_key: {0}".format(self.gt_key))
 
         self.dict_entry = dict_entry
+
+        self.exact_match = exact_match
 
     def get_entry(
         self,
@@ -387,8 +394,32 @@ class Plugin(object):
                             self.string_rules.items(), key=operator.itemgetter(1)
                         )
 
+                    tokens: Optional[set[str]]
+                    if self.exact_match:
+                        # Compare whole tokens, not substrings: 'pathogenic' must not
+                        # match 'Likely_pathogenic' or 'Conflicting_..._pathogenicity'.
+                        # A trailing VEP score such as 'probably_damaging(0.95)' is ignored.
+                        tokens = set(
+                            token.lower().split("(")[0]
+                            for token in self.get_entry(
+                                raw_entry=raw_entry,
+                                vcf_header=vcf_header,
+                                csq_format=csq_format,
+                                dict_key=dict_key,
+                                individual_id=individual_id,
+                            )
+                        )
+                    else:
+                        # Legacy: substring of the raw entry
+                        tokens = None
+
                     for string_rule in sorted_strings:
-                        if string_rule[0].lower() in raw_entry.lower():
+                        rule = string_rule[0].lower()
+                        if tokens is None:
+                            matched = rule in raw_entry.lower()
+                        else:
+                            matched = rule in tokens
+                        if matched:
                             value = string_rule[0]
                             break
                 else:
