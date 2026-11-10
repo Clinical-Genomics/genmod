@@ -17,9 +17,9 @@ import logging
 import sys
 
 import click
-from genmod.plugin import Plugin
 
 from genmod import __version__
+from genmod.plugin import Plugin
 from genmod.vcf_tools import (
     HeaderParser,
     print_headers,

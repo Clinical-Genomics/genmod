@@ -1,5 +1,5 @@
-from genmod.plugin import Plugin
 import pytest
+from genmod.plugin import Plugin
 
 vcf_header = ["CHROM", "POS", "ID", "REF", "ALT", "QUAL", "FILTER", "INFO", "FORMAT", "ADM1003A3"]
 

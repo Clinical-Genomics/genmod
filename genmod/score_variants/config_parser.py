@@ -28,8 +28,9 @@ import logging
 
 import click
 import configobj
-from genmod.plugin import Plugin
 from validate import ValidateError
+
+from genmod.plugin import Plugin
 
 from .score_function import ScoreFunction
 

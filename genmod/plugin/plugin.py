@@ -1,7 +1,7 @@
 """Vendored from extract_vcf (https://github.com/moonso/extract_vcf, MIT License, Måns Magnusson)."""
 
-from logging import getLogger
 import operator
+from logging import getLogger
 
 from .split_strings import split_strings
 
