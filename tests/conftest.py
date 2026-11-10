@@ -1,5 +1,5 @@
 import pytest
-import tabix
+import pysam
 from genmod.annotations import ensembl_path_37 as ensembl_path
 from genmod.vcf_tools.header_parser import HeaderParser
 
@@ -23,14 +23,14 @@ def thousand_g_chr_path(request):
 @pytest.fixture(scope="function")
 def thousand_g_handle(request, thousand_g_path):
     """Return a tabix handle with a 1000G file"""
-    thousand_g = tabix.open(thousand_g_path)
+    thousand_g = pysam.TabixFile(thousand_g_path)
     return thousand_g
 
 
 @pytest.fixture(scope="function")
 def thousand_g_chr_handle(request, thousand_g_chr_path):
     """Return a tabix handle with a 1000G file"""
-    thousand_g = tabix.open(thousand_g_chr_path)
+    thousand_g = pysam.TabixFile(thousand_g_chr_path)
     return thousand_g
 
 

@@ -1,10 +1,13 @@
 import logging
 import os
 
-import tabix
-from tabix import TabixError
+import pysam
 
 logger = logging.getLogger(__name__)
+
+
+class TabixError(Exception):
+    """Raised when a tabix file is unusable (not bgzipped, missing index, unreadable)"""
 
 
 def get_tabixhandle(path):
@@ -17,7 +20,10 @@ def get_tabixhandle(path):
     if not os.path.isfile(index_file):
         raise TabixError("No index could be found for {0}".format(path))
 
-    return tabix.open(path)
+    try:
+        return pysam.TabixFile(path)
+    except (OSError, ValueError) as err:
+        raise TabixError("Could not open {0}: {1}".format(path, err))
 
 
 def get_tabix_records(tabix_reader, chrom, start):
@@ -36,15 +42,17 @@ def get_tabix_records(tabix_reader, chrom, start):
     logger.debug("Looking for record in %s" % (tabix_reader))
     logger.debug("Looking for records with chr:%s, pos:%s" % (chrom, start))
     tabix_key = int(start)
-    try:
-        records = tabix_reader.query(chrom, tabix_key - 1, tabix_key)
-    except TypeError:
-        records = tabix_reader.query(str(chrom), tabix_key - 1, tabix_key)
-    except TabixError:
+    chrom = str(chrom)
+    # pysam raises ValueError for contigs that are missing from the index.
+    # Records are materialised so that errors surface here and not in the caller.
+    for contig in (chrom, "chr" + chrom):
         try:
-            records = tabix_reader.query("chr" + chrom, tabix_key - 1, tabix_key)
-        except TabixError:
-            logger.info("Chromosome {0} does not seem to exist in {1}".format(chrom, tabix_reader))
+            return list(
+                tabix_reader.fetch(contig, tabix_key - 1, tabix_key, parser=pysam.asTuple())
+            )
+        except ValueError:
+            continue
+    logger.info("Chromosome {0} does not seem to exist in {1}".format(chrom, tabix_reader))
 
     return records
 

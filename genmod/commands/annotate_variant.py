@@ -16,7 +16,6 @@ import logging
 import sys
 
 import click
-from tabix import TabixError
 
 from genmod import __version__
 from genmod.annotate_regions.parse_annotations import build_region_trees
@@ -32,7 +31,7 @@ from genmod.annotate_variants.add_annotations import (
     add_thousandg_max,
 )
 from genmod.annotate_variants.annotate import annotate_variant
-from genmod.annotate_variants.read_tabix_files import get_tabixhandle
+from genmod.annotate_variants.read_tabix_files import TabixError, get_tabixhandle
 from genmod.annotations import ensembl_path_37, ensembl_path_38
 from genmod.commands.utils import get_file_handle, outfile, silent, temp_dir, variant_file
 from genmod.vcf_tools import HeaderParser, print_headers, print_variant
