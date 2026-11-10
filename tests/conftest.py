@@ -1,5 +1,5 @@
-import pytest
 import pysam
+import pytest
 from genmod.annotations import ensembl_path_37 as ensembl_path
 from genmod.vcf_tools.header_parser import HeaderParser
 
