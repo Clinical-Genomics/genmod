@@ -16,7 +16,6 @@ import logging
 import sys
 
 import click
-from tabix import TabixError
 
 from genmod import __version__
 from genmod.annotate_regions.parse_annotations import build_region_trees
@@ -32,7 +31,7 @@ from genmod.annotate_variants.add_annotations import (
     add_thousandg_max,
 )
 from genmod.annotate_variants.annotate import annotate_variant
-from genmod.annotate_variants.read_tabix_files import get_tabixhandle
+from genmod.annotate_variants.read_tabix_files import TabixError, get_tabixhandle
 from genmod.annotations import ensembl_path_37, ensembl_path_38
 from genmod.commands.utils import get_file_handle, outfile, silent, temp_dir, variant_file
 from genmod.vcf_tools import HeaderParser, print_headers, print_variant
@@ -177,25 +176,25 @@ def annotate(
 
         if exac:
             logger.info("Annotating ExAC frequencies")
-            logger.debug("Using ExAC file: {0}".format(exac))
+            logger.debug(f"Using ExAC file: {exac}")
             annotation_arguments["exac"] = get_tabixhandle(exac)
             add_exac(head)
 
         if thousand_g:
             logger.info("Annotating 1000G frequencies")
-            logger.debug("Using 1000G file: {0}".format(thousand_g))
+            logger.debug(f"Using 1000G file: {thousand_g}")
             annotation_arguments["thousand_g"] = get_tabixhandle(thousand_g)
             add_thousandg(head)
 
         if spidex:
             logger.info("Annotating Spidex z scores")
-            logger.debug("Using Spidex file: {0}".format(spidex))
+            logger.debug(f"Using Spidex file: {spidex}")
             annotation_arguments["spidex"] = get_tabixhandle(spidex)
             add_spidex(head)
 
         if cadd_file:
             logger.info("Annotating CADD scores")
-            logger.debug("Using CADD file(s): {0}".format(", ".join(cadd_file)))
+            logger.debug(f"Using CADD file(s): {', '.join(cadd_file)}")
             annotation_arguments["cadd_files"] = [get_tabixhandle(cadd) for cadd in cadd_file]
 
             add_cadd(head)
@@ -213,7 +212,7 @@ def annotate(
 
         if cosmic:
             logger.info("Annotating if variant is in COSMIC")
-            logger.debug("Using COSMIC file: {0}".format(cosmic))
+            logger.debug(f"Using COSMIC file: {cosmic}")
             annotation_arguments["cosmic"] = get_tabixhandle(cosmic)
             add_cosmic(head)
     except TabixError as err:

@@ -1,56 +1,69 @@
 """Vendored from extract_vcf (https://github.com/moonso/extract_vcf, MIT License, Måns Magnusson)."""
 
+from __future__ import annotations
+
 import operator
+from collections.abc import Sequence
 from logging import getLogger
+from typing import Any, Optional, Union
 
 from .split_strings import split_strings
 
+VariantDict = dict[str, Any]
+"""A variant as a dictionary, with VCF columns as keys and ``info_dict`` for INFO."""
+
+Value = Union[str, int, float, bool, None]
+"""The value types returned by :meth:`Plugin.get_value`."""
+
 
 class Plugin(object):
-    """Class for holding information about a plugin"""
+    """Extract a single value from a VCF variant based on a set of rules.
+
+    A plugin describes where in a variant to look (``field``, ``info_key``, ``csq_key``,
+    ``gt_key``), how the record is split up (``separators``), what type it has
+    (``data_type``) and how to choose between multiple values (``record_rule`` and
+    ``string_rules``). Use :meth:`get_value` to apply it to a variant, given either as a
+    VCF line or as a dictionary.
+
+    Attributes:
+        data_types: The valid values for ``data_type``.
+        regex: Unused, kept for compatibility with ``extract_vcf``.
+    """
 
     def __init__(
         self,
-        name,
-        field,
-        data_type=None,
-        separators=[],
-        info_key=None,
-        category=None,
-        csq_key=None,
-        record_rule=None,
-        gt_key=None,
-        string_rules={},
-        dict_entry=False,
-    ):
-        """
-        The plugin class hold plugin information. The main task for a plugin
-        is to return the correct value from a vcf field based on a number of
-        rules.
-        "field" determines where in the vcf the value should be collected.
-        "data_type" determines the type of the record that should be extracted
-        "separators" define how the values are separated
-        "info_key" and csq_key determines more specific where to look
-        "record_rule" determines what value to return (If there are multiple values)
-        "string_rules" determin how string matches should be prioritized.
+        name: str,
+        field: str,
+        data_type: Optional[str] = None,
+        separators: Sequence[str] = [],
+        info_key: Optional[str] = None,
+        category: Optional[str] = None,
+        csq_key: Optional[str] = None,
+        record_rule: Optional[str] = None,
+        gt_key: Optional[str] = None,
+        string_rules: dict[str, int] = {},
+        dict_entry: bool = False,
+    ) -> None:
+        """Initialise the plugin.
 
-        Arguments:
-            name (str): The name of the plugin
-            field (str): The field of the vcf that should be searched. Anyone of
-                ['CHROM','POS','ID','REF','ALT', 'FILTER','QUAL',
-                    'FILTER','INFO','FORMAT','sample_id']
-            data_type (str): the data type of the record. Anyone of
-                ['integer','float','flag','string']
-            separators (list): A list of strings that describes how the record is
-                                separated
-            info_key (str): The name of the INFO field
-            csq_key (str): The name of the Vep entry
-            record_rule (str): Anyone of ['min', 'max']
-            string_rules (dict): A dictionary with priority order of string matches
-            dict_entry (bool): If the values are annotated as a dictionary.
-                         In that case the the annotattion after first splitter will
-                         be used as key.
-
+        Args:
+            name: The name of the plugin.
+            field: The field of the VCF that should be searched. Any of
+                ``CHROM``, ``POS``, ``ID``, ``REF``, ``ALT``, ``QUAL``, ``FILTER``,
+                ``INFO``, ``FORMAT`` or ``sample_id``.
+            data_type: The data type of the record. Any of ``integer``, ``float``,
+                ``flag`` or ``string``.
+            separators: How the record is separated, applied in order.
+            info_key: The name of the INFO field (when ``field`` is ``INFO``).
+            category: The category the plugin belongs to.
+            csq_key: The name of the VEP entry (when ``info_key`` is ``CSQ``).
+            record_rule: Which value to return if there are several, ``min`` or ``max``.
+            gt_key: The FORMAT key to extract (when ``field`` is ``sample_id``).
+            string_rules: Priority of string matches, mapping the string to its rank.
+                Used with ``data_type="string"`` and a ``record_rule``.
+            dict_entry: If the values are annotated as a dictionary. The first two
+                separators then split the dictionary and its keys and values, and the
+                remaining ones split the value.
         """
         super(Plugin, self).__init__()
         self.logger = getLogger(__name__)
@@ -93,25 +106,31 @@ class Plugin(object):
 
     def get_entry(
         self,
-        variant_line=None,
-        variant_dict=None,
-        raw_entry=None,
-        vcf_header=None,
-        csq_format=None,
-        dict_key=None,
-        individual_id=None,
-    ):
-        """Return the splitted entry from variant information
+        variant_line: Optional[str] = None,
+        variant_dict: Optional[VariantDict] = None,
+        raw_entry: Optional[str] = None,
+        vcf_header: Optional[Sequence[str]] = None,
+        csq_format: Optional[Sequence[str]] = None,
+        dict_key: Optional[str] = None,
+        individual_id: Optional[str] = None,
+    ) -> list[str]:
+        """Return the entry of the variant, split into its separate values.
 
         Args:
-            variant_line (str): A vcf formated variant line
-            vcf_header (list): A list with the vcf header line
-            csq_format (list): A list with the csq headers
-            family_id (str): The family id that should be searched. If no id
-                             the first family found will be used
+            variant_line: A VCF formatted variant line.
+            variant_dict: A variant dictionary, used if no ``variant_line`` is given.
+            raw_entry: The raw entry. If given it is split directly instead of being
+                looked up in the variant.
+            vcf_header: The VCF header line (column names including sample ids).
+            csq_format: The names of the CSQ (VEP) columns. Required for ``CSQ`` entries.
+            dict_key: The key to pick if the entry is a dictionary (see ``dict_entry``).
+            individual_id: The sample id to use when ``field`` is ``sample_id``.
 
         Returns:
-            entry (list): A list with the splitted entry
+            The split entry. Empty if no entry was found.
+
+        Raises:
+            IOError: If the CSQ format or CSQ key is missing for a CSQ entry.
         """
         if not raw_entry:
             raw_entry = self.get_raw_entry(
@@ -174,73 +193,77 @@ class Plugin(object):
 
     def get_raw_entry(
         self,
-        variant_line=None,
-        variant_dict=None,
-        vcf_header=None,
-        individual_id=None,
-        dict_key=None,
-    ):
-        """Return the raw entry from the vcf field
-
-        If no entry was found return None
+        variant_line: Optional[str] = None,
+        variant_dict: Optional[VariantDict] = None,
+        vcf_header: Optional[Sequence[str]] = None,
+        individual_id: Optional[str] = None,
+        dict_key: Optional[str] = None,
+    ) -> Optional[str]:
+        """Return the raw, unsplit entry from the VCF field of the plugin.
 
         Args:
-            variant_line (str): A vcf formated variant line
-            vcf_header (list): A list with the vcf header line
-            individual_id (str): The individual id to get gt call
+            variant_line: A VCF formatted variant line.
+            variant_dict: A variant dictionary, used if no ``variant_line`` is given.
+            vcf_header: The VCF header line. Required for ``sample_id`` with a line.
+            individual_id: The sample id to get the genotype call for.
+            dict_key: The key to pick if the entry is a dictionary (see ``dict_entry``).
+
         Returns:
-            The raw entry found in variant line
+            The raw entry, or None if no entry was found.
+
+        Raises:
+            IOError: If ``field`` is ``sample_id`` and the individual id, genotype key
+                or (for a variant line) the VCF header is missing.
         """
-        if variant_line:
-            variant_line = variant_line.rstrip().split()
+        columns = variant_line.rstrip().split() if variant_line else None
 
         entry = None
 
         if self.field == "CHROM":
-            if variant_line:
-                entry = variant_line[0]
+            if columns:
+                entry = columns[0]
             elif variant_dict:
                 entry = variant_dict["CHROM"]
 
         elif self.field == "POS":
-            if variant_line:
-                entry = variant_line[1]
+            if columns:
+                entry = columns[1]
             elif variant_dict:
                 entry = variant_dict["POS"]
 
         elif self.field == "ID":
-            if variant_line:
-                entry = variant_line[2]
+            if columns:
+                entry = columns[2]
             elif variant_dict:
                 entry = variant_dict["ID"]
 
         elif self.field == "REF":
-            if variant_line:
-                entry = variant_line[3]
+            if columns:
+                entry = columns[3]
             elif variant_dict:
                 entry = variant_dict["REF"]
 
         elif self.field == "ALT":
-            if variant_line:
-                entry = variant_line[4]
+            if columns:
+                entry = columns[4]
             elif variant_dict:
                 entry = variant_dict["ALT"]
 
         elif self.field == "QUAL":
-            if variant_line:
-                entry = variant_line[5]
+            if columns:
+                entry = columns[5]
             elif variant_dict:
                 entry = variant_dict["QUAL"]
 
         elif self.field == "FILTER":
-            if variant_line:
-                entry = variant_line[6]
+            if columns:
+                entry = columns[6]
             elif variant_dict:
                 entry = variant_dict["FILTER"]
 
         elif self.field == "INFO":
-            if variant_line:
-                for info_annotation in variant_line[7].split(";"):
+            if columns:
+                for info_annotation in columns[7].split(";"):
                     splitted_annotation = info_annotation.split("=")
                     if self.info_key == splitted_annotation[0]:
                         if len(splitted_annotation) == 2:
@@ -265,8 +288,8 @@ class Plugin(object):
                         entry = value
 
         elif self.field == "FORMAT":
-            if variant_line:
-                entry = variant_line[8]
+            if columns:
+                entry = columns[8]
             elif variant_dict:
                 entry = variant_dict["FORMAT"]
 
@@ -276,15 +299,15 @@ class Plugin(object):
             if not self.gt_key:
                 raise IOError("If 'sample_id' a genotype key must be provided")
 
-            if variant_line:
+            if columns:
                 if not vcf_header:
                     raise IOError("If 'sample_id' the vcf header must be provided")
 
-                format_info = variant_line[8]
+                format_info = columns[8]
 
                 for i, head in enumerate(vcf_header):
                     if head == individual_id:
-                        raw_gt_call = variant_line[i]
+                        raw_gt_call = columns[i]
             elif variant_dict:
                 format_info = variant_dict["FORMAT"]
                 raw_gt_call = variant_dict[individual_id]
@@ -296,35 +319,37 @@ class Plugin(object):
 
     def get_value(
         self,
-        variant_line=None,
-        variant_dict=None,
-        entry=None,
-        raw_entry=None,
-        vcf_header=None,
-        csq_format=None,
-        dict_key=None,
-        individual_id=None,
-    ):
-        """
-        Return the value as specified by plugin
+        variant_line: Optional[str] = None,
+        variant_dict: Optional[VariantDict] = None,
+        entry: Optional[Sequence[str]] = None,
+        raw_entry: Optional[str] = None,
+        vcf_header: Optional[Sequence[str]] = None,
+        csq_format: Optional[Sequence[str]] = None,
+        dict_key: Optional[str] = None,
+        individual_id: Optional[str] = None,
+    ) -> Value:
+        """Return the value of the variant as specified by the plugin.
 
-        Get value will return one value or None if no correct value is found.
+        ``entry`` and ``raw_entry`` are accepted for compatibility with ``extract_vcf``
+        but are not used; the raw entry is always looked up from the variant.
 
-        Arguments:
-            variant_line (str): A vcf variant line
-            variant_dict (dict): A variant dictionary
-            entry (list): A splitted entry
-            raw_entry (str): The raw entry from the vcf file
-            vcf_header (list): The vcf header line with sample ids
-            csq_format (list): The CSQ format
-            family_id (str): The family id
-            individual_id (str): The individual id
+        Args:
+            variant_line: A VCF formatted variant line.
+            variant_dict: A variant dictionary, used if no ``variant_line`` is given.
+            entry: Unused.
+            raw_entry: Unused.
+            vcf_header: The VCF header line with sample ids.
+            csq_format: The names of the CSQ (VEP) columns.
+            dict_key: The key to pick if the entry is a dictionary (see ``dict_entry``).
+            individual_id: The sample id to use when ``field`` is ``sample_id``.
 
         Returns:
-            value (str): A string that represents the correct value
-
+            The value, typed according to ``data_type``: ``True`` for a ``flag`` that is
+            present, the matching string rule for a ``string``, or the ``int``/``float``
+            chosen by ``record_rule``. None if no value was found.
         """
-        value = None
+        # Also used for intermediate values while looping, so not just ``Value``
+        value: Any = None
 
         raw_entry = self.get_raw_entry(
             variant_line=variant_line,
@@ -424,7 +449,8 @@ class Plugin(object):
 
         return value
 
-    def __repr__(self):
+    def __repr__(self) -> str:
+        """Return a string with the main settings of the plugin."""
         return (
             "Plugin(name={0},field={1},data_type={2},separators={3},"
             "record_rule={4},info_key={5},csq_key={6},category={7},"
