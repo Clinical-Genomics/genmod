@@ -26,15 +26,15 @@ def get_tabixhandle(path: str) -> pysam.TabixFile:
         TabixError: If the file is not ``.gz``, has no index or cannot be opened.
     """
     if not path.endswith(".gz"):
-        raise TabixError("File {0} does not end with '.gz'".format(path))
+        raise TabixError(f"File {path} does not end with '.gz'")
     index_file = path + ".tbi"
     if not os.path.isfile(index_file):
-        raise TabixError("No index could be found for {0}".format(path))
+        raise TabixError(f"No index could be found for {path}")
 
     try:
         return pysam.TabixFile(path)
     except (OSError, ValueError) as err:
-        raise TabixError("Could not open {0}: {1}".format(path, err))
+        raise TabixError(f"Could not open {path}: {err}")
 
 
 def get_contig_name(tabix_reader: pysam.TabixFile, chrom: str) -> Optional[str]:
@@ -71,12 +71,12 @@ def get_tabix_records(
         The overlapping records as tuples of columns. Empty if there are none or the
         chromosome is not in the file.
     """
-    logger.debug("Looking for record in %s" % (tabix_reader))
-    logger.debug("Looking for records with chr:%s, pos:%s" % (chrom, start))
+    logger.debug(f"Looking for record in {tabix_reader}")
+    logger.debug(f"Looking for records with chr:{chrom}, pos:{start}")
     tabix_key = int(start)
     contig = get_contig_name(tabix_reader, str(chrom))
     if contig is None:
-        logger.info("Chromosome {0} does not seem to exist in {1}".format(chrom, tabix_reader))
+        logger.info(f"Chromosome {chrom} does not seem to exist in {tabix_reader}")
         return []
 
     return list(tabix_reader.fetch(contig, tabix_key - 1, tabix_key, parser=pysam.asTuple()))
@@ -100,7 +100,8 @@ def get_frequencies(
 
     frequencies = {}
     for record in records:
-        logger.debug("Found record: %s" % "\t".join(record))
+        row = "\t".join(record)
+        logger.debug(f"Found record: {row}")
         # We can get multiple rows so need to check each one
         # We also need to check each one of the alternatives per row
         for i, alternative in enumerate(record[4].split(",")):
@@ -135,7 +136,7 @@ def get_spidex_score(
         if record[3] == alt:
             spidex_score = float(record[5])
 
-    logger.debug("Found spidex score: %s" % str(spidex_score))
+    logger.debug(f"Found spidex score: {spidex_score}")
 
     return spidex_score
 
@@ -153,17 +154,8 @@ def get_cosmic(tabix_reader: pysam.TabixFile, chrom: str, start: str | int, alt:
         True if a COSMIC record matches the alternative.
     """
     records = get_tabix_records(tabix_reader, chrom, start)
-    in_cosmic = False
 
-    for record in records:
-        if record[4] == alt:
-            in_cosmic = True
-    if in_cosmic:
-        logger.debug("Variant was found in COSMIC")
-    else:
-        logger.debug("Variant was not found in COSMIC")
-
-    return in_cosmic
+    return any(record[4] == alt for record in records)
 
 
 def get_cadd_scores(
