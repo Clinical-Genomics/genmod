@@ -9,27 +9,27 @@ vcf = "tests/fixtures/test_vcf.vcf"
 
 
 @pytest.fixture(scope="function")
-def thousand_g_path(request):
+def thousand_g_path() -> str:
     """Return the path to a bgzipped 1000G file"""
     return thousandg_path
 
 
 @pytest.fixture(scope="function")
-def thousand_g_chr_path(request):
+def thousand_g_chr_path() -> str:
     """Return the path to a bgzipped 1000G file"""
     return thousandg_chr_path
 
 
 @pytest.fixture(scope="function")
-def thousand_g_handle(request, thousand_g_path):
-    """Return a tabix handle with a 1000G file"""
+def thousand_g_handle(thousand_g_path: str) -> pysam.TabixFile:
+    """Return a tabix handle to a 1000G file with unprefixed contigs (``1``)"""
     thousand_g = pysam.TabixFile(thousand_g_path)
     return thousand_g
 
 
 @pytest.fixture(scope="function")
-def thousand_g_chr_handle(request, thousand_g_chr_path):
-    """Return a tabix handle with a 1000G file"""
+def thousand_g_chr_handle(thousand_g_chr_path: str) -> pysam.TabixFile:
+    """Return a tabix handle to a 1000G file with prefixed contigs (``chr1``)"""
     thousand_g = pysam.TabixFile(thousand_g_chr_path)
     return thousand_g
 
