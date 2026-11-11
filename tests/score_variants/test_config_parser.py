@@ -121,8 +121,11 @@ def get_clnsig_scorer(tmp_path, extra=""):
 
 def test_string_clnsig_exact_match_scores_conflicting_below_pathogenic(tmp_path):
     """Issue #87: with exact_match, conflicting classifications must not score as pathogenic."""
+    # GIVEN a string CLNSIG rank model with exact_match = true
     score = get_clnsig_scorer(tmp_path, extra="  exact_match = true\n")
 
+    # WHEN scoring pathogenic, likely pathogenic and conflicting classifications
+    # THEN each gets its own score and the conflicting one is not scored as pathogenic
     assert score("Pathogenic") == 5
     assert score("Likely_pathogenic") == 2
     assert score("Conflicting_classifications_of_pathogenicity") == 0
@@ -131,12 +134,18 @@ def test_string_clnsig_exact_match_scores_conflicting_below_pathogenic(tmp_path)
 @pytest.mark.parametrize("extra", ["", "  exact_match = false\n"])
 def test_string_clnsig_default_is_legacy_substring_matching(tmp_path, extra):
     """Without exact_match the scores of existing rank models do not change."""
+    # GIVEN a string CLNSIG rank model without exact_match (or with exact_match = false)
     score = get_clnsig_scorer(tmp_path, extra=extra)
 
+    # WHEN scoring likely pathogenic and conflicting classifications
+    # THEN substring matching still scores both as pathogenic
     assert score("Likely_pathogenic") == 5
     assert score("Conflicting_classifications_of_pathogenicity") == 5
 
 
 def test_exact_match_must_be_a_boolean(tmp_path):
+    # GIVEN a rank model where exact_match is not true or false
+    # WHEN parsing the config
+    # THEN a ValidateError is raised
     with pytest.raises(ValidateError):
         get_clnsig_scorer(tmp_path, extra="  exact_match = maybe\n")
