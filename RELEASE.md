@@ -6,9 +6,12 @@ Genmod uses `uv` and `hatchling` to build and publish the package to PyPI and Do
 
 ## Genmod Git branching strategy
 
-Genmod development is organised on a flexible Git ["Release Flow"][release_flow] branching system.
+Genmod development is organised on a flexible Git Release Flow branching system.
 This more or less means that we make releases in release branches which corresponds to stable
 versions of Genmod. The trunk branch is named `main`, and corresponds to the latest development version of Genmod.
+Features and bugfixes are developed in feature branches which are merged into `main` when they are ready. 
+When a new release is to be made, a release branch is created from `main`, and the version number is bumped in that branch. 
+The release branch is then tested and when it is ready, it is merged into `main` and tagged with the release version.
 
 The following steps are used to release a new version of Genmod.
 
