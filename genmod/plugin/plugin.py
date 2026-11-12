@@ -43,7 +43,7 @@ class Plugin(object):
         gt_key: Optional[str] = None,
         string_rules: dict[str, int] = {},
         dict_entry: bool = False,
-        exact_match: bool = False,
+        exact_match: bool = True,
     ) -> None:
         """Initialise the plugin.
 
@@ -65,10 +65,10 @@ class Plugin(object):
             dict_entry: If the values are annotated as a dictionary. The first two
                 separators then split the dictionary and its keys and values, and the
                 remaining ones split the value.
-            exact_match: If True, string rules are matched against whole tokens (the
-                entry split on the separators, ignoring a trailing VEP ``(score)``)
-                instead of as substrings of the raw entry. Default False, the legacy
-                substring matching.
+            exact_match: If True (default), string rules are matched against whole
+                tokens (the entry split on the separators, ignoring a trailing VEP
+                ``(score)``). If False, they are matched as substrings of the raw entry
+                (the legacy behaviour).
         """
         super(Plugin, self).__init__()
         self.logger = getLogger(__name__)

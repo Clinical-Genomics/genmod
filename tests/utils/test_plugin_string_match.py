@@ -1,7 +1,6 @@
-"""String rules: legacy substring matching (default) and opt-in exact matching.
+"""String rules: exact matching (default) and legacy substring matching (`exact_match=False`).
 
-Exact matching (`exact_match=True`) compares whole tokens instead of substrings,
-see genmod issue #87.
+Exact matching compares whole tokens instead of substrings, see genmod issue #87.
 """
 
 import pytest
@@ -35,15 +34,26 @@ def get_value(clnsig, exact_match=True, **kwargs):
     return plugin.get_value(variant_dict=variant)
 
 
-# Legacy behaviour: the default must not change
-
-
-def test_exact_match_is_off_by_default():
+def test_exact_match_is_on_by_default():
     # GIVEN a plugin created without the exact_match argument
     plugin = get_clnsig_plugin()
 
-    # THEN exact matching is off, so existing rank models keep the legacy behaviour
-    assert plugin.exact_match is False
+    # THEN exact matching is on
+    assert plugin.exact_match is True
+
+
+def test_default_matching_is_exact():
+    # GIVEN a plugin without the exact_match argument and a Likely_pathogenic variant
+    variant = {"info_dict": {"CLNSIG": "Likely_pathogenic"}}
+
+    # WHEN getting the plugin value
+    value = get_clnsig_plugin().get_value(variant_dict=variant)
+
+    # THEN 'pathogenic' does not match 'Likely_pathogenic'
+    assert value == "likely_pathogenic"
+
+
+# Legacy behaviour: exact_match=False keeps the substring matching
 
 
 @pytest.mark.parametrize(
@@ -58,26 +68,23 @@ def test_exact_match_is_off_by_default():
     ],
 )
 def test_legacy_substring_matching_is_unchanged(clnsig, expected):
-    # GIVEN a variant with a CLNSIG value and a plugin without (or with false) exact_match
-    variant = {"info_dict": {"CLNSIG": clnsig}}
-
+    # GIVEN a variant with a CLNSIG value and a plugin with exact_match=False
     # WHEN getting the plugin value
-    default_value = get_clnsig_plugin().get_value(variant_dict=variant)
-    explicit_value = get_value(clnsig, exact_match=False)
+    value = get_value(clnsig, exact_match=False)
 
     # THEN rules are matched as substrings, as before exact_match existed
-    assert default_value == expected
-    assert explicit_value == expected
+    assert value == expected
 
 
 def test_legacy_filter_substring_matching_is_unchanged():
-    # GIVEN a FILTER plugin without exact_match, where PASS is a substring of NOT_PASS
+    # GIVEN a FILTER plugin with exact_match=False, where PASS is a substring of NOT_PASS
     plugin = Plugin(
         name="Filter",
         field="FILTER",
         data_type="string",
         string_rules={"PASS": 2, "NOT_PASS": 1},
         record_rule="max",
+        exact_match=False,
     )
 
     # WHEN getting the value of a NOT_PASS variant
@@ -297,9 +304,9 @@ def test_exact_csq_classification_across_transcripts_and_separators():
 
 def test_legacy_csq_searches_the_whole_raw_value():
     """Legacy behaviour, kept as is: substring of the whole CSQ string."""
-    # GIVEN the CSQ of ClinVar variation 198801 and a plugin without exact_match
+    # GIVEN the CSQ of ClinVar variation 198801 and a plugin with exact_match=False
     # WHEN getting the CLNSIG value
-    value = get_csq_value(CONFLICTING_CSQ)
+    value = get_csq_value(CONFLICTING_CSQ, exact_match=False)
 
     # THEN the whole raw CSQ is searched and 'pathogenic' matches 'pathogenicity'
     assert value == "pathogenic"

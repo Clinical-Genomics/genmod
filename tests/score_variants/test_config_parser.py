@@ -119,10 +119,11 @@ def get_clnsig_scorer(tmp_path, extra=""):
     return score
 
 
-def test_string_clnsig_exact_match_scores_conflicting_below_pathogenic(tmp_path):
-    """Issue #87: with exact_match, conflicting classifications must not score as pathogenic."""
-    # GIVEN a string CLNSIG rank model with exact_match = true
-    score = get_clnsig_scorer(tmp_path, extra="  exact_match = true\n")
+@pytest.mark.parametrize("extra", ["", "  exact_match = true\n"])
+def test_string_clnsig_exact_match_scores_conflicting_below_pathogenic(tmp_path, extra):
+    """Issue #87: conflicting classifications must not score as pathogenic by default."""
+    # GIVEN a string CLNSIG rank model with the default matching (or exact_match = true)
+    score = get_clnsig_scorer(tmp_path, extra=extra)
 
     # WHEN scoring pathogenic, likely pathogenic and conflicting classifications
     # THEN each gets its own score and the conflicting one is not scored as pathogenic
@@ -131,11 +132,10 @@ def test_string_clnsig_exact_match_scores_conflicting_below_pathogenic(tmp_path)
     assert score("Conflicting_classifications_of_pathogenicity") == 0
 
 
-@pytest.mark.parametrize("extra", ["", "  exact_match = false\n"])
-def test_string_clnsig_default_is_legacy_substring_matching(tmp_path, extra):
-    """Without exact_match the scores of existing rank models do not change."""
-    # GIVEN a string CLNSIG rank model without exact_match (or with exact_match = false)
-    score = get_clnsig_scorer(tmp_path, extra=extra)
+def test_string_clnsig_exact_match_false_is_legacy_substring_matching(tmp_path):
+    """With exact_match = false the scores of existing rank models do not change."""
+    # GIVEN a string CLNSIG rank model with exact_match = false
+    score = get_clnsig_scorer(tmp_path, extra="  exact_match = false\n")
 
     # WHEN scoring likely pathogenic and conflicting classifications
     # THEN substring matching still scores both as pathogenic

@@ -4,9 +4,9 @@ The VCF has a real VEP annotated variant, ClinVar variation 198801, classified a
 "Conflicting_classifications_of_pathogenicity", together with control variants. The ClinVar
 classification is read from a CSQ column (``csq_key = CLNSIG``).
 
-Without ``exact_match`` rules are matched as substrings of the raw CSQ value (legacy behaviour),
-so the conflicting variant is scored as pathogenic. With ``exact_match = true`` whole tokens in
-the CLNSIG column are compared.
+By default whole tokens in the CLNSIG column are compared. With ``exact_match = false`` rules are
+matched as substrings of the raw CSQ value (legacy behaviour), so the conflicting variant is
+scored as pathogenic.
 """
 
 import operator
@@ -60,8 +60,8 @@ def clinvar_scores(config: str, tmp_path: Path) -> Dict[int, float]:
 
 def test_exact_match_conflicting_classification_is_not_scored_as_pathogenic(tmp_path: Path):
     """The reported bug: 'pathogenic' must not match 'Conflicting_..._pathogenicity'."""
-    # GIVEN a rank model with exact_match and VCAN variant 198801, which has conflicting
-    # classifications and benign SIFT/PolyPhen predictions
+    # GIVEN a rank model with the default matching and VCAN variant 198801, which has
+    # conflicting classifications and benign SIFT/PolyPhen predictions
     # WHEN scoring the variants
     scores = clinvar_scores(EXACT_CONFIG, tmp_path)
 
@@ -72,7 +72,7 @@ def test_exact_match_conflicting_classification_is_not_scored_as_pathogenic(tmp_
 
 
 def test_exact_match_scores_each_classification_by_its_own_rule(tmp_path):
-    # GIVEN a rank model with exact_match
+    # GIVEN a rank model with the default matching
     # WHEN scoring the control variants
     scores = clinvar_scores(EXACT_CONFIG, tmp_path)
 
@@ -88,9 +88,9 @@ def test_exact_match_scores_each_classification_by_its_own_rule(tmp_path):
     assert scores[BENIGN_MIX] == -1.0
 
 
-def test_legacy_matching_is_the_default_and_unchanged(tmp_path: Path):
-    """Without exact_match the scores are what they always were, including the #87 behaviour."""
-    # GIVEN a rank model without exact_match
+def test_exact_match_false_keeps_the_legacy_scores(tmp_path: Path):
+    """With exact_match = false the scores are what they always were, including #87."""
+    # GIVEN a rank model with exact_match = false
     # WHEN scoring the variants
     scores = clinvar_scores(LEGACY_CONFIG, tmp_path)
 
@@ -107,26 +107,26 @@ def test_legacy_matching_is_the_default_and_unchanged(tmp_path: Path):
     }
 
 
-def test_exact_match_false_is_the_same_as_not_setting_it(tmp_path: Path):
-    # GIVEN the legacy rank model with an explicit exact_match = false
-    config = tmp_path / "explicit_false.ini"
+def test_exact_match_true_is_the_same_as_the_default(tmp_path: Path):
+    # GIVEN the default rank model with an explicit exact_match = true
+    config = tmp_path / "explicit_true.ini"
     config.write_text(
-        Path(LEGACY_CONFIG)
+        Path(EXACT_CONFIG)
         .read_text()
-        .replace("  csq_key = CLNSIG\n", "  csq_key = CLNSIG\n  exact_match = false\n")
+        .replace("  csq_key = CLNSIG\n", "  csq_key = CLNSIG\n  exact_match = true\n")
     )
-    assert "exact_match = false" in config.read_text()
+    assert "exact_match = true" in config.read_text()
 
     # WHEN scoring the variants
     explicit = clinvar_scores(str(config), tmp_path)
 
     # THEN the scores are those of the default
-    assert explicit == clinvar_scores(LEGACY_CONFIG, tmp_path)
+    assert explicit == clinvar_scores(EXACT_CONFIG, tmp_path)
 
 
 def test_exact_match_only_differs_for_the_string_plugin(tmp_path):
-    """The two rank models are identical except for exact_match."""
-    # GIVEN the exact and the legacy ClinVar rank models
+    """The two rank models are identical except for exact_match = false in the legacy one."""
+    # GIVEN the default and the legacy ClinVar rank models
     exact = Path(EXACT_CONFIG).read_text()
     legacy = Path(LEGACY_CONFIG).read_text()
 
@@ -135,7 +135,7 @@ def test_exact_match_only_differs_for_the_string_plugin(tmp_path):
     # THEN only the exact_match setting and the model name differ, so score differences
     # between them are caused by exact_match alone
     assert {line.strip() for line in differing_lines if not line.startswith("#")} == {
-        "exact_match = true",
+        "exact_match = false",
         "name = clinvar string exact",
         "name = clinvar string legacy",
     }
@@ -145,7 +145,7 @@ class FrozenLegacyPlugin(Plugin):
     """A copy of the string matching genmod had before `exact_match` existed.
 
     String rules are matched as substrings of the raw entry, ignoring `exact_match`. It is kept
-    here, as it was, to check that the default matching of `Plugin` did not change.
+    here, as it was, to check that `exact_match = false` still scores as before.
     """
 
     def get_value(self, **kwargs):
@@ -186,21 +186,32 @@ def score_with_rank_results(vcf: str, config: str, tmp_path: Path) -> Dict[str, 
     return scores
 
 
+def opt_out_of_exact_match(config: str, tmp_path: Path) -> str:
+    """Return a copy of a rank model with exact_match = false on all string plugins."""
+    text = Path(config).read_text()
+    if "exact_match" not in text:
+        text = text.replace("data_type = string\n", "data_type = string\n  exact_match = false\n")
+    opted_out = tmp_path / "exact_match_false.ini"
+    opted_out.write_text(text)
+    return str(opted_out)
+
+
 @pytest.mark.parametrize(
     "vcf, config",
     [(ANNOTATED_VCF, EXAMPLE_CONFIG), (CLINVAR_VCF, LEGACY_CONFIG)],
     ids=["example_rank_model", "clinvar_legacy_rank_model"],
 )
-def test_default_matching_scores_like_the_legacy_matching(vcf, config, tmp_path, monkeypatch):
-    """Rank models without exact_match score exactly as they did before exact_match existed."""
-    # GIVEN rank models without exact_match, and the scores genmod gives with the legacy
+def test_exact_match_false_scores_like_the_legacy_matching(vcf, config, tmp_path, monkeypatch):
+    """Opting out of exact_match scores exactly as before exact_match existed."""
+    # GIVEN rank models with exact_match = false, and the scores genmod gives with the legacy
     # substring matching (a frozen copy of what it did before)
+    config = opt_out_of_exact_match(config, tmp_path)
     with monkeypatch.context() as patch:
         patch.setattr(config_parser, "Plugin", FrozenLegacyPlugin)
         legacy_scores = score_with_rank_results(vcf, config, tmp_path)
     assert legacy_scores
 
-    # WHEN scoring the same VCF with the current default matching
+    # WHEN scoring the same VCF with the current matching
     scores = score_with_rank_results(vcf, config, tmp_path)
 
     # THEN every variant gets the same rank score and category scores
@@ -208,13 +219,13 @@ def test_default_matching_scores_like_the_legacy_matching(vcf, config, tmp_path,
 
 
 def test_legacy_comparison_detects_a_change_in_matching(tmp_path, monkeypatch):
-    """The comparison above has teeth: it fails for a rank model that uses exact_match."""
-    # GIVEN the legacy scores of the ClinVar VCF, scored with the exact_match rank model
+    """The comparison above has teeth: it fails for a rank model with the default matching."""
+    # GIVEN the legacy scores of the ClinVar VCF, scored with the default rank model
     with monkeypatch.context() as patch:
         patch.setattr(config_parser, "Plugin", FrozenLegacyPlugin)
         legacy_scores = score_with_rank_results(CLINVAR_VCF, EXACT_CONFIG, tmp_path)
 
-    # WHEN scoring it with the current code, where exact_match is applied
+    # WHEN scoring it with the current code, where the default matching is applied
     scores = score_with_rank_results(CLINVAR_VCF, EXACT_CONFIG, tmp_path)
 
     # THEN the conflicting variant is scored differently
