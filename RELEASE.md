@@ -15,7 +15,7 @@ The following steps are used to release a new version of Genmod.
 1. Create a release branch with the release name, e.g. `version_3.12` and checkout
 
     ```bash
-    git checkout -b version_3.12
+    git checkout -b version_3.12 origin/main
     ```
    
 2. Update version to, e.g. 3.12
