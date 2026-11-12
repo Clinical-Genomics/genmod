@@ -14,6 +14,9 @@ Try to use the following format:
 - Replaced the `pytabix` dependency with `pysam`, which ships prebuilt wheels ([#223](https://github.com/Clinical-Genomics/genmod/issues/223)). Minimum supported Python is now 3.11 (3.9 and 3.10 are end-of-life)
 - Refreshed `uv.lock` so it only resolves for Python >= 3.11, and removed the unused `black`/`isort` config and `lint` dependency group ([#221](https://github.com/Clinical-Genomics/genmod/issues/221))
 
+### Fixed
+- Compound pairs are no longer missed when a parent has no call (`./.`) for one of the variants, e.g. when the mother is only called for one variant and the father only for the other ([#99](https://github.com/Clinical-Genomics/genmod/issues/99))
+
 ## [3.12.0]
 ### Changed
 - Changed to use PS-tag instead of intervals to check for variants in phase with `genmod models --phased` ([#197](https://github.com/Clinical-Genomics/genmod/pull/197))
