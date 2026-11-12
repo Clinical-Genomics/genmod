@@ -33,7 +33,7 @@ The following steps are used to release a new version of Genmod.
      version = "3.12"
      ```
    ```bash
-     git add genmod/pyproject.toml
+     git add ./pyproject.toml
      git commit -m 'Bump version'
    ```
    And update the `uv.lock` file to the latest compatible versions of dependencies
