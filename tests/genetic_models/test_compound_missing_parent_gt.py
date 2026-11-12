@@ -1,5 +1,7 @@
 """Compound pairs where each parent is only genotyped for one of the variants (issue #99)"""
 
+from dataclasses import dataclass
+
 import pytest
 from genmod.annotate_models.genetic_models import check_genetic_models
 from genmod.vcf_tools import Genotype
@@ -13,17 +15,25 @@ TRIO_PED = [
 ]
 
 
-def make_variant(child: str, father: str, mother: str) -> dict:
-    """Return a variant in gene GENE1 with the given genotype calls"""
-    return {
-        "CHROM": "1",
-        "annotation": {"GENE1"},
-        "genotypes": {
-            "child": Genotype(GT=child),
-            "father": Genotype(GT=father),
-            "mother": Genotype(GT=mother),
-        },
-    }
+@dataclass(frozen=True)
+class TrioCalls:
+    """The genotype calls of the trio for one variant, e.g. ``0/1`` or ``./.``"""
+
+    child: str
+    father: str
+    mother: str
+
+    def to_variant(self) -> dict:
+        """Return a variant in gene GENE1 with these calls, as used by the genetic models"""
+        return {
+            "CHROM": "1",
+            "annotation": {"GENE1"},
+            "genotypes": {
+                "child": Genotype(GT=self.child),
+                "father": Genotype(GT=self.father),
+                "mother": Genotype(GT=self.mother),
+            },
+        }
 
 
 def run_models(variant_1: dict, variant_2: dict, strict: bool = False) -> dict:
@@ -36,8 +46,8 @@ def run_models(variant_1: dict, variant_2: dict, strict: bool = False) -> dict:
 
 def test_compound_when_parents_are_called_for_both_variants():
     # GIVEN a healthy trio where the mother carries variant 1 and the father variant 2
-    variant_1 = make_variant(child="0/1", father="0/0", mother="0/1")
-    variant_2 = make_variant(child="0/1", father="0/1", mother="0/0")
+    variant_1 = TrioCalls(child="0/1", father="0/0", mother="0/1").to_variant()
+    variant_2 = TrioCalls(child="0/1", father="0/1", mother="0/0").to_variant()
 
     # WHEN checking the genetic models
     batch = run_models(variant_1, variant_2)
@@ -53,8 +63,8 @@ def test_compound_when_parents_are_called_for_both_variants():
 def test_compound_when_each_parent_has_a_no_call_for_one_variant(strict):
     # GIVEN a healthy trio where the mother carries variant 1 but has no call for variant 2,
     # and the father carries variant 2 but has no call for variant 1 (issue #99)
-    variant_1 = make_variant(child="0/1", father="./.", mother="0/1")
-    variant_2 = make_variant(child="0/1", father="0/1", mother="./.")
+    variant_1 = TrioCalls(child="0/1", father="./.", mother="0/1").to_variant()
+    variant_2 = TrioCalls(child="0/1", father="0/1", mother="./.").to_variant()
 
     # WHEN checking the genetic models
     batch = run_models(variant_1, variant_2, strict=strict)
@@ -69,8 +79,8 @@ def test_compound_when_each_parent_has_a_no_call_for_one_variant(strict):
 @pytest.mark.parametrize("strict", [False, True])
 def test_de_novo_compound_when_one_parent_is_reference_and_the_other_has_no_calls(strict):
     # GIVEN a healthy trio where the father is 0/0 for both variants and the mother has no calls
-    variant_1 = make_variant(child="0/1", father="0/0", mother="./.")
-    variant_2 = make_variant(child="0/1", father="0/0", mother="./.")
+    variant_1 = TrioCalls(child="0/1", father="0/0", mother="./.").to_variant()
+    variant_2 = TrioCalls(child="0/1", father="0/0", mother="./.").to_variant()
 
     # WHEN checking the genetic models
     batch = run_models(variant_1, variant_2, strict=strict)
@@ -83,8 +93,8 @@ def test_de_novo_compound_when_one_parent_is_reference_and_the_other_has_no_call
 
 def test_compound_when_a_parent_has_no_calls_and_the_other_carries_one_variant():
     # GIVEN a healthy trio where the father carries variant 2 and the mother has no calls
-    variant_1 = make_variant(child="0/1", father="./.", mother="./.")
-    variant_2 = make_variant(child="0/1", father="0/1", mother="./.")
+    variant_1 = TrioCalls(child="0/1", father="./.", mother="./.").to_variant()
+    variant_2 = TrioCalls(child="0/1", father="0/1", mother="./.").to_variant()
 
     # WHEN checking the genetic models without strict mode
     batch = run_models(variant_1, variant_2, strict=False)
@@ -97,8 +107,8 @@ def test_compound_when_a_parent_has_no_calls_and_the_other_carries_one_variant()
 
 def test_no_compound_in_strict_mode_when_a_parent_carrier_status_is_unknown():
     # GIVEN the same trio, with the mother's carrier status unknown
-    variant_1 = make_variant(child="0/1", father="./.", mother="./.")
-    variant_2 = make_variant(child="0/1", father="0/1", mother="./.")
+    variant_1 = TrioCalls(child="0/1", father="./.", mother="./.").to_variant()
+    variant_2 = TrioCalls(child="0/1", father="0/1", mother="./.").to_variant()
 
     # WHEN checking the genetic models in strict mode
     batch = run_models(variant_1, variant_2, strict=True)
