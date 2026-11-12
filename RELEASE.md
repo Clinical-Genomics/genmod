@@ -22,7 +22,7 @@ The following steps are used to release a new version of Genmod.
    Either use the `uv version` tool to bump the version and update dependencies, or manually update the version in `genmod/pyproject.toml`.
    ```bash
       uv version --bump=minor
-      git add genmod/pyproject.toml uv.lock
+      git add pyproject.toml uv.lock
       git commit -m 'Bump version and upgrade dependencies'
    ```
    OR 
