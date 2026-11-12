@@ -44,7 +44,7 @@ The following steps are used to release a new version of Genmod.
    git commit -m 'Upgrade dependencies'
    ```
 
-4. Make sure CHANGELOG.md is up to date for the release. Add a new candidate release at the top after changing the latest one. 
+4. Make sure CHANGELOG.md is up to date for the release. Optionally add a new candidate release with the heading `[unreleased]` at the top after changing the latest one. 
  ```bash
    add CHANGELOG.md
     git commit -m 'Update CHANGELOG.md'
