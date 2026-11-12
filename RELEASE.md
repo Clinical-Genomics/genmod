@@ -15,13 +15,13 @@ The release branch is then tested and when it is ready, it is merged into `main`
 
 The following steps are used to release a new version of Genmod.
 
-1. Create a release branch with the release name, e.g. `version_3.12` and checkout
+1. Create a release branch with the release name, e.g. `version_3.12.0` and checkout
 
     ```bash
-    git checkout -b version_3.12 origin/main
+    git checkout -b version_3.12.0 origin/main
     ```
    
-2. Update version to, e.g. 3.12
+2. Update version to, e.g. 3.12.0
    Either use the `uv version` tool to bump the version and update dependencies, or manually update the version in `genmod/pyproject.toml`.
    ```bash
       uv version --bump=minor
@@ -33,7 +33,7 @@ The following steps are used to release a new version of Genmod.
      ```toml
      [project]
      name = "genmod"
-     version = "3.12"
+     version = "3.12.0"
      ```
    ```bash
      git add ./pyproject.toml
@@ -55,7 +55,7 @@ The following steps are used to release a new version of Genmod.
 5. Push the release branch to github and create a pull request
 
     ```bash
-    git push -u origin version_3.12
+    git push -u origin version_3.12.0
     ```
 6. Thoroughly test any new features of Genmod, and ideally ensure they are covered by tests, manual example runs or external tests of failure points for bugfixes. Genmod is not independently accredited, but it is used in accredited pipelines. Careful treatment here makes testing of those pipelines easier.
 7. Solicit a review of the pull request and after getting it approved, merge it to main.
