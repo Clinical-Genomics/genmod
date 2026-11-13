@@ -176,3 +176,141 @@ def test_interval_lower_bound_is_inclusive_and_upper_bound_is_exclusive():
 
     # AND the upper bound of the highest interval is excluded
     assert score_function.get_score("1.1") == 0
+
+
+def test_intervals_can_be_added_in_any_order():
+    # GIVEN a score function with intervals added out of order
+    score_function = ScoreFunction(match_type="float")
+    score_function.add_interval(lower=10, upper=20, score=3)
+    score_function.add_interval(lower=0, upper=5, score=1)
+    score_function.add_interval(lower=5, upper=10, score=2)
+
+    # WHEN scoring values in each interval
+    # THEN the score of the interval containing the value is returned
+    assert score_function.get_score("0") == 1
+    assert score_function.get_score("4.99") == 1
+    assert score_function.get_score("5") == 2
+    assert score_function.get_score("10") == 3
+    assert score_function.get_score("19.99") == 3
+
+
+def test_value_in_gap_between_intervals_gets_no_score():
+    # GIVEN two intervals with a gap between them
+    score_function = ScoreFunction(match_type="float")
+    score_function.add_interval(lower=0, upper=5, score=1)
+    score_function.add_interval(lower=10, upper=15, score=2)
+
+    # WHEN scoring values in the gap and outside the intervals
+    # THEN they score 0
+    assert score_function.get_score("7") == 0
+    assert score_function.get_score("-1") == 0
+    assert score_function.get_score("100") == 0
+
+
+def test_single_interval():
+    # GIVEN a score function with one interval
+    score_function = ScoreFunction(match_type="integer")
+    score_function.add_interval(lower=1, upper=3, score=7)
+
+    # THEN values inside score, the upper bound does not
+    assert score_function.get_score("1") == 7
+    assert score_function.get_score("2") == 7
+    assert score_function.get_score("3") == 0
+    assert score_function.get_score("0") == 0
+
+
+def test_negative_and_float_intervals():
+    # GIVEN intervals with negative and fractional bounds
+    score_function = ScoreFunction(match_type="float")
+    score_function.add_interval(lower=-1.5, upper=-0.5, score=-4)
+    score_function.add_interval(lower=-0.5, upper=0.25, score=2)
+
+    # THEN the shared bound belongs to the interval where it is the lower bound
+    assert score_function.get_score("-1.5") == -4
+    assert score_function.get_score("-0.5") == 2
+    assert score_function.get_score("0.25") == 0
+
+
+@pytest.mark.parametrize("lower, upper", [(1, 2), (0, 10), (-5, 1.5), (4, 6)])
+def test_overlapping_intervals_are_rejected(lower, upper):
+    # GIVEN a score function with the interval [1, 5)
+    score_function = ScoreFunction(match_type="float")
+    score_function.add_interval(lower=1, upper=5, score=1)
+
+    # WHEN adding an interval that overlaps it
+    # THEN an error is raised instead of silently picking one of the scores
+    with pytest.raises(ValueError, match="overlap"):
+        score_function.add_interval(lower=lower, upper=upper, score=2)
+
+
+def test_adjacent_intervals_are_allowed():
+    # GIVEN the interval [1, 5)
+    score_function = ScoreFunction(match_type="float")
+    score_function.add_interval(lower=1, upper=5, score=1)
+
+    # WHEN adding intervals that only touch it
+    score_function.add_interval(lower=5, upper=6, score=2)
+    score_function.add_interval(lower=0, upper=1, score=3)
+
+    # THEN no error is raised and the intervals are scored separately
+    assert score_function.get_score("5") == 2
+    assert score_function.get_score("0") == 3
+
+
+@pytest.mark.parametrize("lower, upper", [(5, 5), (6, 5)])
+def test_interval_without_length_is_rejected(lower, upper):
+    # GIVEN a score function
+    score_function = ScoreFunction(match_type="float")
+
+    # WHEN adding an interval where lower >= upper
+    # THEN an error is raised
+    with pytest.raises(ValueError, match="lower < upper"):
+        score_function.add_interval(lower=lower, upper=upper, score=1)
+
+
+def test_score_range_includes_all_interval_scores_and_not_reported():
+    # GIVEN a score function with intervals and a not reported score
+    score_function = ScoreFunction(match_type="float")
+    score_function.set_not_reported(-3)
+    score_function.add_interval(lower=0, upper=1, score=0.5)
+    score_function.add_interval(lower=1, upper=2, score=2)
+
+    # THEN the range holds every interval score and the not reported score
+    assert sorted(score_function.score_range) == [-3.0, 0.5, 2.0]
+
+
+@pytest.mark.parametrize(
+    "match_type, value", [("integer", "abc"), ("float", "abc"), ("integer", "1.5")]
+)
+def test_non_numeric_value_raises(match_type, value):
+    # GIVEN a numeric score function
+    score_function = ScoreFunction(match_type=match_type)
+    score_function.add_interval(lower=0, upper=10, score=1)
+
+    # WHEN scoring a value that is not a number of that type
+    # THEN a clear error is raised
+    with pytest.raises(ValueError, match="Value has to be a number"):
+        score_function.get_score(value)
+
+
+def test_value_lookup_scores_matching_value_and_zero_otherwise():
+    # GIVEN a score function with value rules, given as strings like in a config file
+    score_function = ScoreFunction(match_type="integer")
+    score_function.add_value(value="1", score="2.5")
+    score_function.add_value(value="3", score="7")
+
+    # THEN matching values get their (truncated) score and others get 0
+    assert score_function.get_score("1") == 2
+    assert score_function.get_score("3") == 7
+    assert score_function.get_score("2") == 0
+
+
+def test_flag_and_missing_value_scores():
+    # GIVEN a flag score function
+    score_function = ScoreFunction(match_type="flag")
+    score_function.set_reported(5)
+    score_function.set_not_reported(-2)
+
+    # THEN a present flag gets the reported score and a missing value the not reported score
+    assert score_function.get_score(True) == 5
+    assert score_function.get_score(None) == -2

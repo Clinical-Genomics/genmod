@@ -18,6 +18,7 @@ Try to use the following format:
 - A `RELEASE.md` instruction for creating releases ([#210](https://github.com/Clinical-Genomics/genmod/pull/210))
 
 ### Changed
+- Removed the `intervaltree` dependency: region annotation (`genmod annotate --regions`) now uses a small built-in `RegionIndex`, and numeric rank model intervals use `bisect`. Overlapping numeric intervals in a rank model are now an error when the model is loaded, instead of silently using one of them
 - Added `&` to the `MostSevereConsequence` separators in the bundled rank models (`rank_model_cmms_v1.7`, `v1.9`, `genmod_test.v1.5`), so that multiple VEP consequences joined by `&` are all scored with whole-token matching ([#205](https://github.com/Clinical-Genomics/genmod/issues/205))
 - Docs are now built with Zensical instead of mkdocs/mkdocs-material and deployed with the official GitHub Pages actions; bumped GitHub Actions to Node 24 versions ([#220](https://github.com/Clinical-Genomics/genmod/issues/220))
 - Vendored the `Plugin` class and `split_strings` from the unmaintained `extract_vcf` package into `genmod.plugin` and removed the `extract_vcf` dependency. No change in behaviour

@@ -30,7 +30,6 @@ dependencies = [
     "click",
     "configobj",
     "importlib_resources",
-    "intervaltree >= 3.1.0",
     "six",
 ]
 

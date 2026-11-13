@@ -4,12 +4,12 @@
 annotation_parser.py
 
 This script will parse a file with intervals in .bed format and build
-one interval tree for each chromosome.
+one region index for each chromosome.
 These intervals typically represents genes
 
 So self.chromosomes will look like:
 
-{'1':intervalTree, '2':intervalTree, ..., 'X':intervalTree}
+{'1':RegionIndex, '2':RegionIndex, ..., 'X':RegionIndex}
 
 The intervals represent features that are annotated in the infile.
 
@@ -17,96 +17,78 @@ Created by Måns Magnusson on 2016-12-23.
 Copyright (c) 2016 __MonsoInc__. All rights reserved.
 """
 
-import logging
+from __future__ import annotations
 
-from intervaltree import Interval, IntervalTree
+import logging
+from collections.abc import Iterable, Iterator
+from typing import NamedTuple
+
+from genmod.annotate_regions.region_index import Region, RegionIndex, RegionTrees
 
 logger = logging.getLogger(__name__)
 
 
-def get_interval(start, stop, value):
-    """Create an interval instance
+class BedRegion(NamedTuple):
+    """A region from a bed file, with the chromosome it is on."""
+
+    chrom: str
+    start: int
+    end: int
+    symbol: str
+
+
+def build_region_trees(bed_lines: Iterable[str], padding: int) -> RegionTrees:
+    """Build a region index for each chromosome
+
+    Build a dictionary with chromosomes as keys and region indexes as
+    values. Regions may overlap each other.
 
     Args:
-        start(int)
-        stop(int)
-        value
+        bed_lines: An iterable with bed formated lines
+        padding: Defines what should be considered upstream and downstream variants
 
     Returns:
-        interval(intervaltree.Interval)
+        The region index of each chromosome, keyed on chromosome
     """
-    interval = Interval(start, stop, value)
-    return interval
+    regions_by_chrom: dict[str, list[Region]] = {}
+    for bed_region in bed_parser(bed_lines, padding):
+        regions_by_chrom.setdefault(bed_region.chrom, []).append(
+            Region(bed_region.start, bed_region.end, bed_region.symbol)
+        )
+
+    return {chrom: RegionIndex(regions) for chrom, regions in regions_by_chrom.items()}
 
 
-def build_region_trees(bed_lines, padding):
-    """Build region trees for each chromosome
+def bed_parser(bed_lines: Iterable[str], padding: int = 4000) -> Iterator[BedRegion]:
+    """Parse a file in the bed format.
 
-    Build a dictionary with chromosomes as keys and interval trees as
-    values.
+    Comment lines (starting with ``#``) and empty lines are skipped. The chromosome is
+    stored without a ``chr`` prefix and the mitochondrial chromosome (``MT``, ``M``) as
+    ``M``. Regions are extended ``padding`` bases upstream, but not on ``M``, and never
+    below position 0. If a line has no fourth column the line index is used as symbol.
 
     Args:
-        bed_lines(iterable): An iterable with bed formated lines
-        padding (int): Defines what should be considered upstream
-                       and downstream variants
-    """
-    region_trees = {}
-    for region in bed_parser(bed_lines, padding):
-        chrom = region["chrom"]
-        start = region["start"]
-        stop = region["stop"]
-        symbol = region["symbol"]
-
-        if chrom not in region_trees:
-            region_trees[chrom] = IntervalTree()
-
-        region_trees[chrom].add(Interval(start, stop, symbol))
-
-    return region_trees
-
-
-def bed_parser(bed_lines, padding=4000):
-    """
-    Parse a file in the bed format.
-
-    Arguments:
-        bed_lines(iterable): An iterable with bed formated lines
-        padding (int): Defines what should be considered upstream
-                       and downstream variants
+        bed_lines: An iterable with bed formated lines
+        padding: Defines what should be considered upstream and downstream variants
 
     Yields:
-        region(dict):
-                    {
-                        'chrom': str,
-                        'start': int,
-                        'stop': int,
-                        'symbol': str
-                    }
+        The parsed regions
     """
     for index, line in enumerate(bed_lines):
-        if not line.startswith("#") and len(line) > 1:
-            line = line.rstrip().split()
-            feature_id = str(index)
-            # Get the coordinates for the region:
-            chrom = line[0].lstrip("chr")
-            if chrom in ["MT", "M"]:
-                # Only represent the mitochondrial chromosome as M
-                chrom = "M"
-                feature_start = int(line[1])
-                feature_stop = int(line[2])
-            else:
-                feature_start = max(int(line[1]) - padding, 0)
-                feature_stop = int(line[2])
+        if line.startswith("#") or len(line) <= 1:
+            continue
+        columns = line.rstrip().split()
+        # Get the coordinates for the region:
+        chrom = columns[0].lstrip("chr")
+        feature_stop = int(columns[2])
+        if chrom in ["MT", "M"]:
+            # Only represent the mitochondrial chromosome as M
+            chrom = "M"
+            feature_start = int(columns[1])
+        else:
+            feature_start = max(int(columns[1]) - padding, 0)
 
-            # Get the feature id
-            if len(line) > 3:
-                feature_id = line[3]
+        # Get the feature id
+        feature_id = columns[3] if len(columns) > 3 else str(index)
 
-            region = {
-                "chrom": chrom,
-                "start": feature_start,
-                "stop": feature_stop,
-                "symbol": feature_id,
-            }
-
-            yield region
+        yield BedRegion(chrom, feature_start, feature_stop, feature_id)
