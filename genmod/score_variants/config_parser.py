@@ -22,12 +22,15 @@ Created by Måns Magnusson on 2015-04-16.
 Copyright (c) 2015 __MoonsoInc__. All rights reserved.
 """
 
-from __future__ import print_function
+from __future__ import annotations, print_function
 
 import logging
+import os
+from typing import IO, Any, Optional, Union
 
 import click
 import configobj
+from configobj import Section
 from validate import ValidateError
 
 from genmod.plugin import Plugin
@@ -41,7 +44,12 @@ class ConfigParser(configobj.ConfigObj):
 
     """
 
-    def __init__(self, config_file, indent_type="  ", encoding="utf-8"):
+    def __init__(
+        self,
+        config_file: Union[str, os.PathLike],
+        indent_type: str = "  ",
+        encoding: str = "utf-8",
+    ) -> None:
         super(ConfigParser, self).__init__(
             infile=config_file,
             indent_type=indent_type,
@@ -50,11 +58,11 @@ class ConfigParser(configobj.ConfigObj):
         self.logger = logging.getLogger(__name__)
         self.logger = logging.getLogger("genmod.score_varaints.config_parser")
 
-        self.categories = {}
-        self.plugins = {}
-        self.score_functions = {}
+        self.categories: dict[str, dict[str, Any]] = {}
+        self.plugins: dict[str, Plugin] = {}
+        self.score_functions: dict[str, ScoreFunction] = {}
 
-        self.vcf_columns = [
+        self.vcf_columns: list[str] = [
             "CHROM",
             "POS",
             "ID",
@@ -68,25 +76,24 @@ class ConfigParser(configobj.ConfigObj):
             "sample_id",
         ]
 
-        self.data_types = ["integer", "float", "flag", "character", "string"]
+        self.data_types: list[str] = ["integer", "float", "flag", "character", "string"]
 
         self.logger.info("Checking version and name")
         self.version_check()
-        self.version = float(self["Version"]["version"])
+        self.version: float = float(self["Version"]["version"])
         self.logger.debug("Set version to {0}".format(self.version))
 
-        self.name = self["Version"]["name"]
+        self.name: str = self["Version"]["name"]
         self.logger.debug("Set name to {0}".format(self.name))
 
         self.logger.info("Config name: {0}".format(self["Version"]["name"]))
         self.logger.info("Config version: {0}".format(self["Version"]["version"]))
 
-        for plugin in self.keys():
-            if plugin != "Version" and plugin != "Categories":
-                self.plugins[plugin] = None
-                self.score_functions[plugin] = None
+        plugin_names: list[str] = [
+            plugin for plugin in self.keys() if plugin != "Version" and plugin != "Categories"
+        ]
 
-        self.logger.info("Found plugins: {0}".format(", ".join(list(self.plugins.keys()))))
+        self.logger.info("Found plugins: {0}".format(", ".join(plugin_names)))
 
         self.logger.info("Checking categories")
         for category in self["Categories"]:
@@ -106,7 +113,7 @@ class ConfigParser(configobj.ConfigObj):
                 self.logger.debug("Plugin {0} is ok".format(plugin))
                 plugin_info = self[plugin]
 
-                string_rules = {}
+                string_rules: dict[str, int] = {}
                 if plugin_info["data_type"] == "string":
                     self.logger.info("Checking string rules for plugin {0}".format(plugin))
                     string_rules = self.get_string_dict(plugin_info)
@@ -125,6 +132,7 @@ class ConfigParser(configobj.ConfigObj):
                     csq_key=plugin_info.get("csq_key", None),
                     record_rule=plugin_info.get("record_rule", "max"),
                     string_rules=string_rules,
+                    exact_match=self.get_exact_match(plugin, plugin_info),
                 )
 
                 if category:
@@ -155,7 +163,7 @@ class ConfigParser(configobj.ConfigObj):
     #         logger.debug("Checking plugin score: {0}".format(plugin))
     #         self[plugin] = self.vcf_score_check(self[plugin], plugin)
     #
-    def get_score_function(self, plugin_info):
+    def get_score_function(self, plugin_info: Section) -> ScoreFunction:
         """Convert the scoring information
 
         If data_type = String we use the string dict to get the score
@@ -167,7 +175,7 @@ class ConfigParser(configobj.ConfigObj):
 
         """
 
-        score_dict = {}
+        score_dict: dict[str, dict[str, Any]] = {}
 
         for key in plugin_info:
             try:
@@ -208,7 +216,22 @@ class ConfigParser(configobj.ConfigObj):
 
         return score_function
 
-    def get_string_dict(self, plugin_info):
+    def get_exact_match(self, plugin: str, plugin_info: Section) -> bool:
+        """Return the `exact_match` setting of a plugin, True if not set.
+
+        By default string rules are matched against whole tokens. With `exact_match = false`
+        they are matched as substrings of the raw VCF value (the legacy behaviour).
+        """
+        try:
+            return plugin_info.as_bool("exact_match") if "exact_match" in plugin_info else True
+        except ValueError:
+            raise ValidateError(
+                "exact_match has to be true or false.\nWrong exact_match in plugin: {0}".format(
+                    plugin
+                )
+            )
+
+    def get_string_dict(self, plugin_info: Section) -> dict[str, int]:
         """Convert a section with information of priorities to a string dict.
 
         Arguments:
@@ -218,8 +241,8 @@ class ConfigParser(configobj.ConfigObj):
             string_dict (dict): A dictionary with strings as keys and integer
                                 that specifies their priorities as values
         """
-        string_info = []
-        string_dict = {}
+        string_info: list[dict[str, Any]] = []
+        string_dict: dict[str, int] = {}
 
         for key in plugin_info:
             try:
@@ -249,7 +272,7 @@ class ConfigParser(configobj.ConfigObj):
 
         return string_dict
 
-    def version_check(self):
+    def version_check(self) -> None:
         """
         Check if the version entry is in the proper format
         """
@@ -270,7 +293,7 @@ class ConfigParser(configobj.ConfigObj):
             raise ValidateError("Config file has to have a name")
         return
 
-    def check_plugin(self, plugin):
+    def check_plugin(self, plugin: str) -> bool:
         """
         Check if the section is in the proper format vcf format.
 
@@ -367,7 +390,7 @@ class ConfigParser(configobj.ConfigObj):
 @click.argument("config_file", nargs=1, type=click.Path(exists=True))
 @click.option("-out", "--outfile", nargs=1, type=click.File("w"))
 @click.option("-l", "--loglevel", type=click.Choice(["DEBUG", "INFO", "WARNING"]), default="INFO")
-def read_config(config_file, outfile, loglevel):
+def read_config(config_file: str, outfile: Optional[IO[str]], loglevel: str) -> None:
     """Parse the config file and print it to the output."""
 
     from genmod import logger
