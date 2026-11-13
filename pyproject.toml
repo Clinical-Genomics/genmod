@@ -29,8 +29,6 @@ dependencies = [
     "pysam",
     "click",
     "configobj",
-    "importlib_resources",
-    "six",
 ]
 
 [project.urls]
