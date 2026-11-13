@@ -8,7 +8,7 @@ Please add a new candidate release at the top after changing the latest one. Fee
 
 Try to use the following format:
 
-## [Unreleased]
+## [3.13.0]
 ### Added
 - Documented rank model interval bounds (`lower` inclusive, `upper` exclusive) ([#206](https://github.com/Clinical-Genomics/genmod/issues/206)) and `&` as the separator for multiple VEP consequences ([#205](https://github.com/Clinical-Genomics/genmod/issues/205)) in the score variants docs
 ### Changed
