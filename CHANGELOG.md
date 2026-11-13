@@ -8,9 +8,11 @@ Please add a new candidate release at the top after changing the latest one. Fee
 
 Try to use the following format:
 
-## [Unreleased]
+## [3.13.0]
 ### Added
 - Documented rank model interval bounds (`lower` inclusive, `upper` exclusive) ([#206](https://github.com/Clinical-Genomics/genmod/issues/206)) and `&` as the separator for multiple VEP consequences ([#205](https://github.com/Clinical-Genomics/genmod/issues/205)) in the score variants docs
+- A `RELEASE.md` instruction for creating releases ([#210](https://github.com/Clinical-Genomics/genmod/pull/210))
+
 ### Changed
 - Added `&` to the `MostSevereConsequence` separators in the bundled rank models (`rank_model_cmms_v1.7`, `v1.9`, `genmod_test.v1.5`), so that multiple VEP consequences joined by `&` are all scored with whole-token matching ([#205](https://github.com/Clinical-Genomics/genmod/issues/205))
 - Docs are now built with Zensical instead of mkdocs/mkdocs-material and deployed with the official GitHub Pages actions; bumped GitHub Actions to Node 24 versions ([#220](https://github.com/Clinical-Genomics/genmod/issues/220))
@@ -35,7 +37,6 @@ Try to use the following format:
 ## [3.11.0]
 ### Added
 - Pre-commit hooks with ruff for automatic check and format ([#200](https://github.com/Clinical-Genomics/genmod/pull/200))
-- A `RELEASE.md` instruction for creating releases ([#210](https://github.com/Clinical-Genomics/genmod/pull/210))
 ### Changed
 - Compounds `print_variant()` to use `cat` which provides significant speedups for large variants ([#189](https://github.com/Clinical-Genomics/genmod/pull/189))
 - Return phased genotype string from Genotype class if variant is phased ([#195](https://github.com/Clinical-Genomics/genmod/pull/195))
