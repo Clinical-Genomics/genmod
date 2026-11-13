@@ -18,6 +18,7 @@ Try to use the following format:
 - A `RELEASE.md` instruction for creating releases ([#210](https://github.com/Clinical-Genomics/genmod/pull/210))
 
 ### Changed
+- Added type hints to `get_batches`, which no longer has the unused `results_queue` argument and returns no `None` chromosome for a VCF without variants
 - Moved `check_individuals` from `genmod.utils` to `genmod.pedigree.check_individuals_in_vcf`, added type hints, and let its error name the individuals missing from the VCF
 - Replaced the unmaintained `ped_parser` dependency (last release 2017, and it pulled in `pytest` for every install) with a `genmod.pedigree` module with the same behaviour for the `ped`, `fam`, `alt`, `cmms` and `mip` family types. Unknown family types and malformed ped lines now raise `ValueError` and `WrongLineFormat` instead of silently reading nothing or raising `SyntaxError`. An individual id that is used more than once (in the same family, or in two families, since ids are matched against the VCF sample names) now raises `PedigreeError` instead of the last line silently winning
 - Removed the unused `six` dependency and the `importlib_resources` backport (`importlib.resources` in the standard library is used instead), and the unused Python 3.7 `importlib_metadata` import fallback
