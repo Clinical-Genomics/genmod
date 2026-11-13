@@ -68,7 +68,7 @@ def test_add_metadata_unknown_type_raises() -> None:
         (add_annotation_header, "Annotation", ".", "String"),
         (add_exonic_header, "Exonic", "0", "Flag"),
         (add_genetic_models_header, "GeneticModels", ".", "String"),
-        (add_model_score_header, "ModelScore", "1", "Integer"),
+        (add_model_score_header, "ModelScore", ".", "String"),
         (add_compounds_header, "Compounds", ".", "String"),
     ],
 )

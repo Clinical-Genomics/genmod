@@ -18,6 +18,7 @@ Try to use the following format:
 - A `RELEASE.md` instruction for creating releases ([#210](https://github.com/Clinical-Genomics/genmod/pull/210))
 
 ### Changed
+- `genmod models` now adds its INFO headers with the shared `add_*_header` helpers, and `add_model_score_header` now describes ModelScore as it is written (`Number=.`, `Type=String`, `family_id:score` pairs, previously `Number=1`, `Type=Integer`)
 - Removed the unused `analyze` and `summarize_variants` command modules (not registered in the CLI and depending on the missing `vcf_parser` package)
 - Added type hints to `add_metadata`, `print_headers`, `print_variant` and `sort_variants` and their modules. `add_metadata` no longer has the unused `version` and `command_line_string` arguments and rejects metadata types other than `info`, `print_variant` raises a `ValueError` when given neither a line nor a dictionary, and `sort_variants` rejects unknown sort modes instead of running plain `sort`
 - Added type hints to `get_batches`, which no longer has the unused `results_queue` argument and returns no `None` chromosome for a VCF without variants

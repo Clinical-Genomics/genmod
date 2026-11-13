@@ -97,13 +97,16 @@ def add_genetic_models_header(head: HeaderParser) -> None:
 
 
 def add_model_score_header(head: HeaderParser) -> None:
-    """Add Model Score to a vcf header."""
+    """Add Model Score to a vcf header.
+
+    The value is ``family_id:score`` pairs separated by ``,``, so it is a String.
+    """
     add_metadata(
         head,
         "info",
         "ModelScore",
-        annotation_number="1",
-        entry_type="Integer",
+        annotation_number=".",
+        entry_type="String",
         description="PHRED score for genotype models.",
     )
 
