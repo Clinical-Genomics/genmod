@@ -13,7 +13,6 @@ from __future__ import print_function
 
 import click
 
-# , sort, annotate, analyze, summarize_variants, score_variants)
 from genmod import __version__
 
 from . import (
