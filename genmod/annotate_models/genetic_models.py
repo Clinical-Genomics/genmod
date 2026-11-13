@@ -417,25 +417,25 @@ def check_parents(model, individual_id, family, variant, variant_2={}, strict=Fa
 
         # One of the variants must come from father and one from mother
         if len(parent_genotypes) == 2 and len(parent_genotypes_2) == 2:
-            # If both parents are genotyped and one of them are homozygote reference for both variants
-            # the pair will be considered AR compound de novo
+            # A parent can only have passed on a variant if the call is a variant call
+            # or is missing. A missing call (./.) tells us nothing about the parent.
+            mother_calls = (mother_genotype, mother_genotype_2)
+            father_calls = (father_genotype, father_genotype_2)
+            mother_may_carry = any(call.has_variant or not call.genotyped for call in mother_calls)
+            father_may_carry = any(call.has_variant or not call.genotyped for call in father_calls)
+            mother_carries = any(call.has_variant for call in mother_calls)
+            father_carries = any(call.has_variant for call in father_calls)
 
-            if (
-                (mother_genotype.genotyped and mother_genotype_2.genotyped)
-                and father_genotype.genotyped
-                and father_genotype_2.genotyped
-            ):
-                # if not both parents have one of the variants it is de novo
-                if not (
-                    (mother_genotype.has_variant or mother_genotype_2.has_variant)
-                    and (father_genotype.has_variant or father_genotype_2.has_variant)
-                ):
-                    variant["inheritance_models"][family_id]["AR_comp_dn"] = True
-                    variant_2["inheritance_models"][family_id]["AR_comp_dn"] = True
-
-                else:
+            if mother_may_carry and father_may_carry:
+                # In strict mode both parents need to be known carriers, otherwise it is
+                # not possible to say that the variants come from different parents
+                if not strict or (mother_carries and father_carries):
                     variant["inheritance_models"][family_id]["AR_comp"] = True
                     variant_2["inheritance_models"][family_id]["AR_comp"] = True
+            else:
+                # A parent is known not to carry any of the variants, the pair is de novo
+                variant["inheritance_models"][family_id]["AR_comp_dn"] = True
+                variant_2["inheritance_models"][family_id]["AR_comp_dn"] = True
 
         elif not strict:
             variant["inheritance_models"][family_id]["AR_comp_dn"] = True
