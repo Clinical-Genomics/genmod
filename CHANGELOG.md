@@ -15,6 +15,9 @@ Try to use the following format:
 - Refreshed `uv.lock` so it only resolves for Python >= 3.11, and removed the unused `black`/`isort` config and `lint` dependency group ([#221](https://github.com/Clinical-Genomics/genmod/issues/221))
 - **Scoring behaviour change:** `data_type = string` rules in rank models are now matched against whole tokens (the value split on the plugin's `separators`, a trailing VEP `(score)` ignored, for CSQ plugins only the `csq_key` column is searched) instead of as substrings of the raw value. This fixes e.g. `Pathogenic` matching `Likely_pathogenic` and `Conflicting_classifications_of_pathogenicity` ([#87](https://github.com/Clinical-Genomics/genmod/issues/87)). Rank models that relied on substring matching, e.g. a rule `AD` also matching `AD_dn`, will score differently. Set `exact_match = false` on a string plugin to keep the old substring matching for it
 
+### Fixed
+- Compound pairs are no longer missed when a parent has no call (`./.`) for one of the variants, e.g. when the mother is only called for one variant and the father only for the other ([#99](https://github.com/Clinical-Genomics/genmod/issues/99))
+
 ## [3.12.0]
 ### Changed
 - Changed to use PS-tag instead of intervals to check for variants in phase with `genmod models --phased` ([#197](https://github.com/Clinical-Genomics/genmod/pull/197))
