@@ -15,43 +15,50 @@ Created by Måns Magnusson on 2015-01-22.
 Copyright (c) 2015 __MoonsoInc__. All rights reserved.
 """
 
-from __future__ import print_function
+from __future__ import annotations
+
+from collections.abc import Mapping, Sequence
+from typing import Literal, TextIO
 
 
-def print_variant_dict(variant, header_line, outfile=None, silent=False):
-    """Print a variant dictionary
+def print_variant_dict(
+    variant: Mapping[str, str],
+    header_line: Sequence[str],
+    outfile: TextIO | None = None,
+    silent: bool = False,
+) -> None:
+    """Print a variant dictionary.
 
-    Prints a variant dictionary to a file or stdout
+    Prints a variant dictionary to a file or stdout, with the columns in the order of the
+    header. Columns that the variant lacks are printed as ``.``.
 
     Args:
-        variant (dict): A variant dictionary
-        header_line (list): A list with the header columns
-        outfile (FileHandle): A file handle
-
+        variant: A variant dictionary
+        header_line: The header columns
+        outfile: A file handle to write to
+        silent: If nothing should be printed to stdout
     """
     print_line = [variant.get(entry, ".") for entry in header_line]
 
-    if outfile:
+    if outfile is not None:
         outfile.write("\t".join(print_line) + "\n")
-    else:
-        if not silent:
-            print("\t".join(print_line))
+    elif not silent:
+        print("\t".join(print_line))
 
 
 def print_variant(
-    variant_line=None,
-    variant_dict=None,
-    header_line=None,
-    priority=None,
-    outfile=None,
-    mode="vcf",
-    silent=False,
-):
-    """
-    Print a variant line.
+    variant_line: str | None = None,
+    variant_dict: Mapping[str, str] | None = None,
+    header_line: Sequence[str] | None = None,
+    priority: str | None = None,
+    outfile: TextIO | None = None,
+    mode: Literal["vcf", "modified"] = "vcf",
+    silent: bool = False,
+) -> None:
+    """Print a variant line.
 
-    If a result file is provided the variante will be appended to the file,
-    otherwise they are printed to stdout.
+    If a result file is provided the variant will be appended to the file,
+    otherwise it is printed to stdout.
 
     There are two modes, 'vcf' or 'modified'.
     If 'vcf' we expect plain vcf variants and print them as they came in.
@@ -59,55 +66,48 @@ def print_variant(
     that one.
 
     Args:
-        variant_line (str): A vcf formatted variant line
-        variant_dict (dict): A variant dictionary
-        header_line (list): A list with haeder columns
-        priority (str): the priority for this variant
-        outfile (FileHandle): An opened file_handle
-        mode (str): 'vcf' or 'modified'
-        silent (bool): Bool. If nothing should be printed.
+        variant_line: A vcf formatted variant line
+        variant_dict: A variant dictionary, used instead of ``variant_line`` if given
+        header_line: The header columns, needed to print a ``variant_dict``
+        priority: The priority for this variant, added as first column in ``vcf`` mode
+        outfile: A file handle to write to
+        mode: ``vcf`` or ``modified``
+        silent: If nothing should be printed to stdout
 
+    Raises:
+        ValueError: If neither a variant line nor a variant dictionary is given
+        IOError: If a variant dictionary is given without a header line
     """
-
-    if variant_dict:
+    if variant_dict is not None:
         if not header_line:
             raise IOError("Print line needs a header_line when printing variant dict.")
         print_line = [variant_dict.get(entry, ".") for entry in header_line]
-
-    else:
+    elif variant_line is not None:
         print_line = variant_line.rstrip().split("\t")
+    else:
+        raise ValueError("print_variant needs a variant_line or variant_dict")
 
     if mode == "modified":
         print_line = print_line[1:]
-
     elif priority:
         print_line = [priority] + print_line
 
     print_string = "\t".join(print_line)
 
-    # Only for python2
-    if not isinstance(print_string, str):
-        print_string = print_string.encode("utf-8")
-
-    if outfile:
+    if outfile is not None:
         outfile.write(print_string + "\n")
-
-    else:
-        if not silent:
-            print(print_string)
-    return
+    elif not silent:
+        print(print_string)
 
 
-def print_variant_for_sorting(variant_line, priority, outfile):
+def print_variant_for_sorting(variant_line: str, priority: str, outfile: TextIO) -> None:
+    """Print a variant with its priority as first column, for sorting.
+
+    Args:
+        variant_line: A vcf variant line
+        priority: The priority for this variant
+        outfile: A file handle to the temporary variant file
     """
-    Print the variants for sorting
+    columns = variant_line.rstrip().split("\t")
 
-    Arguments:
-        variant_line (str): A vcf variant line
-        prority (str): The priotiy for this variant
-        outfile (file_handle): A filehandle to the temporary variant file
-        family_id (str): The family Id for sorting on rank score
-    """
-    variant_line = variant_line.rstrip().split("\t")
-
-    outfile.write("{0}\t{1}\n".format(priority, "\t".join(variant_line)))
+    outfile.write("{0}\t{1}\n".format(priority, "\t".join(columns)))

@@ -1,5 +1,7 @@
+from pathlib import Path
 from tempfile import NamedTemporaryFile
 
+import pytest
 from genmod.vcf_tools import sort_variants
 
 
@@ -53,3 +55,44 @@ def test_sort_variants():
 
     assert variants[5][1] == "X"
     assert variants[5][2] == "879586"
+
+
+def read_rows(path: str) -> list[list[str]]:
+    with open(path, "r") as f:
+        return [line.rstrip().split("\t") for line in f]
+
+
+def test_sort_variants_rank_mode_sorts_on_first_column_descending(tmp_path: Path) -> None:
+    # GIVEN lines with a numeric priority in the first column
+    infile = tmp_path / "rank.txt"
+    infile.write_text("2\ta\n10\tb\n5\tc\n")
+
+    # WHEN sorting on rank
+    sort_variants(infile=str(infile), mode="rank")
+
+    # THEN the highest score is first
+    assert [row[0] for row in read_rows(str(infile))] == ["10", "5", "2"]
+
+
+def test_sort_variants_vcf_mode_sorts_on_chromosome_and_position(tmp_path: Path) -> None:
+    # GIVEN vcf lines out of order (version sorting keeps 2 before 10)
+    infile = tmp_path / "vcf.txt"
+    infile.write_text("10\t5\n2\t100\n2\t20\n1\t7\n")
+
+    # WHEN sorting in vcf mode
+    sort_variants(infile=str(infile), mode="vcf")
+
+    # THEN they are sorted on chromosome, then on position, both with version sorting
+    assert read_rows(str(infile)) == [["1", "7"], ["2", "20"], ["2", "100"], ["10", "5"]]
+
+
+def test_sort_variants_unknown_mode_raises(tmp_path: Path) -> None:
+    # GIVEN a file
+    infile = tmp_path / "x.txt"
+    infile.write_text("b\na\n")
+
+    # WHEN sorting with an unknown mode
+    # THEN an error is raised and the file is not changed
+    with pytest.raises(ValueError, match="sort mode"):
+        sort_variants(infile=str(infile), mode="alphabet")  # type: ignore[arg-type]
+    assert infile.read_text() == "b\na\n"
