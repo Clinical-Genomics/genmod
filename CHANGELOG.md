@@ -11,6 +11,7 @@ Try to use the following format:
 ## [3.13.0]
 ### Added
 - Documented rank model interval bounds (`lower` inclusive, `upper` exclusive) ([#206](https://github.com/Clinical-Genomics/genmod/issues/206)) and `&` as the separator for multiple VEP consequences ([#205](https://github.com/Clinical-Genomics/genmod/issues/205)) in the score variants docs
+
 ### Changed
 - Added `&` to the `MostSevereConsequence` separators in the bundled rank models (`rank_model_cmms_v1.7`, `v1.9`, `genmod_test.v1.5`), so that multiple VEP consequences joined by `&` are all scored with whole-token matching ([#205](https://github.com/Clinical-Genomics/genmod/issues/205))
 - Docs are now built with Zensical instead of mkdocs/mkdocs-material and deployed with the official GitHub Pages actions; bumped GitHub Actions to Node 24 versions ([#220](https://github.com/Clinical-Genomics/genmod/issues/220))
