@@ -61,7 +61,5 @@ dev = [
     "ruff>=0.8.0",
 ]
 docs = [
-	"mkdocs",
-	"mkdocs-material",
-	"markdown-include",
+	"zensical",
 ]
