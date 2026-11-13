@@ -9,7 +9,10 @@ Please add a new candidate release at the top after changing the latest one. Fee
 Try to use the following format:
 
 ## [Unreleased]
+### Added
+- Documented rank model interval bounds (`lower` inclusive, `upper` exclusive) ([#206](https://github.com/Clinical-Genomics/genmod/issues/206)) and `&` as the separator for multiple VEP consequences ([#205](https://github.com/Clinical-Genomics/genmod/issues/205)) in the score variants docs
 ### Changed
+- Added `&` to the `MostSevereConsequence` separators in the bundled rank models (`rank_model_cmms_v1.7`, `v1.9`, `genmod_test.v1.5`), so that multiple VEP consequences joined by `&` are all scored with whole-token matching ([#205](https://github.com/Clinical-Genomics/genmod/issues/205))
 - Vendored the `Plugin` class and `split_strings` from the unmaintained `extract_vcf` package into `genmod.plugin` and removed the `extract_vcf` dependency. No change in behaviour
 - Replaced the `pytabix` dependency with `pysam`, which ships prebuilt wheels ([#223](https://github.com/Clinical-Genomics/genmod/issues/223)). Minimum supported Python is now 3.11 (3.9 and 3.10 are end-of-life)
 - Refreshed `uv.lock` so it only resolves for Python >= 3.11, and removed the unused `black`/`isort` config and `lint` dependency group ([#221](https://github.com/Clinical-Genomics/genmod/issues/221))
