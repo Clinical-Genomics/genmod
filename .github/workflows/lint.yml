@@ -13,6 +13,6 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - name: Ruff lint
-        uses: astral-sh/ruff-action@v4
+        uses: astral-sh/ruff-action@v4.1.0
         with:
           args: "check ."
