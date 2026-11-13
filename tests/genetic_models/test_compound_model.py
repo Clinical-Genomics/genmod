@@ -4,8 +4,8 @@ from genmod.annotate_models.models.compound_model import (
     get_phase_set,
     variants_on_same_allele,
 )
+from genmod.pedigree import FamilyParser
 from genmod.vcf_tools import Genotype
-from ped_parser import FamilyParser
 
 
 def get_family(family_lines):

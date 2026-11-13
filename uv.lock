@@ -166,7 +166,6 @@ source = { editable = "." }
 dependencies = [
     { name = "click" },
     { name = "configobj" },
-    { name = "ped-parser" },
     { name = "pysam" },
 ]
 
@@ -184,7 +183,6 @@ docs = [
 requires-dist = [
     { name = "click" },
     { name = "configobj" },
-    { name = "ped-parser" },
     { name = "pysam" },
 ]
 
@@ -370,19 +368,6 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/5a/82/42f767fc1c1143d6fd36efb827202a2d997a375e160a71eb2888a925aac1/pathspec-1.1.1.tar.gz", hash = "sha256:17db5ecd524104a120e173814c90367a96a98d07c45b2e10c2f3919fff91bf5a", size = 135180, upload-time = "2026-04-27T01:46:08.907Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/f1/d9/7fb5aa316bc299258e68c73ba3bddbc499654a07f151cba08f6153988714/pathspec-1.1.1-py3-none-any.whl", hash = "sha256:a00ce642f577bf7f473932318056212bc4f8bfdf53128c78bbd5af0b9b20b189", size = 57328, upload-time = "2026-04-27T01:46:07.06Z" },
-]
-
-[[package]]
-name = "ped-parser"
-version = "1.6.6"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "click" },
-    { name = "pytest" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/5d/ca/0ad16b9dd17f8115800ef08584bc6119a2ca05654dad456c285d5ca33c67/ped_parser-1.6.6.tar.gz", hash = "sha256:7ce955a5674815ff9383fd5d1e54181ddeadf1bd9c897cc45007edff4125e4fc", size = 12783, upload-time = "2017-08-29T08:01:22.244Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/24/c0/c8b5130df9aa2f64964dc336d045f8a794f3cb1f6266ceca1d8c8941fb3b/ped_parser-1.6.6-py2.py3-none-any.whl", hash = "sha256:a3a6808429e45d7effad650b5638d63f4901f9adfa6223faf1293dc745d97681", size = 15820, upload-time = "2017-08-29T08:01:24.952Z" },
 ]
 
 [[package]]

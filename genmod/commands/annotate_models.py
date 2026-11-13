@@ -24,10 +24,10 @@ from multiprocessing import JoinableQueue, Manager, cpu_count, util
 from tempfile import NamedTemporaryFile
 
 import click
-from ped_parser import FamilyParser
 
 from genmod import __version__
 from genmod.annotate_models.variant_annotator import VariantAnnotator
+from genmod.pedigree import FamilyParser
 from genmod.utils import VariantPrinter, check_individuals, get_batches
 from genmod.vcf_tools import HeaderParser, add_metadata, print_headers, print_variant, sort_variants
 

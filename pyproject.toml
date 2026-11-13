@@ -25,7 +25,6 @@ classifiers = [
   "Topic :: Scientific/Engineering :: Medical Science Apps.",
 ]
 dependencies = [
-    "ped_parser",
     "pysam",
     "click",
     "configobj",
