@@ -46,7 +46,6 @@ class HeaderParser(object):
             "contig": ["ID"],
         }
         self.fileformat = None
-        self.filedate = None
         self.reference = None
         self.phasing = None
         self.source = None
@@ -201,8 +200,6 @@ class HeaderParser(object):
         """Returns a list with the header lines if proper format"""
         lines_to_print = []
         lines_to_print.append("##fileformat=" + self.fileformat)
-        if self.filedate:
-            lines_to_print.append("##fileformat=" + self.fileformat)
 
         for filt in self.filter_dict:
             lines_to_print.append(self.filter_dict[filt])
