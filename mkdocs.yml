@@ -18,5 +18,4 @@ nav:
     - Score variants: 'commands/score-variants.md'
 
 dev_addr: "0.0.0.0:4000"
-theme: mkdocs
 docs_dir: docs
