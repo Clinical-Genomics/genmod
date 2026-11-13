@@ -426,16 +426,16 @@ def check_parents(model, individual_id, family, variant, variant_2={}, strict=Fa
             mother_carries = any(call.has_variant for call in mother_calls)
             father_carries = any(call.has_variant for call in father_calls)
 
-            # If a parent is known not to carry any of the variants the pair is de novo
-            if not (mother_may_carry and father_may_carry):
+            if mother_may_carry and father_may_carry:
+                # In strict mode both parents need to be known carriers, otherwise it is
+                # not possible to say that the variants come from different parents
+                if not strict or (mother_carries and father_carries):
+                    variant["inheritance_models"][family_id]["AR_comp"] = True
+                    variant_2["inheritance_models"][family_id]["AR_comp"] = True
+            else:
+                # A parent is known not to carry any of the variants, the pair is de novo
                 variant["inheritance_models"][family_id]["AR_comp_dn"] = True
                 variant_2["inheritance_models"][family_id]["AR_comp_dn"] = True
-
-            # In strict mode both parents need to be known carriers, otherwise it is
-            # not possible to say that the variants come from different parents
-            elif not strict or (mother_carries and father_carries):
-                variant["inheritance_models"][family_id]["AR_comp"] = True
-                variant_2["inheritance_models"][family_id]["AR_comp"] = True
 
         elif not strict:
             variant["inheritance_models"][family_id]["AR_comp_dn"] = True
