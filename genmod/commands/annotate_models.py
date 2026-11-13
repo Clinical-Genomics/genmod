@@ -27,8 +27,8 @@ import click
 
 from genmod import __version__
 from genmod.annotate_models.variant_annotator import VariantAnnotator
-from genmod.pedigree import FamilyParser
-from genmod.utils import VariantPrinter, check_individuals, get_batches
+from genmod.pedigree import FamilyParser, check_individuals_in_vcf
+from genmod.utils import VariantPrinter, get_batches
 from genmod.vcf_tools import HeaderParser, add_metadata, print_headers, print_variant, sort_variants
 
 from .utils import (
@@ -262,7 +262,7 @@ def models(
     logger.debug("Individuals found in vcf file: {}".format(", ".join(vcf_individuals)))
 
     try:
-        check_individuals(family_parser.individuals, vcf_individuals)
+        check_individuals_in_vcf(family_parser.individuals, vcf_individuals)
     except IOError as e:
         logger.error(e)
         logger.info("Individuals in PED file: {0}".format(", ".join(family_parser.individuals)))

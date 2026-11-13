@@ -3,6 +3,7 @@
 Based on the ``ped_parser`` package, trimmed to what genmod uses.
 """
 
+from genmod.pedigree.check_individuals import check_individuals_in_vcf
 from genmod.pedigree.exceptions import PedigreeError, WrongLineFormat
 from genmod.pedigree.family import Family
 from genmod.pedigree.individual import Individual
@@ -15,4 +16,5 @@ __all__ = [
     "Individual",
     "PedigreeError",
     "WrongLineFormat",
+    "check_individuals_in_vcf",
 ]
