@@ -18,6 +18,7 @@ Try to use the following format:
 - A `RELEASE.md` instruction for creating releases ([#210](https://github.com/Clinical-Genomics/genmod/pull/210))
 
 ### Changed
+- Added type hints to `get_file_handle`, which reads gzipped files with `gzip.open` in text mode instead of the deprecated `codecs` reader
 - Removed an unreachable duplicate `##fileformat` branch (`filedate` was never set) in `HeaderParser.print_header`
 - `genmod models` now adds its INFO headers with the shared `add_*_header` helpers, and `add_model_score_header` now describes ModelScore as it is written (`Number=.`, `Type=String`, `family_id:score` pairs, previously `Number=1`, `Type=Integer`)
 - Removed the unused `analyze` and `summarize_variants` command modules (not registered in the CLI and depending on the missing `vcf_parser` package)

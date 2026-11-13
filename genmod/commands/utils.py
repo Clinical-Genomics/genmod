@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 import gzip
 import sys
-from codecs import getreader, open
 from multiprocessing import cpu_count
+from typing import TextIO
 
 import click
 
@@ -36,18 +38,23 @@ family_type = click.option(
 )
 
 
-def get_file_handle(path):
-    """Get a file handle"""
+def get_file_handle(path: str) -> TextIO:
+    """Open a file for reading as text.
+
+    Args:
+        path: Path to the file. ``-`` means standard input and a path ending in ``.gz`` is
+            read as a gzipped file.
+
+    Returns:
+        A text file handle. Bytes that are not valid utf-8 in gzipped files are replaced.
+
+    Raises:
+        FileNotFoundError: If the file does not exist
+    """
     if path == "-":
-        if sys.version_info < (3, 0):
-            sys.stdin = getreader("utf-8")(sys.stdin)
+        return sys.stdin
 
-        file_handle = sys.stdin
+    if path.endswith(".gz"):
+        return gzip.open(path, "rt", encoding="utf-8", errors="replace")
 
-    elif path.endswith(".gz"):
-        file_handle = getreader("utf-8")(gzip.open(path, "r"), errors="replace")
-
-    else:
-        file_handle = open(path, "r")
-
-    return file_handle
+    return open(path, "r")
