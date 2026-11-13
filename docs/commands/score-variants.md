@@ -29,7 +29,7 @@ Intervals should not overlap. If they do, which rule is used is not defined.
 
 A `data_type = string` rule is matched against whole values, not parts of them. The annotation is split into values using `separators`, applied in the order listed, and each rule `string` is compared to those values.
 
-VEP joins multiple consequences of one transcript with `&`, for example `intron_variant&non_coding_transcript_variant`. Add `'&'` to the separators so that every consequence is considered. With `record_rule = max` the consequence with the highest `priority` / score is then used, not only the first one:
+VEP joins multiple consequences of one transcript with `&`, for example `intron_variant&non_coding_transcript_variant`. Set `'&'` as the separator so that every consequence is considered. With `record_rule = max` the consequence with the highest `priority` / score is then used, not only the first one:
 
 ```
 [most_severe_consequence]
@@ -40,8 +40,10 @@ VEP joins multiple consequences of one transcript with `&`, for example `intron_
   info_key = CSQ
   csq_key = Consequence
   record_rule = max
-  separators = ',', ':', '|', '&',
+  separators = '&'
 ```
+
+For `info_key = CSQ`, genmod itself splits the transcripts (`,`) and the VEP columns (`|`) and picks the column named by `csq_key`. `separators` only describes how to split the value *within* that column, so `,` and `|` should not be listed for a CSQ plugin.
 
 If `'&'` is missing, `intron_variant&non_coding_transcript_variant` is one single value that matches none of the rules, and the variant gets no score for the plugin. Setting `exact_match = false` on the plugin restores the older substring matching, which finds the consequences without `&` as a separator, but then a rule such as `AD` also matches `AD_dn`.
 
