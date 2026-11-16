@@ -17,9 +17,9 @@ import logging
 import sys
 
 import click
-from extract_vcf import Plugin
 
 from genmod import __version__
+from genmod.plugin import Plugin
 from genmod.vcf_tools import (
     HeaderParser,
     print_headers,
@@ -88,7 +88,7 @@ def filter(variant_file, annotation, threshold, discard, greater, silent, outfil
         logger.info("Exiting...")
         sys.exit(1)
 
-    logger.info("Building a plugin from extract_vcf for {0}".format(annotation))
+    logger.info("Building a plugin for {0}".format(annotation))
     annotation_plugin = Plugin(
         name=annotation,
         field="INFO",

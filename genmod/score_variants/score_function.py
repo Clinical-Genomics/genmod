@@ -9,13 +9,14 @@ Created by Måns Magnusson on 2015-09-08.
 Copyright (c) 2015 __MoonsoInc__. All rights reserved.
 """
 
-from __future__ import print_function
+from __future__ import annotations
 
 import logging
 from enum import Enum
-from typing import List
 
 from intervaltree import IntervalTree
+
+from genmod.plugin.plugin import Value
 
 
 class ModeLookup(Enum):
@@ -35,29 +36,28 @@ class ModeLookup(Enum):
     UNBOUNDED_USER_DEFINED = 5
 
 
-class ScoreFunction(object):
+class ScoreFunction:
     """Class for holding score functions"""
 
-    def __init__(self, match_type, equal=False):
-        super(ScoreFunction, self).__init__()
+    def __init__(self, match_type: str, equal: bool = False) -> None:
         self.logger = logging.getLogger(__name__)
         self.logger.debug("Initializing match_type to:{0}".format(match_type))
         self.match_type = match_type  # ['integer','float','flag','character','string']
         self.logger.debug("Initializing string_dict to:{}")
-        self._string_dict = {}
+        self._string_dict: dict[str, float] = {}
         self.logger.debug("Initializing interval_tree")
-        self._interval_tree = IntervalTree()
+        self._interval_tree: IntervalTree = IntervalTree()
         self.logger.debug("Initializing value_dict")
-        self._value_dict = {}
+        self._value_dict: dict[str, float | str] = {}
         self.logger.debug("Initializing not_reported_score to 0")
-        self._not_reported_score = 0
+        self._not_reported_score: float = 0
         self.logger.debug("Initializing reported_score to 0")
-        self._reported_score = 0  # only for 'flag'
+        self._reported_score: float = 0  # only for 'flag'
         # If the score is the same as the value found:
         self.logger.debug("Initializing equal to {0}".format(equal))
-        self._equal = equal
+        self._equal: bool = equal
 
-    def add_interval(self, lower, upper, score):
+    def add_interval(self, lower: float, upper: float, score: float) -> None:
         """Add an interval to the score function
 
         Args:
@@ -73,9 +73,7 @@ class ScoreFunction(object):
         ##TODO Check if intervals overlap
         self._interval_tree[lower:upper] = score
 
-        return
-
-    def add_string_rule(self, key, score):
+    def add_string_rule(self, key: str, score: float) -> None:
         """Add the score for a string match
 
         Args:
@@ -85,9 +83,8 @@ class ScoreFunction(object):
         """
         self.logger.debug("Adding string {0} with score {1} to string_dict".format(key, str(score)))
         self._string_dict[key.lower()] = score
-        return
 
-    def add_value(self, value, score):
+    def add_value(self, value: float | str, score: float | str) -> None:
         """Add the score for a value match
 
         Args:
@@ -97,9 +94,8 @@ class ScoreFunction(object):
         """
         self.logger.debug("Adding value {0} with score {1} to value_dict".format(value, str(score)))
         self._value_dict[str(value)] = score
-        return
 
-    def get_score(self, value):
+    def get_score(self, value: Value) -> int:
         """Take a value and return a score
 
         - If value is None we return the not_reported score
@@ -115,7 +111,7 @@ class ScoreFunction(object):
          Return:
              score (number): The score for this value
         """
-        score = 0
+        score: float | str = 0
 
         if not value:
             self.logger.debug("No value found set score to not reported score")
@@ -127,32 +123,33 @@ class ScoreFunction(object):
             score = self._reported_score
 
         elif self.match_type in ["string", "char"]:
-            score = self._string_dict.get(value.lower(), 0)
+            score = self._string_dict.get(str(value).lower(), 0)
 
         # We know that match type must be any of integer or float
         else:
+            number: float
             if self.match_type == "float":
                 try:
-                    value = float(value)
+                    number = float(value)
                 except ValueError:
                     raise ValueError("Value has to be a number")
             else:
                 try:
-                    value = int(value)
+                    number = int(value)
                 except ValueError:
                     raise ValueError("Value has to be a number")
 
             if self._equal:
-                score = value
+                score = number
 
             else:
                 if self._value_dict:
-                    score = float(self._value_dict.get(str(value), 0))
+                    score = float(self._value_dict.get(str(number), 0))
                     self.logger.debug("Got score from value dict")
                 else:
                     # There should only be one interval matching
                     ##TODO Check if intervals overlap
-                    for interval in self._interval_tree[value]:
+                    for interval in self._interval_tree[number]:
                         score = interval.data
                         self.logger.debug("Got score from interval tree")
 
@@ -165,7 +162,7 @@ class ScoreFunction(object):
 
         return score
 
-    def set_not_reported(self, value):
+    def set_not_reported(self, value: float) -> None:
         """Set the not reported score
 
         Args:
@@ -174,9 +171,8 @@ class ScoreFunction(object):
         """
         self.logger.debug("Setting not_reported_score to {0}".format(value))
         self._not_reported_score = float(value)
-        return
 
-    def set_reported(self, value):
+    def set_reported(self, value: float) -> None:
         """Set the reported score
 
         Args:
@@ -184,16 +180,14 @@ class ScoreFunction(object):
         """
         self.logger.debug("Setting reported_score to {0}".format(value))
         self._reported_score = float(value)
-        return
 
-    def set_equal(self):
+    def set_equal(self) -> None:
         """Set _equal to True"""
         self.logger.debug("Setting equal to True")
         self._equal = True
-        return
 
     @property
-    def _scoring_mode(self) -> ModeLookup:
+    def _scoring_mode(self) -> ModeLookup | None:
         """
         Return ModeLookup, i.e. the way ScoreFunction intends to map a
         VALUE into SCORE (see self.get_score()).
@@ -205,7 +199,7 @@ class ScoreFunction(object):
         score-mappings have been established by callee.
 
         Returns:
-            ModeLookup enum
+            ModeLookup enum, None if no score mapping has been added
         """
         if self._equal:
             return ModeLookup.UNBOUNDED_USER_DEFINED
@@ -226,9 +220,10 @@ class ScoreFunction(object):
             return ModeLookup.TREE
         if mode_flag:
             return ModeLookup.FLAG
+        return None
 
     @property
-    def score_range(self) -> List[float]:
+    def score_range(self) -> list[float]:
         """
         Returns discrete rank score values, originating from the plugin config file.
         These are the values the scoring function can provide, including values for not reported and
@@ -237,23 +232,24 @@ class ScoreFunction(object):
         Returns:
             list of discrete rank scores, list[float]
         """
+        scores: list[float]
         if self._scoring_mode == ModeLookup.UNBOUNDED_USER_DEFINED:
             # Invalid request to expect a known range from an unknown plugin config
             raise ValueError("User supplied score values does not have a known score range")
         elif self._scoring_mode == ModeLookup.VALUE:
-            scores: list = [
+            scores = [
                 float(score_value) for score_value in self._value_dict.values()
             ]  # val -> score
         elif self._scoring_mode == ModeLookup.STRING:
-            scores: list = [
+            scores = [
                 float(score_value) for score_value in self._string_dict.values()
             ]  # str -> score
         elif self._scoring_mode == ModeLookup.TREE:
-            scores: list = []
+            scores = []
             for interval in self._interval_tree.all_intervals:
                 scores.append(interval.data)  # tree.interval -> score
         elif self._scoring_mode == ModeLookup.FLAG:
-            scores: list = []
+            scores = []
             scores.append(float(self._reported_score))
         else:
             raise NotImplementedError("Unknown scoring mode", self._scoring_mode)

@@ -155,3 +155,24 @@ def test_score_mode_flag_lookup():
 
     # WHEN asking for a set value, THEN reported is flagged and scored
     assert score_function.get_score("c'est une pipe") == reported_score
+
+
+def test_interval_lower_bound_is_inclusive_and_upper_bound_is_exclusive():
+    """Intervals are [lower, upper): see genmod issue #206."""
+    # GIVEN a score function with two adjacent intervals sharing the boundary 0.02
+    score_function = ScoreFunction(match_type="float")
+    score_function.add_interval(lower=0.02, upper=1.1, score=-12)
+    score_function.add_interval(lower=0.005, upper=0.02, score=1)
+
+    # WHEN scoring the shared boundary value
+    # THEN the interval with lower = 0.02 is chosen, not the one with upper = 0.02
+    assert score_function.get_score("0.02") == -12
+
+    # AND the value just below the boundary is in the other interval
+    assert score_function.get_score("0.0199") == 1
+
+    # AND the lowest value of an interval is included
+    assert score_function.get_score("0.005") == 1
+
+    # AND the upper bound of the highest interval is excluded
+    assert score_function.get_score("1.1") == 0

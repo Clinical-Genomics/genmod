@@ -1,0 +1,63 @@
+# Instructions for how to release a new version of Genmod
+
+## Overview
+
+Genmod uses `uv` and `hatchling` to build and publish the package to PyPI and Dockerhub.
+
+## Genmod Git branching strategy
+
+Genmod development is organised on a flexible Git Release Flow branching system.
+This more or less means that we make releases in release branches which corresponds to stable
+versions of Genmod. The trunk branch is named `main`, and corresponds to the latest development version of Genmod.
+Features and bugfixes are developed in feature branches which are merged into `main` when they are ready. 
+When a new release is to be made, a release branch is created from `main`, and the version number is bumped in that branch. 
+The release branch is then tested and when it is ready, it is merged into `main` and tagged with the release version.
+
+The following steps are used to release a new version of Genmod.
+
+1. Create a release branch with the release name, e.g. `version_3.12.0` and checkout
+
+    ```bash
+    git checkout -b version_3.12.0 origin/main
+    ```
+   
+2. Update version to, e.g. 3.12.0
+   Either use the `uv version` tool to bump the version and update dependencies, or manually update the version in `genmod/pyproject.toml`.
+   ```bash
+      uv version --bump=minor
+      git add pyproject.toml uv.lock
+      git commit -m 'Bump version and upgrade dependencies'
+   ```
+   OR 
+   - in `genmod/pyproject.toml`
+     ```toml
+     [project]
+     name = "genmod"
+     version = "3.12.0"
+     ```
+   ```bash
+     git add ./pyproject.toml
+     git commit -m 'Bump version'
+   ```
+   And update the `uv.lock` file to the latest compatible versions of dependencies
+   This in particular also updates the genmod package verison. Note that it is now the same as in the previous step.
+   ```bash
+   uv lock --upgrade
+   git add uv.lock
+   git commit -m 'Upgrade dependencies'
+   ```
+
+4. Make sure CHANGELOG.md is up to date for the release. Optionally add a new candidate release with the heading `[unreleased]` at the top after changing the latest one. 
+ ```bash
+   add CHANGELOG.md
+    git commit -m 'Update CHANGELOG.md'
+ ```
+5. Push the release branch to github and create a pull request
+
+    ```bash
+    git push -u origin version_3.12.0
+    ```
+6. Thoroughly test any new features of Genmod, and ideally ensure they are covered by tests, manual example runs or external tests of failure points for bugfixes. Genmod is not independently accredited, but it is used in accredited pipelines. Careful treatment here makes testing of those pipelines easier.
+7. Solicit a review of the pull request and after getting it approved, merge it to main.
+8. Draft a new release on GitHub, add some text - e.g. an abbreviated CHANGELOG - and release. 
+9. The GitHub release action should take care of the rest (build and submit to PyPi and DockerHub, build and publish docs).

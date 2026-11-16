@@ -1,4 +1,6 @@
+import pytest
 from genmod.score_variants import ConfigParser
+from validate import ValidateError
 
 CONFIG = "tests/fixtures/score_variants/genmod_example.ini"
 
@@ -89,3 +91,61 @@ def test_get_score_value_multiple_values():
     assert config_reader.plugins["CLNSIG"].get_value(variant_dict=variant) == 5
 
     assert config_reader.score_functions["CLNSIG"].get_score(5) == 2
+
+
+STRING_CLNSIG_INI = (
+    "[Version]\n  version = 1.0\n  name = clnsig_string\n"
+    "[Categories]\n  [[Clinical_significance]]\n    category_aggregation = max\n"
+    "[CLNSIG]\n  field = INFO\n  data_type = string\n"
+    "  category = Clinical_significance\n  record_rule = max\n"
+    "  separators = '|', '/', ',',\n  info_key = CLNSIG\n{extra}"
+    "  [[not_reported]]\n    score = 0\n"
+    "  [[pathogenic]]\n    score = 5\n    priority = 5\n    string = 'Pathogenic'\n"
+    "  [[likely_pathogenic]]\n    score = 2\n    priority = 4\n    string = 'Likely_pathogenic'\n"
+)
+
+
+def get_clnsig_scorer(tmp_path, extra=""):
+    ini = tmp_path / "clnsig_string.ini"
+    ini.write_text(STRING_CLNSIG_INI.format(extra=extra))
+    config_reader = ConfigParser(str(ini))
+    plugin = config_reader.plugins["CLNSIG"]
+    score_function = config_reader.score_functions["CLNSIG"]
+
+    def score(clnsig):
+        value = plugin.get_value(variant_dict={"info_dict": {"CLNSIG": clnsig}})
+        return score_function.get_score(value)
+
+    return score
+
+
+@pytest.mark.parametrize("extra", ["", "  exact_match = true\n"])
+def test_string_clnsig_exact_match_scores_conflicting_below_pathogenic(tmp_path, extra):
+    """Issue #87: conflicting classifications must not score as pathogenic by default."""
+    # GIVEN a string CLNSIG rank model with the default matching (or exact_match = true)
+    score = get_clnsig_scorer(tmp_path, extra=extra)
+
+    # WHEN scoring pathogenic, likely pathogenic and conflicting classifications
+    # THEN each gets its own score and the conflicting one is not scored as pathogenic
+    assert score("Pathogenic") == 5
+    assert score("Likely_pathogenic") == 2
+    assert score("Conflicting_classifications_of_pathogenicity") == 0
+
+
+def test_string_clnsig_exact_match_false_is_legacy_substring_matching(tmp_path):
+    """With exact_match = false the scores of existing rank models do not change."""
+    # GIVEN a string CLNSIG rank model with exact_match = false
+    score = get_clnsig_scorer(tmp_path, extra="  exact_match = false\n")
+
+    # WHEN scoring likely pathogenic and conflicting classifications
+    # THEN substring matching still scores both as pathogenic
+    assert score("Likely_pathogenic") == 5
+    assert score("Conflicting_classifications_of_pathogenicity") == 5
+
+
+def test_exact_match_must_be_a_boolean(tmp_path):
+    # GIVEN a rank model where exact_match is not true or false
+    # WHEN parsing the config
+    # THEN a ValidateError is raised
+    with pytest.raises(ValidateError):
+        get_clnsig_scorer(tmp_path, extra="  exact_match = maybe\n")

@@ -8,6 +8,32 @@ Please add a new candidate release at the top after changing the latest one. Fee
 
 Try to use the following format:
 
+## [3.13.0]
+### Added
+- Documented rank model interval bounds (`lower` inclusive, `upper` exclusive) ([#206](https://github.com/Clinical-Genomics/genmod/issues/206)) and `&` as the separator for multiple VEP consequences ([#205](https://github.com/Clinical-Genomics/genmod/issues/205)) in the score variants docs
+- A `RELEASE.md` instruction for creating releases ([#210](https://github.com/Clinical-Genomics/genmod/pull/210))
+
+### Changed
+- Added `&` to the `MostSevereConsequence` separators in the bundled rank models (`rank_model_cmms_v1.7`, `v1.9`, `genmod_test.v1.5`), so that multiple VEP consequences joined by `&` are all scored with whole-token matching ([#205](https://github.com/Clinical-Genomics/genmod/issues/205))
+- Docs are now built with Zensical instead of mkdocs/mkdocs-material and deployed with the official GitHub Pages actions; bumped GitHub Actions to Node 24 versions ([#220](https://github.com/Clinical-Genomics/genmod/issues/220))
+- Vendored the `Plugin` class and `split_strings` from the unmaintained `extract_vcf` package into `genmod.plugin` and removed the `extract_vcf` dependency. No change in behaviour
+- Replaced the `pytabix` dependency with `pysam`, which ships prebuilt wheels ([#223](https://github.com/Clinical-Genomics/genmod/issues/223)). Minimum supported Python is now 3.11 (3.9 and 3.10 are end-of-life)
+- Refreshed `uv.lock` so it only resolves for Python >= 3.11, and removed the unused `black`/`isort` config and `lint` dependency group ([#221](https://github.com/Clinical-Genomics/genmod/issues/221))
+- **Scoring behaviour change:** `data_type = string` rules in rank models are now matched against whole tokens (the value split on the plugin's `separators`, a trailing VEP `(score)` ignored, for CSQ plugins only the `csq_key` column is searched) instead of as substrings of the raw value. This fixes e.g. `Pathogenic` matching `Likely_pathogenic` and `Conflicting_classifications_of_pathogenicity` ([#87](https://github.com/Clinical-Genomics/genmod/issues/87)). Rank models that relied on substring matching, e.g. a rule `AD` also matching `AD_dn`, will score differently. Set `exact_match = false` on a string plugin to keep the old substring matching for it
+
+### Fixed
+- Compound pairs are no longer missed when a parent has no call (`./.`) for one of the variants, e.g. when the mother is only called for one variant and the father only for the other ([#99](https://github.com/Clinical-Genomics/genmod/issues/99))
+
+## [3.12.0]
+### Changed
+- Changed to use PS-tag instead of intervals to check for variants in phase with `genmod models --phased` ([#197](https://github.com/Clinical-Genomics/genmod/pull/197))
+- Refactored the implementation of `check_compounds()` to improve maintainability ([#197](https://github.com/Clinical-Genomics/genmod/pull/197))
+- Removed haploblock interval tree code and the `interval_tree` dependency in favour of PS-tag phasing check ([#197](https://github.com/Clinical-Genomics/genmod/pull/197))
+
+### Fixed
+- Models giving KeyError with `--phased` when variants lack region annotation ([#197](https://github.com/Clinical-Genomics/genmod/pull/197))
+
+
 ## [3.11.0]
 ### Added
 - Pre-commit hooks with ruff for automatic check and format ([#200](https://github.com/Clinical-Genomics/genmod/pull/200))

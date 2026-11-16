@@ -20,7 +20,6 @@ from genmod.vcf_tools import get_genotypes
 
 from .fix_variant import make_print_version
 from .genetic_models import check_genetic_models
-from .make_haploblocks import get_haploblocks
 
 
 class VariantAnnotator(Process):
@@ -116,12 +115,6 @@ class VariantAnnotator(Process):
                     variant["reduced_penetrance"] = True
 
             if len(variant_batch) > 1:
-                # If the variant are phased we want to find out which
-                # haploblocks they belong to for compounds
-                if self.phased:
-                    self.logger.debug("Get haploblocks for variant batch")
-                    variant_batch["haploblocks"] = get_haploblocks(variant_batch, self.individuals)
-
                 # We only need to check compound candidates if there is
                 # more than one variant in the batch
                 for variant_id in variant_batch:
