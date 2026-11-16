@@ -148,7 +148,7 @@ class Plugin(object):
                 dict_key=dict_key,
             )
 
-        entry = []
+        entry: list[str] = []
         if raw_entry:
             if self.field in ["CHROM", "POS", "REF", "QUAL"]:
                 # We know these fields allways has one entry
@@ -172,10 +172,18 @@ class Plugin(object):
                         raise IOError("If CSQ the csq format must be provided")
                     if not self.csq_key:
                         raise IOError("If CSQ a csq key must be provided")
+                    csq_column: Optional[int] = None
                     for i, head in enumerate(csq_format):
                         if head == self.csq_key:
                             # This is the csq entry we are looking for
                             csq_column = i
+                    if csq_column is None:
+                        # The key is not in the CSQ annotation (e.g. --skip_plugin_check),
+                        # so there is no entry to score
+                        self.logger.debug(
+                            "CSQ key %s is not in the CSQ format, no entry found", self.csq_key
+                        )
+                        return []
                     # CSQ entries are allways splitted on ','
                     for csq_entry in raw_entry.split(","):
                         entry += split_strings(csq_entry.split("|")[csq_column], self.separators)
