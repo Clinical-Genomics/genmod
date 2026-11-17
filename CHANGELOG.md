@@ -10,7 +10,7 @@ Try to use the following format:
 
 ## [unreleased]
 ### Fixed
-- `genmod score --skip_plugin_check` no longer crashes with `UnboundLocalError: csq_column` when a rank model scores a CSQ column that is missing from the VEP annotation. The column is scored as not reported ([#85](https://github.com/Clinical-Genomics/genmod/issues/85))
+- `genmod score --skip_plugin_check` no longer crashes with `UnboundLocalError: csq_column` when a rank model scores a CSQ column that is missing from the VEP annotation. The column is scored as not reported ([#238](https://github.com/Clinical-Genomics/genmod/pull/238))
 
 ## [3.13.0]
 ### Added
