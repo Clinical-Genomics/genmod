@@ -8,6 +8,10 @@ Please add a new candidate release at the top after changing the latest one. Fee
 
 Try to use the following format:
 
+## [unreleased]
+### Fixed
+- `genmod score --skip_plugin_check` no longer crashes with `UnboundLocalError: csq_column` when a rank model scores a CSQ column that is missing from the VEP annotation. The column is scored as not reported ([#238](https://github.com/Clinical-Genomics/genmod/pull/238))
+
 ## [3.13.0]
 ### Added
 - Documented rank model interval bounds (`lower` inclusive, `upper` exclusive) ([#206](https://github.com/Clinical-Genomics/genmod/issues/206)) and `&` as the separator for multiple VEP consequences ([#205](https://github.com/Clinical-Genomics/genmod/issues/205)) in the score variants docs
