@@ -306,7 +306,6 @@ def models(
                 individuals=analysis_individuals,
                 phased=phased,
                 strict=strict,
-                vep=vep,
                 reduced_penetrance_genes=reduced_penetrance_genes,
             )
             for i in range(num_model_checkers)
