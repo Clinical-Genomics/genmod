@@ -133,6 +133,7 @@ class ConfigParser(configobj.ConfigObj):
                     record_rule=plugin_info.get("record_rule", "max"),
                     string_rules=string_rules,
                     exact_match=self.get_exact_match(plugin, plugin_info),
+                    record_rule_on=plugin_info.get("record_rule_on", "value"),
                 )
 
                 if category:
@@ -382,6 +383,15 @@ class ConfigParser(configobj.ConfigObj):
                 )
         else:
             self.logger.info("Setting record rule to default: 'max'")
+
+        record_rule_on = vcf_section.get("record_rule_on", None)
+
+        if record_rule_on and record_rule_on not in ["value", "score"]:
+            raise ValidateError(
+                "record_rule_on has to be in {0}\nWrong record_rule_on in plugin: {1}".format(
+                    ["value", "score"], plugin
+                )
+            )
 
         return True
 
