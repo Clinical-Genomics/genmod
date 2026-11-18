@@ -44,6 +44,7 @@ class Plugin(object):
         string_rules: dict[str, int] = {},
         dict_entry: bool = False,
         exact_match: bool = True,
+        record_rule_on: str = "value",
     ) -> None:
         """Initialise the plugin.
 
@@ -69,6 +70,10 @@ class Plugin(object):
                 tokens (the entry split on the separators, ignoring a trailing VEP
                 ``(score)``). If False, they are matched as substrings of the raw entry
                 (the legacy behaviour).
+            record_rule_on: What ``record_rule`` compares for an ``integer`` or ``float``
+                plugin with several values: ``value`` (default) takes the min/max annotation
+                value, ``score`` takes the annotation with the min/max score. Used when
+                scoring (see ``get_plugin_score``); :meth:`get_value` always uses the value.
         """
         super(Plugin, self).__init__()
         self.logger = getLogger(__name__)
@@ -91,6 +96,9 @@ class Plugin(object):
 
         self.record_rule = record_rule
         self.logger.info("Record rule: {0}".format(self.record_rule))
+
+        self.record_rule_on = record_rule_on
+        self.logger.info("Record rule on: {0}".format(self.record_rule_on))
 
         self.info_key = info_key
         self.logger.info("Info key: {0}".format(self.info_key))
@@ -431,26 +439,13 @@ class Plugin(object):
                             value = string_rule[0]
                             break
                 else:
-                    typed_annotations = []
-
-                    for value in self.get_entry(
+                    typed_annotations = self._typed_annotations(
                         raw_entry=raw_entry,
                         vcf_header=vcf_header,
                         csq_format=csq_format,
                         dict_key=dict_key,
                         individual_id=individual_id,
-                    ):
-                        if self.data_type == "float":
-                            try:
-                                typed_annotations.append(float(value))
-                            except ValueError:
-                                pass
-
-                        elif self.data_type == "integer":
-                            try:
-                                typed_annotations.append(int(value))
-                            except ValueError:
-                                pass
+                    )
 
                     if typed_annotations:
                         if self.record_rule == "max":
@@ -487,6 +482,73 @@ class Plugin(object):
                         pass
 
         return value
+
+    def _typed_annotations(
+        self,
+        raw_entry: str,
+        vcf_header: Optional[Sequence[str]] = None,
+        csq_format: Optional[Sequence[str]] = None,
+        dict_key: Optional[str] = None,
+        individual_id: Optional[str] = None,
+    ) -> list[Any]:
+        """Return all annotation values of a numeric plugin, converted to its data type.
+
+        Values that cannot be converted are skipped.
+        """
+        typed_annotations: list[Any] = []
+        for value in self.get_entry(
+            raw_entry=raw_entry,
+            vcf_header=vcf_header,
+            csq_format=csq_format,
+            dict_key=dict_key,
+            individual_id=individual_id,
+        ):
+            if self.data_type == "float":
+                try:
+                    typed_annotations.append(float(value))
+                except ValueError:
+                    pass
+
+            elif self.data_type == "integer":
+                try:
+                    typed_annotations.append(int(value))
+                except ValueError:
+                    pass
+        return typed_annotations
+
+    def get_typed_values(
+        self,
+        variant_line: Optional[str] = None,
+        variant_dict: Optional[dict[str, Any]] = None,
+        vcf_header: Optional[Sequence[str]] = None,
+        csq_format: Optional[Sequence[str]] = None,
+        dict_key: Optional[str] = None,
+        individual_id: Optional[str] = None,
+    ) -> list[Any]:
+        """Return every annotation value of a numeric (integer or float) plugin.
+
+        Unlike :meth:`get_value`, the values are not reduced by ``record_rule``, so the
+        caller can score each of them and choose by score. Returns an empty list if there
+        is no annotation or the plugin is not numeric.
+        """
+        if self.data_type not in ("integer", "float"):
+            return []
+        raw_entry = self.get_raw_entry(
+            variant_line=variant_line,
+            variant_dict=variant_dict,
+            vcf_header=vcf_header,
+            individual_id=individual_id,
+            dict_key=dict_key,
+        )
+        if not raw_entry:
+            return []
+        return self._typed_annotations(
+            raw_entry=raw_entry,
+            vcf_header=vcf_header,
+            csq_format=csq_format,
+            dict_key=dict_key,
+            individual_id=individual_id,
+        )
 
     def __repr__(self) -> str:
         """Return a string with the main settings of the plugin."""

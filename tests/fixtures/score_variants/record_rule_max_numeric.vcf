@@ -1,0 +1,4 @@
+##fileformat=VCFv4.2
+##INFO=<ID=CLNSIG,Number=.,Type=String,Description="Variant Clinical Significance">
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	test
+10	102013179	.	G	A	100	PASS	CLNSIG=4|5	GT:AD:DP:GQ:PL	0/1:63,45:1
