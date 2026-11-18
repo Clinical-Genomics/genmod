@@ -2,10 +2,9 @@ import gzip
 import sys
 from codecs import getreader, open
 from multiprocessing import cpu_count
+from typing import Optional
 
 import click
-
-from typing import Optional
 
 from genmod.utils import SNPEFF, VEP, ConsequenceSource
 

@@ -1,10 +1,9 @@
 from __future__ import print_function
 
 import logging
+import queue
 from collections import OrderedDict
 from datetime import datetime
-
-import queue
 from multiprocessing import queues
 from typing import Iterable, Optional, Union
 
