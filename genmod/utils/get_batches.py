@@ -1,19 +1,32 @@
 from __future__ import print_function
 
 import logging
+import queue
 from collections import OrderedDict
 from datetime import datetime
+from multiprocessing import queues
+from typing import Iterable, Optional, Union
 
-from genmod.vcf_tools import get_info_dict, get_variant_dict, get_variant_id, get_vep_dict
+from genmod.vcf_tools import (
+    HeaderParser,
+    get_info_dict,
+    get_variant_dict,
+    get_variant_id,
+)
 
-from .get_features import get_annotation
+from .get_features import ConsequenceSource, get_annotation
 
 logger = logging.getLogger(__name__)
 
 
 def get_batches(
-    variants, batch_queue, header, vep=False, results_queue=None, annotation_keyword="Annotation"
-):
+    variants: Iterable[str],
+    batch_queue: Union[queues.Queue, queue.Queue],
+    header: HeaderParser,
+    source: Optional[ConsequenceSource] = None,
+    results_queue: Optional[Union[queues.Queue, queue.Queue]] = None,
+    annotation_keyword: str = "Annotation",
+) -> list[str]:
     """
     Create variant batches based on their annotation and put them into the
     batch queue.
@@ -31,8 +44,8 @@ def get_batches(
          variants (Iterator):An iterator that returns variant dictionaries
          batch_queue (Queue): A queue where the batches will be putted
          header (HeaderParser): A HeaderParser object
-         vep (bool): If variant is annotated with vep
-         compound_mode (bool): If only compounds should be used
+         source (ConsequenceSource): If given, the genes of a variant are taken from
+             its VEP (CSQ) or SnpEff (ANN) annotation instead of annotation_keyword
          results_queue (Queue): A queue where variants can be put for printing
 
     Returns:
@@ -57,7 +70,7 @@ def get_batches(
     nr_of_batches = 0
 
     header_line = header.header
-    vep_header = header.vep_columns
+    annotation_columns = header.annotation_columns(source.info_key) if source else []
     logger.info("Start parsing the variants")
 
     for line in variants:
@@ -66,13 +79,6 @@ def get_batches(
             variant["info_dict"] = get_info_dict(variant["INFO"])
             variant_id = get_variant_id(variant)
             variant["variant_id"] = variant_id
-
-            if vep:
-                variant["vep_info"] = get_vep_dict(
-                    vep_string=variant["info_dict"]["CSQ"],
-                    vep_header=vep_header,
-                    allele=variant["ALT"].split(",")[0],
-                )
 
             logger.debug("Checking variant {0}".format(variant_id))
 
@@ -84,7 +90,10 @@ def get_batches(
             logger.debug("Update new chrom to {0}".format(new_chrom))
 
             new_features = get_annotation(
-                variant=variant, vep=vep, annotation_key=annotation_keyword
+                variant=variant,
+                annotation_key=annotation_keyword,
+                source=source,
+                columns=annotation_columns,
             )
             logger.debug("Adding {0} to variant {1}".format(", ".join(new_features), variant_id))
 

@@ -138,6 +138,7 @@ def score(
         logger.info("All plugins are defined in vcf")
 
     csq_format = head.vep_columns
+    ann_format = head.ann_columns
     # Add the first variant to the iterator
     if not line.startswith("#"):
         variant_file = itertools.chain([line], variant_file)
@@ -202,6 +203,7 @@ def score(
                     category=category,
                     config_parser=config_parser,
                     csq_format=csq_format,
+                    ann_format=ann_format,
                 )
                 logger.debug("Adding category score {0} to rank_score".format(category_score))
                 rank_score += category_score

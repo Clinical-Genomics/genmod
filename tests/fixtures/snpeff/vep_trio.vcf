@@ -1,0 +1,12 @@
+##fileformat=VCFv4.2
+##genmod_test_fixture=VEP CSQ twin of snpeff_trio.vcf: the same variants with equivalent synthetic VEP annotations
+##contig=<ID=1,length=249250621,assembly=b37>
+##INFO=<ID=CSQ,Number=.,Type=String,Description="Consequence annotations from Ensembl VEP. Format: Allele|Consequence|IMPACT|SYMBOL|Gene|Feature_type|Feature|BIOTYPE|HGVSc|HGVSp">
+##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	father	mother	proband
+1	879537	.	T	C	100	PASS	CSQ=C|missense_variant|MODERATE|SAMD11|ENSG00000187634|Transcript|ENST00000342066.8|protein_coding|ENST00000342066.8:c.707T>C|p.Leu236Pro,C|downstream_gene_variant|MODIFIER|NOC2L|ENSG00000188976|Transcript|ENST00000327044.7|protein_coding|ENST00000327044.7:c.*3955A>G|	GT	0/1	0/0	0/1
+1	879595	.	C	T	100	PASS	CSQ=T|missense_variant&splice_region_variant|MODERATE|SAMD11|ENSG00000187634|Transcript|ENST00000342066.8|protein_coding|ENST00000342066.8:c.765C>T|p.Arg255Cys	GT	0/0	0/1	0/1
+1	880086	.	T	C	100	PASS	CSQ=C|synonymous_variant|LOW|NOC2L|ENSG00000188976|Transcript|ENST00000327044.7|protein_coding|ENST00000327044.7:c.1843A>G|p.Leu615Leu	GT	0/0	0/0	0/1
+1	900000	.	G	A	100	PASS	CSQ=A|intergenic_variant|MODIFIER|||||||	GT	0/1	0/1	1/1
+1	950000	.	A	G,T	100	PASS	CSQ=G|missense_variant|MODERATE|KLHL17|ENSG00000187961|Transcript|ENST00000338591.8|protein_coding|ENST00000338591.8:c.311A>G|p.Asn104Ser,T|stop_gained|HIGH|KLHL17|ENSG00000187961|Transcript|ENST00000338591.8|protein_coding|ENST00000338591.8:c.311A>T|p.Lys104*	GT	0/1	0/2	1/2
+1	960000	.	CAAG	C	100	PASS	CSQ=C|inframe_deletion|MODERATE|KLHL17|ENSG00000187961|Transcript|ENST00000338591.8|protein_coding|ENST00000338591.8:c.612_614delAAG|p.Lys205del	GT	0/1	0/0	0/1
