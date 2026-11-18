@@ -1,6 +1,8 @@
 """Parse a variant line in different ways"""
 
 import logging
+from collections.abc import Sequence
+from typing import Union
 
 logging = logging.getLogger(__name__)
 
@@ -81,31 +83,24 @@ def get_variant_id(variant_dict):
     return base_id
 
 
-def get_vep_dict(vep_string, vep_header, allele=None):
-    """Make the vep annotation into a dictionary
+def parse_annotations(
+    annotation_string: Union[str, list, None], columns: Sequence[str]
+) -> list[dict[str, str]]:
+    """Parse a consequence annotation INFO value, VEP ``CSQ`` or SnpEff ``ANN``
 
-    This dictionary will have the alleles as keys and a list of
-    dictionaries with vep annotations as values.
+    Both formats separate the annotations (one per transcript or feature) with ``,``
+    and the fields of one annotation with ``|``, in the order of ``columns``.
 
     Args:
-        vep_list (string): A string with the CSQ annotation
-        vep_header (list): A list with the vep header
-        allele (str): The allele that is annotated
+        annotation_string: The raw INFO value. Empty, ``None`` (key not in the variant) and
+            ``[]`` (``get_info_dict`` value of a flag without value) give no annotations
+        columns: The field names from the INFO header line
 
     Return:
-        vep_dict (dict): A vep dict as described above
-
+        One dictionary per annotation, field name to value
     """
-    vep_dict = {}
-    for vep_annotation in vep_string.split(","):
-        inner_dict = dict(zip(vep_header, vep_annotation.split("|")))
-        # If allele is annotated by vep we use that allele
-        if "Allele" in inner_dict:
-            allele = inner_dict["Allele"]
-
-        if allele in vep_dict:
-            vep_dict[allele].append(inner_dict)
-        else:
-            vep_dict[allele] = [inner_dict]
-
-    return vep_dict
+    if not annotation_string:
+        return []
+    return [
+        dict(zip(columns, annotation.split("|"))) for annotation in annotation_string.split(",")
+    ]

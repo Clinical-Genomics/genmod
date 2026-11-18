@@ -9,6 +9,45 @@ if sys.version_info < (2, 7):
 else:
     from collections import OrderedDict
 
+# The ANN fields in the order given by the SnpEff "VCF annotation format" specification,
+# used if the ANN header line does not list them.
+ANN_SPEC_COLUMNS: list[str] = [
+    "Allele",
+    "Annotation",
+    "Annotation_Impact",
+    "Gene_Name",
+    "Gene_ID",
+    "Feature_Type",
+    "Feature_ID",
+    "Transcript_BioType",
+    "Rank",
+    "HGVS.c",
+    "HGVS.p",
+    "cDNA.pos / cDNA.length",
+    "CDS.pos / CDS.length",
+    "AA.pos / AA.length",
+    "Distance",
+    "ERRORS / WARNINGS / INFO",
+]
+
+
+def parse_ann_columns(description: str) -> list[str]:
+    """Return the ANN field names from the description of the ANN INFO header line.
+
+    SnpEff writes the field names after a colon, quoted and separated by ``|`` with
+    surrounding spaces, e.g. ``Functional annotations: 'Allele | Annotation | ...'``.
+
+    Args:
+        description: The Description of the ANN INFO header line.
+
+    Returns:
+        The field names. The spec order if none are listed.
+    """
+    _, colon, fields = description.partition(":")
+    if not colon or "|" not in fields:
+        return list(ANN_SPEC_COLUMNS)
+    return [field.strip(" '") for field in fields.strip().strip("'").split("|")]
+
 
 class HeaderParser(object):
     """Parses a file with family info and creates a family object with individuals."""
@@ -52,7 +91,8 @@ class HeaderParser(object):
         self.source = None
         self.line_counter = 0
         self.individuals = []
-        self.vep_columns = []
+        self.vep_columns: list[str] = []
+        self.ann_columns: list[str] = []
         self.info_pattern = re.compile(
             r"""\#\#INFO=<
             ID=(?P<id>[^,]+),
@@ -95,6 +135,21 @@ class HeaderParser(object):
             re.VERBOSE,
         )
         self.meta_pattern = re.compile(r"""##(?P<key>.+?)=(?P<val>.+)""")
+
+    def annotation_columns(self, info_key: str) -> list[str]:
+        """Return the column names of a consequence annotation INFO field.
+
+        Args:
+            info_key: ``CSQ`` (VEP) or ``ANN`` (SnpEff).
+
+        Returns:
+            The column names, empty for any other key.
+        """
+        if info_key == "CSQ":
+            return self.vep_columns
+        if info_key == "ANN":
+            return self.ann_columns
+        return []
 
     def parse_meta_data(self, line):
         """Parse a vcf metadataline"""
@@ -139,6 +194,10 @@ class HeaderParser(object):
             # Store the vep columns:
             if info_line["ID"] == "CSQ":
                 self.vep_columns = info_line.get("Format", "").split("|")
+            # Store the SnpEff ANN columns:
+            elif info_line["ID"] == "ANN":
+                self.ann_columns = parse_ann_columns(info_line["Description"])
+                self.logger.debug("Found ANN columns: %s", self.ann_columns)
 
             self.info_dict[match.group("id")] = line
 

@@ -29,7 +29,17 @@ from genmod.score_variants import CompoundScorer
 from genmod.utils import VariantPrinter, get_batches
 from genmod.vcf_tools import HeaderParser, add_metadata, print_headers, sort_variants
 
-from .utils import get_file_handle, outfile, processes, silent, temp_dir, variant_file
+from .utils import (
+    get_consequence_source,
+    get_file_handle,
+    outfile,
+    processes,
+    silent,
+    snpeff,
+    temp_dir,
+    variant_file,
+    vep,
+)
 
 logger = logging.getLogger(__name__)
 util.abstract_sockets_supported = False
@@ -41,9 +51,8 @@ util.abstract_sockets_supported = False
 @outfile
 @processes
 @temp_dir
-@click.option(
-    "--vep", is_flag=True, help="If variants are annotated with the Variant Effect Predictor."
-)
+@vep
+@snpeff
 @click.option(
     "--threshold",
     type=int,
@@ -53,12 +62,22 @@ util.abstract_sockets_supported = False
 @click.option("--penalty", type=int, help="Penalty applied together with --threshold", default=6)
 @click.pass_context
 def compound(
-    context, variant_file, silent, outfile, vep, threshold: int, penalty: int, processes, temp_dir
+    context,
+    variant_file,
+    silent,
+    outfile,
+    vep,
+    snpeff,
+    threshold: int,
+    penalty: int,
+    processes,
+    temp_dir,
 ):
     """
     Score compound variants in a vcf file based on their rank score.
     """
     logger.info("Running GENMOD score_compounds, version: {0}".format(__version__))
+    consequence_source = get_consequence_source(vep=vep, snpeff=snpeff)
 
     variant_file = get_file_handle(variant_file)
 
@@ -157,7 +176,7 @@ def compound(
             variants=variant_file,
             batch_queue=variant_queue,
             header=head,
-            vep=vep,
+            source=consequence_source,
             results_queue=results,
         )
 

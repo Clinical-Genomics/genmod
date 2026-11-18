@@ -1,0 +1,12 @@
+##fileformat=VCFv4.2
+##genmod_test_fixture=Synthetic SnpEff ANN annotations written from the VCF annotation format v1.0 spec
+##contig=<ID=1,length=249250621,assembly=b37>
+##INFO=<ID=ANN,Number=.,Type=String,Description="Functional annotations: 'Allele | Annotation | Annotation_Impact | Gene_Name | Gene_ID | Feature_Type | Feature_ID | Transcript_BioType | Rank | HGVS.c | HGVS.p | cDNA.pos / cDNA.length | CDS.pos / CDS.length | AA.pos / AA.length | Distance | ERRORS / WARNINGS / INFO' ">
+##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	father	mother	proband
+1	879537	.	T	C	100	PASS	ANN=C|missense_variant|MODERATE|SAMD11|ENSG00000187634|transcript|ENST00000342066.8|protein_coding|7/14|c.707T>C|p.Leu236Pro|794/2551|707/2046|236/681||,C|downstream_gene_variant|MODIFIER|NOC2L|ENSG00000188976|transcript|ENST00000327044.7|protein_coding||c.*3955A>G|||||3955|	GT	0/1	0/0	0/1
+1	879595	.	C	T	100	PASS	ANN=T|missense_variant&splice_region_variant|MODERATE|SAMD11|ENSG00000187634|transcript|ENST00000342066.8|protein_coding|8/14|c.765C>T|p.Arg255Cys|852/2551|765/2046|255/681||	GT	0/0	0/1	0/1
+1	880086	.	T	C	100	PASS	ANN=C|synonymous_variant|LOW|NOC2L|ENSG00000188976|transcript|ENST00000327044.7|protein_coding|16/19|c.1843A>G|p.Leu615Leu|1902/2800|1843/2250|615/749||	GT	0/0	0/0	0/1
+1	900000	.	G	A	100	PASS	ANN=A|intergenic_region|MODIFIER|NOC2L-KLHL17|ENSG00000188976-ENSG00000187961|intergenic_region|ENSG00000188976-ENSG00000187961|||n.900000G>A||||||	GT	0/1	0/1	1/1
+1	950000	.	A	G,T	100	PASS	ANN=G|missense_variant|MODERATE|KLHL17|ENSG00000187961|transcript|ENST00000338591.8|protein_coding|3/12|c.311A>G|p.Asn104Ser|402/2512|311/1929|104/642||,T|stop_gained|HIGH|KLHL17|ENSG00000187961|transcript|ENST00000338591.8|protein_coding|3/12|c.311A>T|p.Lys104*|402/2512|311/1929|104/642||	GT	0/1	0/2	1/2
+1	960000	.	CAAG	C	100	PASS	ANN=C|conservative_inframe_deletion|MODERATE|KLHL17|ENSG00000187961|transcript|ENST00000338591.8|protein_coding|5/12|c.612_614delAAG|p.Lys205del||612/1929|205/642||W1	GT	0/1	0/0	0/1

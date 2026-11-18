@@ -28,14 +28,18 @@ def check_plugins(config_parser, head):
                 all_pass = False
             else:
                 logger.debug("INFO field {0} was found in vcf INFO.".format(info_key))
-            if info_key == "CSQ":
+            if info_key in ("CSQ", "ANN"):
                 csq_key = plugin_object.csq_key
-                if csq_key not in head.vep_columns:
+                if csq_key not in head.annotation_columns(info_key):
                     logger.warning(
-                        "CSQ field {0} is not in csq annotation."
-                        " This field will not be scored.".format(csq_key)
+                        "%s field %s is not in %s annotation. This field will not be scored.",
+                        info_key,
+                        csq_key,
+                        info_key,
                     )
                     all_pass = False
                 else:
-                    logger.debug("CSQ field {0} was found in csq annotation.".format(csq_key))
+                    logger.debug(
+                        "%s field %s was found in %s annotation.", info_key, csq_key, info_key
+                    )
     return all_pass

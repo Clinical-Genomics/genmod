@@ -1,6 +1,9 @@
 from __future__ import print_function
 
 import logging
+from typing import Any, Iterable, NamedTuple, Optional, Sequence
+
+from genmod.vcf_tools import parse_annotations
 
 INTERESTING_SO_TERMS = {
     "transcript_ablation",
@@ -32,67 +35,99 @@ INTERESTING_SO_TERMS = {
     "non_coding_transcript_variant",
     "upstream_gene_variant",
     "downstream_gene_variant",
+    # Terms used by SnpEff but not by VEP
+    "conservative_inframe_deletion",
+    "conservative_inframe_insertion",
+    "disruptive_inframe_deletion",
+    "disruptive_inframe_insertion",
+    "exon_loss_variant",
+    "rare_amino_acid_variant",
+    "5_prime_UTR_premature_start_codon_gain_variant",
+    "start_retained_variant",
+    "splice_branch_variant",
 }
 
 
-def check_vep_annotation(variant):
-    """
-    Return a set with the genes that vep has annotated this variant with.
+class ConsequenceSource(NamedTuple):
+    """Where a consequence annotation tool stores its per-transcript annotations.
 
-    Vep annotates all variants but we are only interested in the exonic ones.
-    The terms are specified in INTERESTING_SO_TERMS
+    Attributes:
+        info_key: The INFO field with the annotations.
+        gene_column: The annotation field with the gene id.
+        consequence_column: The annotation field with the ``&``-joined SO terms.
+    """
+
+    info_key: str
+    gene_column: str
+    consequence_column: str
+
+
+VEP = ConsequenceSource(info_key="CSQ", gene_column="Gene", consequence_column="Consequence")
+SNPEFF = ConsequenceSource(info_key="ANN", gene_column="Gene_ID", consequence_column="Annotation")
+
+
+def get_annotated_genes(
+    annotations: Iterable[dict[str, str]], source: ConsequenceSource
+) -> set[str]:
+    """
+    Return a set with the genes that a variant is annotated with.
+
+    VEP and SnpEff annotate all variants but we are only interested in the ones
+    that belong to a gene. The terms are specified in INTERESTING_SO_TERMS.
 
     Arguments:
-        variant (dict): A variant dictionary
+        annotations (list[dict]): The parsed annotations, see parse_annotations
+        source (ConsequenceSource): Which fields hold the gene and the consequence
 
     Returns:
         annotation (set): A set with genes
     """
-
-    annotation = set()
-    # vep_info is a dictionary with genes as key and annotation as values
-    ##TODO use extract_vcf to get the annotation here
-
-    vep_info = variant.get("vep_info", {})
-
-    for allele in vep_info:
-        for vep_annotation in variant["vep_info"][allele]:
-            for consequence in vep_annotation.get("Consequence", {}).split("&"):
-                # These are the SO terms that indicate that the variant
-                # belongs to a gene
-                if consequence in INTERESTING_SO_TERMS:
-                    annotation.add(vep_annotation.get("Gene", ""))
-    return annotation
+    genes = set()
+    for annotation in annotations:
+        gene = annotation.get(source.gene_column, "")
+        if not gene:
+            continue
+        consequences = annotation.get(source.consequence_column, "").split("&")
+        # These are the SO terms that indicate that the variant belongs to a gene
+        if INTERESTING_SO_TERMS.intersection(consequences):
+            genes.add(gene)
+    return genes
 
 
-def get_annotation(variant, annotation_key="Annotation", vep=False):
+def get_annotation(
+    variant: dict[str, Any],
+    annotation_key: str = "Annotation",
+    source: Optional[ConsequenceSource] = None,
+    columns: Sequence[str] = (),
+) -> set[str]:
     """
     Return the features that a variant belongs to.
 
     Arguments:
         variant (dict): A variant dictionary
         annotation_key (str): The name of the info field to search
-        vep (bool): If variants are annotated with vep
+        source (ConsequenceSource): If given, take the genes from the VEP or SnpEff
+            annotation instead of from annotation_key
+        columns (list[str]): The field names of the source annotation
 
     Returns:
         annotations (set): A set with annotated features
     """
     logger = logging.getLogger(__name__)
-    ##TODO use extract_vcf to get the annotation here
 
     annotation = set()
     variant_id = variant.get("variant_id", "")
-    logger.debug("Checking variant annotation for {0}".format(variant_id))
-    # If the variant has already been annotated by genmod we do not need to
-    # check again
-    if vep:
-        logger.debug("Using vep annotation.")
-        annotation = check_vep_annotation(variant)
+    logger.debug("Checking variant annotation for %s", variant_id)
+    info_dict = variant.get("info_dict", {})
+    if source:
+        logger.debug("Using %s annotation.", source.info_key)
+        annotation = get_annotated_genes(
+            annotations=parse_annotations(info_dict.get(source.info_key), columns),
+            source=source,
+        )
 
-    else:
-        info_dict = variant.get("info_dict", {})
-        if info_dict.get(annotation_key, None):
-            annotation = set(info_dict[annotation_key].split(","))
+    elif info_dict.get(annotation_key, None):
+        annotation = set(info_dict[annotation_key].split(","))
 
-    logger.debug("Annotations found for {0}: {1}".format(variant_id, ",".join(annotation)))
+    logger.debug("Annotations found for %s: %s", variant_id, ",".join(annotation))
     return annotation

@@ -114,7 +114,7 @@ MT	302253	.	CCCTCCTGCCCCT	C	100	PASS	MQ=1;GeneticModels=1:AR_hom_dn;ModelScore=1
 **genmod** is made for working on any type of annotated vcf.
 To get relevant Autosomal Compound Heterozygotes we need to know what genetic regions that the variants belong to.
 We can use annotations from the [Variant Effect Predictor](http://www.ensembl.org/info/docs/tools/vep/index.html) 
-or let **genmod** do the annotation.
+(`--vep`) or [SnpEff](https://pcingola.github.io/SnpEff/) (`--snpeff`), or let **genmod** do the annotation.
 
 **genmod** comes with a prebuilt annotation data base that is made from the latest refSeq dataset. 
 We can also build new annotation sets with **genmod build**, please see wiki for mor info.

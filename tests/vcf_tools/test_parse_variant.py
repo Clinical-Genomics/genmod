@@ -1,4 +1,33 @@
-from genmod.vcf_tools import get_variant_id
+from genmod.vcf_tools import get_variant_id, parse_annotations
+
+ANN_COLUMNS = ["Allele", "Annotation", "Annotation_Impact", "Gene_Name", "Gene_ID", "Distance"]
+
+
+class TestParseAnnotations:
+    def test_one_annotation_per_allele(self):
+        # GIVEN a SnpEff ANN value of a multiallelic site, one annotation per ALT allele
+        ann = "G|missense_variant|MODERATE|ADK|ENSG01|,T|stop_gained|HIGH|ADK|ENSG01|"
+
+        # WHEN parsing it
+        annotations = parse_annotations(ann, ANN_COLUMNS)
+
+        # THEN there is one dictionary per annotation, in order, with empty fields kept
+        assert [a["Allele"] for a in annotations] == ["G", "T"]
+        assert annotations[1]["Annotation_Impact"] == "HIGH"
+        assert annotations[0]["Distance"] == ""
+
+    def test_non_reference_allele(self):
+        # GIVEN an annotation against a non-standard reference (cancer), Allele is ALT-REF
+        annotations = parse_annotations("G-C|missense_variant|MODERATE|ADK|ENSG01|", ANN_COLUMNS)
+
+        # THEN the allele is kept as written
+        assert annotations[0]["Allele"] == "G-C"
+
+    def test_empty(self):
+        # A variant without the annotation (None) or a flag without value ([]) has none
+        assert parse_annotations(None, ANN_COLUMNS) == []
+        assert parse_annotations([], ANN_COLUMNS) == []
+        assert parse_annotations("", ANN_COLUMNS) == []
 
 
 class TestGetVariantId:

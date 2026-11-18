@@ -5,6 +5,10 @@ from multiprocessing import cpu_count
 
 import click
 
+from typing import Optional
+
+from genmod.utils import SNPEFF, VEP, ConsequenceSource
+
 variant_file = click.argument("variant_file", type=click.Path(), metavar="<vcf_file> or -")
 
 outfile = click.option(
@@ -34,6 +38,37 @@ family_type = click.option(
     default="ped",
     help="If the analysis use one of the known setups, please specify which one.",
 )
+
+
+vep = click.option(
+    "--vep", is_flag=True, help="If variants are annotated with the Variant Effect Predictor."
+)
+
+snpeff = click.option(
+    "--snpeff", is_flag=True, help="If variants are annotated with SnpEff (the ANN field)."
+)
+
+
+def get_consequence_source(vep: bool, snpeff: bool) -> Optional[ConsequenceSource]:
+    """Return where to take the genes of a variant from, given the --vep and --snpeff flags
+
+    Args:
+        vep: If variants are annotated with VEP (CSQ)
+        snpeff: If variants are annotated with SnpEff (ANN)
+
+    Returns:
+        VEP, SNPEFF or None if neither flag is set
+
+    Raises:
+        click.UsageError: If both flags are set
+    """
+    if vep and snpeff:
+        raise click.UsageError("--vep and --snpeff can not be used together")
+    if vep:
+        return VEP
+    if snpeff:
+        return SNPEFF
+    return None
 
 
 def get_file_handle(path):

@@ -57,7 +57,8 @@ class Plugin(object):
             separators: How the record is separated, applied in order.
             info_key: The name of the INFO field (when ``field`` is ``INFO``).
             category: The category the plugin belongs to.
-            csq_key: The name of the VEP entry (when ``info_key`` is ``CSQ``).
+            csq_key: The name of the VEP or SnpEff field (when ``info_key`` is ``CSQ``
+                or ``ANN``).
             record_rule: Which value to return if there are several, ``min`` or ``max``.
             gt_key: The FORMAT key to extract (when ``field`` is ``sample_id``).
             string_rules: Priority of string matches, mapping the string to its rank.
@@ -129,7 +130,8 @@ class Plugin(object):
             raw_entry: The raw entry. If given it is split directly instead of being
                 looked up in the variant.
             vcf_header: The VCF header line (column names including sample ids).
-            csq_format: The names of the CSQ (VEP) columns. Required for ``CSQ`` entries.
+            csq_format: The names of the CSQ (VEP) or ANN (SnpEff) columns, matching
+                ``info_key``. Required for ``CSQ`` and ``ANN`` entries.
             dict_key: The key to pick if the entry is a dictionary (see ``dict_entry``).
             individual_id: The sample id to use when ``field`` is ``sample_id``.
 
@@ -137,7 +139,7 @@ class Plugin(object):
             The split entry. Empty if no entry was found.
 
         Raises:
-            IOError: If the CSQ format or CSQ key is missing for a CSQ entry.
+            IOError: If the CSQ format or CSQ key is missing for a CSQ or ANN entry.
         """
         if not raw_entry:
             raw_entry = self.get_raw_entry(
@@ -166,25 +168,27 @@ class Plugin(object):
                 entry = raw_entry.split(":")
 
             elif self.field == "INFO":
-                # We are going to treat csq fields separately
-                if self.info_key == "CSQ":
+                # We are going to treat VEP (CSQ) and SnpEff (ANN) fields separately
+                if self.info_key in ("CSQ", "ANN"):
                     if not csq_format:
-                        raise IOError("If CSQ the csq format must be provided")
+                        raise IOError(f"If {self.info_key} the csq format must be provided")
                     if not self.csq_key:
-                        raise IOError("If CSQ a csq key must be provided")
+                        raise IOError(f"If {self.info_key} a csq key must be provided")
                     csq_column: Optional[int] = None
                     for i, head in enumerate(csq_format):
                         if head == self.csq_key:
                             # This is the csq entry we are looking for
                             csq_column = i
                     if csq_column is None:
-                        # The key is not in the CSQ annotation (e.g. --skip_plugin_check),
+                        # The key is not in the annotation (e.g. --skip_plugin_check),
                         # so there is no entry to score
                         self.logger.debug(
-                            "CSQ key %s is not in the CSQ format, no entry found", self.csq_key
+                            "CSQ key %s is not in the %s format, no entry found",
+                            self.csq_key,
+                            self.info_key,
                         )
                         return []
-                    # CSQ entries are allways splitted on ','
+                    # CSQ and ANN entries are allways splitted on ','
                     for csq_entry in raw_entry.split(","):
                         entry += split_strings(csq_entry.split("|")[csq_column], self.separators)
                 else:
@@ -354,7 +358,7 @@ class Plugin(object):
             entry: Unused.
             raw_entry: Unused.
             vcf_header: The VCF header line with sample ids.
-            csq_format: The names of the CSQ (VEP) columns.
+            csq_format: The names of the CSQ (VEP) or ANN (SnpEff) columns.
             dict_key: The key to pick if the entry is a dictionary (see ``dict_entry``).
             individual_id: The sample id to use when ``field`` is ``sample_id``.
 
