@@ -158,7 +158,6 @@ def compound(
             batch_queue=variant_queue,
             header=head,
             vep=vep,
-            results_queue=results,
         )
 
         logger.debug("Put stop signs in the variant queue")

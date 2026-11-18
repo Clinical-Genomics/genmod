@@ -1,4 +1,4 @@
-from importlib_resources import files
+from importlib.resources import files
 
 ensembl_file_37 = "annotations/ensembl_genes_37.txt.gz"
 ensembl_file_38 = "annotations/ensembl_genes_38.txt.gz"

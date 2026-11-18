@@ -9,27 +9,31 @@ Created by Måns Magnusson on 2015-09-16.
 Copyright (c) 2015 __MoonsoInc__. All rights reserved.
 """
 
+from __future__ import annotations
+
 import logging
+from collections.abc import Mapping
+
+from genmod.annotate_regions.region_index import RegionIndex
 
 logger = logging.getLogger(__name__)
 
 
-def get_region(chrom, start, end, region_trees):
-    """Check if a position overlapps any regions
+def get_region(
+    chrom: str, start: int, end: int, region_trees: Mapping[str, RegionIndex]
+) -> set[str]:
+    """Check if a position overlaps any regions
 
-    Arguments:
-       chrom (str): The chromosome
-       start (int): The start position for the feature
-       end (int): The stop position for the feature
-       region_trees (dict): A dictionary with chromosomes as keys and interval trees as values
+    Args:
+        chrom: The chromosome
+        start: The start position for the feature (inclusive)
+        end: The end position for the feature (exclusive)
+        region_trees: The region index of each chromosome, keyed on chromosome
 
     Returns:
-        regions (set): The regions that the variant ovelapps
+        The symbols of the regions that the variant overlaps, empty if the chromosome
+        has no regions
     """
-    regions = set()
-    if chrom in region_trees:
-        tree = region_trees[chrom]
-        result = tree[start:end]
-        for interval in result:
-            regions.add(interval.data)
-    return regions
+    if chrom not in region_trees:
+        return set()
+    return {region.symbol for region in region_trees[chrom].query(start, end)}

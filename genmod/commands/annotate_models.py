@@ -24,12 +24,20 @@ from multiprocessing import JoinableQueue, Manager, cpu_count, util
 from tempfile import NamedTemporaryFile
 
 import click
-from ped_parser import FamilyParser
 
 from genmod import __version__
 from genmod.annotate_models.variant_annotator import VariantAnnotator
-from genmod.utils import VariantPrinter, check_individuals, get_batches
-from genmod.vcf_tools import HeaderParser, add_metadata, print_headers, print_variant, sort_variants
+from genmod.pedigree import FamilyParser, check_individuals_in_vcf
+from genmod.utils import VariantPrinter, get_batches
+from genmod.vcf_tools import (
+    HeaderParser,
+    add_compounds_header,
+    add_genetic_models_header,
+    add_model_score_header,
+    print_headers,
+    print_variant,
+    sort_variants,
+)
 
 from .utils import (
     family_file,
@@ -200,40 +208,14 @@ def models(
 
     logger.debug("Version added")
     logger.info("Adding genetic models to vcf header")
-    add_metadata(
-        head,
-        "info",
-        "GeneticModels",
-        annotation_number=".",
-        entry_type="String",
-        description="':'-separated list of genetic models for this variant.",
-    )
-
+    add_genetic_models_header(head)
     logger.debug("Genetic models added")
     logger.info("Adding model score to vcf header")
-    add_metadata(
-        head,
-        "info",
-        "ModelScore",
-        annotation_number=".",
-        entry_type="String",
-        description="PHRED score for genotype models.",
-    )
+    add_model_score_header(head)
     logger.debug("Model score added")
 
     logger.info("Adding Compounds to vcf header")
-    add_metadata(
-        head,
-        "info",
-        "Compounds",
-        annotation_number=".",
-        entry_type="String",
-        description=(
-            "List of compound pairs for this variant."
-            "The list is splitted on ',' family id is separated with compounds"
-            "with ':'. Compounds are separated with '|'."
-        ),
-    )
+    add_compounds_header(head)
     logger.debug("Compounds added")
 
     # Add the first variant to the iterator
@@ -262,7 +244,7 @@ def models(
     logger.debug("Individuals found in vcf file: {}".format(", ".join(vcf_individuals)))
 
     try:
-        check_individuals(family_parser.individuals, vcf_individuals)
+        check_individuals_in_vcf(family_parser.individuals, vcf_individuals)
     except IOError as e:
         logger.error(e)
         logger.info("Individuals in PED file: {0}".format(", ".join(family_parser.individuals)))

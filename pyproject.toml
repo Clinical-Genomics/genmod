@@ -25,13 +25,9 @@ classifiers = [
   "Topic :: Scientific/Engineering :: Medical Science Apps.",
 ]
 dependencies = [
-    "ped_parser",
     "pysam",
     "click",
     "configobj",
-    "importlib_resources",
-    "intervaltree >= 3.1.0",
-    "six",
 ]
 
 [project.urls]

@@ -4,8 +4,8 @@ from dataclasses import dataclass
 
 import pytest
 from genmod.annotate_models.genetic_models import check_genetic_models
+from genmod.pedigree import FamilyParser
 from genmod.vcf_tools import Genotype
-from ped_parser import FamilyParser
 
 TRIO_PED = [
     "#FamilyID\tSampleID\tFather\tMother\tSex\tPhenotype\n",

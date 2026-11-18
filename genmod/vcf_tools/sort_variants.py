@@ -1,56 +1,50 @@
 #!/usr/bin/env python
 # encoding: utf-8
 """
-sort_test.py
+sort_variants.py
 
-Try to sort with unix sort.
+Sort a file of variants with unix sort.
 
 Created by Måns Magnusson on 2015-01-22.
 Copyright (c) 2015 __MoonsoInc__. All rights reserved.
 """
 
-from __future__ import print_function
+from __future__ import annotations
 
 import logging
 from datetime import datetime
 from subprocess import call
+from typing import Literal
 
 logger = logging.getLogger(__name__)
 
+SORT_OPTIONS = {
+    # Version sorting (-V) deals with e.g. Un_* contigs
+    "chromosome": ["-k1,1", "-k3,3", "-s", "-V"],
+    "vcf": ["-k1,1", "-k2,2", "-s", "-V"],
+    "rank": ["-rn", "-k1"],
+}
 
-def sort_variants(infile, mode="chromosome"):
-    """
-    Sort variants based on rank score or chromosome.
+
+def sort_variants(infile: str, mode: Literal["chromosome", "vcf", "rank"] = "chromosome") -> None:
+    """Sort variants based on rank score or chromosome.
 
     Uses unix sort to sort the variants and overwrites the infile.
 
     Args:
-        infile : A string that is the path to a file
-        mode : 'chromosome', 'vcf' or 'rank'
-        outfile : The path to an outfile where the variants should be printed
+        infile: The path to the file to sort, which is overwritten
+        mode: ``chromosome`` sorts on the first and third column (a temporary file with a
+            sort column first), ``vcf`` on chromosome and position of a plain vcf, and
+            ``rank`` on the first column, highest number first
 
-    Returns:
-        0 if sorting was performed
-        1 if variants where not sorted
+    Raises:
+        ValueError: If the sort mode is not known
+        OSError: If unix ``sort`` is not available
     """
-    command = [
-        "sort",
-    ]
-    if mode == "chromosome":
-        command.append("-k1,1")
-        command.append("-k3,3")
-        command.append("-s")
-        command.append("-V")  # Version sorting to deal with e.g. Un_* contigs
-    elif mode == "vcf":
-        command.append("-k1,1")
-        command.append("-k2,2")
-        command.append("-s")
-        command.append("-V")  # Version sorting to deal with e.g. Un_* contigs
-    elif mode == "rank":
-        command.append("-rn")
-        command.append("-k1")
+    if mode not in SORT_OPTIONS:
+        raise ValueError(f"Unknown sort mode '{mode}', use one of {list(SORT_OPTIONS)}")
 
-    command = command + [infile, "-o", infile]
+    command = ["sort", *SORT_OPTIONS[mode], infile, "-o", infile]
 
     logger.info("Start sorting variants...")
     logger.info("Sort command: {0}".format(" ".join(command)))
@@ -65,5 +59,3 @@ def sort_variants(infile, mode="chromosome"):
         raise e
 
     logger.info("Sorting done. Time to sort: {0}".format(datetime.now() - sort_start))
-
-    return
