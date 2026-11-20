@@ -45,6 +45,20 @@ VEP joins multiple consequences of one transcript with `&`, for example `intron_
 
 For `info_key = CSQ`, genmod itself splits the transcripts (`,`) and the VEP columns (`|`) and picks the column named by `csq_key`. `separators` only describes how to split the value *within* that column, so `,` and `|` should not be listed for a CSQ plugin.
 
+SnpEff annotations work the same way. Set `info_key = ANN` and name the ANN field with `csq_key`, for example `csq_key = Annotation` for the SO terms (also joined with `&`) or `csq_key = Annotation_Impact` for `HIGH`/`MODERATE`/`LOW`/`MODIFIER`:
+
+```
+[snpeff_consequence]
+  category = consequence
+  data_type = string
+  description = Most severe SnpEff consequence for this variant
+  field = INFO
+  info_key = ANN
+  csq_key = Annotation
+  record_rule = max
+  separators = '&'
+```
+
 If `'&'` is missing, `intron_variant&non_coding_transcript_variant` is one single value that matches none of the rules, and the variant gets no score for the plugin. Setting `exact_match = false` on the plugin restores the older substring matching, which finds the consequences without `&` as a separator, but then a rule such as `AD` also matches `AD_dn`.
 
 ## Rank Score Normalization

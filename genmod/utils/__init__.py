@@ -2,7 +2,14 @@
 
 from .check_individuals import check_individuals
 from .get_batches import get_batches
-from .get_features import INTERESTING_SO_TERMS, check_vep_annotation, get_annotation
+from .get_features import (
+    INTERESTING_SO_TERMS,
+    SNPEFF,
+    VEP,
+    ConsequenceSource,
+    get_annotated_genes,
+    get_annotation,
+)
 from .get_priority import get_chromosome_priority, get_rank_score
 from .is_number import is_number
 from .pair_generator import generate_pairs
@@ -32,8 +39,11 @@ EXONIC_SO_TERMS = {
 __all__ = [
     "check_individuals",
     "get_batches",
-    "check_vep_annotation",
+    "ConsequenceSource",
+    "get_annotated_genes",
     "get_annotation",
+    "SNPEFF",
+    "VEP",
     "get_chromosome_priority",
     "get_rank_score",
     "is_number",

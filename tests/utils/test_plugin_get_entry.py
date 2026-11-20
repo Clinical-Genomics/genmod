@@ -299,6 +299,23 @@ def test_CSQ():
     assert plugin.get_entry(variant_dict=variant_dict, csq_format=csq_format) == test_value
 
 
+def test_ANN():
+    # GIVEN a plugin for the SnpEff ANN field Annotation and a variant with two annotations
+    ann_format = ["Allele", "Annotation", "Annotation_Impact", "Gene_Name", "Gene_ID"]
+    plugin = Plugin(
+        name="ANN", field="INFO", info_key="ANN", csq_key="Annotation", separators=["&"]
+    )
+    info = "ANN=G|missense_variant&splice_region_variant|MODERATE|STAT4|ENSG01,G|intron_variant|MODIFIER|STAT4|ENSG01"
+    variant_line = get_variant_line(info=info)
+    variant_dict = get_variant_dict(info=info)
+
+    # WHEN getting the entry
+    # THEN the Annotation of both annotations is returned, split on '&'
+    test_value = ["missense_variant", "splice_region_variant", "intron_variant"]
+    assert plugin.get_entry(variant_line=variant_line, csq_format=ann_format) == test_value
+    assert plugin.get_entry(variant_dict=variant_dict, csq_format=ann_format) == test_value
+
+
 def test_dict_two_separators_no_key():
     """Test to get the raw chromosome"""
     variant_dict = get_variant_dict(info="RankScore=1:12,2:11")

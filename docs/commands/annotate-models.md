@@ -25,6 +25,8 @@ Options:
                                    penetrance.
    --vep                           If variants are annotated with the Variant
                                    Effect Predictor.
+   --snpeff                        If variants are annotated with SnpEff (the
+                                   ANN field).
    --phased                        If data is phased use this flag.
    -s, --strict                    If strict model annotations should be
                                    used(see documentation).
@@ -79,6 +81,13 @@ Genmod will then allow healthy carriers for variants that resides in these genes
 
 This flag tell genmod that the variants are annotated with the [Variant Effect Predictor](http://www.ensembl.org/info/docs/tools/vep/index.html).
 In this case the vep annotations will be used to determine if a compound pair is in the same gene.
+A variant belongs to the genes (the `Gene` field of the `CSQ` annotation) of its transcripts with a genic consequence, for example `missense_variant` or `intron_variant`.
+
+### snpeff ###
+
+This flag tell genmod that the variants are annotated with [SnpEff](https://pcingola.github.io/SnpEff/), in the `ANN` field of the [VCF annotation format](http://snpeff.sourceforge.net/VCFannotationformat_v1.0.pdf).
+It works like `--vep`: a variant belongs to the `Gene_ID` of its annotations with a genic `Annotation`. An `intergenic_region` annotation, where `Gene_ID` names the closest genes, does not make the variant part of a gene.
+`--vep` and `--snpeff` can not be used together.
 
 ### strict ###
 

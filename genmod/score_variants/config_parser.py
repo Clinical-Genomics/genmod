@@ -319,7 +319,7 @@ class ConfigParser(configobj.ConfigObj):
                 try:
                     info_key = vcf_section["info_key"]
 
-                    if info_key == "CSQ":
+                    if info_key in ("CSQ", "ANN"):
                         try:
                             vcf_section["csq_key"]
                         except KeyError:
@@ -327,7 +327,7 @@ class ConfigParser(configobj.ConfigObj):
                                 vcf_section["vep_key"]
                             except KeyError:
                                 raise ValidateError(
-                                    "CSQ entrys has to refer to an csq field.\n"
+                                    "CSQ and ANN entrys has to refer to an csq field.\n"
                                     "Refer with keyword 'csq_key'\n"
                                     "csq_key is missing in section: {0}".format(plugin)
                                 )

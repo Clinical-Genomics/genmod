@@ -34,12 +34,15 @@ from genmod.vcf_tools import HeaderParser, add_metadata, print_headers, print_va
 from .utils import (
     family_file,
     family_type,
+    get_consequence_source,
     get_file_handle,
     outfile,
     processes,
     silent,
+    snpeff,
     temp_dir,
     variant_file,
+    vep,
 )
 
 logger = logging.getLogger(__name__)
@@ -59,9 +62,8 @@ util.abstract_sockets_supported = False
     metavar="<tsv_file>",
     help="File with gene ids that have reduced penetrance.",
 )
-@click.option(
-    "--vep", is_flag=True, help="If variants are annotated with the Variant Effect Predictor."
-)
+@vep
+@snpeff
 @click.option(
     "--phased",
     is_flag=True,
@@ -94,6 +96,7 @@ def models(
     family_type,
     reduced_penetrance,
     vep,
+    snpeff,
     keyword,
     phased,
     strict,
@@ -118,6 +121,7 @@ def models(
     args, _, _, values = inspect.getargvalues(frame)
     argument_list = [i + "=" + str(values[i]) for i in values if values[i] and i not in ["frame"]]
 
+    consequence_source = get_consequence_source(vep=vep, snpeff=snpeff)
     variant_file = get_file_handle(variant_file)
     ###########################################################################
 
@@ -243,13 +247,17 @@ def models(
         print_headers(head=head, outfile=outfile, silent=silent)
         sys.exit(0)
 
-    if vep:
-        if "CSQ" not in head.info_dict:
-            logger.warning("vep flag is used but there is no CSQ field specified in header")
+    if consequence_source:
+        if consequence_source.info_key not in head.info_dict:
+            logger.warning(
+                "%s flag is used but there is no %s field specified in header",
+                "--vep" if vep else "--snpeff",
+                consequence_source.info_key,
+            )
             logger.info("Please check VCF file")
             context.abort()
         else:
-            logger.info("Using VEP annotation")
+            logger.info("Using %s annotation", consequence_source.info_key)
     else:
         if keyword not in head.info_dict:
             logger.warning("Annotation key {0} could not be found in VCF header".format(keyword))
@@ -306,7 +314,6 @@ def models(
                 individuals=analysis_individuals,
                 phased=phased,
                 strict=strict,
-                vep=vep,
                 reduced_penetrance_genes=reduced_penetrance_genes,
             )
             for i in range(num_model_checkers)
@@ -350,7 +357,7 @@ def models(
             variants=variant_file,
             batch_queue=variant_queue,
             header=head,
-            vep=vep,
+            source=consequence_source,
             annotation_keyword=keyword,
         )
 

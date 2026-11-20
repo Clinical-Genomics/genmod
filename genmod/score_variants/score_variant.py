@@ -4,7 +4,7 @@ Score a variant line based on the score functions in config_parser
 """
 
 import logging
-from typing import Any, List, Tuple
+from typing import Any, List, Optional, Sequence, Tuple
 
 logger = logging.getLogger(__name__)
 
@@ -13,7 +13,11 @@ MAX_SCORE_NORMALIZED: float = 1.0
 
 
 def get_plugin_score(
-    variant, plugin_name, config_parser, csq_format=None
+    variant: dict[str, Any],
+    plugin_name: str,
+    config_parser,
+    csq_format: Optional[Sequence[str]] = None,
+    ann_format: Optional[Sequence[str]] = None,
 ) -> Tuple[Any, float, float]:
     """Return the score found for a plugin
 
@@ -21,6 +25,8 @@ def get_plugin_score(
         variant (dict): A variant dictionary
         plugin_name (str): A plugin name
         config_parser (ConfigParser): A config parser object with score functions
+        csq_format (list): The VEP CSQ columns
+        ann_format (list): The SnpEff ANN columns
     Returns:
         category_score (float): The rank score for this variant
 
@@ -28,6 +34,8 @@ def get_plugin_score(
     logger.debug("Checking scores for plugin {0}".format(plugin_name))
     # This is a plugin to collect the correct value from the vcf
     plugin = config_parser.plugins[plugin_name]
+    if plugin.info_key == "ANN":
+        csq_format = ann_format
     # This is the score function for this plugin
     score_function = config_parser.score_functions[plugin_name]
 
@@ -48,7 +56,11 @@ def get_plugin_score(
 
 
 def get_category_score(
-    variant, category, config_parser, csq_format=None
+    variant: dict[str, Any],
+    category: str,
+    config_parser,
+    csq_format: Optional[Sequence[str]] = None,
+    ann_format: Optional[Sequence[str]] = None,
 ) -> Tuple[int, float, float]:
     """Return the score for a given category.
 
@@ -60,6 +72,8 @@ def get_category_score(
          variant (dict): A variant dictionary
          category (str): A score category
          config_parser (ConfigParser): A config parser object with score functions
+         csq_format (list): The VEP CSQ columns
+         ann_format (list): The SnpEff ANN columns
      Returns:
          category_score, sum of min and max scores for this category
     """
@@ -79,6 +93,7 @@ def get_category_score(
             plugin_name=plugin_name,
             config_parser=config_parser,
             csq_format=csq_format,
+            ann_format=ann_format,
         )
         category_scores.append(plugin_score)
         # Add the maximal and minimal score points that can be provided for this category

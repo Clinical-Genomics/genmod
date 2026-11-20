@@ -1,4 +1,4 @@
-from genmod.utils import get_batches
+from genmod.utils import SNPEFF, get_batches
 from genmod.vcf_tools import HeaderParser
 
 try:
@@ -123,6 +123,34 @@ def test_get_batches_vep():
     assert chromosomes == ["1"]
     assert len(batch_1) == 1
     assert len(batch_2) == 1
+
+
+def test_get_batches_snpeff_shared_gene():
+    # GIVEN two SnpEff annotated variants in the same gene and an intergenic variant
+    ann_header = (
+        '##INFO=<ID=ANN,Number=.,Type=String,Description="Functional annotations: '
+        "'Allele | Annotation | Annotation_Impact | Gene_Name | Gene_ID' \">"
+    )
+    variants = [
+        get_variant_line(info="ANN=G|missense_variant|MODERATE|ADK|ENSG01"),
+        get_variant_line(pos="2", info="ANN=G|stop_gained|HIGH|ADK|ENSG01"),
+        get_variant_line(pos="3", info="ANN=G|intergenic_region|MODIFIER|ADK-DDD|ENSG01-ENSG02"),
+    ]
+    header = HeaderParser()
+    header.parse_meta_data(ann_header)
+    header.parse_header_line("#{0}".format(HEADER))
+    batch_queue = Queue()
+
+    # WHEN batching with the SnpEff source
+    get_batches(variants=variants, batch_queue=batch_queue, header=header, source=SNPEFF)
+    batch_1 = batch_queue.get()
+    batch_2 = batch_queue.get()
+
+    # THEN the variants in the gene share a batch and the intergenic variant is alone
+    assert list(batch_1) == ["1_1_A_G", "1_2_A_G"]
+    assert batch_1["1_1_A_G"]["annotation"] == {"ENSG01"}
+    assert list(batch_2) == ["1_3_A_G"]
+    assert batch_2["1_3_A_G"]["annotation"] == set()
 
 
 def test_get_batches_vep_no_allele():
