@@ -9,11 +9,9 @@ Please add a new candidate release at the top after changing the latest one. Fee
 Try to use the following format:
 
 ## [unreleased]
-### Added
-- Support for SnpEff annotated VCFs (the `ANN` field). `genmod models --snpeff` and `genmod compound --snpeff` take the genes of a variant from `ANN`, like `--vep` does from `CSQ`. Rank model plugins can score an ANN field with `info_key = ANN` and `csq_key = <ANN field>` ([#240](https://github.com/Clinical-Genomics/genmod/pull/240))
-
 ### Changed
 - Refactored how VEP annotations are read: `get_vep_dict` is replaced by the format-agnostic `parse_annotations`, `check_vep_annotation` by `get_annotated_genes`, and the per-transcript annotations are no longer kept on each variant while batching. Removed the unused `vep` argument of `VariantAnnotator`. No change in behaviour ([#240](https://github.com/Clinical-Genomics/genmod/pull/240))
+- Added `AGENTS.md`, a guide to the code layout, commands and conventions for coding agents, imported by `CLAUDE.md` ([#TBD](https://github.com/Clinical-Genomics/genmod/pull/242))
 
 ### Fixed
 - `genmod score --skip_plugin_check` no longer crashes with `UnboundLocalError: csq_column` when a rank model scores a CSQ column that is missing from the VEP annotation. The column is scored as not reported ([#238](https://github.com/Clinical-Genomics/genmod/pull/238))
