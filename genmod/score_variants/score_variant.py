@@ -31,11 +31,17 @@ def get_plugin_score(
     # This is the score function for this plugin
     score_function = config_parser.score_functions[plugin_name]
 
-    value = plugin.get_value(variant_dict=variant, csq_format=csq_format)
-    logger.debug("Found value {0} for plugin {1}".format(value, plugin_name))
-
     # Score is allways a number
-    score = score_function.get_score(value)
+    values = plugin.get_typed_values(variant_dict=variant, csq_format=csq_format)
+    if values and plugin.record_rule in ("min", "max") and plugin.record_rule_on == "score":
+        # record_rule_on = score: pick the annotation with the min/max score, not value
+        scores = [score_function.get_score(value) for value in values]
+        score = max(scores) if plugin.record_rule == "max" else min(scores)
+        logger.debug("Found values {0} for plugin {1}".format(values, plugin_name))
+    else:
+        value = plugin.get_value(variant_dict=variant, csq_format=csq_format)
+        logger.debug("Found value {0} for plugin {1}".format(value, plugin_name))
+        score = score_function.get_score(value)
     logger.debug("Score is {0} for plugin {1}".format(score, plugin_name))
 
     plugin_score_min: float = score_function.score_min

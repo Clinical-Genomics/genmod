@@ -9,7 +9,11 @@ Please add a new candidate release at the top after changing the latest one. Fee
 Try to use the following format:
 
 ## [unreleased]
+### Added
+- `record_rule_on = value | score` plugin option for numeric (`integer`/`float`) plugins. With `record_rule_on = score` the `record_rule` (`min`/`max`) chooses between several annotation values by their score instead of by the value itself. The default, `value`, keeps the existing behaviour ([#239](https://github.com/Clinical-Genomics/genmod/pull/239))
+
 ### Fixed
+- Docs no longer say that string rules choose by "priority / score"; they choose by `priority` ([#239](https://github.com/Clinical-Genomics/genmod/pull/239))
 - `genmod score --skip_plugin_check` no longer crashes with `UnboundLocalError: csq_column` when a rank model scores a CSQ column that is missing from the VEP annotation. The column is scored as not reported ([#238](https://github.com/Clinical-Genomics/genmod/pull/238))
 
 ## [3.13.0]
