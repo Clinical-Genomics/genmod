@@ -92,3 +92,20 @@ def test_parse_minimal_contig():
 
     ## THEN assert it is added to the parser
     assert "1" in head.contig_dict
+
+
+def test_print_header_prints_fileformat_once_and_keeps_filedate() -> None:
+    # GIVEN a header with a fileformat and a fileDate line
+    head = HeaderParser()
+    head.parse_meta_data("##fileformat=VCFv4.2")
+    head.parse_meta_data("##fileDate=20260101")
+    head.parse_header_line("#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO")
+
+    # WHEN printing the header
+    lines = head.print_header()
+
+    # THEN the fileformat is printed once, first, and the fileDate line is kept as it was
+    assert lines.count("##fileformat=VCFv4.2") == 1
+    assert lines[0] == "##fileformat=VCFv4.2"
+    assert "##fileDate=20260101" in lines
+    assert lines[-1].startswith("#CHROM")

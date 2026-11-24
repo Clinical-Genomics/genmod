@@ -18,6 +18,16 @@ Try to use the following format:
 - A `RELEASE.md` instruction for creating releases ([#210](https://github.com/Clinical-Genomics/genmod/pull/210))
 
 ### Changed
+- Added type hints to `get_file_handle`, which reads gzipped files with `gzip.open` in text mode instead of the deprecated `codecs` reader
+- Removed an unreachable duplicate `##fileformat` branch (`filedate` was never set) in `HeaderParser.print_header`
+- `genmod models` now adds its INFO headers with the shared `add_*_header` helpers, and `add_model_score_header` now describes ModelScore as it is written (`Number=.`, `Type=String`, `family_id:score` pairs, previously `Number=1`, `Type=Integer`)
+- Removed the unused `analyze` and `summarize_variants` command modules (not registered in the CLI and depending on the missing `vcf_parser` package)
+- Added type hints to `add_metadata`, `print_headers`, `print_variant` and `sort_variants` and their modules. `add_metadata` no longer has the unused `version` and `command_line_string` arguments and rejects metadata types other than `info`, `print_variant` raises a `ValueError` when given neither a line nor a dictionary, and `sort_variants` rejects unknown sort modes instead of running plain `sort`
+- Added type hints to `get_batches`, which no longer has the unused `results_queue` argument and returns no `None` chromosome for a VCF without variants
+- Moved `check_individuals` from `genmod.utils` to `genmod.pedigree.check_individuals_in_vcf`, added type hints, and let its error name the individuals missing from the VCF
+- Replaced the unmaintained `ped_parser` dependency (last release 2017, and it pulled in `pytest` for every install) with a `genmod.pedigree` module with the same behaviour for the `ped`, `fam`, `alt`, `cmms` and `mip` family types. Unknown family types and malformed ped lines now raise `ValueError` and `WrongLineFormat` instead of silently reading nothing or raising `SyntaxError`. An individual id that is used more than once (in the same family, or in two families, since ids are matched against the VCF sample names) now raises `PedigreeError` instead of the last line silently winning
+- Removed the unused `six` dependency and the `importlib_resources` backport (`importlib.resources` in the standard library is used instead), and the unused Python 3.7 `importlib_metadata` import fallback
+- Removed the `intervaltree` dependency: region annotation (`genmod annotate --regions`) now uses a small built-in `RegionIndex`, and numeric rank model intervals use `bisect`. Overlapping numeric intervals in a rank model are now an error when the model is loaded, instead of silently using one of them
 - Added `&` to the `MostSevereConsequence` separators in the bundled rank models (`rank_model_cmms_v1.7`, `v1.9`, `genmod_test.v1.5`), so that multiple VEP consequences joined by `&` are all scored with whole-token matching ([#205](https://github.com/Clinical-Genomics/genmod/issues/205))
 - Docs are now built with Zensical instead of mkdocs/mkdocs-material and deployed with the official GitHub Pages actions; bumped GitHub Actions to Node 24 versions ([#220](https://github.com/Clinical-Genomics/genmod/issues/220))
 - Vendored the `Plugin` class and `split_strings` from the unmaintained `extract_vcf` package into `genmod.plugin` and removed the `extract_vcf` dependency. No change in behaviour

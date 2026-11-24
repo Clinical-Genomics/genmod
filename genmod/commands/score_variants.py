@@ -17,10 +17,10 @@ import sys
 from datetime import datetime
 
 import click
-from ped_parser import FamilyParser
 from validate import ValidateError
 
 from genmod import __version__
+from genmod.pedigree import FamilyParser
 from genmod.score_variants import (
     RANK_SCORE_TYPES,
     ConfigParser,

@@ -149,3 +149,45 @@ def test_exact_match_must_be_a_boolean(tmp_path):
     # THEN a ValidateError is raised
     with pytest.raises(ValidateError):
         get_clnsig_scorer(tmp_path, extra="  exact_match = maybe\n")
+
+
+def test_overlapping_rank_model_intervals_are_rejected(tmp_path):
+    # GIVEN a rank model where two numeric intervals overlap
+    ini = tmp_path / "overlap.ini"
+    ini.write_text(
+        """[Version]
+  version = 0.1
+  name = overlap
+
+[Categories]
+ [[allele_frequency]]
+   category_aggregation = min
+
+[1000G]
+  field = INFO
+  data_type = float
+  category = allele_frequency
+  info_key = 1000GAF
+  record_rule = min
+  separators = ',',
+  description = 1000 genomes frequency
+
+  [[common]]
+    score = -12
+    lower = 0.01
+    upper = 1.1
+
+  [[intermediate]]
+    score = 1
+    lower = 0.005
+    upper = 0.02
+
+  [[not_reported]]
+    score = 0
+"""
+    )
+
+    # WHEN loading the rank model
+    # THEN the overlap is reported instead of silently using one of the scores
+    with pytest.raises(ValueError, match="overlaps"):
+        ConfigParser(str(ini))

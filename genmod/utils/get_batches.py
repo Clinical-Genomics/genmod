@@ -1,53 +1,72 @@
-from __future__ import print_function
+"""Group variants into batches of variants with overlapping annotations."""
+
+from __future__ import annotations
 
 import logging
-from collections import OrderedDict
+from collections.abc import Iterable
 from datetime import datetime
+from typing import Any, Protocol
 
-from genmod.vcf_tools import get_info_dict, get_variant_dict, get_variant_id, get_vep_dict
+from genmod.vcf_tools import (
+    HeaderParser,
+    get_info_dict,
+    get_variant_dict,
+    get_variant_id,
+    get_vep_dict,
+)
 
 from .get_features import get_annotation
 
 logger = logging.getLogger(__name__)
 
+# A parsed variant, e.g. {"CHROM": "1", "POS": "1", "info_dict": {...}, "annotation": {...}}
+VariantDict = dict[str, Any]
+# Variants keyed on variant id, in the order they were read
+VariantBatch = dict[str, VariantDict]
+
+
+class BatchQueue(Protocol):
+    """Anything batches can be put on, e.g. ``queue.Queue`` or ``multiprocessing.JoinableQueue``."""
+
+    def put(self, item: VariantBatch, /) -> None: ...
+
 
 def get_batches(
-    variants, batch_queue, header, vep=False, results_queue=None, annotation_keyword="Annotation"
-):
-    """
-    Create variant batches based on their annotation and put them into the
-    batch queue.
+    variants: Iterable[str],
+    batch_queue: BatchQueue,
+    header: HeaderParser,
+    vep: bool = False,
+    annotation_keyword: str = "Annotation",
+) -> list[str]:
+    """Create variant batches based on their annotation and put them into the batch queue.
 
-    Variant batches are are dictionaries with variant_id as key and
-    variant_dict as value.
+    Variant batches are dictionaries with variant_id as key and variant_dict as value.
 
-    get_batches will then use the annotation to search for sequences of variants
-    with overlapping annotations. These are collected into one batch and gets
-    put into a queue.
+    get_batches uses the annotation to search for sequences of variants with overlapping
+    annotations. These are collected into one batch which is put into the queue. Variants
+    that are in between features are in their own batch, and a new chromosome always
+    starts a new batch.
 
-    Variants that are in between features will be in their own batch.
-
-    Arguments:
-         variants (Iterator):An iterator that returns variant dictionaries
-         batch_queue (Queue): A queue where the batches will be putted
-         header (HeaderParser): A HeaderParser object
-         vep (bool): If variant is annotated with vep
-         compound_mode (bool): If only compounds should be used
-         results_queue (Queue): A queue where variants can be put for printing
+    Args:
+        variants: The lines of the VCF file (comment lines are skipped)
+        batch_queue: A queue where the batches will be put
+        header: The parsed VCF header
+        vep: If the variants are annotated with VEP
+        annotation_keyword: The INFO key that holds the annotated features
 
     Returns:
-         Does not return but put the results in a queue
+        The chromosomes found, in the order they were read, without a ``chr`` prefix
     """
 
     logger.debug("Set beginning to True")
     beginning = True
     logger.debug("Create first empty batch")
-    # A batch is a ordered dictionary with variants
-    batch = OrderedDict()
-    new_chrom = None
-    current_chrom = None
-    current_features = set()
-    chromosomes = []
+    # A batch is a dictionary with variants, kept in the order they were read
+    batch: VariantBatch = {}
+    new_chrom: str
+    current_chrom: str | None = None
+    current_features: set[str] = set()
+    chromosomes: list[str] = []
 
     start_parsing_time = datetime.now()
     start_chrom_time = start_parsing_time
@@ -126,7 +145,7 @@ def get_batches(
                         send = False
                 # If we are at a new chromosome we finish the current batch:
                 if new_chrom != current_chrom:
-                    if current_chrom not in chromosomes:
+                    if current_chrom is not None and current_chrom not in chromosomes:
                         chromosomes.append(current_chrom)
                     logger.debug("Adding chr {0} to chromosomes".format(new_chrom))
                     # New chromosome means new batch
@@ -155,15 +174,16 @@ def get_batches(
                 # Add variant to batch
                 batch[variant_id] = variant
 
-    if current_chrom not in chromosomes:
-        logger.debug("Adding chr {0} to chromosomes".format(current_chrom))
-        chromosomes.append(current_chrom)
+    if current_chrom is not None:
+        if current_chrom not in chromosomes:
+            logger.debug("Adding chr {0} to chromosomes".format(current_chrom))
+            chromosomes.append(current_chrom)
 
-    logger.info(
-        "Chromosome {0} parsed. Time to parse chromosome: {0}".format(
-            current_chrom,
+        logger.info(
+            "Chromosome {0} parsed. Time to parse chromosome: {1}".format(
+                current_chrom, datetime.now() - start_chrom_time
+            )
         )
-    )
 
     if len(batch) > 0:
         nr_of_batches += 1

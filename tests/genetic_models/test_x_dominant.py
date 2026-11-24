@@ -1,6 +1,6 @@
 from genmod.annotate_models.models import check_X_dominant
+from genmod.pedigree import FamilyParser
 from genmod.vcf_tools import Genotype
-from ped_parser import FamilyParser
 
 FAMILY_FILE = "tests/fixtures/recessive_trio.ped"
 
