@@ -9,6 +9,9 @@ Please add a new candidate release at the top after changing the latest one. Fee
 Try to use the following format:
 
 ## [unreleased]
+### Changed
+- Added `AGENTS.md`, a guide to the code layout, commands and conventions for coding agents, imported by `CLAUDE.md` ([#242](https://github.com/Clinical-Genomics/genmod/pull/242))
+
 ### Fixed
 - `genmod score --skip_plugin_check` no longer crashes with `UnboundLocalError: csq_column` when a rank model scores a CSQ column that is missing from the VEP annotation. The column is scored as not reported ([#238](https://github.com/Clinical-Genomics/genmod/pull/238))
 
