@@ -87,7 +87,7 @@ class FamilyParser:
         header: list[str] | None = None
         for line in lines:
             if line.startswith("#"):
-                header = line[1:].rstrip().split("\t")
+                header = self._split_alternative_line(line[1:])
                 logger.debug(f"Alternative header found: {line}")
             elif line.strip():
                 if not header:
@@ -96,7 +96,7 @@ class FamilyParser:
                         "Please add a header line.",
                         ped_line=line.rstrip(),
                     )
-                columns = self._split_line(line)
+                columns = self._split_alternative_line(line)
                 if len(columns) != len(header):
                     raise WrongLineFormat(
                         message=(
@@ -115,6 +115,19 @@ class FamilyParser:
         if len(columns) < len(FAMILY_HEADER):
             columns = line.rstrip().split()
         return columns
+
+    @staticmethod
+    def _split_alternative_line(line: str) -> list[str]:
+        """Split a header or data line of an alternative file, keeping empty trailing columns.
+
+        Only the line break is removed before splitting on tabs, so a row ending in an empty
+        extra column keeps that column. Lines that are not tab separated are split on whitespace.
+        """
+        stripped = line.rstrip("\r\n")
+        columns = stripped.split("\t")
+        if len(columns) < len(FAMILY_HEADER):
+            columns = stripped.split()
+        return [column.strip() for column in columns]
 
     def _add_individual(self, columns: list[str], extra_info: dict[str, str] | None = None) -> None:
         family_id, sample_id, father_id, mother_id, sex, phenotype = columns

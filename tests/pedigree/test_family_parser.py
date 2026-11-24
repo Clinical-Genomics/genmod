@@ -372,3 +372,45 @@ def test_alternative_format_checks_parents() -> None:
     # THEN the pedigree is checked like for ped files
     with pytest.raises(PedigreeError):
         FamilyParser(lines, "alt")
+
+
+def test_alternative_header_and_lines_can_be_whitespace_separated() -> None:
+    # GIVEN an alternative format file where the header and the data lines are separated by spaces
+    lines = [
+        "#FamilyID SampleID Father Mother Sex Phenotype Proband\n",
+        f"{FAMILY} proband father mother 1 2 Yes\n",
+        f"{FAMILY} mother 0 0 2 1 No\n",
+        f"{FAMILY} father 0 0 1 1 No\n",
+    ]
+
+    # WHEN parsing as the alternative format
+    family = FamilyParser(lines, "alt").families[FAMILY]
+
+    # THEN the extra column is read under its header name
+    assert family.individuals["proband"].extra_info == {"Proband": "Yes"}
+
+
+def test_alternative_line_keeps_empty_trailing_column() -> None:
+    # GIVEN an alternative format file where the last column is empty for every individual
+    lines = [
+        ALT_HEADER,
+        f"{FAMILY}\tproband\tfather\tmother\t1\t2\tYes\t\n",
+        f"{FAMILY}\tmother\t0\t0\t2\t1\tNo\t\n",
+        f"{FAMILY}\tfather\t0\t0\t1\t1\tNo\t\n",
+    ]
+
+    # WHEN parsing as the alternative format
+    family = FamilyParser(lines, "alt").families[FAMILY]
+
+    # THEN the empty column is kept as an empty value
+    assert family.individuals["proband"].extra_info == {"Proband": "Yes", "Notes": ""}
+
+
+def test_ped_line_with_trailing_tab_is_still_accepted() -> None:
+    # GIVEN a ped line with a trailing tab after its six columns
+    lines = [f"{FAMILY}\tproband\t0\t0\t1\t2\t\n"]
+
+    # WHEN parsing as a ped file
+    # THEN the trailing tab is ignored and the individual is read
+    family = FamilyParser(lines, "ped").families[FAMILY]
+    assert family.individuals["proband"].extra_info == {}
